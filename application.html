@@ -488,7 +488,7 @@
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
                 // Redirect to login if not authenticated
-                window.location.href = 'https://stack-base.github.io/account/login';
+                window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
             }
         });
 
@@ -760,7 +760,7 @@
 
             signOut: () => {
                 signOut(auth).then(() => {
-                    window.location.href = 'https://stack-base.github.io/account/login';
+                    window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
                 });
             }
         };
