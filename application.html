@@ -146,6 +146,12 @@
                     <i class="ph-fill ph-timer text-2xl lg:text-xl text-purple-400 shrink-0"></i>
                     <span class="block md:hidden lg:block ml-3 font-bold">Focus Mode</span>
                 </button>
+                
+                <button onclick="app.setView('past')" id="nav-past" class="nav-btn w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
+                    <i class="ph-duotone ph-clock-counter-clockwise text-2xl lg:text-xl group-hover:text-red-400 transition-colors shrink-0"></i>
+                    <span class="block md:hidden lg:block ml-3 font-medium">Past</span>
+                    <span id="count-past" class="block md:hidden lg:flex ml-auto text-xs bg-oled-highlight text-gray-400 px-2 py-0.5 rounded-full border border-oled-border font-display font-bold">0</span>
+                </button>
 
                 <button onclick="app.setView('today')" id="nav-today" class="nav-btn w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
                     <i class="ph-duotone ph-sun text-2xl lg:text-xl group-hover:text-yellow-400 transition-colors shrink-0"></i>
@@ -636,7 +642,8 @@
             navCounts: {
                 today: document.getElementById('count-today'),
                 tomorrow: document.getElementById('count-tomorrow'),
-                upcoming: document.getElementById('count-upcoming')
+                upcoming: document.getElementById('count-upcoming'),
+                past: document.getElementById('count-past') // New
             },
             stats: {
                 pomosToday: document.getElementById('stat-pomos-today'),
@@ -966,6 +973,37 @@
                     window.app.showToast("Failed to rename project.", "error");
                 }
             },
+            
+            // New Delete Project Function
+            deleteProject: async (projName, e) => {
+                e.stopPropagation();
+                if(!confirm(`Delete project "${projName}"? Tasks will be moved to Inbox.`)) return;
+                
+                if (!state.user) return;
+
+                const tasksRef = collection(db, 'artifacts', appId, 'users', state.user.uid, 'tasks');
+                const q = query(tasksRef, where("project", "==", projName));
+                
+                try {
+                    const querySnapshot = await getDocs(q);
+                    const batch = writeBatch(db);
+                    querySnapshot.forEach((doc) => {
+                        batch.update(doc.ref, { project: 'Inbox' });
+                    });
+                    
+                    await batch.commit();
+                    
+                    state.projects.delete(projName);
+                    if (state.filterProject === projName) {
+                        window.app.setView('today');
+                    } else {
+                        updateProjectsUI();
+                    }
+                } catch (err) {
+                    console.error("Error deleting project:", err);
+                    window.app.showToast("Failed to delete project.", "error");
+                }
+            },
 
             addSubtaskUI: (value = '') => {
                 const div = document.createElement('div');
@@ -1201,6 +1239,11 @@
             // --- SYNCED TIMER CONTROLS ---
 
             toggleTimer: async () => {
+                // Request Notification Permission on first user interaction
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+
                 if(state.timer.status === 'running') {
                     // PAUSE
                     if (state.timer.settings.strictMode && state.timer.mode === 'focus') {
@@ -1267,6 +1310,16 @@
                 osc.frequency.value = 523.25;
                 osc.start();
                 osc.stop(ctx.currentTime + 0.2);
+
+                // Send Notification
+                if (Notification.permission === 'granted') {
+                    const title = state.timer.mode === 'focus' ? "Focus Session Complete!" : "Break Over!";
+                    const body = state.timer.mode === 'focus' ? "Great job! Take a short break." : "Time to get back to work.";
+                    const icon = "https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png";
+                    
+                    // Create notification
+                    new Notification(title, { body, icon });
+                }
 
                 if(state.timer.mode === 'focus') {
                     if(state.timer.activeTaskId) {
@@ -1587,9 +1640,14 @@
                                 <span class="truncate">${p}</span>
                             </div>
                         </button>
-                        <button onclick="app.renameProject('${p}', event)" class="absolute right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-opacity p-1" title="Rename Project">
-                            <i class="ph-bold ph-pencil-simple"></i>
-                        </button>
+                        <div class="absolute right-2 flex opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button onclick="app.renameProject('${p}', event)" class="text-gray-500 hover:text-white p-1" title="Rename Project">
+                                <i class="ph-bold ph-pencil-simple"></i>
+                            </button>
+                            <button onclick="app.deleteProject('${p}', event)" class="text-gray-500 hover:text-red-400 p-1 ml-1" title="Delete Project">
+                                <i class="ph-bold ph-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
                 els.projectList.appendChild(div);
@@ -1603,6 +1661,9 @@
             els.navCounts.today.innerText = state.tasks.filter(t => t.dueDate === today && t.status === 'todo').length;
             els.navCounts.tomorrow.innerText = state.tasks.filter(t => t.dueDate === tomorrow && t.status === 'todo').length;
             els.navCounts.upcoming.innerText = state.tasks.filter(t => t.dueDate > tomorrow && t.status === 'todo').length;
+            
+            // New Past Count
+            els.navCounts.past.innerText = state.tasks.filter(t => t.dueDate < today && t.status === 'todo').length;
             
             const doneToday = state.tasks.filter(t => t.status === 'done' && t.dueDate === today).length;
             const totalPomos = state.tasks.reduce((a,b) => a + (b.completedPomos||0), 0);
@@ -1627,6 +1688,7 @@
             if (state.view === 'today') list = state.tasks.filter(t => t.dueDate === today && t.status === 'todo');
             else if (state.view === 'tomorrow') list = state.tasks.filter(t => t.dueDate === tomorrow && t.status === 'todo');
             else if (state.view === 'upcoming') list = state.tasks.filter(t => t.dueDate > tomorrow && t.status === 'todo');
+            else if (state.view === 'past') list = state.tasks.filter(t => t.dueDate < today && t.status === 'todo'); // New Past View
             else if (state.view === 'completed') list = state.tasks.filter(t => t.status === 'done');
             else if (state.view === 'project') list = state.tasks.filter(t => t.project === state.filterProject && t.status === 'todo');
             
@@ -1643,8 +1705,22 @@
                 const pColor = { high: 'text-red-500', med: 'text-yellow-500', low: 'text-blue-500', none: 'text-gray-600' }[t.priority || 'none'];
                 const boxColor = { high: 'border-red-500', med: 'border-yellow-500', low: 'border-blue-500', none: 'border-gray-600' }[t.priority || 'none'];
 
+                // Dynamic Active Border Logic
+                let borderClass = 'border-oled-border hover:border-oled-border bg-oled-surface';
+                if (isSel) {
+                    const selColors = { 
+                        high: 'border-red-500 bg-oled-highlight', 
+                        med: 'border-yellow-500 bg-oled-highlight', 
+                        low: 'border-blue-500 bg-oled-highlight', 
+                        none: 'border-gray-600 bg-oled-highlight' 
+                    };
+                    borderClass = selColors[t.priority || 'none'];
+                } else {
+                     borderClass = `bg-oled-surface border-oled-border hover:bg-oled-highlight hover:border-oled-border`;
+                }
+
                 const el = document.createElement('div');
-                el.className = `group flex items-start p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${isSel ? 'bg-oled-highlight border-purple-500/50' : 'bg-oled-surface border-oled-border hover:bg-oled-highlight hover:border-oled-border'}`;
+                el.className = `group flex items-start p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${borderClass}`;
                 el.onclick = () => window.app.selectTask(t.id);
 
                 let tagsHTML = '';
