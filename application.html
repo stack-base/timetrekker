@@ -548,7 +548,7 @@
                 focusTime: document.getElementById('stat-focus-time')
             },
             projectList: document.getElementById('project-list'),
-            projectDatalist: document.getElementById('projects-datalist'),
+            projectSelect: document.getElementById('task-project'),
             subtasksContainer: document.getElementById('subtasks-container'),
             audio: document.getElementById('audio-player'),
             soundMenu: document.getElementById('sound-menu'),
@@ -839,7 +839,7 @@
                     estimatedPomos: state.newEst,
                     pomoDuration: pomoDuration,
                     priority: document.getElementById('task-priority').value,
-                    project: document.getElementById('task-project').value || 'Inbox',
+                    project: els.projectSelect.value || 'Inbox',
                     note: document.getElementById('task-note').value,
                     subtasks: subtasks,
                     tags: tags
