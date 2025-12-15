@@ -129,7 +129,6 @@
                     </div>
                     <span class="block md:hidden lg:block ml-3 font-bold text-xl tracking-tight text-white truncate font-heading">Time<span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Trekker</span></span>
                 </div>
-                <!-- Close Button (Mobile Only) -->
                 <button onclick="app.toggleSidebar(false)" class="md:hidden text-gray-400 hover:text-white p-2 rounded-lg hover:bg-oled-highlight transition-colors">
                     <i class="ph-bold ph-x text-xl"></i>
                 </button>
@@ -386,8 +385,8 @@
         <audio id="audio-player" loop></audio>
     </aside>
 
-    <div id="add-task-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-        <div class="bg-oled-surface border border-oled-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="add-task-panel">
+    <div id="add-task-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end md:items-center justify-center md:p-4 opacity-0 transition-opacity duration-200">
+        <div class="bg-oled-surface border border-oled-border w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg md:rounded-2xl shadow-2xl overflow-hidden transform transition-transform duration-200 flex flex-col" id="add-task-panel">
             <form id="add-task-form" onsubmit="app.handleSaveTask(event)" class="flex flex-col h-full">
                 <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
                     <div class="flex justify-between items-center mb-6">
@@ -455,15 +454,16 @@
                     <div class="mb-6 font-display">
                         <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Project / List</label>
                         <div class="relative">
-                            <input type="text" id="task-project" list="projects-datalist" placeholder="Inbox" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
-                            <datalist id="projects-datalist"></datalist>
-                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-folder"></i></div>
+                            <select id="task-project" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px] appearance-none">
+                            </select>
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-caret-down"></i></div>
                         </div>
                     </div>
 
                 </div>
-                <div class="bg-oled-surface p-4 flex justify-end border-t border-oled-border mt-auto shrink-0">
-                    <button type="submit" id="save-task-btn" class="bg-white text-black hover:bg-gray-200 px-8 py-2.5 rounded-xl font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-transform active:scale-95 font-display">
+                <div class="bg-oled-surface p-4 flex justify-between border-t border-oled-border mt-auto shrink-0">
+                    <button type="button" onclick="app.toggleAddTaskModal()" class="text-gray-400 hover:text-white font-medium text-sm transition-colors md:hidden">Cancel</button>
+                    <button type="submit" id="save-task-btn" class="bg-white text-black hover:bg-gray-200 px-8 py-2.5 rounded-xl font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-transform active:scale-95 font-display ml-auto">
                         Save Task
                     </button>
                 </div>
@@ -494,7 +494,7 @@
         const state = {
             user: null,
             tasks: [],
-            projects: new Set(['Work', 'Personal', 'Study']),
+            projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
             view: 'today',
             filterProject: null,
             selectedTaskId: null,
@@ -548,7 +548,7 @@
                 focusTime: document.getElementById('stat-focus-time')
             },
             projectList: document.getElementById('project-list'),
-            projectDatalist: document.getElementById('projects-datalist'),
+            projectSelect: document.getElementById('task-project'),
             subtasksContainer: document.getElementById('subtasks-container'),
             audio: document.getElementById('audio-player'),
             soundMenu: document.getElementById('sound-menu'),
@@ -587,11 +587,11 @@
             const q = collection(db, 'artifacts', appId, 'users', uid, 'tasks');
             onSnapshot(q, (snapshot) => {
                 const tasks = [];
-                const projects = new Set(state.projects);
+                const projects = new Set(['Inbox', 'Work', 'Personal', 'Study']);
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     tasks.push({ id: doc.id, ...data });
-                    if(data.project && data.project !== 'Inbox') projects.add(data.project);
+                    if(data.project) projects.add(data.project);
                 });
                 state.tasks = tasks;
                 state.projects = projects;
@@ -741,11 +741,12 @@
                 if (els.modal.classList.contains('hidden')) {
                     els.subtasksContainer.innerHTML = '';
                     
-                    els.projectDatalist.innerHTML = '';
+                    els.projectSelect.innerHTML = '';
                     state.projects.forEach(p => {
                         const opt = document.createElement('option');
                         opt.value = p;
-                        els.projectDatalist.appendChild(opt);
+                        opt.innerText = p;
+                        els.projectSelect.appendChild(opt);
                     });
 
                     if (taskToEdit) {
@@ -761,7 +762,7 @@
                         els.pomoDurationInput.value = taskToEdit.pomoDuration || 25;
                         els.dateInput.value = taskToEdit.dueDate || '';
                         document.getElementById('task-priority').value = taskToEdit.priority || 'none';
-                        document.getElementById('task-project').value = taskToEdit.project || '';
+                        els.projectSelect.value = taskToEdit.project || 'Inbox';
                         
                         if (taskToEdit.subtasks && Array.isArray(taskToEdit.subtasks)) {
                             taskToEdit.subtasks.forEach(sub => window.app.addSubtaskUI(sub));
@@ -779,7 +780,7 @@
                         document.getElementById('task-note').value = '';
                         document.getElementById('task-tags').value = '';
                         document.getElementById('task-priority').value = 'none';
-                        document.getElementById('task-project').value = '';
+                        els.projectSelect.value = 'Inbox';
                     }
                     
                     window.app.updateTotalEstDisplay();
