@@ -598,6 +598,7 @@
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
+                // Redirect to login if not authenticated
                 window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
             }
         });
@@ -1212,7 +1213,7 @@
                         </div>
                     </label>
                     
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1 min-w-0 pr-24">
                         <div class="flex items-center justify-between">
                             <h3 class="text-sm font-medium text-gray-200 truncate ${t.status === 'done' ? 'line-through text-gray-500' : ''} font-heading">${t.title}</h3>
                             <div class="flex items-center shrink-0">
@@ -1234,22 +1235,22 @@
                                 <i class="ph-bold ph-folder mr-1 shrink-0"></i> <span class="truncate">${t.project}</span>
                             </div>
                             <!-- Time Stats -->
-                            <div class="flex items-center text-[10px] text-gray-500 ml-auto space-x-2">
+                            <div class="flex items-center text-[10px] text-gray-400 bg-oled-surface border border-oled-border px-3 py-1 rounded-full ml-auto whitespace-nowrap">
                                 <span>Done: ${doneH}h ${doneM}m</span>
-                                <span>•</span>
+                                <span class="mx-1 opacity-30">|</span>
                                 <span>Left: ${remH}h ${remM}m</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="absolute right-2 top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all z-20 bg-oled-surface rounded-md">
-                        <button onclick="app.startTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-white transition-colors" title="Start Timer">
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all z-20 bg-oled-surface p-1 rounded-lg border border-oled-border shadow-lg">
+                        <button onclick="app.startTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-white transition-colors hover:bg-white/5 rounded-md" title="Start Timer">
                             <i class="ph-fill ph-play"></i>
                         </button>
-                        <button onclick="app.editTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors" title="Edit Task">
+                        <button onclick="app.editTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors hover:bg-white/5 rounded-md" title="Edit Task">
                             <i class="ph-bold ph-pencil-simple"></i>
                         </button>
-                        <button onclick="app.deleteTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 transition-colors" title="Delete Task">
+                        <button onclick="app.deleteTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 transition-colors hover:bg-white/5 rounded-md" title="Delete Task">
                             <i class="ph-bold ph-trash"></i>
                         </button>
                     </div>
