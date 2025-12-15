@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,8 +18,9 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
+                        sans: ['Roboto', 'sans-serif'],
+                        heading: ['Ubuntu', 'sans-serif'],
+                        display: ['Poppins', 'sans-serif'],
                     },
                     colors: {
                         gray: {
@@ -28,9 +29,10 @@
                             950: '#0B0F19',
                         },
                         oled: {
-                            base: '#000000',
-                            card: '#0a0a0a',
-                            border: '#262626',
+                            base: '#000000',      // True Black (Background)
+                            surface: '#0f0f0f',   // Dark Gray (Cards, Sidebar)
+                            highlight: '#1a1a1a', // Lighter Gray (Hover)
+                            border: '#2a2a2a',    // Visible Border
                         },
                         priority: {
                             high: '#ef4444',
@@ -55,17 +57,12 @@
         ::-webkit-scrollbar-thumb:hover { background: #404040; }
 
         .glass {
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(15, 15, 15, 0.95); /* Using Surface color for glass */
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid #2a2a2a;
         }
-        .glass-panel {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px);
-            border-left: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         
@@ -90,72 +87,90 @@
         .animate-breathe { animation: breathe 4s ease-in-out infinite; }
     </style>
 </head>
-<body class="h-screen w-full overflow-hidden flex selection:bg-purple-500/30 font-sans bg-black">
+<body class="h-screen w-full overflow-hidden flex selection:bg-purple-500/30 font-sans bg-oled-base">
+
+    <!-- Auth Protection Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-oled-base hidden flex-col items-center justify-center text-center p-6">
+        <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20">
+            <i class="ph-bold ph-lock-key text-3xl text-white"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white mb-2 font-heading">Authentication Required</h1>
+        <p class="text-gray-400 mb-8 max-w-md">Please sign in to access your tasks.</p>
+        <a href="https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application" class="px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors font-display">
+            Go to Login Page
+        </a>
+    </div>
 
     <!-- Sidebar -->
-    <nav class="w-20 lg:w-64 flex-shrink-0 bg-black border-r border-white/10 flex flex-col justify-between transition-all duration-300 z-30">
+    <nav class="w-20 lg:w-64 flex-shrink-0 bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-all duration-300 z-30">
         <div class="flex flex-col h-full overflow-hidden">
             <!-- Header -->
-            <div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-white/10 flex-shrink-0">
+            <div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-oled-border flex-shrink-0">
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] shrink-0">
                     <i class="ph-bold ph-check text-white text-lg"></i>
                 </div>
-                <span class="hidden lg:block ml-3 font-bold text-xl tracking-tight text-white truncate">Time<span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Trekker</span></span>
+                <span class="hidden lg:block ml-3 font-bold text-xl tracking-tight text-white truncate font-heading">Time<span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Trekker</span></span>
             </div>
 
             <!-- Scrollable Nav Area -->
             <div class="flex-1 overflow-y-auto p-3 space-y-1">
-                <button onclick="app.toggleFocusPanel(true)" class="xl:hidden w-full flex items-center justify-center lg:justify-start px-3 py-2.5 mb-2 rounded-xl bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-white border border-purple-500/30 hover:border-purple-400 transition-all group relative shadow-[0_0_10px_rgba(147,51,234,0.1)] shrink-0">
+                <!-- Mobile Focus Toggle -->
+                <button onclick="app.toggleFocusPanel(true)" class="xl:hidden w-full flex items-center justify-center lg:justify-start px-3 py-2.5 mb-2 rounded-xl bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-white border border-purple-500/30 hover:border-purple-400 transition-all group relative shadow-[0_0_10px_rgba(147,51,234,0.1)] shrink-0 font-display">
                     <i class="ph-fill ph-timer text-2xl lg:text-xl text-purple-400 shrink-0"></i>
                     <span class="hidden lg:block ml-3 font-bold">Focus Mode</span>
                 </button>
 
-                <button onclick="app.setView('today')" id="nav-today" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors group relative shrink-0">
+                <!-- Main Views -->
+                <button onclick="app.setView('today')" id="nav-today" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
                     <i class="ph-duotone ph-sun text-2xl lg:text-xl group-hover:text-yellow-400 transition-colors shrink-0"></i>
                     <span class="hidden lg:block ml-3 font-medium">Today</span>
-                    <span id="count-today" class="hidden lg:flex ml-auto text-xs bg-white/5 text-gray-400 px-2 py-0.5 rounded-full border border-white/5">0</span>
+                    <span id="count-today" class="hidden lg:flex ml-auto text-xs bg-oled-highlight text-gray-400 px-2 py-0.5 rounded-full border border-oled-border font-display font-bold">0</span>
                 </button>
 
-                <button onclick="app.setView('tomorrow')" id="nav-tomorrow" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors group relative shrink-0">
+                <button onclick="app.setView('tomorrow')" id="nav-tomorrow" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
                     <i class="ph-duotone ph-calendar-plus text-2xl lg:text-xl group-hover:text-blue-400 transition-colors shrink-0"></i>
                     <span class="hidden lg:block ml-3 font-medium">Tomorrow</span>
-                    <span id="count-tomorrow" class="hidden lg:flex ml-auto text-xs bg-white/5 text-gray-400 px-2 py-0.5 rounded-full border border-white/5">0</span>
+                    <span id="count-tomorrow" class="hidden lg:flex ml-auto text-xs bg-oled-highlight text-gray-400 px-2 py-0.5 rounded-full border border-oled-border font-display font-bold">0</span>
                 </button>
 
-                <button onclick="app.setView('upcoming')" id="nav-upcoming" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors group relative shrink-0">
+                <button onclick="app.setView('upcoming')" id="nav-upcoming" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
                     <i class="ph-duotone ph-calendar text-2xl lg:text-xl group-hover:text-purple-400 transition-colors shrink-0"></i>
                     <span class="hidden lg:block ml-3 font-medium">Upcoming</span>
-                    <span id="count-upcoming" class="hidden lg:flex ml-auto text-xs bg-white/5 text-gray-400 px-2 py-0.5 rounded-full border border-white/5">0</span>
+                    <span id="count-upcoming" class="hidden lg:flex ml-auto text-xs bg-oled-highlight text-gray-400 px-2 py-0.5 rounded-full border border-oled-border font-display font-bold">0</span>
                 </button>
                 
-                <div class="border-t border-white/10 my-2 mx-2 shrink-0"></div>
+                <div class="border-t border-oled-border my-2 mx-2 shrink-0"></div>
                 
-                <div class="hidden lg:flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider shrink-0">
+                <!-- Projects Header -->
+                <div class="hidden lg:flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider shrink-0 font-display">
                     <span>Projects</span>
-                    <button onclick="app.promptNewProject()" class="hover:text-white"><i class="ph-bold ph-plus"></i></button>
+                    <button onclick="app.promptNewProject()" class="hover:text-white" title="New Project"><i class="ph-bold ph-plus"></i></button>
                 </div>
 
-                <div id="project-list" class="space-y-0.5"></div>
+                <!-- Projects List -->
+                <div id="project-list" class="space-y-0.5 font-display">
+                    <!-- Projects injected here -->
+                </div>
             </div>
             
             <!-- Bottom Actions -->
-            <div class="p-3 border-t border-white/10 shrink-0">
-                 <button onclick="app.setView('completed')" id="nav-completed" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2 rounded-xl text-gray-500 hover:bg-white/5 hover:text-white transition-colors mb-2">
+            <div class="p-3 border-t border-oled-border shrink-0">
+                 <button onclick="app.setView('completed')" id="nav-completed" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2 rounded-xl text-gray-500 hover:bg-oled-highlight hover:text-white transition-colors mb-2 font-display">
                     <i class="ph-duotone ph-check-circle text-xl shrink-0"></i>
                     <span class="hidden lg:block ml-3 text-sm font-medium">Completed</span>
                 </button>
 
                 <!-- Branding & Sign Out -->
                 <div class="flex flex-col gap-2">
-                    <a href="https://stack-base.github.io/home" target="_blank" class="flex items-center justify-center lg:justify-start w-full border border-white/5 hover:bg-white/5 rounded-xl p-3 transition-colors group no-underline box-border">
-                        <span class="lg:hidden text-xs font-bold text-gray-500 group-hover:text-white">SB</span>
+                    <a href="https://stack-base.github.io/home" target="_blank" class="flex items-center justify-center lg:justify-start w-full border border-oled-border hover:bg-oled-highlight rounded-xl p-3 transition-colors group no-underline box-border">
+                        <span class="lg:hidden text-xs font-bold text-gray-500 group-hover:text-white font-heading">SB</span>
                         <div class="hidden lg:flex flex-col leading-none">
-                            <span class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Powered by</span>
-                            <span class="text-xs text-white font-bold mt-0.5">StackBase</span>
+                            <span class="text-[10px] text-gray-500 font-medium uppercase tracking-wider font-display">Powered by</span>
+                            <span class="text-xs text-white font-bold mt-0.5 font-heading">StackBase</span>
                         </div>
                     </a>
                     
-                    <button onclick="app.signOut()" class="w-full flex items-center justify-center lg:justify-start px-3 py-2 rounded-xl text-red-400 hover:bg-white/5 transition-colors text-sm font-medium">
+                    <button onclick="app.signOut()" class="w-full flex items-center justify-center lg:justify-start px-3 py-2 rounded-xl text-red-400 hover:bg-oled-highlight transition-colors text-sm font-medium font-display border border-transparent hover:border-red-900/30">
                         <i class="ph-bold ph-sign-out text-lg lg:mr-2"></i>
                         <span class="hidden lg:inline">Sign Out</span>
                     </button>
@@ -165,27 +180,33 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col relative overflow-hidden bg-black min-w-0">
+    <main class="flex-1 flex flex-col relative overflow-hidden bg-oled-base min-w-0">
+        <!-- Top Bar -->
         <header class="h-16 flex-shrink-0 flex items-center justify-between px-6 lg:px-8 glass z-10 w-full">
             <div class="flex items-center min-w-0 mr-4">
-                <h1 id="page-title" class="text-2xl font-bold text-white tracking-tight truncate">Today</h1>
-                <span id="current-date-display" class="ml-4 text-sm text-gray-500 font-medium hidden md:block whitespace-nowrap"></span>
+                <h1 id="page-title" class="text-2xl font-bold text-white tracking-tight truncate font-heading">Today</h1>
+                <span id="current-date-display" class="ml-4 text-sm text-gray-500 font-medium hidden md:block whitespace-nowrap font-display"></span>
             </div>
             <div class="flex items-center space-x-3 shrink-0">
+                 <!-- View Options (Sort) -->
                  <div class="relative group">
-                    <button class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-gray-400 transition-colors">
+                    <button class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors">
                         <i class="ph-bold ph-sort-ascending"></i>
                     </button>
                  </div>
-                <button onclick="app.toggleAddTaskModal()" class="bg-white text-black hover:bg-gray-200 transition-colors px-4 py-2 rounded-lg font-bold text-sm flex items-center shadow-[0_0_15px_rgba(255,255,255,0.1)] whitespace-nowrap">
+                 
+                <button onclick="app.toggleAddTaskModal()" class="bg-white text-black hover:bg-gray-200 transition-colors px-4 py-2 rounded-lg font-bold text-sm flex items-center shadow-[0_0_15px_rgba(255,255,255,0.1)] whitespace-nowrap font-display">
                     <i class="ph-bold ph-plus mr-2"></i> <span class="hidden sm:inline">New Task</span><span class="sm:hidden">New</span>
                 </button>
             </div>
         </header>
 
+        <!-- Task List Area -->
         <div class="flex-1 overflow-y-auto p-4 lg:p-8 relative custom-scrollbar">
-            <div id="stats-summary" class="hidden lg:flex items-end justify-between bg-black border border-white/10 rounded-2xl p-6 mb-8 w-full max-w-4xl mx-auto">
-                <div class="flex items-center space-x-8">
+            
+            <!-- Daily Stats Chart -->
+            <div id="stats-summary" class="hidden lg:flex items-end justify-between bg-oled-surface border border-oled-border rounded-2xl p-6 mb-8 w-full max-w-4xl mx-auto shadow-lg shadow-black/50">
+                <div class="flex items-center space-x-8 font-display">
                     <div>
                         <div class="text-3xl font-bold text-white leading-none" id="stat-pomos-today">0</div>
                         <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mt-2">Pomos Today</div>
@@ -199,6 +220,7 @@
                         <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mt-2">Est. Remain</div>
                     </div>
                 </div>
+                <!-- Mini Activity Graph -->
                 <div class="h-12 flex items-end space-x-1">
                     <div class="w-2 bg-purple-900/40 rounded-t h-4 border-t border-purple-500/30"></div>
                     <div class="w-2 bg-purple-900/60 rounded-t h-8 border-t border-purple-500/50"></div>
@@ -209,26 +231,34 @@
                 </div>
             </div>
 
+            <!-- Empty State -->
             <div id="empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-600 pb-20 pointer-events-none">
                 <i class="ph-duotone ph-check-square-offset text-6xl mb-4 opacity-30 text-white"></i>
-                <p class="text-lg font-medium text-gray-500">No tasks here yet</p>
-                <p class="text-sm text-gray-700">Stay focused, get things done.</p>
+                <p class="text-lg font-medium text-gray-500 font-heading">No tasks here yet</p>
+                <p class="text-sm text-gray-700 font-display">Stay focused, get things done.</p>
             </div>
 
-            <div id="task-list" class="space-y-2 pb-32 lg:pb-10 max-w-4xl mx-auto"></div>
+            <!-- List Container -->
+            <div id="task-list" class="space-y-3 pb-32 lg:pb-10 max-w-4xl mx-auto">
+                <!-- Tasks injected here -->
+            </div>
         </div>
     </main>
 
     <!-- Right Panel: Pomodoro Timer -->
-    <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-black transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:glass-panel xl:w-96 xl:border-l xl:border-white/10 xl:z-20 h-full overflow-y-auto custom-scrollbar">
+    <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-oled-surface transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:w-96 xl:border-l xl:border-oled-border xl:z-20 h-full overflow-y-auto custom-scrollbar shadow-2xl shadow-black">
+        
+        <!-- Timer Header / Settings -->
         <div class="p-4 flex justify-between items-center text-gray-400 shrink-0">
-            <button onclick="app.toggleFocusPanel(false)" class="xl:hidden hover:text-white flex items-center text-sm font-medium text-gray-400">
+            <!-- Back Button (Mobile Only) -->
+            <button onclick="app.toggleFocusPanel(false)" class="xl:hidden hover:text-white flex items-center text-sm font-medium text-gray-400 font-display">
                 <i class="ph-bold ph-arrow-left text-xl mr-1"></i> Tasks
             </button>
             
              <button onclick="app.toggleSoundMenu()" class="hover:text-white transition-colors relative ml-auto xl:ml-0" id="sound-btn">
                 <i class="ph-fill ph-waves text-xl"></i>
-                <div id="sound-menu" class="absolute top-8 right-0 w-48 bg-black border border-white/10 rounded-xl shadow-2xl p-2 hidden z-50">
+                 <!-- Sound Menu -->
+                <div id="sound-menu" class="absolute top-8 right-0 w-48 bg-oled-highlight border border-oled-border rounded-xl shadow-2xl p-2 hidden z-50 font-display">
                     <div class="text-xs font-bold text-gray-500 px-2 py-1 uppercase">Soundscapes</div>
                     <button onclick="app.setSound('none')" class="w-full text-left px-2 py-2 rounded hover:bg-white/10 text-sm flex items-center text-gray-300"><i class="ph-bold ph-prohibit mr-2"></i> None</button>
                     <button onclick="app.setSound('rain')" class="w-full text-left px-2 py-2 rounded hover:bg-white/10 text-sm flex items-center text-gray-300"><i class="ph-bold ph-cloud-rain mr-2"></i> Rain</button>
@@ -242,84 +272,98 @@
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center p-8 relative min-h-[500px] overflow-hidden">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[100px] pointer-events-none opacity-50" id="timer-bg-glow"></div>
+            <!-- Background Ambient Glow -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none opacity-50" id="timer-bg-glow"></div>
 
+            <!-- Task Info (Floating Top) -->
             <div class="mb-8 w-full z-10 min-h-[80px] flex flex-col items-center justify-center transition-all duration-500">
-                <div id="focus-empty" class="flex flex-col items-center text-gray-600 animate-pulse">
+                <div id="focus-empty" class="flex flex-col items-center text-gray-600 animate-pulse font-display">
                      <i class="ph-duotone ph-target text-4xl mb-2 opacity-50 text-white"></i>
                     <p class="text-sm font-medium">Select a task to start focusing</p>
                 </div>
                 <div id="focus-active" class="hidden animate-fade-in w-full flex flex-col items-center text-center">
-                     <div class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-3 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                     <div class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-oled-highlight border border-oled-border text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-3 font-display">
                         <i class="ph-fill ph-hash mr-1.5"></i> <span id="focus-project-badge" class="truncate max-w-[150px]">Project</span>
                     </div>
-                    <h2 id="focus-task-title" class="text-2xl md:text-3xl font-bold text-white leading-tight mb-2 line-clamp-2 px-4 drop-shadow-lg">Task Title</h2>
-                     <div class="flex items-center space-x-2 text-sm text-gray-400 mt-1 bg-black/40 px-3 py-1 rounded-full border border-white/5 backdrop-blur-md">
+                    <h2 id="focus-task-title" class="text-2xl md:text-3xl font-bold text-white leading-tight mb-2 line-clamp-2 px-4 drop-shadow-lg font-heading">Task Title</h2>
+                     <div class="flex items-center space-x-2 text-sm text-gray-400 mt-1 bg-oled-highlight px-3 py-1 rounded-full border border-oled-border backdrop-blur-md font-display">
                         <span class="text-pink-400 font-bold"><span id="focus-completed">0</span> / <span id="focus-total">4</span></span>
                         <span class="text-xs uppercase tracking-wide opacity-70">Intervals</span>
                     </div>
                 </div>
             </div>
 
+            <!-- Main Timer Display -->
             <div class="relative z-10 mb-12 group">
+                <!-- Outer Decorative Ring -->
                 <div class="absolute inset-[-10px] rounded-full border border-white/5 opacity-30"></div>
+                
+                <!-- Timer SVG -->
                 <div class="relative w-72 h-72 flex items-center justify-center">
                     <svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_25px_rgba(168,85,247,0.4)]" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="45" fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round" />
+                        <!-- Track -->
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round" />
+                        <!-- Progress -->
                         <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="4" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear" />
                         <defs>
                             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#c084fc" />
-                                <stop offset="100%" stop-color="#e879f9" />
+                                <stop offset="0%" stop-color="#c084fc" /> <!-- bright purple -->
+                                <stop offset="100%" stop-color="#e879f9" /> <!-- bright pink -->
                             </linearGradient>
                         </defs>
                     </svg>
+
+                    <!-- Digital Time (Center) -->
                     <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()">
-                        <div id="timer-display" class="text-7xl font-bold text-white tabular-nums tracking-tighter drop-shadow-2xl font-mono">25:00</div>
-                        <div id="timer-mode" class="text-xs font-bold tracking-[0.2em] uppercase mt-3 text-purple-300">Focus Mode</div>
+                        <div id="timer-display" class="text-7xl font-bold text-white tabular-nums tracking-tighter drop-shadow-2xl font-display">25:00</div>
+                        <div id="timer-mode" class="text-xs font-bold tracking-[0.2em] uppercase mt-3 text-purple-300 font-display">Focus Mode</div>
                     </div>
                 </div>
             </div>
 
+            <!-- Controls -->
             <div class="flex items-center gap-10 z-10">
-                <button onclick="app.resetTimer()" class="group relative w-14 h-14 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0">
+                <button onclick="app.resetTimer()" class="group relative w-14 h-14 rounded-full bg-oled-highlight border border-oled-border text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0">
                      <div class="absolute inset-0 rounded-full bg-white/5 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <i class="ph-bold ph-arrow-counter-clockwise text-xl relative z-10"></i>
                 </button>
                 
                 <button onclick="app.toggleTimer()" id="play-btn" class="group relative w-24 h-24 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0">
+                    <!-- Glow effect behind play button -->
                     <div id="play-glow" class="absolute inset-0 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 blur-lg opacity-40 group-hover:opacity-80 transition-opacity duration-500"></div>
+                     <!-- Button Body -->
                     <div class="absolute inset-1 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border border-white/20 flex items-center justify-center shadow-xl">
                          <i class="ph-fill ph-play text-4xl text-white ml-1.5" id="play-icon"></i>
                     </div>
                 </button>
                 
-                <button onclick="app.skipTimer()" class="group relative w-14 h-14 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0">
+                <button onclick="app.skipTimer()" class="group relative w-14 h-14 rounded-full bg-oled-highlight border border-oled-border text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0">
                     <div class="absolute inset-0 rounded-full bg-white/5 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <i class="ph-bold ph-skip-forward text-xl relative z-10"></i>
                 </button>
             </div>
         </div>
         
-        <div id="timer-settings" class="absolute inset-0 bg-black/95 backdrop-blur z-50 hidden flex-col p-6 animate-fade-in overflow-y-auto">
+        <!-- Timer Settings Overlay -->
+        <div id="timer-settings" class="absolute inset-0 bg-oled-surface/95 backdrop-blur z-50 hidden flex-col p-6 animate-fade-in overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-white">Timer Settings</h3>
+                <h3 class="text-lg font-bold text-white font-heading">Timer Settings</h3>
                 <button onclick="app.toggleTimerSettings()"><i class="ph-bold ph-x text-xl"></i></button>
             </div>
-            <div class="space-y-6">
+            <div class="space-y-6 font-display">
                 <div>
                     <label class="text-xs text-gray-500 uppercase font-bold mb-2 block">Focus Duration (min)</label>
-                    <input type="range" min="5" max="60" step="5" value="25" class="w-full accent-purple-500 h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer" oninput="app.updateSettings('focus', this.value)">
+                    <input type="range" min="5" max="60" step="5" value="25" class="w-full accent-purple-500 h-2 bg-oled-highlight rounded-lg appearance-none cursor-pointer" oninput="app.updateSettings('focus', this.value)">
                     <div class="flex justify-between text-xs text-gray-400 mt-1"><span>5</span><span id="set-focus-val" class="text-white font-bold">25</span><span>60</span></div>
                 </div>
                 <div>
                     <label class="text-xs text-gray-500 uppercase font-bold mb-2 block">Short Break (min)</label>
-                    <input type="range" min="1" max="15" step="1" value="5" class="w-full accent-blue-500 h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer" oninput="app.updateSettings('short', this.value)">
+                    <input type="range" min="1" max="15" step="1" value="5" class="w-full accent-blue-500 h-2 bg-oled-highlight rounded-lg appearance-none cursor-pointer" oninput="app.updateSettings('short', this.value)">
                     <div class="flex justify-between text-xs text-gray-400 mt-1"><span>1</span><span id="set-short-val" class="text-white font-bold">5</span><span>15</span></div>
                 </div>
                  <div>
                     <label class="text-xs text-gray-500 uppercase font-bold mb-2 block">Long Break (min)</label>
-                    <input type="range" min="10" max="45" step="5" value="15" class="w-full accent-green-500 h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer" oninput="app.updateSettings('long', this.value)">
+                    <input type="range" min="10" max="45" step="5" value="15" class="w-full accent-green-500 h-2 bg-oled-highlight rounded-lg appearance-none cursor-pointer" oninput="app.updateSettings('long', this.value)">
                     <div class="flex justify-between text-xs text-gray-400 mt-1"><span>10</span><span id="set-long-val" class="text-white font-bold">15</span><span>45</span></div>
                 </div>
             </div>
@@ -328,42 +372,45 @@
         <audio id="audio-player" loop></audio>
     </aside>
 
-    <!-- Add Task Modal -->
+    <!-- Add/Edit Task Modal -->
     <div id="add-task-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-        <div class="bg-black border border-white/10 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="add-task-panel">
-            <form id="add-task-form" onsubmit="app.handleAddTask(event)" class="flex flex-col h-full">
+        <div class="bg-oled-surface border border-oled-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="add-task-panel">
+            <form id="add-task-form" onsubmit="app.handleSaveTask(event)" class="flex flex-col h-full">
                 <div class="p-6 overflow-y-auto">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-semibold text-white">New Task</h2>
+                        <h2 class="text-lg font-semibold text-white font-heading" id="modal-title">New Task</h2>
                         <button type="button" onclick="app.toggleAddTaskModal()" class="text-gray-400 hover:text-white">
                             <i class="ph-bold ph-x text-xl"></i>
                         </button>
                     </div>
                     
-                    <input type="text" id="task-title" placeholder="I want to..." class="w-full bg-transparent text-2xl font-medium text-white placeholder-gray-600 border-none outline-none mb-6" required autocomplete="off">
+                    <input type="text" id="task-title" placeholder="I want to..." class="w-full bg-transparent text-2xl font-medium text-white placeholder-gray-600 border-none outline-none mb-6 font-heading" required autocomplete="off">
                     
-                    <textarea id="task-note" placeholder="Add a note or description..." class="w-full bg-white/5 text-sm text-gray-300 placeholder-gray-600 border border-transparent focus:border-white/10 rounded-lg p-3 outline-none resize-none h-20 mb-6 transition-colors"></textarea>
+                    <textarea id="task-note" placeholder="Add a note or description..." class="w-full bg-oled-highlight text-sm text-gray-300 placeholder-gray-600 border border-transparent focus:border-white/10 rounded-lg p-3 outline-none resize-none h-20 mb-6 transition-colors"></textarea>
 
-                    <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-6 font-display">
+                        <!-- Est Pomos -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Est. Pomos</label>
-                            <div class="flex items-center space-x-2 bg-white/5 rounded-lg p-1 border border-white/5 h-[42px]">
+                            <div class="flex items-center space-x-2 bg-oled-highlight rounded-lg p-1 border border-oled-border h-[42px]">
                                 <button type="button" onclick="app.adjustEst(-1)" class="w-8 h-full rounded bg-transparent hover:bg-white/10 text-white flex items-center justify-center transition-colors"><i class="ph-bold ph-minus"></i></button>
                                 <span id="est-display" class="text-white font-mono flex-1 text-center font-bold">1</span>
                                 <button type="button" onclick="app.adjustEst(1)" class="w-8 h-full rounded bg-transparent hover:bg-white/10 text-white flex items-center justify-center transition-colors"><i class="ph-bold ph-plus"></i></button>
                             </div>
                         </div>
+                        <!-- Due Date -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Due Date</label>
-                            <input type="date" id="task-date" class="w-full bg-white/5 border border-white/5 text-white rounded-lg px-2 outline-none focus:border-purple-500 transition-colors h-[42px] text-sm font-sans">
+                            <input type="date" id="task-date" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2 outline-none focus:border-purple-500 transition-colors h-[42px] text-sm font-sans">
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4 mb-2">
+                    <div class="grid grid-cols-2 gap-4 mb-2 font-display">
+                         <!-- Priority -->
                          <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Priority</label>
                             <div class="relative">
-                                <select id="task-priority" class="w-full bg-white/5 border border-white/5 text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors appearance-none text-sm h-[42px]">
+                                <select id="task-priority" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors appearance-none text-sm h-[42px]">
                                     <option value="none">None</option>
                                     <option value="high">High Priority (!)</option>
                                     <option value="med">Medium Priority</option>
@@ -372,15 +419,13 @@
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-caret-down"></i></div>
                             </div>
                         </div>
+                        <!-- Project -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Project / List</label>
                             <div class="relative">
-                                <input type="text" id="task-project" list="projects-datalist" placeholder="Inbox" class="w-full bg-white/5 border border-white/5 text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
+                                <input type="text" id="task-project" list="projects-datalist" placeholder="Inbox" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
                                 <datalist id="projects-datalist">
-                                    <option value="Work">
-                                    <option value="Personal">
-                                    <option value="Study">
-                                    <option value="Health">
+                                    <!-- Populated dynamically -->
                                 </datalist>
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-folder"></i></div>
                             </div>
@@ -388,8 +433,8 @@
                     </div>
 
                 </div>
-                <div class="bg-black/80 p-4 flex justify-end border-t border-white/5 mt-auto">
-                    <button type="submit" class="bg-white text-black hover:bg-gray-200 px-8 py-2.5 rounded-xl font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-transform active:scale-95">
+                <div class="bg-oled-surface p-4 flex justify-end border-t border-oled-border mt-auto">
+                    <button type="submit" id="save-task-btn" class="bg-white text-black hover:bg-gray-200 px-8 py-2.5 rounded-xl font-bold shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-transform active:scale-95 font-display">
                         Save Task
                     </button>
                 </div>
@@ -401,19 +446,19 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // -----------------------------------------------------------
-        // CONFIGURATION (Hardcoded for local use based on your Login file)
+        // CONFIGURATION
         // -----------------------------------------------------------
         const firebaseConfig = {
-        apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",
-        authDomain: "timetrekker-app.firebaseapp.com",
-        projectId: "timetrekker-app",
-        storageBucket: "timetrekker-app.firebasestorage.app",
-        messagingSenderId: "83185163190",
-        appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17",
-        measurementId: "G-FLZ02E1Y5L"
+            apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",
+            authDomain: "timetrekker-app.firebaseapp.com",
+            projectId: "timetrekker-app",
+            storageBucket: "timetrekker-app.firebasestorage.app",
+            messagingSenderId: "83185163190",
+            appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17",
+            measurementId: "G-FLZ02E1Y5L"
         };
 
         const fbApp = initializeApp(firebaseConfig);
@@ -428,6 +473,7 @@
             view: 'today',
             filterProject: null,
             selectedTaskId: null,
+            editingTaskId: null, // Tracks if we are editing
             timer: { active: false, timeLeft: 25 * 60, mode: 'focus', interval: null, settings: { focus: 25, short: 5, long: 15 } },
             newEst: 1,
             sound: 'none'
@@ -447,6 +493,8 @@
             emptyState: document.getElementById('empty-state'),
             modal: document.getElementById('add-task-modal'),
             modalPanel: document.getElementById('add-task-panel'),
+            modalTitle: document.getElementById('modal-title'),
+            saveTaskBtn: document.getElementById('save-task-btn'),
             estDisplay: document.getElementById('est-display'),
             dateInput: document.getElementById('task-date'),
             timerDisplay: document.getElementById('timer-display'),
@@ -473,17 +521,20 @@
                 estRemain: document.getElementById('stat-est-remaining')
             },
             projectList: document.getElementById('project-list'),
+            projectDatalist: document.getElementById('projects-datalist'),
             audio: document.getElementById('audio-player'),
             soundMenu: document.getElementById('sound-menu'),
             timerSettings: document.getElementById('timer-settings'),
-            currentDate: document.getElementById('current-date-display')
+            currentDate: document.getElementById('current-date-display'),
+            authOverlay: document.getElementById('auth-overlay')
         };
 
         // --- AUTH LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 state.user = user;
-                // Load data
+                els.authOverlay.classList.add('hidden');
+                els.authOverlay.classList.remove('flex');
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
@@ -500,7 +551,7 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     tasks.push({ id: doc.id, ...data });
-                    if(data.project) projects.add(data.project);
+                    if(data.project && data.project !== 'Inbox') projects.add(data.project);
                 });
                 state.tasks = tasks;
                 state.projects = projects;
@@ -522,18 +573,7 @@
                 state.view = view;
                 state.filterProject = null;
                 els.pageTitle.innerText = view.charAt(0).toUpperCase() + view.slice(1);
-                
-                document.querySelectorAll('.nav-btn').forEach(btn => {
-                    if (btn.id === `nav-${view}`) {
-                        btn.classList.add('bg-white/10', 'text-white', 'border', 'border-white/5');
-                        btn.classList.remove('text-gray-400', 'hover:bg-white/5');
-                    } else {
-                        btn.classList.remove('bg-white/10', 'text-white', 'border', 'border-white/5');
-                        btn.classList.add('text-gray-400', 'hover:bg-white/5');
-                    }
-                });
-                
-                document.querySelectorAll('.project-btn').forEach(b => b.classList.remove('text-white', 'bg-white/10'));
+                updateNavStyles(view);
                 if(window.innerWidth < 1280) window.app.toggleFocusPanel(false);
                 renderTasks();
             },
@@ -542,17 +582,7 @@
                 state.view = 'project';
                 state.filterProject = proj;
                 els.pageTitle.innerText = proj;
-                
-                document.querySelectorAll('.nav-btn').forEach(b => {
-                    b.classList.remove('bg-white/10', 'text-white', 'border', 'border-white/5');
-                    b.classList.add('text-gray-400');
-                });
-                
-                document.querySelectorAll('.project-btn').forEach(b => {
-                    if(b.dataset.proj === proj) b.classList.add('text-white', 'bg-white/10');
-                    else b.classList.remove('text-white', 'bg-white/10');
-                });
-                
+                updateNavStyles('project', proj);
                 if(window.innerWidth < 1280) window.app.toggleFocusPanel(false);
                 renderTasks();
             },
@@ -561,12 +591,8 @@
                 const panel = els.timerPanel;
                 const isOpen = !panel.classList.contains('translate-x-full');
                 const shouldOpen = forceOpen !== null ? forceOpen : !isOpen;
-
-                if (shouldOpen) {
-                    panel.classList.remove('translate-x-full');
-                } else {
-                    panel.classList.add('translate-x-full');
-                }
+                if (shouldOpen) panel.classList.remove('translate-x-full');
+                else panel.classList.add('translate-x-full');
             },
 
             promptNewProject: () => {
@@ -577,21 +603,90 @@
                 }
             },
 
-            toggleAddTaskModal: () => {
+            // --- Renaming Projects ---
+            renameProject: async (oldName, e) => {
+                e.stopPropagation(); // Prevent navigation
+                const newName = prompt(`Rename project "${oldName}" to:`, oldName);
+                if (!newName || newName === oldName) return;
+
+                if (!state.user) return;
+
+                // 1. Find all tasks with old project name
+                const tasksRef = collection(db, 'artifacts', appId, 'users', state.user.uid, 'tasks');
+                const q = query(tasksRef, where("project", "==", oldName));
+                
+                try {
+                    const querySnapshot = await getDocs(q);
+                    
+                    // 2. Batch update
+                    const batch = writeBatch(db);
+                    querySnapshot.forEach((doc) => {
+                        batch.update(doc.ref, { project: newName });
+                    });
+                    
+                    await batch.commit();
+                    
+                    // 3. Update local state immediately for responsiveness
+                    state.projects.delete(oldName);
+                    state.projects.add(newName);
+                    if (state.filterProject === oldName) {
+                        window.app.setProjectView(newName);
+                    } else {
+                        updateProjectsUI();
+                    }
+                } catch (err) {
+                    console.error("Error renaming project:", err);
+                    alert("Failed to rename project.");
+                }
+            },
+
+            // --- Add/Edit Task Logic ---
+            toggleAddTaskModal: (taskToEdit = null) => {
                 if (els.modal.classList.contains('hidden')) {
-                    state.newEst = 1;
-                    els.estDisplay.innerText = "1";
-                    els.dateInput.value = new Date().toISOString().split('T')[0];
-                    document.getElementById('task-title').value = '';
-                    document.getElementById('task-note').value = '';
-                    document.getElementById('task-priority').value = 'none';
-                    document.getElementById('task-project').value = '';
+                    // OPEN
+                    if (taskToEdit) {
+                        // Edit Mode
+                        state.editingTaskId = taskToEdit.id;
+                        els.modalTitle.innerText = "Edit Task";
+                        els.saveTaskBtn.innerText = "Update Task";
+                        
+                        document.getElementById('task-title').value = taskToEdit.title;
+                        document.getElementById('task-note').value = taskToEdit.note || '';
+                        state.newEst = taskToEdit.estimatedPomos || 1;
+                        els.estDisplay.innerText = state.newEst;
+                        els.dateInput.value = taskToEdit.dueDate || '';
+                        document.getElementById('task-priority').value = taskToEdit.priority || 'none';
+                        document.getElementById('task-project').value = taskToEdit.project || '';
+                    } else {
+                        // Create Mode
+                        state.editingTaskId = null;
+                        els.modalTitle.innerText = "New Task";
+                        els.saveTaskBtn.innerText = "Save Task";
+                        
+                        // Reset form
+                        state.newEst = 1;
+                        els.estDisplay.innerText = "1";
+                        els.dateInput.value = new Date().toISOString().split('T')[0];
+                        document.getElementById('task-title').value = '';
+                        document.getElementById('task-note').value = '';
+                        document.getElementById('task-priority').value = 'none';
+                        document.getElementById('task-project').value = '';
+                        
+                        // Populate datalist
+                        els.projectDatalist.innerHTML = '';
+                        state.projects.forEach(p => {
+                            const opt = document.createElement('option');
+                            opt.value = p;
+                            els.projectDatalist.appendChild(opt);
+                        });
+                    }
 
                     els.modal.classList.remove('hidden');
                     setTimeout(() => els.modal.classList.remove('opacity-0'), 10);
                     setTimeout(() => els.modalPanel.classList.replace('scale-95', 'scale-100'), 10);
                     document.getElementById('task-title').focus();
                 } else {
+                    // CLOSE
                     els.modal.classList.add('opacity-0');
                     els.modalPanel.classList.replace('scale-100', 'scale-95');
                     setTimeout(() => els.modal.classList.add('hidden'), 200);
@@ -605,24 +700,39 @@
                 els.estDisplay.innerText = v;
             },
 
-            handleAddTask: async (e) => {
+            editTask: (id, e) => {
+                e.stopPropagation();
+                const task = state.tasks.find(t => t.id === id);
+                if (task) window.app.toggleAddTaskModal(task);
+            },
+
+            handleSaveTask: async (e) => {
                 e.preventDefault();
                 const title = document.getElementById('task-title').value;
                 if(!title) return;
                 
-                const task = {
+                const taskData = {
                     title,
                     dueDate: els.dateInput.value,
                     estimatedPomos: state.newEst,
-                    completedPomos: 0,
-                    status: 'todo',
-                    createdAt: new Date().toISOString(),
                     priority: document.getElementById('task-priority').value,
                     project: document.getElementById('task-project').value || 'Inbox',
                     note: document.getElementById('task-note').value
                 };
 
-                await addDoc(collection(db, 'artifacts', appId, 'users', state.user.uid, 'tasks'), task);
+                const collectionRef = collection(db, 'artifacts', appId, 'users', state.user.uid, 'tasks');
+
+                if (state.editingTaskId) {
+                    // Update existing
+                    await updateDoc(doc(collectionRef, state.editingTaskId), taskData);
+                } else {
+                    // Create new
+                    taskData.completedPomos = 0;
+                    taskData.status = 'todo';
+                    taskData.createdAt = new Date().toISOString();
+                    await addDoc(collectionRef, taskData);
+                }
+                
                 window.app.toggleAddTaskModal();
             },
 
@@ -766,17 +876,45 @@
         };
 
         // Render Helpers
+        function updateNavStyles(view, proj) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const isActive = view !== 'project' && btn.id === `nav-${view}`;
+                if (isActive) {
+                    btn.classList.add('bg-oled-highlight', 'text-white', 'border', 'border-oled-border');
+                    btn.classList.remove('text-gray-400', 'hover:bg-oled-highlight');
+                } else {
+                    btn.classList.remove('bg-oled-highlight', 'text-white', 'border', 'border-oled-border');
+                    btn.classList.add('text-gray-400', 'hover:bg-oled-highlight');
+                }
+            });
+            document.querySelectorAll('.project-btn').forEach(b => {
+                const isActive = view === 'project' && b.dataset.proj === proj;
+                if (isActive) {
+                    b.classList.add('text-white', 'bg-oled-highlight');
+                    b.classList.remove('text-gray-400', 'hover:bg-oled-highlight');
+                } else {
+                    b.classList.remove('text-white', 'bg-oled-highlight');
+                    b.classList.add('text-gray-400', 'hover:bg-oled-highlight');
+                }
+            });
+        }
+
         function updateProjectsUI() {
             els.projectList.innerHTML = '';
             state.projects.forEach(p => {
                 const div = document.createElement('div');
                 div.innerHTML = `
-                    <button onclick="app.setProjectView('${p}')" data-proj="${p}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm group shrink-0">
-                        <div class="flex items-center min-w-0">
-                            <i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i>
-                            <span class="truncate">${p}</span>
-                        </div>
-                    </button>
+                    <div class="group relative flex items-center">
+                        <button onclick="app.setProjectView('${p}')" data-proj="${p}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-oled-highlight transition-colors text-sm group shrink-0 font-display">
+                            <div class="flex items-center min-w-0">
+                                <i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i>
+                                <span class="truncate">${p}</span>
+                            </div>
+                        </button>
+                        <button onclick="app.renameProject('${p}', event)" class="absolute right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-opacity p-1" title="Rename Project">
+                            <i class="ph-bold ph-pencil-simple"></i>
+                        </button>
+                    </div>
                 `;
                 els.projectList.appendChild(div);
             });
@@ -825,7 +963,7 @@
                 const boxColor = { high: 'border-red-500', med: 'border-yellow-500', low: 'border-blue-500', none: 'border-gray-600' }[t.priority || 'none'];
 
                 const el = document.createElement('div');
-                el.className = `group flex items-start p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${isSel ? 'bg-white/10 border-purple-500/50' : 'bg-black border-white/5 hover:bg-white/5 hover:border-white/10'}`;
+                el.className = `group flex items-start p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${isSel ? 'bg-oled-highlight border-purple-500/50' : 'bg-oled-surface border-oled-border hover:bg-oled-highlight hover:border-oled-border'}`;
                 el.onclick = () => window.app.selectTask(t.id);
 
                 el.innerHTML = `
@@ -833,21 +971,23 @@
                     
                     <label class="custom-checkbox flex-shrink-0 mt-0.5 w-6 h-6 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()">
                         <input type="checkbox" class="hidden" ${t.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${t.id}', '${t.status}')">
-                        <div class="w-5 h-5 border-2 ${boxColor} rounded-md flex items-center justify-center transition-all hover:border-purple-400 bg-black">
+                        <div class="w-5 h-5 border-2 ${boxColor} rounded-md flex items-center justify-center transition-all hover:border-purple-400 bg-oled-surface">
                             <svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                         </div>
                     </label>
                     
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-medium text-gray-200 truncate ${t.status === 'done' ? 'line-through text-gray-500' : ''}">${t.title}</h3>
-                            ${t.priority !== 'none' ? `<i class="ph-fill ph-flag ${pColor} text-xs ml-2 shrink-0"></i>` : ''}
+                            <h3 class="text-sm font-medium text-gray-200 truncate ${t.status === 'done' ? 'line-through text-gray-500' : ''} font-heading">${t.title}</h3>
+                            <div class="flex items-center shrink-0">
+                                ${t.priority !== 'none' ? `<i class="ph-fill ph-flag ${pColor} text-xs ml-2"></i>` : ''}
+                            </div>
                         </div>
                         
-                        ${t.note ? `<p class="text-xs text-gray-500 line-clamp-1 mt-0.5 truncate">${t.note}</p>` : ''}
+                        ${t.note ? `<p class="text-xs text-gray-500 line-clamp-1 mt-0.5 truncate font-display">${t.note}</p>` : ''}
 
-                        <div class="flex items-center mt-2 space-x-3">
-                            <div class="flex items-center text-xs text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5 shrink-0">
+                        <div class="flex items-center mt-2 space-x-3 font-display">
+                            <div class="flex items-center text-xs text-gray-400 bg-oled-highlight px-2 py-0.5 rounded border border-oled-border shrink-0">
                                 <i class="ph-fill ph-clock text-pink-500 mr-1 shrink-0"></i>
                                 <span class="${percent >= 100 ? 'text-green-400' : ''}">${t.completedPomos||0}/${t.estimatedPomos||1}</span>
                             </div>
@@ -857,9 +997,14 @@
                         </div>
                     </div>
 
-                    <button onclick="app.deleteTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all absolute right-2 top-2 shrink-0">
-                        <i class="ph-bold ph-trash"></i>
-                    </button>
+                    <div class="absolute right-2 top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onclick="app.editTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors" title="Edit Task">
+                            <i class="ph-bold ph-pencil-simple"></i>
+                        </button>
+                        <button onclick="app.deleteTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-400 transition-colors" title="Delete Task">
+                            <i class="ph-bold ph-trash"></i>
+                        </button>
+                    </div>
                     
                     <div class="absolute bottom-0 left-0 right-0 h-px bg-white/5">
                          <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-30" style="width: ${percent}%"></div>
