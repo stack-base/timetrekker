@@ -95,6 +95,15 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #68D391;
         }
+        
+        /* Hide scrollbar for sound menu */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex selection:bg-purple-500/30 font-sans bg-oled-base">
@@ -241,100 +250,99 @@
     </main>
 
     <!-- Right Panel: Pomodoro Timer -->
-    <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-oled-surface transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:w-96 xl:border-l xl:border-oled-border xl:z-20 h-full overflow-y-auto custom-scrollbar shadow-2xl shadow-black">
+    <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-oled-surface transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:w-96 xl:border-l xl:border-oled-border xl:z-20 h-full overflow-hidden shadow-2xl shadow-black">
         
-        <!-- Timer Header / Settings -->
-        <div class="p-4 flex justify-between items-center text-gray-400 shrink-0">
+        <!-- Timer Top Bar: Sounds & Settings -->
+        <div class="flex-shrink-0 px-6 py-5 flex items-center justify-between z-20 bg-oled-surface border-b border-oled-border">
             <!-- Back Button (Mobile Only) -->
-            <button onclick="app.toggleFocusPanel(false)" class="xl:hidden hover:text-white flex items-center text-sm font-medium text-gray-400 font-display">
-                <i class="ph-bold ph-arrow-left text-xl mr-1"></i> Tasks
+            <button onclick="app.toggleFocusPanel(false)" class="xl:hidden hover:text-white flex items-center text-sm font-medium text-gray-400 font-display mr-2">
+                <i class="ph-bold ph-arrow-left text-xl"></i>
             </button>
-            
-             <button onclick="app.toggleSoundMenu()" class="hover:text-white transition-colors relative ml-auto xl:ml-0" id="sound-btn">
-                <i class="ph-fill ph-waves text-xl"></i>
-                 <!-- Sound Menu -->
-                <div id="sound-menu" class="absolute top-8 right-0 w-48 bg-oled-highlight border border-oled-border rounded-xl shadow-2xl p-2 hidden z-50 font-display">
-                    <div class="text-xs font-bold text-gray-500 px-2 py-1 uppercase">Soundscapes</div>
-                    <button onclick="app.setSound('none')" class="w-full text-left px-2 py-2 rounded hover:bg-white/10 text-sm flex items-center text-gray-300"><i class="ph-bold ph-prohibit mr-2"></i> None</button>
-                    <button onclick="app.setSound('rain')" class="w-full text-left px-2 py-2 rounded hover:bg-white/10 text-sm flex items-center text-gray-300"><i class="ph-bold ph-cloud-rain mr-2"></i> Rain</button>
-                    <button onclick="app.setSound('cafe')" class="w-full text-left px-2 py-2 rounded hover:bg-white/10 text-sm flex items-center text-gray-300"><i class="ph-bold ph-coffee mr-2"></i> Cafe</button>
-                    <button onclick="app.setSound('forest')" class="w-full text-left px-2 py-2 rounded hover:bg-white/10 text-sm flex items-center text-gray-300"><i class="ph-bold ph-tree mr-2"></i> Forest</button>
-                </div>
-            </button>
-            <button onclick="app.toggleTimerSettings()" class="hover:text-white transition-colors relative ml-4">
+
+            <!-- Sound Options (Horizontal List) -->
+            <div class="flex items-center space-x-6 overflow-x-auto no-scrollbar font-display text-xs font-medium tracking-wide">
+                <button onclick="app.setSound('none')" class="sound-option text-purple-400 hover:text-white transition-colors flex items-center whitespace-nowrap" id="sound-none">
+                    <i class="ph-bold ph-prohibit mr-1.5 text-lg"></i> None
+                </button>
+                <button onclick="app.setSound('rain')" class="sound-option text-gray-500 hover:text-white transition-colors flex items-center whitespace-nowrap" id="sound-rain">
+                    <i class="ph-bold ph-cloud-rain mr-1.5 text-lg"></i> Rain
+                </button>
+                <button onclick="app.setSound('cafe')" class="sound-option text-gray-500 hover:text-white transition-colors flex items-center whitespace-nowrap" id="sound-cafe">
+                    <i class="ph-bold ph-coffee mr-1.5 text-lg"></i> Cafe
+                </button>
+                <button onclick="app.setSound('forest')" class="sound-option text-gray-500 hover:text-white transition-colors flex items-center whitespace-nowrap" id="sound-forest">
+                    <i class="ph-bold ph-tree mr-1.5 text-lg"></i> Forest
+                </button>
+            </div>
+
+            <!-- Settings Cog -->
+            <button onclick="app.toggleTimerSettings()" class="ml-4 hover:text-white text-gray-400 transition-colors relative flex-shrink-0">
                 <i class="ph-fill ph-gear text-xl"></i>
             </button>
         </div>
 
-        <div class="flex-1 flex flex-col items-center justify-center p-8 relative min-h-[500px] overflow-hidden">
-            <!-- Background Ambient Glow -->
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none opacity-50" id="timer-bg-glow"></div>
+        <!-- Main Timer Area -->
+        <div class="flex-1 flex flex-col items-center justify-center p-8 relative overflow-y-auto custom-scrollbar">
+            
+            <!-- Ambient Glow -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-purple-900/10 rounded-full blur-[80px] pointer-events-none opacity-50 transition-opacity duration-1000" id="timer-bg-glow"></div>
 
-            <!-- Task Info (Floating Top) -->
-            <div class="mb-8 w-full z-10 min-h-[80px] flex flex-col items-center justify-center transition-all duration-500">
-                <div id="focus-empty" class="flex flex-col items-center text-gray-600 animate-pulse font-display">
-                     <i class="ph-duotone ph-target text-4xl mb-2 opacity-50 text-white"></i>
-                    <p class="text-sm font-medium">Select a task to start focusing</p>
+            <!-- Task Info -->
+            <div class="mb-12 w-full z-10 flex flex-col items-center justify-center text-center min-h-[90px]">
+                <div id="focus-empty" class="flex flex-col items-center text-gray-500 animate-pulse font-display">
+                     <i class="ph-duotone ph-target text-5xl mb-3 opacity-30 text-white"></i>
+                    <p class="text-sm font-medium tracking-wide">Select a task to focus</p>
                 </div>
-                <div id="focus-active" class="hidden animate-fade-in w-full flex flex-col items-center text-center">
-                     <div class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-oled-highlight border border-oled-border text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-3 font-display">
-                        <i class="ph-fill ph-hash mr-1.5"></i> <span id="focus-project-badge" class="truncate max-w-[150px]">Project</span>
+                <div id="focus-active" class="hidden animate-fade-in w-full flex flex-col items-center">
+                     <div class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-oled-highlight border border-oled-border text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-4 font-display">
+                        <i class="ph-fill ph-hash mr-1.5 text-purple-500"></i> <span id="focus-project-badge" class="truncate max-w-[200px]">Project</span>
                     </div>
-                    <h2 id="focus-task-title" class="text-2xl md:text-3xl font-bold text-white leading-tight mb-2 line-clamp-2 px-4 drop-shadow-lg font-heading">Task Title</h2>
-                     <div class="flex items-center space-x-2 text-sm text-gray-400 mt-1 bg-oled-highlight px-3 py-1 rounded-full border border-oled-border backdrop-blur-md font-display">
-                        <span class="text-pink-400 font-bold"><span id="focus-completed">0</span> / <span id="focus-total">4</span></span>
-                        <span class="text-xs uppercase tracking-wide opacity-70">Intervals</span>
+                    <h2 id="focus-task-title" class="text-2xl font-bold text-white leading-snug mb-3 line-clamp-2 px-2 font-display">Task Title</h2>
+                     <div class="flex items-center space-x-2 text-xs text-gray-400 bg-oled-highlight px-4 py-1.5 rounded-full border border-oled-border font-display">
+                        <span class="text-purple-400 font-bold text-sm"><span id="focus-completed">0</span> / <span id="focus-total">4</span></span>
+                        <span class="uppercase tracking-widest opacity-60 ml-1">Pomos</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Main Timer Display -->
-            <div class="relative z-10 mb-12 group">
-                <!-- Outer Decorative Ring -->
-                <div class="absolute inset-[-10px] rounded-full border border-white/5 opacity-30"></div>
-                
-                <!-- Timer SVG -->
-                <div class="relative w-72 h-72 flex items-center justify-center">
-                    <svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_25px_rgba(168,85,247,0.4)]" viewBox="0 0 100 100">
-                        <!-- Track -->
-                        <circle cx="50" cy="50" r="45" fill="none" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round" />
-                        <!-- Progress -->
-                        <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="4" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear" />
+            <!-- Big Timer Display -->
+            <div class="relative z-10 mb-16 group">
+                <!-- SVG Ring -->
+                <div class="relative w-80 h-80 flex items-center justify-center">
+                    <svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_30px_rgba(168,85,247,0.15)]" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#1a1a1a" stroke-width="3" />
+                        <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="3" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear" />
                         <defs>
                             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#c084fc" /> <!-- bright purple -->
-                                <stop offset="100%" stop-color="#e879f9" /> <!-- bright pink -->
+                                <stop offset="0%" stop-color="#c084fc" />
+                                <stop offset="100%" stop-color="#e879f9" />
                             </linearGradient>
                         </defs>
                     </svg>
 
-                    <!-- Digital Time (Center) -->
+                    <!-- Time Text -->
                     <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()">
-                        <div id="timer-display" class="text-7xl font-bold text-white tabular-nums tracking-tighter drop-shadow-2xl font-display">25:00</div>
-                        <div id="timer-mode" class="text-xs font-bold tracking-[0.2em] uppercase mt-3 text-purple-300 font-display">Focus Mode</div>
+                        <div id="timer-display" class="text-[5rem] font-bold text-white leading-none tracking-tight font-display drop-shadow-2xl">25:00</div>
+                        <div id="timer-mode" class="text-xs font-bold tracking-[0.3em] uppercase mt-4 text-purple-400/80 font-display">Focus</div>
                     </div>
                 </div>
             </div>
 
             <!-- Controls -->
-            <div class="flex items-center gap-10 z-10">
-                <button onclick="app.resetTimer()" class="group relative w-14 h-14 rounded-full bg-oled-highlight border border-oled-border text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0">
-                     <div class="absolute inset-0 rounded-full bg-white/5 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <i class="ph-bold ph-arrow-counter-clockwise text-xl relative z-10"></i>
+            <div class="flex items-center justify-center gap-12 z-10">
+                <button onclick="app.resetTimer()" class="w-14 h-14 rounded-full bg-oled-highlight border border-oled-border text-gray-400 hover:text-white hover:border-gray-600 flex items-center justify-center transition-all active:scale-95 shadow-lg shadow-black/50">
+                    <i class="ph-bold ph-arrow-counter-clockwise text-xl"></i>
                 </button>
                 
-                <button onclick="app.toggleTimer()" id="play-btn" class="group relative w-24 h-24 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0">
-                    <!-- Glow effect behind play button -->
-                    <div id="play-glow" class="absolute inset-0 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 blur-lg opacity-40 group-hover:opacity-80 transition-opacity duration-500"></div>
-                     <!-- Button Body -->
-                    <div class="absolute inset-1 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border border-white/20 flex items-center justify-center shadow-xl">
-                         <i class="ph-fill ph-play text-4xl text-white ml-1.5" id="play-icon"></i>
+                <button onclick="app.toggleTimer()" id="play-btn" class="relative w-24 h-24 rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group">
+                    <div id="play-glow" class="absolute inset-0 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500"></div>
+                    <div class="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-xl border border-white/10">
+                         <i class="ph-fill ph-play text-4xl text-white ml-2" id="play-icon"></i>
                     </div>
                 </button>
                 
-                <button onclick="app.skipTimer()" class="group relative w-14 h-14 rounded-full bg-oled-highlight border border-oled-border text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0">
-                    <div class="absolute inset-0 rounded-full bg-white/5 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <i class="ph-bold ph-skip-forward text-xl relative z-10"></i>
+                <button onclick="app.skipTimer()" class="w-14 h-14 rounded-full bg-oled-highlight border border-oled-border text-gray-400 hover:text-white hover:border-gray-600 flex items-center justify-center transition-all active:scale-95 shadow-lg shadow-black/50">
+                    <i class="ph-bold ph-skip-forward text-xl"></i>
                 </button>
             </div>
         </div>
@@ -552,17 +560,19 @@
             soundMenu: document.getElementById('sound-menu'),
             timerSettings: document.getElementById('timer-settings'),
             currentDate: document.getElementById('current-date-display'),
-            // authOverlay removed
+            authOverlay: document.getElementById('auth-overlay')
         };
 
         // --- AUTH LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 state.user = user;
+                els.authOverlay.classList.add('hidden');
+                els.authOverlay.classList.remove('flex');
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
-                // Direct redirect, no overlay
+                // Redirect to login if not authenticated
                 window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
             }
         });
@@ -824,13 +834,13 @@
 
                     clearInterval(state.timer.interval);
                     state.timer.active = false;
-                    els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-1.5";
+                    els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-2";
                     if(els.playGlow) els.playGlow.classList.remove('animate-pulse');
                     if(els.timerBgGlow) els.timerBgGlow.classList.remove('animate-breathe');
                     if(state.sound !== 'none') els.audio.pause();
                 } else {
                     if(!state.selectedTaskId && state.timer.mode === 'focus') {
-                        alert("Please select a task to focus on!");
+                        // alert("Please select a task to focus on!"); // Removed alert
                         return;
                     }
                     state.timer.active = true;
@@ -854,7 +864,7 @@
                 const min = state.timer.settings[state.timer.mode];
                 state.timer.timeLeft = min * 60;
                 
-                els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-1.5";
+                els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-2";
                 if(els.playGlow) els.playGlow.classList.remove('animate-pulse');
                 if(els.timerBgGlow) els.timerBgGlow.classList.remove('animate-breathe');
                 
@@ -867,7 +877,7 @@
             completeTimer: () => {
                 clearInterval(state.timer.interval);
                 state.timer.active = false;
-                els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-1.5";
+                els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-2";
                 if(els.playGlow) els.playGlow.classList.remove('animate-pulse');
                 if(els.timerBgGlow) els.timerBgGlow.classList.remove('animate-breathe');
                 els.audio.pause();
@@ -905,13 +915,22 @@
             setSound: (type) => {
                 state.sound = type;
                 els.audio.src = sounds[type];
-                els.soundMenu.classList.add('hidden');
-                const btn = document.getElementById('sound-btn').querySelector('i');
+                
+                // Highlight active sound
+                document.querySelectorAll('.sound-option').forEach(btn => {
+                    btn.classList.remove('text-purple-400');
+                    btn.classList.add('text-gray-500');
+                });
+                
+                const activeBtn = document.getElementById(`sound-${type}`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('text-gray-500');
+                    activeBtn.classList.add('text-purple-400');
+                }
+
                 if(type === 'none') {
-                    btn.className = "ph-fill ph-speaker-slash text-xl";
                     els.audio.pause();
                 } else {
-                    btn.className = "ph-fill ph-speaker-high text-xl text-purple-400";
                     if(state.timer.active) els.audio.play();
                 }
             },
@@ -941,7 +960,7 @@
             }
         };
 
-        // Render Helpers
+        // Render Helpers (Unchanged)
         function updateNavStyles(view, proj) {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 const isActive = view !== 'project' && btn.id === `nav-${view}`;
@@ -1002,7 +1021,6 @@
             els.stats.tasksToday.innerText = doneToday;
             els.stats.estRemain.innerText = estRem;
             
-            // Calculate Total Focus Time
             const focusMinutes = totalPomos * state.timer.settings.focus;
             const hours = Math.floor(focusMinutes / 60);
             const mins = focusMinutes % 60;
