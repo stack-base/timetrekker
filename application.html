@@ -1705,22 +1705,23 @@
                 const pColor = { high: 'text-red-500', med: 'text-yellow-500', low: 'text-blue-500', none: 'text-gray-600' }[t.priority || 'none'];
                 const boxColor = { high: 'border-red-500', med: 'border-yellow-500', low: 'border-blue-500', none: 'border-gray-600' }[t.priority || 'none'];
 
-                // Dynamic Active Border Logic
-                let borderClass = 'border-oled-border hover:border-oled-border bg-oled-surface';
+                // Dynamic Active Styling Logic
+                let cardClass = 'bg-oled-surface border-oled-border hover:bg-oled-highlight hover:border-oled-border scale-100'; // Default non-selected
+                
                 if (isSel) {
-                    const selColors = { 
-                        high: 'border-red-500 bg-oled-highlight', 
-                        med: 'border-yellow-500 bg-oled-highlight', 
-                        low: 'border-blue-500 bg-oled-highlight', 
-                        none: 'border-gray-600 bg-oled-highlight' 
+                    // Selected State: Scale up, Tinted BG, Colored Shadow, Colored Border
+                    const activeStyles = { 
+                        high: 'border-red-500/50 bg-red-500/5 shadow-[0_0_30px_-5px_rgba(239,68,68,0.2)] scale-[1.01] z-10', 
+                        med: 'border-yellow-500/50 bg-yellow-500/5 shadow-[0_0_30px_-5px_rgba(234,179,8,0.2)] scale-[1.01] z-10', 
+                        low: 'border-blue-500/50 bg-blue-500/5 shadow-[0_0_30px_-5px_rgba(59,130,246,0.2)] scale-[1.01] z-10', 
+                        none: 'border-gray-500/50 bg-gray-500/5 shadow-[0_0_30px_-5px_rgba(107,114,128,0.2)] scale-[1.01] z-10' 
                     };
-                    borderClass = selColors[t.priority || 'none'];
-                } else {
-                     borderClass = `bg-oled-surface border-oled-border hover:bg-oled-highlight hover:border-oled-border`;
+                    cardClass = activeStyles[t.priority || 'none'];
                 }
 
                 const el = document.createElement('div');
-                el.className = `group flex items-start p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${borderClass}`;
+                // Added transition-all duration-300 ease-out for smooth micro-interaction
+                el.className = `group flex items-start p-4 rounded-xl border transition-all duration-300 ease-out cursor-pointer relative overflow-hidden ${cardClass}`;
                 el.onclick = () => window.app.selectTask(t.id);
 
                 let tagsHTML = '';
