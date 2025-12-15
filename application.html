@@ -126,6 +126,18 @@
         </div>
     </div>
 
+    <!-- Auth Protection Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-oled-base hidden flex-col items-center justify-center text-center p-6">
+        <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20">
+            <i class="ph-bold ph-lock-key text-3xl text-white"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white mb-2 font-heading">Authentication Required</h1>
+        <p class="text-gray-400 mb-8 max-w-md">Please sign in to access your tasks.</p>
+        <a href="https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application" class="px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors font-display">
+            Go to Login Page
+        </a>
+    </div>
+
     <!-- Sidebar -->
     <nav class="w-20 lg:w-64 flex-shrink-0 bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-all duration-300 z-30">
         <div class="flex flex-col h-full overflow-hidden">
@@ -185,8 +197,8 @@
                     <span class="hidden lg:block ml-3 text-sm font-medium">Completed</span>
                 </button>
 
-                <!-- Branding & Sign Out -->
                 <div class="flex flex-col gap-2">
+                    <!-- Branding -->
                     <a href="https://stack-base.github.io/home" target="_blank" class="flex items-center justify-center lg:justify-start w-full border border-oled-border hover:bg-oled-highlight rounded-xl p-3 transition-colors group no-underline box-border">
                         <span class="lg:hidden text-xs font-bold text-gray-500 group-hover:text-white font-heading">SB</span>
                         <div class="hidden lg:flex flex-col leading-none">
@@ -194,7 +206,19 @@
                             <span class="text-xs text-white font-bold mt-0.5 font-heading">StackBase</span>
                         </div>
                     </a>
+
+                    <!-- User Profile (New) -->
+                    <div id="user-profile-display" class="flex items-center justify-center lg:justify-start w-full border border-oled-border bg-white/5 rounded-xl p-2 transition-colors hidden">
+                        <div id="user-avatar-initials" class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shrink-0 font-heading">
+                            U
+                        </div>
+                        <div class="hidden lg:flex flex-col ml-3 overflow-hidden">
+                            <span id="user-name-text" class="text-xs font-bold text-white truncate font-display">User</span>
+                            <span id="user-email-text" class="text-[10px] text-gray-400 truncate font-sans">email@example.com</span>
+                        </div>
+                    </div>
                     
+                    <!-- Sign Out -->
                     <button onclick="app.signOut()" class="w-full flex items-center justify-center lg:justify-start px-3 py-2 rounded-xl text-red-400 hover:bg-oled-highlight transition-colors text-sm font-medium font-display border border-transparent hover:border-red-900/30">
                         <i class="ph-bold ph-sign-out text-lg lg:mr-2"></i>
                         <span class="hidden lg:inline">Sign Out</span>
@@ -589,12 +613,31 @@
             soundMenu: document.getElementById('sound-menu'),
             timerSettings: document.getElementById('timer-settings'),
             currentDate: document.getElementById('current-date-display'),
+            authOverlay: document.getElementById('auth-overlay')
         };
 
         // --- AUTH LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 state.user = user;
+                
+                // Update UI Profile
+                const profileEl = document.getElementById('user-profile-display');
+                const nameEl = document.getElementById('user-name-text');
+                const emailEl = document.getElementById('user-email-text');
+                const avatarEl = document.getElementById('user-avatar-initials');
+                
+                if(profileEl && user) {
+                    profileEl.classList.remove('hidden');
+                    profileEl.classList.add('flex');
+                    const name = user.displayName || user.email.split('@')[0];
+                    nameEl.innerText = name;
+                    emailEl.innerText = user.email;
+                    avatarEl.innerText = name.charAt(0).toUpperCase();
+                }
+
+                els.authOverlay.classList.add('hidden');
+                els.authOverlay.classList.remove('flex');
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
@@ -772,7 +815,7 @@
                         document.getElementById('task-priority').value = taskToEdit.priority || 'none';
                         document.getElementById('task-project').value = taskToEdit.project || '';
                         
-                        // Populate subtasks
+                        // Populate subtasks - FIXED REFERENCE to window.app
                         if (taskToEdit.subtasks && Array.isArray(taskToEdit.subtasks)) {
                             taskToEdit.subtasks.forEach(sub => window.app.addSubtaskUI(sub));
                         }
