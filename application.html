@@ -67,6 +67,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        .animate-fade-out { animation: fadeOut 0.3s ease-out forwards; }
+
         .progress-ring__circle {
             transition: stroke-dashoffset 0.35s;
             transform: rotate(-90deg);
@@ -107,6 +110,9 @@
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex selection:bg-purple-500/30 font-sans bg-oled-base">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
 
     <!-- Sidebar -->
     <nav class="w-20 lg:w-64 flex-shrink-0 bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-all duration-300 z-30">
@@ -250,7 +256,7 @@
     </main>
 
     <!-- Right Panel: Pomodoro Timer -->
-    <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-oled-surface transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:w-96 xl:border-l xl:border-oled-border xl:z-20 h-full overflow-hidden shadow-2xl shadow-black">
+    <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-oled-surface transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:w-96 xl:border-l xl:border-oled-border xl:z-20 h-full overflow-hidden shadow-2xl shadow-black overflow-x-hidden">
         
         <!-- Timer Top Bar: Sounds & Settings -->
         <div class="flex-shrink-0 px-6 py-5 flex items-center justify-between z-20 bg-oled-surface border-b border-oled-border">
@@ -282,13 +288,13 @@
         </div>
 
         <!-- Main Timer Area -->
-        <div class="flex-1 flex flex-col items-center justify-center p-8 relative overflow-y-auto custom-scrollbar">
+        <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-y-auto custom-scrollbar overflow-x-hidden">
             
             <!-- Ambient Glow -->
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-purple-900/10 rounded-full blur-[80px] pointer-events-none opacity-50 transition-opacity duration-1000" id="timer-bg-glow"></div>
 
             <!-- Task Info -->
-            <div class="mb-12 w-full z-10 flex flex-col items-center justify-center text-center min-h-[90px]">
+            <div class="mb-10 w-full z-10 flex flex-col items-center justify-center text-center min-h-[90px]">
                 <div id="focus-empty" class="flex flex-col items-center text-gray-500 animate-pulse font-display">
                      <i class="ph-duotone ph-target text-5xl mb-3 opacity-30 text-white"></i>
                     <p class="text-sm font-medium tracking-wide">Select a task to focus</p>
@@ -306,9 +312,9 @@
             </div>
 
             <!-- Big Timer Display -->
-            <div class="relative z-10 mb-16 group">
+            <div class="relative z-10 mb-16 group flex justify-center">
                 <!-- SVG Ring -->
-                <div class="relative w-80 h-80 flex items-center justify-center">
+                <div class="relative w-72 h-72 flex items-center justify-center">
                     <svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_30px_rgba(168,85,247,0.15)]" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="45" fill="none" stroke="#1a1a1a" stroke-width="3" />
                         <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="3" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear" />
@@ -322,7 +328,7 @@
 
                     <!-- Time Text -->
                     <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()">
-                        <div id="timer-display" class="text-[5rem] font-bold text-white leading-none tracking-tight font-display drop-shadow-2xl">25:00</div>
+                        <div id="timer-display" class="text-[4.5rem] font-bold text-white leading-none tracking-tight font-display drop-shadow-2xl">25:00</div>
                         <div id="timer-mode" class="text-xs font-bold tracking-[0.3em] uppercase mt-4 text-purple-400/80 font-display">Focus</div>
                     </div>
                 </div>
@@ -819,6 +825,21 @@
                 }
             },
 
+            // Toast Function
+            showToast: (msg, type='error') => {
+               const container = document.getElementById('toast-container');
+               const el = document.createElement('div');
+               el.className = `px-4 py-2 rounded-lg text-white text-sm font-medium shadow-lg animate-fade-in ${type === 'error' ? 'bg-red-500/90' : 'bg-green-500/90'} backdrop-blur-sm pointer-events-auto`;
+               el.innerText = msg;
+               container.appendChild(el);
+               
+               // Auto remove
+               setTimeout(() => {
+                   el.classList.replace('animate-fade-in', 'animate-fade-out');
+                   setTimeout(() => el.remove(), 300);
+               }, 3000);
+            },
+
             // Timer functionality
             toggleTimer: () => {
                 if(state.timer.active) {
@@ -837,7 +858,7 @@
                     if(state.sound !== 'none') els.audio.pause();
                 } else {
                     if(!state.selectedTaskId && state.timer.mode === 'focus') {
-                        // alert("Please select a task to focus on!"); // Removed alert
+                        window.app.showToast("Please select a task to focus on!", "error");
                         return;
                     }
                     state.timer.active = true;
