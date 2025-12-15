@@ -6,12 +6,10 @@
     <title>TimeTrekker</title>
     <link rel="icon" href="https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png" type="image/x-icon">
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -30,10 +28,10 @@
                             950: '#0B0F19',
                         },
                         oled: {
-                            base: '#000000',      // True Black (Background)
-                            surface: '#0f0f0f',   // Dark Gray (Cards, Sidebar)
-                            highlight: '#1a1a1a', // Lighter Gray (Hover)
-                            border: '#2a2a2a',    // Visible Border
+                            base: '#000000',
+                            surface: '#0f0f0f',
+                            highlight: '#1a1a1a',
+                            border: '#2a2a2a',
                         },
                         priority: {
                             high: '#ef4444',
@@ -47,18 +45,16 @@
         }
     </script>
 
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #262626; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #404040; }
 
         .glass {
-            background: rgba(15, 15, 15, 0.95); /* Using Surface color for glass */
+            background: rgba(15, 15, 15, 0.95);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid #2a2a2a;
@@ -90,7 +86,6 @@
         }
         .animate-breathe { animation: breathe 4s ease-in-out infinite; }
         
-        /* Switch Toggle */
         .toggle-checkbox:checked {
             right: 0;
             border-color: #68D391;
@@ -99,7 +94,6 @@
             background-color: #68D391;
         }
         
-        /* Hide scrollbar for sound menu */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -111,10 +105,8 @@
 </head>
 <body class="h-screen w-full overflow-hidden flex selection:bg-purple-500/30 font-sans bg-oled-base">
 
-    <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
 
-    <!-- Custom Prompt Modal -->
     <div id="custom-prompt-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
         <div class="bg-oled-surface border border-oled-border w-full max-w-sm rounded-2xl shadow-2xl p-6 transform scale-95 transition-transform duration-200">
             <h3 id="prompt-title" class="text-lg font-semibold text-white font-heading mb-4">Enter Value</h3>
@@ -126,44 +118,36 @@
         </div>
     </div>
 
-    <!-- Sidebar Overlay (Mobile) -->
     <div id="sidebar-overlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden backdrop-blur-sm md:hidden transition-opacity opacity-0"></div>
 
-    <!-- Sidebar -->
-    <!-- Updated classes for mobile drawer behavior -->
-    <nav id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-transform duration-300 -translate-x-full md:translate-x-0 md:static md:w-20 lg:w-64">
+    <nav id="sidebar" class="fixed inset-y-0 left-0 z-40 w-full bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-transform duration-300 -translate-x-full md:translate-x-0 md:static md:w-20 lg:w-64">
         <div class="flex flex-col h-full overflow-hidden">
-            <!-- Header -->
             <div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-oled-border flex-shrink-0">
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] shrink-0">
                     <i class="ph-bold ph-check text-white text-lg"></i>
                 </div>
-                <!-- Updated visibility classes: visible on mobile, hidden on tablet, visible on desktop -->
                 <span class="block md:hidden lg:block ml-3 font-bold text-xl tracking-tight text-white truncate font-heading">Time<span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Trekker</span></span>
             </div>
 
-            <!-- Scrollable Nav Area -->
             <div class="flex-1 overflow-y-auto p-3 space-y-1">
-                <!-- Mobile Focus Toggle -->
-                <button onclick="app.toggleFocusPanel(true)" class="xl:hidden w-full flex items-center justify-center lg:justify-start px-3 py-2.5 mb-2 rounded-xl bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-white border border-purple-500/30 hover:border-purple-400 transition-all group relative shadow-[0_0_10px_rgba(147,51,234,0.1)] shrink-0 font-display">
+                <button onclick="app.toggleFocusPanel(true)" class="xl:hidden w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2.5 mb-2 rounded-xl bg-gradient-to-r from-purple-900/30 to-pink-900/30 text-white border border-purple-500/30 hover:border-purple-400 transition-all group relative shadow-[0_0_10px_rgba(147,51,234,0.1)] shrink-0 font-display">
                     <i class="ph-fill ph-timer text-2xl lg:text-xl text-purple-400 shrink-0"></i>
                     <span class="block md:hidden lg:block ml-3 font-bold">Focus Mode</span>
                 </button>
 
-                <!-- Main Views -->
-                <button onclick="app.setView('today')" id="nav-today" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
+                <button onclick="app.setView('today')" id="nav-today" class="nav-btn w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
                     <i class="ph-duotone ph-sun text-2xl lg:text-xl group-hover:text-yellow-400 transition-colors shrink-0"></i>
                     <span class="block md:hidden lg:block ml-3 font-medium">Today</span>
                     <span id="count-today" class="block md:hidden lg:flex ml-auto text-xs bg-oled-highlight text-gray-400 px-2 py-0.5 rounded-full border border-oled-border font-display font-bold">0</span>
                 </button>
 
-                <button onclick="app.setView('tomorrow')" id="nav-tomorrow" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
+                <button onclick="app.setView('tomorrow')" id="nav-tomorrow" class="nav-btn w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
                     <i class="ph-duotone ph-calendar-plus text-2xl lg:text-xl group-hover:text-blue-400 transition-colors shrink-0"></i>
                     <span class="block md:hidden lg:block ml-3 font-medium">Tomorrow</span>
                     <span id="count-tomorrow" class="block md:hidden lg:flex ml-auto text-xs bg-oled-highlight text-gray-400 px-2 py-0.5 rounded-full border border-oled-border font-display font-bold">0</span>
                 </button>
 
-                <button onclick="app.setView('upcoming')" id="nav-upcoming" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
+                <button onclick="app.setView('upcoming')" id="nav-upcoming" class="nav-btn w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2.5 rounded-xl text-gray-400 hover:bg-oled-highlight hover:text-white transition-colors group relative shrink-0 font-display">
                     <i class="ph-duotone ph-calendar text-2xl lg:text-xl group-hover:text-purple-400 transition-colors shrink-0"></i>
                     <span class="block md:hidden lg:block ml-3 font-medium">Upcoming</span>
                     <span id="count-upcoming" class="block md:hidden lg:flex ml-auto text-xs bg-oled-highlight text-gray-400 px-2 py-0.5 rounded-full border border-oled-border font-display font-bold">0</span>
@@ -171,69 +155,53 @@
                 
                 <div class="border-t border-oled-border my-2 mx-2 shrink-0"></div>
                 
-                <!-- Projects Header -->
                 <div class="flex md:hidden lg:flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider shrink-0 font-display">
                     <span>Projects</span>
                     <button onclick="app.promptNewProject()" class="hover:text-white" title="New Project"><i class="ph-bold ph-plus"></i></button>
                 </div>
-                <!-- Tablet Icon Only Project Add -->
                 <div class="hidden md:flex lg:hidden items-center justify-center py-2 shrink-0">
                      <button onclick="app.promptNewProject()" class="hover:text-white text-gray-500" title="New Project"><i class="ph-bold ph-plus"></i></button>
                 </div>
 
-                <!-- Projects List -->
-                <div id="project-list" class="space-y-0.5 font-display">
-                    <!-- Projects injected here -->
-                </div>
+                <div id="project-list" class="space-y-0.5 font-display"></div>
             </div>
             
-            <!-- Bottom Actions -->
-            <div class="p-3 border-t border-oled-border shrink-0">
-                 <button onclick="app.setView('completed')" id="nav-completed" class="nav-btn w-full flex items-center justify-center lg:justify-start px-3 py-2 rounded-xl text-gray-500 hover:bg-oled-highlight hover:text-white transition-colors mb-2 font-display">
+            <div class="p-3 border-t border-oled-border shrink-0 flex flex-col gap-2">
+                 <button onclick="app.setView('completed')" id="nav-completed" class="nav-btn w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2 rounded-xl text-gray-500 hover:bg-oled-highlight hover:text-white transition-colors font-display">
                     <i class="ph-duotone ph-check-circle text-xl shrink-0"></i>
                     <span class="block md:hidden lg:block ml-3 text-sm font-medium">Completed</span>
                 </button>
 
-                <!-- Branding & Sign Out -->
-                <div class="flex flex-col gap-2">
-                    <a href="https://stack-base.github.io/home" target="_blank" class="flex items-center justify-center lg:justify-start w-full border border-oled-border hover:bg-oled-highlight rounded-xl p-3 transition-colors group no-underline box-border">
-                        <span class="block md:hidden lg:block text-xs font-bold text-gray-500 group-hover:text-white font-heading">SB</span>
-                        <!-- Icon for tablet view -->
-                         <span class="hidden md:block lg:hidden text-xs font-bold text-gray-500 group-hover:text-white font-heading">SB</span>
-                         
-                        <div class="flex md:hidden lg:flex flex-col leading-none">
-                            <span class="text-[10px] text-gray-500 font-medium uppercase tracking-wider font-display">Powered by</span>
-                            <span class="text-xs text-white font-bold mt-0.5 font-heading">StackBase</span>
-                        </div>
-                    </a>
-
-                    <!-- User Profile -->
-                    <div id="user-profile-display" class="flex items-center justify-center lg:justify-start w-full border border-oled-border bg-white/5 rounded-xl p-2 transition-colors hidden">
-                        <div id="user-avatar-initials" class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shrink-0 font-heading">
-                            U
-                        </div>
-                        <div class="flex md:hidden lg:flex flex-col ml-3 overflow-hidden">
-                            <span id="user-name-text" class="text-xs font-bold text-white truncate font-display">User</span>
-                            <span id="user-email-text" class="text-[10px] text-gray-400 truncate font-sans">email@example.com</span>
-                        </div>
+                <div id="user-profile-display" class="flex items-center justify-start md:justify-center lg:justify-start w-full border border-oled-border bg-white/5 rounded-xl p-2 transition-colors hidden">
+                    <div id="user-avatar-initials" class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shrink-0 font-heading">
+                        U
                     </div>
-                    
-                    <!-- Sign Out -->
-                    <button onclick="app.signOut()" class="w-full flex items-center justify-center lg:justify-start px-3 py-2 rounded-xl text-red-400 hover:bg-oled-highlight transition-colors text-sm font-medium font-display border border-transparent hover:border-red-900/30">
-                        <i class="ph-bold ph-sign-out text-lg lg:mr-2"></i>
-                        <span class="block md:hidden lg:inline">Sign Out</span>
-                    </button>
+                    <div class="flex md:hidden lg:flex flex-col ml-3 overflow-hidden">
+                        <span id="user-name-text" class="text-xs font-bold text-white truncate font-display">User</span>
+                        <span id="user-email-text" class="text-[10px] text-gray-400 truncate font-sans">email@example.com</span>
+                    </div>
                 </div>
+
+                <button onclick="app.signOut()" class="w-full flex items-center justify-start md:justify-center lg:justify-start px-3 py-2 rounded-xl text-red-400 hover:bg-oled-highlight transition-colors text-sm font-medium font-display border border-transparent hover:border-red-900/30">
+                    <i class="ph-bold ph-sign-out text-lg lg:mr-2"></i>
+                    <span class="block md:hidden lg:inline">Sign Out</span>
+                </button>
+
+                <a href="https://stack-base.github.io/home" target="_blank" class="flex items-center justify-start md:justify-center lg:justify-start w-full border border-oled-border hover:bg-oled-highlight rounded-xl p-3 transition-colors group no-underline box-border">
+                    <span class="hidden md:block lg:hidden text-xs font-bold text-gray-500 group-hover:text-white font-heading">SB</span>
+                     
+                    <div class="flex md:hidden lg:flex flex-col leading-none">
+                        <span class="text-[10px] text-gray-500 font-medium uppercase tracking-wider font-display">Powered by</span>
+                        <span class="text-xs text-white font-bold mt-0.5 font-heading">StackBase</span>
+                    </div>
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="flex-1 flex flex-col relative overflow-hidden bg-oled-base min-w-0">
-        <!-- Top Bar -->
         <header class="h-16 flex-shrink-0 flex items-center justify-between px-4 lg:px-8 glass z-10 w-full">
             <div class="flex items-center min-w-0 mr-4">
-                <!-- Hamburger Button (Mobile Only) -->
                 <button onclick="app.toggleSidebar()" class="md:hidden text-gray-400 hover:text-white mr-4 transition-colors">
                     <i class="ph-bold ph-list text-2xl"></i>
                 </button>
@@ -242,7 +210,6 @@
                 <span id="current-date-display" class="ml-4 text-sm text-gray-500 font-medium hidden md:block whitespace-nowrap font-display"></span>
             </div>
             <div class="flex items-center space-x-3 shrink-0">
-                 <!-- View Options (Sort) -->
                  <div class="relative group hidden sm:block">
                     <button class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-gray-400 transition-colors">
                         <i class="ph-bold ph-sort-ascending"></i>
@@ -255,10 +222,8 @@
             </div>
         </header>
 
-        <!-- Task List Area -->
         <div class="flex-1 overflow-y-auto p-4 lg:p-8 relative custom-scrollbar">
             
-            <!-- Daily Stats Chart -->
             <div id="stats-summary" class="hidden md:flex items-end justify-between bg-oled-surface border border-oled-border rounded-2xl p-6 mb-8 w-full max-w-4xl mx-auto shadow-lg shadow-black/50">
                 <div class="flex items-center space-x-8 font-display">
                     <div>
@@ -275,38 +240,29 @@
                     </div>
                 </div>
                 
-                <!-- Total Focus Time -->
                 <div class="text-right">
                     <div class="text-3xl font-bold text-white leading-none font-display" id="stat-focus-time">0h 0m</div>
                     <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mt-2 font-display">Total Focus Time</div>
                 </div>
             </div>
 
-            <!-- Empty State -->
             <div id="empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center text-gray-600 pb-20 pointer-events-none">
                 <i class="ph-duotone ph-check-square-offset text-6xl mb-4 opacity-30 text-white"></i>
                 <p class="text-lg font-medium text-gray-500 font-heading">No tasks here yet</p>
                 <p class="text-sm text-gray-700 font-display">Stay focused, get things done.</p>
             </div>
 
-            <!-- List Container -->
-            <div id="task-list" class="space-y-3 pb-32 lg:pb-10 max-w-4xl mx-auto">
-                <!-- Tasks injected here -->
-            </div>
+            <div id="task-list" class="space-y-3 pb-32 lg:pb-10 max-w-4xl mx-auto"></div>
         </div>
     </main>
 
-    <!-- Right Panel: Pomodoro Timer -->
     <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-oled-surface transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:w-96 xl:border-l xl:border-oled-border xl:z-20 h-full overflow-hidden shadow-2xl shadow-black overflow-x-hidden">
         
-        <!-- Timer Top Bar: Sounds & Settings -->
         <div class="flex-shrink-0 px-6 py-5 flex items-center justify-between z-20 bg-oled-surface border-b border-oled-border">
-            <!-- Back Button (Mobile Only) -->
             <button onclick="app.toggleFocusPanel(false)" class="xl:hidden hover:text-white flex items-center text-sm font-medium text-gray-400 font-display mr-2">
                 <i class="ph-bold ph-arrow-left text-xl"></i>
             </button>
 
-            <!-- Sound Options (Horizontal List) -->
             <div class="flex items-center space-x-6 overflow-x-auto no-scrollbar font-display text-xs font-medium tracking-wide">
                 <button onclick="app.setSound('none')" class="sound-option text-purple-400 hover:text-white transition-colors flex items-center whitespace-nowrap" id="sound-none">
                     <i class="ph-bold ph-prohibit mr-1.5 text-lg"></i> None
@@ -322,19 +278,15 @@
                 </button>
             </div>
 
-            <!-- Settings Cog -->
             <button onclick="app.toggleTimerSettings()" class="ml-4 hover:text-white text-gray-400 transition-colors relative flex-shrink-0">
                 <i class="ph-fill ph-gear text-xl"></i>
             </button>
         </div>
 
-        <!-- Main Timer Area -->
         <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-y-auto custom-scrollbar overflow-x-hidden">
             
-            <!-- Ambient Glow -->
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-purple-900/10 rounded-full blur-[80px] pointer-events-none opacity-50 transition-opacity duration-1000" id="timer-bg-glow"></div>
 
-            <!-- Task Info -->
             <div class="mb-10 w-full z-10 flex flex-col items-center justify-center text-center min-h-[90px]">
                 <div id="focus-empty" class="flex flex-col items-center text-gray-500 animate-pulse font-display">
                      <i class="ph-duotone ph-target text-5xl mb-3 opacity-30 text-white"></i>
@@ -352,9 +304,7 @@
                 </div>
             </div>
 
-            <!-- Big Timer Display -->
             <div class="relative z-10 mb-16 group flex justify-center">
-                <!-- SVG Ring -->
                 <div class="relative w-72 h-72 flex items-center justify-center">
                     <svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_30px_rgba(168,85,247,0.15)]" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="45" fill="none" stroke="#1a1a1a" stroke-width="3" />
@@ -367,7 +317,6 @@
                         </defs>
                     </svg>
 
-                    <!-- Time Text -->
                     <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()">
                         <div id="timer-display" class="text-[4.5rem] font-bold text-white leading-none tracking-tight font-display drop-shadow-2xl">25:00</div>
                         <div id="timer-mode" class="text-xs font-bold tracking-[0.3em] uppercase mt-4 text-purple-400/80 font-display">Focus</div>
@@ -375,7 +324,6 @@
                 </div>
             </div>
 
-            <!-- Controls -->
             <div class="flex items-center justify-center gap-12 z-10">
                 <button onclick="app.resetTimer()" class="w-14 h-14 rounded-full bg-oled-highlight border border-oled-border text-gray-400 hover:text-white hover:border-gray-600 flex items-center justify-center transition-all active:scale-95 shadow-lg shadow-black/50">
                     <i class="ph-bold ph-arrow-counter-clockwise text-xl"></i>
@@ -394,7 +342,6 @@
             </div>
         </div>
         
-        <!-- Timer Settings Overlay -->
         <div id="timer-settings" class="absolute inset-0 bg-oled-surface/95 backdrop-blur z-50 hidden flex-col p-6 animate-fade-in overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold text-white font-heading">Timer Settings</h3>
@@ -417,7 +364,6 @@
                     <div class="flex justify-between text-xs text-gray-400 mt-1"><span>10</span><span id="set-long-val" class="text-white font-bold">15</span><span>45</span></div>
                 </div>
                 
-                <!-- Strict Mode Toggle -->
                 <div class="flex items-center justify-between pt-4 border-t border-oled-border">
                     <div>
                         <label class="text-sm font-bold text-white block">Strict Mode</label>
@@ -434,7 +380,6 @@
         <audio id="audio-player" loop></audio>
     </aside>
 
-    <!-- Add/Edit Task Modal -->
     <div id="add-task-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
         <div class="bg-oled-surface border border-oled-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="add-task-panel">
             <form id="add-task-form" onsubmit="app.handleSaveTask(event)" class="flex flex-col h-full">
@@ -450,25 +395,20 @@
                     
                     <textarea id="task-note" placeholder="Add a note or description..." class="w-full bg-oled-highlight text-sm text-gray-300 placeholder-gray-600 border border-transparent focus:border-white/10 rounded-lg p-3 outline-none resize-none h-20 mb-6 transition-colors"></textarea>
 
-                    <!-- Subtasks Section -->
                     <div class="mb-6">
                         <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide font-display">Subtasks</label>
-                        <div id="subtasks-container" class="space-y-2 mb-2">
-                            <!-- Dynamic Inputs -->
-                        </div>
+                        <div id="subtasks-container" class="space-y-2 mb-2"></div>
                         <button type="button" onclick="app.addSubtaskUI()" class="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center">
                             <i class="ph-bold ph-plus mr-1"></i> Add Step
                         </button>
                     </div>
 
-                    <!-- Tags -->
                     <div class="mb-6">
                         <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide font-display">Tags</label>
                         <input type="text" id="task-tags" placeholder="e.g. Work, Urgent, Design (comma separated)" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 py-2 outline-none focus:border-purple-500 transition-colors text-sm font-sans">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-2 font-display">
-                        <!-- Est Pomos -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Est. Pomos</label>
                             <div class="flex items-center space-x-2 bg-oled-highlight rounded-lg p-1 border border-oled-border h-[42px]">
@@ -477,7 +417,6 @@
                                 <button type="button" onclick="app.adjustEst(1)" class="w-8 h-full rounded bg-transparent hover:bg-white/10 text-white flex items-center justify-center transition-colors"><i class="ph-bold ph-plus"></i></button>
                             </div>
                         </div>
-                        <!-- Pomo Duration -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Time per Pomo (min)</label>
                             <input type="number" id="task-pomo-duration" value="25" min="1" max="120" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 outline-none focus:border-purple-500 transition-colors h-[42px] text-sm text-center font-mono">
@@ -489,7 +428,6 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-2 font-display">
-                         <!-- Priority -->
                          <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Priority</label>
                             <div class="relative">
@@ -502,7 +440,6 @@
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-caret-down"></i></div>
                             </div>
                         </div>
-                        <!-- Due Date -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Due Date</label>
                             <input type="date" id="task-date" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2 outline-none focus:border-purple-500 transition-colors h-[42px] text-sm font-sans">
@@ -513,9 +450,7 @@
                         <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Project / List</label>
                         <div class="relative">
                             <input type="text" id="task-project" list="projects-datalist" placeholder="Inbox" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
-                            <datalist id="projects-datalist">
-                                <!-- Populated dynamically -->
-                            </datalist>
+                            <datalist id="projects-datalist"></datalist>
                             <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-folder"></i></div>
                         </div>
                     </div>
@@ -530,15 +465,11 @@
         </div>
     </div>
 
-    <!-- Application Logic -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        // -----------------------------------------------------------
-        // CONFIGURATION
-        // -----------------------------------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",
             authDomain: "timetrekker-app.firebaseapp.com",
@@ -574,7 +505,6 @@
             forest: 'https://cdn.pixabay.com/download/audio/2021/09/06/audio_4488354c46.mp3?filename=forest-wind-and-birds-6869.mp3'
         };
 
-        // DOM elements
         const els = {
             taskList: document.getElementById('task-list'),
             pageTitle: document.getElementById('page-title'),
@@ -623,12 +553,10 @@
             sidebar: document.getElementById('sidebar')
         };
 
-        // --- AUTH LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 state.user = user;
                 
-                // Update UI Profile
                 const profileEl = document.getElementById('user-profile-display');
                 const nameEl = document.getElementById('user-name-text');
                 const emailEl = document.getElementById('user-email-text');
@@ -648,7 +576,6 @@
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
-                // Redirect to login if not authenticated
                 window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
             }
         });
@@ -677,7 +604,6 @@
             });
         }
 
-        // --- APP LOGIC ---
         window.app = {
             customPrompt: {
                 resolve: null,
@@ -715,7 +641,6 @@
                 state.filterProject = null;
                 els.pageTitle.innerText = view.charAt(0).toUpperCase() + view.slice(1);
                 updateNavStyles(view);
-                // Close sidebar on mobile when navigating
                 window.app.toggleSidebar(false);
                 renderTasks();
             },
@@ -725,7 +650,6 @@
                 state.filterProject = proj;
                 els.pageTitle.innerText = proj;
                 updateNavStyles('project', proj);
-                // Close sidebar on mobile when navigating
                 window.app.toggleSidebar(false);
                 renderTasks();
             },
@@ -738,7 +662,6 @@
                 else panel.classList.add('translate-x-full');
             },
 
-            // Sidebar Toggle Logic
             toggleSidebar: (forceOpen = null) => {
                 const sidebar = els.sidebar;
                 const overlay = els.sidebarOverlay;
@@ -748,7 +671,6 @@
                 if (shouldOpen) {
                     sidebar.classList.remove('-translate-x-full');
                     overlay.classList.remove('hidden');
-                    // Small delay to allow display:block to apply before opacity transition
                     requestAnimationFrame(() => {
                         overlay.classList.remove('opacity-0');
                     });
@@ -757,7 +679,7 @@
                     overlay.classList.add('opacity-0');
                     setTimeout(() => {
                         overlay.classList.add('hidden');
-                    }, 300); // Match transition duration
+                    }, 300);
                 }
             },
 
@@ -769,7 +691,6 @@
                 }
             },
 
-            // --- Renaming Projects ---
             renameProject: async (oldName, e) => {
                 e.stopPropagation(); 
                 const newName = await window.app.showPrompt(`Rename project "${oldName}" to:`, oldName);
@@ -782,8 +703,6 @@
                 
                 try {
                     const querySnapshot = await getDocs(q);
-                    
-                    // 2. Batch update
                     const batch = writeBatch(db);
                     querySnapshot.forEach((doc) => {
                         batch.update(doc.ref, { project: newName });
@@ -791,7 +710,6 @@
                     
                     await batch.commit();
                     
-                    // 3. Update local state immediately for responsiveness
                     state.projects.delete(oldName);
                     state.projects.add(newName);
                     if (state.filterProject === oldName) {
@@ -805,7 +723,6 @@
                 }
             },
 
-            // --- Subtasks Logic ---
             addSubtaskUI: (value = '') => {
                 const div = document.createElement('div');
                 div.className = 'flex items-center space-x-2 animate-fade-in';
@@ -817,13 +734,10 @@
                 els.subtasksContainer.appendChild(div);
             },
 
-            // --- Add/Edit Task Logic ---
             toggleAddTaskModal: (taskToEdit = null) => {
                 if (els.modal.classList.contains('hidden')) {
-                    // OPEN
-                    els.subtasksContainer.innerHTML = ''; // Reset subtasks
+                    els.subtasksContainer.innerHTML = '';
                     
-                    // Populate datalist (ALWAYS do this first so it's available for both modes)
                     els.projectDatalist.innerHTML = '';
                     state.projects.forEach(p => {
                         const opt = document.createElement('option');
@@ -832,7 +746,6 @@
                     });
 
                     if (taskToEdit) {
-                        // Edit Mode
                         state.editingTaskId = taskToEdit.id;
                         els.modalTitle.innerText = "Edit Task";
                         els.saveTaskBtn.innerText = "Update Task";
@@ -847,17 +760,14 @@
                         document.getElementById('task-priority').value = taskToEdit.priority || 'none';
                         document.getElementById('task-project').value = taskToEdit.project || '';
                         
-                        // Populate subtasks - FIXED REFERENCE to window.app
                         if (taskToEdit.subtasks && Array.isArray(taskToEdit.subtasks)) {
                             taskToEdit.subtasks.forEach(sub => window.app.addSubtaskUI(sub));
                         }
                     } else {
-                        // Create Mode
                         state.editingTaskId = null;
                         els.modalTitle.innerText = "New Task";
                         els.saveTaskBtn.innerText = "Save Task";
                         
-                        // Reset form
                         state.newEst = 1;
                         els.estDisplay.innerText = "1";
                         els.pomoDurationInput.value = 25;
@@ -876,7 +786,6 @@
                     setTimeout(() => els.modalPanel.classList.replace('scale-95', 'scale-100'), 10);
                     document.getElementById('task-title').focus();
                 } else {
-                    // CLOSE
                     els.modal.classList.add('opacity-0');
                     els.modalPanel.classList.replace('scale-100', 'scale-95');
                     setTimeout(() => els.modal.classList.add('hidden'), 200);
@@ -912,11 +821,9 @@
                 const title = document.getElementById('task-title').value;
                 if(!title) return;
                 
-                // Collect subtasks
                 const subtaskInputs = document.querySelectorAll('.subtask-input');
                 const subtasks = Array.from(subtaskInputs).map(input => input.value.trim()).filter(v => v);
                 
-                // Collect tags
                 const tagsStr = document.getElementById('task-tags').value;
                 const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
                 
@@ -937,10 +844,8 @@
                 const collectionRef = collection(db, 'artifacts', appId, 'users', state.user.uid, 'tasks');
 
                 if (state.editingTaskId) {
-                    // Update existing
                     await updateDoc(doc(collectionRef, state.editingTaskId), taskData);
                 } else {
-                    // Create new
                     taskData.completedPomos = 0;
                     taskData.status = 'todo';
                     taskData.createdAt = new Date().toISOString();
@@ -969,18 +874,12 @@
                 renderTasks();
                 updateTimerUI(task);
                 
-                // Set the timer duration based on task settings if not currently running
                 if(!state.timer.active) {
                     const taskDuration = task.pomoDuration || 25;
-                    // Update global setting for this session
                     app.updateSettings('focus', taskDuration); 
-                    // Start timer
                     app.toggleTimer();
                 } else {
-                    // Just switch context if already running? Or restart?
-                    // User said "start pomodoro", usually implies action.
-                    // If already active, maybe just focus panel
-                    window.app.toggleFocusPanel(true);
+                    if (window.innerWidth < 1280) app.toggleFocusPanel(true);
                 }
             },
 
@@ -990,13 +889,11 @@
                 const t = state.tasks.find(x => x.id === id);
                 updateTimerUI(t);
                 
-                // On mobile/tablet, open timer panel when task is selected
                 if (window.innerWidth < 1280) {
                     window.app.toggleFocusPanel(true);
                 }
             },
 
-            // Toast Function
             showToast: (msg, type='error') => {
                const container = document.getElementById('toast-container');
                const el = document.createElement('div');
@@ -1004,20 +901,17 @@
                el.innerText = msg;
                container.appendChild(el);
                
-               // Auto remove
                setTimeout(() => {
                    el.classList.replace('animate-fade-in', 'animate-fade-out');
                    setTimeout(() => el.remove(), 300);
                }, 3000);
             },
 
-            // Timer functionality
             toggleTimer: () => {
                 if(state.timer.active) {
-                    // Check Strict Mode
                     if (state.timer.settings.strictMode && state.timer.mode === 'focus') {
                         if (!confirm("Strict Mode is active! Giving up will stop your streak. Are you sure?")) {
-                            return; // Do not pause
+                            return; 
                         }
                     }
 
@@ -1029,7 +923,6 @@
                     if(state.sound !== 'none') els.audio.pause();
                 } else {
                     if(!state.selectedTaskId && state.timer.mode === 'focus') {
-                        // Silent return as requested
                         return;
                     }
                     state.timer.active = true;
@@ -1105,7 +998,6 @@
                 state.sound = type;
                 els.audio.src = sounds[type];
                 
-                // Highlight active sound
                 document.querySelectorAll('.sound-option').forEach(btn => {
                     btn.classList.remove('text-purple-400');
                     btn.classList.add('text-gray-500');
@@ -1149,17 +1041,14 @@
             }
         };
 
-        // Event listeners for Prompt Modal
         document.getElementById('prompt-cancel-btn').addEventListener('click', () => window.app.closePrompt(null));
         document.getElementById('prompt-confirm-btn').addEventListener('click', () => window.app.closePrompt(window.app.customPrompt.input.value));
         document.getElementById('prompt-input').addEventListener('keypress', (e) => {
             if(e.key === 'Enter') window.app.closePrompt(window.app.customPrompt.input.value);
         });
 
-        // Event listeners for duration input
         els.pomoDurationInput.addEventListener('input', window.app.updateTotalEstDisplay);
 
-        // Render Helpers
         function updateNavStyles(view, proj) {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 const isActive = view !== 'project' && btn.id === `nav-${view}`;
@@ -1270,7 +1159,6 @@
                     </div>`;
                 }
                 
-                // Calculate Times
                 const duration = t.pomoDuration || 25;
                 const completedMins = (t.completedPomos || 0) * duration;
                 const remainingMins = ((t.estimatedPomos || 1) - (t.completedPomos || 0)) * duration;
@@ -1310,7 +1198,6 @@
                             <div class="flex items-center text-xs text-gray-600 truncate">
                                 <i class="ph-bold ph-folder mr-1 shrink-0"></i> <span class="truncate">${t.project}</span>
                             </div>
-                            <!-- Time Stats -->
                             <div class="flex items-center text-[10px] text-gray-400 bg-oled-surface border border-oled-border px-3 py-1 rounded-full ml-auto whitespace-nowrap">
                                 <span>Done: ${doneH}h ${doneM}m</span>
                                 <span class="mx-1 opacity-30">|</span>
@@ -1319,7 +1206,6 @@
                         </div>
                     </div>
 
-                    <!-- Actions (Visible on Mobile) -->
                     <div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20 bg-oled-surface p-1 rounded-lg border border-oled-border shadow-lg">
                         <button onclick="app.startTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-white transition-colors hover:bg-white/5 rounded-md" title="Start Timer">
                             <i class="ph-fill ph-play"></i>
