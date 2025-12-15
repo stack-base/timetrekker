@@ -552,19 +552,17 @@
             soundMenu: document.getElementById('sound-menu'),
             timerSettings: document.getElementById('timer-settings'),
             currentDate: document.getElementById('current-date-display'),
-            authOverlay: document.getElementById('auth-overlay')
+            // authOverlay removed
         };
 
         // --- AUTH LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 state.user = user;
-                els.authOverlay.classList.add('hidden');
-                els.authOverlay.classList.remove('flex');
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
-                // Redirect to login if not authenticated
+                // Direct redirect, no overlay
                 window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
             }
         });
@@ -684,6 +682,14 @@
                     // OPEN
                     els.subtasksContainer.innerHTML = ''; // Reset subtasks
                     
+                    // Populate datalist (ALWAYS do this first so it's available for both modes)
+                    els.projectDatalist.innerHTML = '';
+                    state.projects.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p;
+                        els.projectDatalist.appendChild(opt);
+                    });
+
                     if (taskToEdit) {
                         // Edit Mode
                         state.editingTaskId = taskToEdit.id;
@@ -699,9 +705,9 @@
                         document.getElementById('task-priority').value = taskToEdit.priority || 'none';
                         document.getElementById('task-project').value = taskToEdit.project || '';
                         
-                        // Populate subtasks
+                        // Populate subtasks - FIXED REFERENCE to window.app
                         if (taskToEdit.subtasks && Array.isArray(taskToEdit.subtasks)) {
-                            taskToEdit.subtasks.forEach(sub => app.addSubtaskUI(sub));
+                            taskToEdit.subtasks.forEach(sub => window.app.addSubtaskUI(sub));
                         }
                     } else {
                         // Create Mode
@@ -718,14 +724,6 @@
                         document.getElementById('task-tags').value = '';
                         document.getElementById('task-priority').value = 'none';
                         document.getElementById('task-project').value = '';
-                        
-                        // Populate datalist
-                        els.projectDatalist.innerHTML = '';
-                        state.projects.forEach(p => {
-                            const opt = document.createElement('option');
-                            opt.value = p;
-                            els.projectDatalist.appendChild(opt);
-                        });
                     }
 
                     els.modal.classList.remove('hidden');
