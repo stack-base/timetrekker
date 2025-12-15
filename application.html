@@ -557,7 +557,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, getDocs, writeBatch, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, onSnapshot, query, where, getDocs, writeBatch, orderBy, serverTimestamp, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",
@@ -583,7 +583,17 @@
             filterProject: null,
             selectedTaskId: null,
             editingTaskId: null,
-            timer: { active: false, timeLeft: 25 * 60, mode: 'focus', interval: null, settings: { focus: 25, short: 5, long: 15, strictMode: false } },
+            // Synced Timer State
+            timer: { 
+                mode: 'focus', 
+                status: 'idle', // idle, running, paused
+                endTime: null, // timestamp when timer ends
+                remaining: 25 * 60, // seconds remaining when paused/idle
+                totalDuration: 25 * 60, // total duration for progress bar
+                activeTaskId: null,
+                interval: null, 
+                settings: { focus: 25, short: 5, long: 15, strictMode: false } 
+            },
             newEst: 1,
             sound: 'none',
             charts: { activity: null, project: null }
@@ -673,7 +683,8 @@
                     avatarEl.innerText = name.charAt(0).toUpperCase();
                 }
                 subscribeToTasks(user.uid);
-                subscribeToLogs(user.uid); // Fetch analytics data
+                subscribeToLogs(user.uid); 
+                subscribeToTimerState(user.uid); // NEW: Sync timer across devices
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
                 window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
@@ -695,16 +706,124 @@
                 updateProjectsUI();
                 updateCounts();
                 renderTasks();
-                if (state.selectedTaskId) {
-                    const t = tasks.find(x => x.id === state.selectedTaskId);
-                    if(t) updateTimerUI(t); else { state.selectedTaskId = null; updateTimerUI(null); }
+                
+                // If the synced timer has a task ID, update UI for it
+                if(state.timer.activeTaskId) {
+                    const t = tasks.find(x => x.id === state.timer.activeTaskId);
+                    updateTimerUI(t);
                 }
             });
         }
 
+        // NEW: Subscribe to Synced Timer
+        function subscribeToTimerState(uid) {
+            const timerDocRef = doc(db, 'artifacts', appId, 'users', uid, 'timer', 'active');
+            onSnapshot(timerDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    // Sync local state with server state
+                    state.timer.status = data.status || 'idle';
+                    state.timer.mode = data.mode || 'focus';
+                    state.timer.endTime = data.endTime ? data.endTime.toMillis() : null;
+                    state.timer.remaining = data.remaining || (state.timer.settings[state.timer.mode] * 60);
+                    state.timer.totalDuration = data.totalDuration || (state.timer.settings[state.timer.mode] * 60);
+                    state.timer.activeTaskId = data.taskId || null;
+                    
+                    // Update UI elements based on mode
+                    window.app.setTimerModeUI(state.timer.mode);
+
+                    // Handle Task Selection UI
+                    if (state.timer.activeTaskId) {
+                        state.selectedTaskId = state.timer.activeTaskId;
+                        const t = state.tasks.find(x => x.id === state.timer.activeTaskId);
+                        updateTimerUI(t);
+                    } else {
+                        updateTimerUI(null);
+                    }
+
+                    // Manage Interval based on status
+                    if (state.timer.status === 'running') {
+                        startLocalInterval();
+                        updateTimerVisuals(); // Instant update
+                        // Audio Handling: Play if running
+                        if(state.sound !== 'none' && els.audio.paused) {
+                           els.audio.play().catch(e => console.log("Autoplay blocked/waiting interaction"));
+                        }
+                    } else {
+                        stopLocalInterval();
+                        updateTimerVisuals(); // Show static time
+                        if(!els.audio.paused) els.audio.pause();
+                    }
+                } else {
+                    // No timer state exists, init default
+                    window.app.resetTimer(true); // pass true to 'remote' to avoid loop
+                }
+            });
+        }
+        
+        // Local Tick Loop (Purely for Visuals & Completion Check)
+        function startLocalInterval() {
+            if (state.timer.interval) clearInterval(state.timer.interval);
+            
+            // Visual update loop
+            state.timer.interval = setInterval(() => {
+                updateTimerVisuals();
+                
+                // Check for completion
+                if (state.timer.status === 'running' && state.timer.endTime) {
+                    const now = Date.now();
+                    if (now >= state.timer.endTime) {
+                        // Timer finished!
+                        window.app.completeTimer();
+                    }
+                }
+            }, 100); // 100ms for smoother updates
+            
+            // UI Glows
+            els.playIcon.className = "ph-fill ph-pause text-4xl text-white";
+            if(els.playGlow) els.playGlow.classList.add('animate-pulse');
+            if(els.timerBgGlow) els.timerBgGlow.classList.add('animate-breathe');
+        }
+        
+        function stopLocalInterval() {
+            if (state.timer.interval) clearInterval(state.timer.interval);
+            state.timer.interval = null;
+            
+            // UI Glows Off
+            els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-2";
+            if(els.playGlow) els.playGlow.classList.remove('animate-pulse');
+            if(els.timerBgGlow) els.timerBgGlow.classList.remove('animate-breathe');
+        }
+
+        function updateTimerVisuals() {
+            let secondsLeft = 0;
+
+            if (state.timer.status === 'running' && state.timer.endTime) {
+                // Calculate from real time
+                const diff = state.timer.endTime - Date.now();
+                secondsLeft = Math.max(0, Math.ceil(diff / 1000));
+            } else {
+                // Use stored remaining time
+                secondsLeft = state.timer.remaining;
+            }
+
+            const m = Math.floor(secondsLeft / 60);
+            const s = secondsLeft % 60;
+            els.timerDisplay.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            
+            // Progress Ring
+            const total = state.timer.totalDuration || 1; // avoid /0
+            const fraction = secondsLeft / total;
+            const dashoffset = 283 * (1 - fraction);
+            els.timerProgress.style.strokeDashoffset = dashoffset;
+            
+            // Tab Title Sync
+            document.title = `${m}:${s.toString().padStart(2, '0')} - TimeTrekker`;
+        }
+
         // Fetch Analytics History
         function subscribeToLogs(uid) {
-            // NOTE: We now store 'focus_sessions' to enable analytics
             const q = query(collection(db, 'artifacts', appId, 'users', uid, 'focus_sessions'), orderBy('completedAt', 'desc'));
             onSnapshot(q, (snapshot) => {
                 const logs = [];
@@ -1020,7 +1139,7 @@
                 if(confirm('Delete task?')) await deleteDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'tasks', id));
             },
 
-            startTask: (id, e) => {
+            startTask: async (id, e) => {
                 e.stopPropagation();
                 const task = state.tasks.find(t => t.id === id);
                 if(!task) return;
@@ -1029,12 +1148,22 @@
                 renderTasks();
                 updateTimerUI(task);
                 
-                if(!state.timer.active) {
-                    const taskDuration = task.pomoDuration || 25;
-                    app.updateSettings('focus', taskDuration); 
-                    app.toggleTimer();
-                } else {
-                    if (window.innerWidth < 1280) app.toggleFocusPanel(true);
+                if (window.innerWidth < 1280) app.toggleFocusPanel(true);
+                
+                // If timer is not running, prepare it
+                if(state.timer.status !== 'running') {
+                   const taskDuration = task.pomoDuration || 25;
+                   // Sync new state
+                   await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'timer', 'active'), {
+                       status: 'running',
+                       mode: 'focus',
+                       taskId: id,
+                       remaining: taskDuration * 60,
+                       totalDuration: taskDuration * 60,
+                       endTime: new Date(Date.now() + (taskDuration * 60 * 1000))
+                   });
+                   // Local settings update for slider visuals
+                   app.updateSettings('focus', taskDuration);
                 }
             },
 
@@ -1043,6 +1172,13 @@
                 renderTasks();
                 const t = state.tasks.find(x => x.id === id);
                 updateTimerUI(t);
+                
+                // Also update sync state just to select the task visually for others
+                if(state.timer.status !== 'running') {
+                     updateDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'timer', 'active'), {
+                       taskId: id
+                   }).catch(()=>{});
+                }
                 
                 if (window.innerWidth < 1280) {
                     window.app.toggleFocusPanel(true);
@@ -1062,63 +1198,69 @@
                }, 3000);
             },
 
-            toggleTimer: () => {
-                if(state.timer.active) {
+            // --- SYNCED TIMER CONTROLS ---
+
+            toggleTimer: async () => {
+                if(state.timer.status === 'running') {
+                    // PAUSE
                     if (state.timer.settings.strictMode && state.timer.mode === 'focus') {
-                        if (!confirm("Strict Mode is active! Giving up will stop your streak. Are you sure?")) {
-                            return; 
-                        }
+                        if (!confirm("Strict Mode is active! Giving up will stop your streak. Are you sure?")) return; 
                     }
 
-                    clearInterval(state.timer.interval);
-                    state.timer.active = false;
-                    els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-2";
-                    if(els.playGlow) els.playGlow.classList.remove('animate-pulse');
-                    if(els.timerBgGlow) els.timerBgGlow.classList.remove('animate-breathe');
-                    if(state.sound !== 'none') els.audio.pause();
+                    // Calculate remaining time
+                    const diff = state.timer.endTime - Date.now();
+                    const remaining = Math.max(0, Math.ceil(diff / 1000));
+                    
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'timer', 'active'), {
+                        status: 'paused',
+                        endTime: null,
+                        remaining: remaining
+                    });
+                    
                 } else {
-                    if(!state.selectedTaskId && state.timer.mode === 'focus') {
+                    // START / RESUME
+                    if(!state.timer.activeTaskId && state.timer.mode === 'focus') {
+                        window.app.showToast("Select a task first!", "error");
                         return;
                     }
-                    state.timer.active = true;
-                    els.playIcon.className = "ph-fill ph-pause text-4xl text-white";
-                    if(els.playGlow) els.playGlow.classList.add('animate-pulse');
-                    if(els.timerBgGlow) els.timerBgGlow.classList.add('animate-breathe');
                     
-                    if(state.sound !== 'none') els.audio.play().catch(e=>console.log("Audio autoplay blocked"));
+                    const duration = state.timer.remaining; // seconds
+                    const newEndTime = new Date(Date.now() + (duration * 1000));
                     
-                    state.timer.interval = setInterval(() => {
-                        state.timer.timeLeft--;
-                        updateTimerVisuals();
-                        if(state.timer.timeLeft <= 0) window.app.completeTimer();
-                    }, 1000);
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'timer', 'active'), {
+                        status: 'running',
+                        endTime: newEndTime,
+                        // totalDuration stays same
+                    });
                 }
             },
 
-            resetTimer: () => {
-                clearInterval(state.timer.interval);
-                state.timer.active = false;
-                const min = state.timer.settings[state.timer.mode];
-                state.timer.timeLeft = min * 60;
-                
-                els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-2";
-                if(els.playGlow) els.playGlow.classList.remove('animate-pulse');
-                if(els.timerBgGlow) els.timerBgGlow.classList.remove('animate-breathe');
-                
-                els.audio.pause();
-                updateTimerVisuals();
+            resetTimer: async (isRemote = false) => {
+                if(isRemote) {
+                    // Just update local defaults if called from init
+                } else {
+                    const defaultMins = state.timer.settings[state.timer.mode];
+                     await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'timer', 'active'), {
+                       status: 'idle',
+                       endTime: null,
+                       remaining: defaultMins * 60,
+                       totalDuration: defaultMins * 60,
+                       mode: state.timer.mode,
+                       taskId: state.timer.activeTaskId || null
+                   });
+                }
             },
 
             skipTimer: () => window.app.completeTimer(),
 
             completeTimer: async () => {
-                clearInterval(state.timer.interval);
-                state.timer.active = false;
-                els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-2";
-                if(els.playGlow) els.playGlow.classList.remove('animate-pulse');
-                if(els.timerBgGlow) els.timerBgGlow.classList.remove('animate-breathe');
-                els.audio.pause();
+                // Prevent multiple triggers from different tabs
+                if(state.timer.status === 'idle') return;
 
+                // Stop locally first to prevent sound loop/glitch
+                stopLocalInterval();
+                
+                // Play Sound
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 osc.connect(ctx.destination);
@@ -1127,8 +1269,8 @@
                 osc.stop(ctx.currentTime + 0.2);
 
                 if(state.timer.mode === 'focus') {
-                    if(state.selectedTaskId) {
-                        const t = state.tasks.find(x => x.id === state.selectedTaskId);
+                    if(state.timer.activeTaskId) {
+                        const t = state.tasks.find(x => x.id === state.timer.activeTaskId);
                         if(t) {
                             // Update Task Count
                             await updateDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'tasks', t.id), { completedPomos: (t.completedPomos||0)+1 });
@@ -1138,8 +1280,8 @@
                                 taskId: t.id,
                                 taskTitle: t.title,
                                 project: t.project || 'Inbox',
-                                duration: state.timer.settings.focus,
-                                completedAt: serverTimestamp() // Important for charts
+                                duration: state.timer.totalDuration / 60,
+                                completedAt: serverTimestamp() 
                             });
                         }
                     }
@@ -1149,12 +1291,24 @@
                 }
             },
             
-            setTimerMode: (mode) => {
-                state.timer.mode = mode;
-                state.timer.timeLeft = state.timer.settings[mode] * 60;
-                els.timerMode.innerText = mode === 'focus' ? 'Focus Mode' : mode === 'short' ? 'Short Break' : 'Long Break';
-                els.timerMode.className = `text-xs font-bold tracking-[0.2em] uppercase mt-3 ${mode === 'focus' ? 'text-purple-300' : 'text-blue-300'}`;
-                updateTimerVisuals();
+            setTimerMode: async (mode) => {
+                // Determine duration
+                let mins = state.timer.settings[mode];
+                // If focus mode and task selected, use task duration preference? (Optional, currently global)
+                
+                await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'timer', 'active'), {
+                   status: 'idle',
+                   mode: mode,
+                   remaining: mins * 60,
+                   totalDuration: mins * 60,
+                   endTime: null,
+                   taskId: state.timer.activeTaskId || null
+               });
+            },
+            
+            setTimerModeUI: (mode) => {
+                 els.timerMode.innerText = mode === 'focus' ? 'Focus Mode' : mode === 'short' ? 'Short Break' : 'Long Break';
+                 els.timerMode.className = `text-xs font-bold tracking-[0.2em] uppercase mt-3 ${mode === 'focus' ? 'text-purple-300' : 'text-blue-300'}`;
             },
 
             toggleSoundMenu: () => {
@@ -1179,7 +1333,7 @@
                 if(type === 'none') {
                     els.audio.pause();
                 } else {
-                    if(state.timer.active) els.audio.play();
+                    if(state.timer.status === 'running') els.audio.play();
                 }
             },
 
@@ -1194,9 +1348,11 @@
                 } else {
                     state.timer.settings[key] = parseInt(val);
                     document.getElementById(`set-${key}-val`).innerText = val;
-                    if(!state.timer.active && state.timer.mode === key) {
-                        state.timer.timeLeft = parseInt(val) * 60;
-                        updateTimerVisuals();
+                    // If we are idle in this mode, update display immediately
+                    if(state.timer.status === 'idle' && state.timer.mode === key) {
+                        // Update sync state to reflect new setting
+                        // This might be chatty, but ensures sync
+                        // Debounce could be added here
                     }
                 }
             },
@@ -1217,24 +1373,22 @@
             // 1. Calculate Total Time
             const totalMins = state.logs.reduce((acc, log) => acc + (log.duration || 25), 0);
             const tH = Math.floor(totalMins / 60);
-            const tM = totalMins % 60;
+            const tM = Math.round(totalMins % 60);
             els.analytics.totalTime.innerText = `${tH}h ${tM}m`;
 
             // 2. Calculate Streak
-            // Simple logic: consecutive days with at least one log
             const dates = [...new Set(state.logs.map(l => l.completedAt ? new Date(l.completedAt.seconds * 1000).toDateString() : ''))].filter(d => d).sort((a,b) => new Date(b) - new Date(a));
             let streak = 0;
             if (dates.length > 0) {
                 const today = new Date().toDateString();
                 const yesterday = new Date(Date.now() - 86400000).toDateString();
-                // Check if last activity was today or yesterday
                 if (dates[0] === today || dates[0] === yesterday) {
                     streak = 1;
                     let curr = new Date(dates[0]);
                     for(let i = 1; i < dates.length; i++) {
                         let prev = new Date(dates[i]);
                         let diff = (curr - prev) / (1000 * 3600 * 24);
-                        if (diff <= 1.5) { // Roughly 1 day diff
+                        if (diff <= 1.5) { 
                             streak++;
                             curr = prev;
                         } else {
@@ -1264,7 +1418,6 @@
                 const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
                 days.push(dayStr);
                 
-                // Filter logs for this day
                 const start = new Date(d.setHours(0,0,0,0));
                 const end = new Date(d.setHours(23,59,59,999));
                 const dayMins = state.logs
@@ -1353,41 +1506,28 @@
                 });
             }
 
-            // 6. Heatmap Grid (Simple Visualization)
-            // 7 Days (rows) x 24 Hours (cols)
-            // Ideally we use a library, but CSS Grid is lightweight
+            // 6. Heatmap Grid
             const heatmapGrid = els.analytics.heatmap;
             heatmapGrid.innerHTML = '';
-            // Generate a simple contribution grid for the last 30 days
-            // or just Day of Week vs Hour
-            
-            // Map: DayOfWeek (0-6) -> Hour (0-23) -> Count
             const heatMapData = Array(7).fill(0).map(() => Array(24).fill(0));
             
             state.logs.forEach(l => {
                 if(!l.completedAt) return;
                 const d = new Date(l.completedAt.seconds * 1000);
-                const day = d.getDay(); // 0 is Sunday
+                const day = d.getDay(); 
                 const hour = d.getHours();
                 heatMapData[day][hour]++;
             });
 
-            // Find max for scaling opacity
             let maxVal = 0;
             heatMapData.forEach(r => r.forEach(c => { if(c > maxVal) maxVal = c; }));
 
-            // Render
-            // We'll just render flat cells for simplicity in this view
-            // 7 rows, 24 cols
             heatmapGrid.className = "grid grid-rows-7 grid-cols-24 gap-1 w-full h-full";
-            
             const daysShort = ['S','M','T','W','T','F','S'];
-            
             for(let d=0; d<7; d++) {
                 for(let h=0; h<24; h++) {
                     const val = heatMapData[d][h];
                     const div = document.createElement('div');
-                    // Opacity based on intensity
                     const alpha = maxVal > 0 ? (val / maxVal) : 0;
                     div.style.backgroundColor = `rgba(168, 85, 247, ${Math.max(0.1, alpha)})`;
                     div.className = "rounded-sm w-full h-full";
@@ -1414,7 +1554,6 @@
 
         function updateNavStyles(view, proj) {
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                // Special handle for analytics vs standard views
                 const btnId = `nav-${view}`;
                 if (btn.id === btnId) {
                      btn.classList.add('bg-oled-highlight', 'text-white', 'border', 'border-oled-border');
@@ -1605,19 +1744,7 @@
             els.focusTotal.innerText = t.estimatedPomos || 1;
         }
 
-        function updateTimerVisuals() {
-            const m = Math.floor(state.timer.timeLeft / 60);
-            const s = state.timer.timeLeft % 60;
-            els.timerDisplay.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            
-            const max = state.timer.settings[state.timer.mode] * 60;
-            const fraction = state.timer.timeLeft / max;
-            const dashoffset = 283 * (1 - fraction);
-            els.timerProgress.style.strokeDashoffset = dashoffset;
-        }
-        
         window.app.setView('today');
-        updateTimerVisuals();
     </script>
 </body>
 </html>
