@@ -78,7 +78,6 @@
         }
         
         body { background-color: #000000; color: #e5e7eb; }
-        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         
         @keyframes breathe {
             0%, 100% { opacity: 0.4; transform: scale(1); }
@@ -435,14 +434,18 @@
                     <div class="grid grid-cols-2 gap-4 mb-2 font-display">
                          <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Priority</label>
-                            <div class="relative">
-                                <select id="task-priority" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors appearance-none text-sm h-[42px]">
-                                    <option value="none">None</option>
-                                    <option value="high">High Priority (!)</option>
-                                    <option value="med">Medium Priority</option>
-                                    <option value="low">Low Priority</option>
-                                </select>
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-caret-down"></i></div>
+                            <div class="relative" id="priority-dropdown">
+                                <button type="button" onclick="app.toggleDropdown('priority')" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 flex items-center justify-between outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
+                                    <span id="selected-priority">None</span>
+                                    <i class="ph-bold ph-caret-down text-gray-400"></i>
+                                </button>
+                                <div id="priority-options" class="absolute left-0 right-0 top-full mt-1 bg-oled-surface border border-oled-border rounded-lg shadow-xl z-20 hidden overflow-hidden">
+                                    <button type="button" onclick="app.selectOption('priority', 'none', 'None')" class="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-oled-highlight hover:text-white transition-colors">None</button>
+                                    <button type="button" onclick="app.selectOption('priority', 'high', 'High Priority (!)')" class="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-oled-highlight transition-colors">High Priority (!)</button>
+                                    <button type="button" onclick="app.selectOption('priority', 'med', 'Medium Priority')" class="w-full text-left px-3 py-2 text-sm text-yellow-400 hover:bg-oled-highlight transition-colors">Medium Priority</button>
+                                    <button type="button" onclick="app.selectOption('priority', 'low', 'Low Priority')" class="w-full text-left px-3 py-2 text-sm text-blue-400 hover:bg-oled-highlight transition-colors">Low Priority</button>
+                                </div>
+                                <input type="hidden" id="task-priority" value="none">
                             </div>
                         </div>
                         <div>
@@ -453,10 +456,15 @@
                     
                     <div class="mb-6 font-display">
                         <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Project / List</label>
-                        <div class="relative">
-                            <select id="task-project" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px] appearance-none">
-                            </select>
-                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-caret-down"></i></div>
+                        <div class="relative" id="project-dropdown">
+                            <button type="button" onclick="app.toggleDropdown('project')" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 flex items-center justify-between outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
+                                <span id="selected-project" class="truncate">Inbox</span>
+                                <i class="ph-bold ph-caret-down text-gray-400 shrink-0 ml-2"></i>
+                            </button>
+                            <div id="project-options" class="absolute left-0 right-0 top-full mt-1 bg-oled-surface border border-oled-border rounded-lg shadow-xl z-20 hidden max-h-48 overflow-y-auto custom-scrollbar">
+                                <!-- Dynamic Options -->
+                            </div>
+                            <input type="hidden" id="task-project" value="Inbox">
                         </div>
                     </div>
 
@@ -548,7 +556,7 @@
                 focusTime: document.getElementById('stat-focus-time')
             },
             projectList: document.getElementById('project-list'),
-            projectSelect: document.getElementById('task-project'),
+            projectDatalist: document.getElementById('projects-datalist'),
             subtasksContainer: document.getElementById('subtasks-container'),
             audio: document.getElementById('audio-player'),
             soundMenu: document.getElementById('sound-menu'),
@@ -591,7 +599,7 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     tasks.push({ id: doc.id, ...data });
-                    if(data.project) projects.add(data.project);
+                    if(data.project && data.project !== 'Inbox') projects.add(data.project);
                 });
                 state.tasks = tasks;
                 state.projects = projects;
@@ -737,16 +745,41 @@
                 els.subtasksContainer.appendChild(div);
             },
 
+            toggleDropdown: (type) => {
+                const dropdown = document.getElementById(`${type}-options`);
+                const allDropdowns = document.querySelectorAll('[id$="-options"]');
+                
+                allDropdowns.forEach(d => {
+                    if (d.id !== `${type}-options`) d.classList.add('hidden');
+                });
+                
+                if (dropdown.classList.contains('hidden')) {
+                    dropdown.classList.remove('hidden');
+                    dropdown.classList.add('animate-fade-in');
+                } else {
+                    dropdown.classList.add('hidden');
+                }
+            },
+
+            selectOption: (type, value, display) => {
+                document.getElementById(`selected-${type}`).innerText = display;
+                document.getElementById(`task-${type}`).value = value;
+                document.getElementById(`${type}-options`).classList.add('hidden');
+            },
+
             toggleAddTaskModal: (taskToEdit = null) => {
                 if (els.modal.classList.contains('hidden')) {
                     els.subtasksContainer.innerHTML = '';
                     
-                    els.projectSelect.innerHTML = '';
+                    const projectOptions = document.getElementById('project-options');
+                    projectOptions.innerHTML = '';
                     state.projects.forEach(p => {
-                        const opt = document.createElement('option');
-                        opt.value = p;
-                        opt.innerText = p;
-                        els.projectSelect.appendChild(opt);
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.onclick = () => window.app.selectOption('project', p, p);
+                        btn.className = "w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-oled-highlight hover:text-white transition-colors flex items-center";
+                        btn.innerHTML = `<i class="ph-bold ph-folder mr-2 text-gray-500"></i> ${p}`;
+                        projectOptions.appendChild(btn);
                     });
 
                     if (taskToEdit) {
@@ -761,8 +794,10 @@
                         els.estDisplay.innerText = state.newEst;
                         els.pomoDurationInput.value = taskToEdit.pomoDuration || 25;
                         els.dateInput.value = taskToEdit.dueDate || '';
-                        document.getElementById('task-priority').value = taskToEdit.priority || 'none';
-                        els.projectSelect.value = taskToEdit.project || 'Inbox';
+                        
+                        const prioMap = { 'none': 'None', 'high': 'High Priority (!)', 'med': 'Medium Priority', 'low': 'Low Priority' };
+                        window.app.selectOption('priority', taskToEdit.priority || 'none', prioMap[taskToEdit.priority || 'none']);
+                        window.app.selectOption('project', taskToEdit.project || 'Inbox', taskToEdit.project || 'Inbox');
                         
                         if (taskToEdit.subtasks && Array.isArray(taskToEdit.subtasks)) {
                             taskToEdit.subtasks.forEach(sub => window.app.addSubtaskUI(sub));
@@ -779,8 +814,8 @@
                         document.getElementById('task-title').value = '';
                         document.getElementById('task-note').value = '';
                         document.getElementById('task-tags').value = '';
-                        document.getElementById('task-priority').value = 'none';
-                        els.projectSelect.value = 'Inbox';
+                        window.app.selectOption('priority', 'none', 'None');
+                        window.app.selectOption('project', 'Inbox', 'Inbox');
                     }
                     
                     window.app.updateTotalEstDisplay();
@@ -832,14 +867,16 @@
                 const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
                 
                 const pomoDuration = parseInt(els.pomoDurationInput.value) || 25;
+                const priority = document.getElementById('task-priority').value;
+                const project = document.getElementById('task-project').value;
 
                 const taskData = {
                     title,
                     dueDate: els.dateInput.value,
                     estimatedPomos: state.newEst,
                     pomoDuration: pomoDuration,
-                    priority: document.getElementById('task-priority').value,
-                    project: els.projectSelect.value || 'Inbox',
+                    priority: priority,
+                    project: project,
                     note: document.getElementById('task-note').value,
                     subtasks: subtasks,
                     tags: tags
@@ -1049,6 +1086,13 @@
         document.getElementById('prompt-confirm-btn').addEventListener('click', () => window.app.closePrompt(window.app.customPrompt.input.value));
         document.getElementById('prompt-input').addEventListener('keypress', (e) => {
             if(e.key === 'Enter') window.app.closePrompt(window.app.customPrompt.input.value);
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#project-dropdown') && !e.target.closest('#priority-dropdown')) {
+                document.getElementById('project-options').classList.add('hidden');
+                document.getElementById('priority-options').classList.add('hidden');
+            }
         });
 
         els.pomoDurationInput.addEventListener('input', window.app.updateTotalEstDisplay);
