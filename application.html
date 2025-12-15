@@ -1708,11 +1708,12 @@
                 // Dynamic Active Border Logic
                 let borderClass = 'border-oled-border hover:border-oled-border bg-oled-surface';
                 if (isSel) {
-                    const selColors = { 
-                        high: 'border-red-500 bg-oled-highlight', 
-                        med: 'border-yellow-500 bg-oled-highlight', 
-                        low: 'border-blue-500 bg-oled-highlight', 
-                        none: 'border-gray-600 bg-oled-highlight' 
+                    const activeBase = "ring-1 shadow-lg backdrop-blur-sm z-10 scale-[1.01]";
+                    const selColors = {
+                        high: `${activeBase} ring-red-500/50 shadow-red-900/20 bg-red-500/5`,
+                        med:  `${activeBase} ring-yellow-500/50 shadow-yellow-900/20 bg-yellow-500/5`,
+                        low:  `${activeBase} ring-blue-500/50 shadow-blue-900/20 bg-blue-500/5`,
+                        none: `${activeBase} ring-purple-500/50 shadow-purple-900/20 bg-purple-500/5`
                     };
                     borderClass = selColors[t.priority || 'none'];
                 } else {
