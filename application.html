@@ -122,11 +122,17 @@
 
     <nav id="sidebar" class="fixed inset-y-0 left-0 z-40 w-full bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-transform duration-300 -translate-x-full md:translate-x-0 md:static md:w-20 lg:w-64">
         <div class="flex flex-col h-full overflow-hidden">
-            <div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-oled-border flex-shrink-0">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] shrink-0">
-                    <i class="ph-bold ph-check text-white text-lg"></i>
+            <div class="h-16 flex items-center justify-between px-4 lg:justify-start lg:px-6 border-b border-oled-border flex-shrink-0">
+                <div class="flex items-center justify-center lg:justify-start">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] shrink-0">
+                        <i class="ph-bold ph-check text-white text-lg"></i>
+                    </div>
+                    <span class="block md:hidden lg:block ml-3 font-bold text-xl tracking-tight text-white truncate font-heading">Time<span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Trekker</span></span>
                 </div>
-                <span class="block md:hidden lg:block ml-3 font-bold text-xl tracking-tight text-white truncate font-heading">Time<span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Trekker</span></span>
+                <!-- Close Button (Mobile Only) -->
+                <button onclick="app.toggleSidebar(false)" class="md:hidden text-gray-400 hover:text-white p-2 rounded-lg hover:bg-oled-highlight transition-colors">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-3 space-y-1">
@@ -548,7 +554,6 @@
             soundMenu: document.getElementById('sound-menu'),
             timerSettings: document.getElementById('timer-settings'),
             currentDate: document.getElementById('current-date-display'),
-            authOverlay: document.getElementById('auth-overlay'),
             sidebarOverlay: document.getElementById('sidebar-overlay'),
             sidebar: document.getElementById('sidebar')
         };
@@ -571,8 +576,6 @@
                     avatarEl.innerText = name.charAt(0).toUpperCase();
                 }
 
-                els.authOverlay.classList.add('hidden');
-                els.authOverlay.classList.remove('flex');
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
