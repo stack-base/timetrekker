@@ -1239,9 +1239,17 @@
             // --- SYNCED TIMER CONTROLS ---
 
             toggleTimer: async () => {
-                // Request Notification Permission on first user interaction
+                // Explicitly request permission and WAIT for result
                 if (Notification.permission === 'default') {
-                    Notification.requestPermission();
+                   try {
+                       await Notification.requestPermission();
+                   } catch(e) {
+                       console.log("Notification permission error", e);
+                   }
+                }
+                
+                if (Notification.permission === 'denied') {
+                    window.app.showToast("Enable notifications to get alerted!", "error");
                 }
 
                 if(state.timer.status === 'running') {
@@ -1312,13 +1320,23 @@
                 osc.stop(ctx.currentTime + 0.2);
 
                 // Send Notification
-                if (Notification.permission === 'granted') {
-                    const title = state.timer.mode === 'focus' ? "Focus Session Complete!" : "Break Over!";
-                    const body = state.timer.mode === 'focus' ? "Great job! Take a short break." : "Time to get back to work.";
-                    const icon = "https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png";
-                    
-                    // Create notification
-                    new Notification(title, { body, icon });
+                // Try catch block for unsupported browsers (e.g. Android Webview without SW)
+                try {
+                    if (Notification.permission === 'granted') {
+                        const title = state.timer.mode === 'focus' ? "Focus Session Complete!" : "Break Over!";
+                        const body = state.timer.mode === 'focus' ? "Great job! Take a short break." : "Time to get back to work.";
+                        const icon = "https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png";
+                        
+                        new Notification(title, { body, icon });
+                    } else if (Notification.permission !== 'denied') {
+                         Notification.requestPermission().then(p => {
+                             if(p === 'granted') {
+                                 new Notification("Timer Complete", { body: "Session finished!" });
+                             }
+                         });
+                    }
+                } catch(e) {
+                    console.error("Notification failed:", e);
                 }
 
                 if(state.timer.mode === 'focus') {
