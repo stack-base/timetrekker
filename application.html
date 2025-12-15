@@ -387,7 +387,7 @@
 
     <div id="add-task-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end md:items-center justify-center md:p-4 opacity-0 transition-opacity duration-200">
         <div class="bg-oled-surface border border-oled-border w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg md:rounded-2xl shadow-2xl overflow-hidden transform transition-transform duration-200 flex flex-col" id="add-task-panel">
-            <form id="add-task-form" onsubmit="app.handleSaveTask(event)" class="flex flex-col h-full">
+            <form id="add-task-form" onsubmit="app.handleSaveTask(event)" class="flex flex-col flex-1 min-h-0">
                 <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-lg font-semibold text-white font-heading" id="modal-title">New Task</h2>
@@ -548,7 +548,7 @@
                 focusTime: document.getElementById('stat-focus-time')
             },
             projectList: document.getElementById('project-list'),
-            projectSelect: document.getElementById('task-project'),
+            projectDatalist: document.getElementById('projects-datalist'),
             subtasksContainer: document.getElementById('subtasks-container'),
             audio: document.getElementById('audio-player'),
             soundMenu: document.getElementById('sound-menu'),
