@@ -560,15 +560,12 @@
             soundMenu: document.getElementById('sound-menu'),
             timerSettings: document.getElementById('timer-settings'),
             currentDate: document.getElementById('current-date-display'),
-            authOverlay: document.getElementById('auth-overlay')
         };
 
         // --- AUTH LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 state.user = user;
-                els.authOverlay.classList.add('hidden');
-                els.authOverlay.classList.remove('flex');
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
