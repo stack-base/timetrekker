@@ -114,6 +114,18 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
 
+    <!-- Custom Prompt Modal -->
+    <div id="custom-prompt-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+        <div class="bg-oled-surface border border-oled-border w-full max-w-sm rounded-2xl shadow-2xl p-6 transform scale-95 transition-transform duration-200">
+            <h3 id="prompt-title" class="text-lg font-semibold text-white font-heading mb-4">Enter Value</h3>
+            <input type="text" id="prompt-input" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 py-2 outline-none focus:border-purple-500 transition-colors text-sm font-sans mb-6" autocomplete="off">
+            <div class="flex justify-end space-x-3">
+                <button id="prompt-cancel-btn" class="text-gray-400 hover:text-white font-medium text-sm transition-colors">Cancel</button>
+                <button id="prompt-confirm-btn" class="bg-white text-black hover:bg-gray-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <nav class="w-20 lg:w-64 flex-shrink-0 bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-all duration-300 z-30">
         <div class="flex flex-col h-full overflow-hidden">
@@ -426,7 +438,7 @@
                         <input type="text" id="task-tags" placeholder="e.g. Work, Urgent, Design (comma separated)" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 py-2 outline-none focus:border-purple-500 transition-colors text-sm font-sans">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mb-6 font-display">
+                    <div class="grid grid-cols-2 gap-4 mb-2 font-display">
                         <!-- Est Pomos -->
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Est. Pomos</label>
@@ -436,13 +448,17 @@
                                 <button type="button" onclick="app.adjustEst(1)" class="w-8 h-full rounded bg-transparent hover:bg-white/10 text-white flex items-center justify-center transition-colors"><i class="ph-bold ph-plus"></i></button>
                             </div>
                         </div>
-                        <!-- Due Date -->
+                        <!-- Pomo Duration -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Due Date</label>
-                            <input type="date" id="task-date" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2 outline-none focus:border-purple-500 transition-colors h-[42px] text-sm font-sans">
+                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Time per Pomo (min)</label>
+                            <input type="number" id="task-pomo-duration" value="25" min="1" max="120" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 outline-none focus:border-purple-500 transition-colors h-[42px] text-sm text-center font-mono">
                         </div>
                     </div>
                     
+                    <div class="mb-6 text-center">
+                        <p class="text-[11px] text-gray-500 font-display">Total Estimated Focus Time: <span id="total-est-time-display" class="text-purple-400 font-bold">25m</span></p>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4 mb-2 font-display">
                          <!-- Priority -->
                          <div>
@@ -457,16 +473,21 @@
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-caret-down"></i></div>
                             </div>
                         </div>
-                        <!-- Project -->
+                        <!-- Due Date -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Project / List</label>
-                            <div class="relative">
-                                <input type="text" id="task-project" list="projects-datalist" placeholder="Inbox" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
-                                <datalist id="projects-datalist">
-                                    <!-- Populated dynamically -->
-                                </datalist>
-                                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-folder"></i></div>
-                            </div>
+                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Due Date</label>
+                            <input type="date" id="task-date" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2 outline-none focus:border-purple-500 transition-colors h-[42px] text-sm font-sans">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6 font-display">
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Project / List</label>
+                        <div class="relative">
+                            <input type="text" id="task-project" list="projects-datalist" placeholder="Inbox" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-2.5 outline-none focus:border-purple-500 transition-colors text-sm h-[42px]">
+                            <datalist id="projects-datalist">
+                                <!-- Populated dynamically -->
+                            </datalist>
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"><i class="ph-bold ph-folder"></i></div>
                         </div>
                     </div>
 
@@ -534,6 +555,8 @@
             modalTitle: document.getElementById('modal-title'),
             saveTaskBtn: document.getElementById('save-task-btn'),
             estDisplay: document.getElementById('est-display'),
+            pomoDurationInput: document.getElementById('task-pomo-duration'),
+            totalEstTimeDisplay: document.getElementById('total-est-time-display'),
             dateInput: document.getElementById('task-date'),
             timerDisplay: document.getElementById('timer-display'),
             timerProgress: document.getElementById('timer-progress'),
@@ -575,7 +598,6 @@
                 subscribeToTasks(user.uid);
                 els.currentDate.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             } else {
-                // Redirect to login if not authenticated
                 window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
             }
         });
@@ -606,6 +628,37 @@
 
         // --- APP LOGIC ---
         window.app = {
+            customPrompt: {
+                resolve: null,
+                el: document.getElementById('custom-prompt-modal'),
+                input: document.getElementById('prompt-input'),
+                title: document.getElementById('prompt-title')
+            },
+            
+            showPrompt: (title, defaultValue = '') => {
+                return new Promise((resolve) => {
+                    const p = app.customPrompt;
+                    p.resolve = resolve;
+                    p.title.innerText = title;
+                    p.input.value = defaultValue;
+                    p.el.classList.remove('hidden');
+                    setTimeout(() => p.el.classList.remove('opacity-0'), 10);
+                    setTimeout(() => p.el.querySelector('div').classList.replace('scale-95', 'scale-100'), 10);
+                    p.input.focus();
+                });
+            },
+            
+            closePrompt: (value) => {
+                const p = app.customPrompt;
+                p.el.classList.add('opacity-0');
+                p.el.querySelector('div').classList.replace('scale-100', 'scale-95');
+                setTimeout(() => {
+                    p.el.classList.add('hidden');
+                    if(p.resolve) p.resolve(value);
+                    p.resolve = null;
+                }, 200);
+            },
+
             setView: (view) => {
                 state.view = view;
                 state.filterProject = null;
@@ -632,8 +685,8 @@
                 else panel.classList.add('translate-x-full');
             },
 
-            promptNewProject: () => {
-                const name = prompt("Enter project name:");
+            promptNewProject: async () => {
+                const name = await window.app.showPrompt("Enter project name:");
                 if(name) {
                     state.projects.add(name);
                     updateProjectsUI();
@@ -642,13 +695,12 @@
 
             // --- Renaming Projects ---
             renameProject: async (oldName, e) => {
-                e.stopPropagation(); // Prevent navigation
-                const newName = prompt(`Rename project "${oldName}" to:`, oldName);
+                e.stopPropagation(); 
+                const newName = await window.app.showPrompt(`Rename project "${oldName}" to:`, oldName);
                 if (!newName || newName === oldName) return;
 
                 if (!state.user) return;
 
-                // 1. Find all tasks with old project name
                 const tasksRef = collection(db, 'artifacts', appId, 'users', state.user.uid, 'tasks');
                 const q = query(tasksRef, where("project", "==", oldName));
                 
@@ -673,7 +725,7 @@
                     }
                 } catch (err) {
                     console.error("Error renaming project:", err);
-                    alert("Failed to rename project.");
+                    window.app.showToast("Failed to rename project.", "error");
                 }
             },
 
@@ -714,11 +766,12 @@
                         document.getElementById('task-tags').value = taskToEdit.tags ? taskToEdit.tags.join(', ') : '';
                         state.newEst = taskToEdit.estimatedPomos || 1;
                         els.estDisplay.innerText = state.newEst;
+                        els.pomoDurationInput.value = taskToEdit.pomoDuration || 25;
                         els.dateInput.value = taskToEdit.dueDate || '';
                         document.getElementById('task-priority').value = taskToEdit.priority || 'none';
                         document.getElementById('task-project').value = taskToEdit.project || '';
                         
-                        // Populate subtasks - FIXED REFERENCE to window.app
+                        // Populate subtasks
                         if (taskToEdit.subtasks && Array.isArray(taskToEdit.subtasks)) {
                             taskToEdit.subtasks.forEach(sub => window.app.addSubtaskUI(sub));
                         }
@@ -731,6 +784,7 @@
                         // Reset form
                         state.newEst = 1;
                         els.estDisplay.innerText = "1";
+                        els.pomoDurationInput.value = 25;
                         els.dateInput.value = new Date().toISOString().split('T')[0];
                         document.getElementById('task-title').value = '';
                         document.getElementById('task-note').value = '';
@@ -738,6 +792,8 @@
                         document.getElementById('task-priority').value = 'none';
                         document.getElementById('task-project').value = '';
                     }
+                    
+                    window.app.updateTotalEstDisplay();
 
                     els.modal.classList.remove('hidden');
                     setTimeout(() => els.modal.classList.remove('opacity-0'), 10);
@@ -756,6 +812,17 @@
                 if(v < 1) v = 1; if(v > 50) v = 50;
                 state.newEst = v;
                 els.estDisplay.innerText = v;
+                window.app.updateTotalEstDisplay();
+            },
+            
+            updateTotalEstDisplay: () => {
+                const duration = parseInt(els.pomoDurationInput.value) || 25;
+                const totalMins = state.newEst * duration;
+                const h = Math.floor(totalMins / 60);
+                const m = totalMins % 60;
+                let text = `${totalMins}m`;
+                if (h > 0) text = `${h}h ${m}m`;
+                els.totalEstTimeDisplay.innerText = text;
             },
 
             editTask: (id, e) => {
@@ -776,11 +843,14 @@
                 // Collect tags
                 const tagsStr = document.getElementById('task-tags').value;
                 const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
+                
+                const pomoDuration = parseInt(els.pomoDurationInput.value) || 25;
 
                 const taskData = {
                     title,
                     dueDate: els.dateInput.value,
                     estimatedPomos: state.newEst,
+                    pomoDuration: pomoDuration,
                     priority: document.getElementById('task-priority').value,
                     project: document.getElementById('task-project').value || 'Inbox',
                     note: document.getElementById('task-note').value,
@@ -812,6 +882,30 @@
             deleteTask: async (id, e) => {
                 e.stopPropagation();
                 if(confirm('Delete task?')) await deleteDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'tasks', id));
+            },
+
+            startTask: (id, e) => {
+                e.stopPropagation();
+                const task = state.tasks.find(t => t.id === id);
+                if(!task) return;
+                
+                state.selectedTaskId = id;
+                renderTasks();
+                updateTimerUI(task);
+                
+                // Set the timer duration based on task settings if not currently running
+                if(!state.timer.active) {
+                    const taskDuration = task.pomoDuration || 25;
+                    // Update global setting for this session
+                    app.updateSettings('focus', taskDuration); 
+                    // Start timer
+                    app.toggleTimer();
+                } else {
+                    // Just switch context if already running? Or restart?
+                    // User said "start pomodoro", usually implies action.
+                    // If already active, maybe just focus panel
+                    if (window.innerWidth < 1280) app.toggleFocusPanel(true);
+                }
             },
 
             selectTask: (id) => {
@@ -858,7 +952,7 @@
                     if(state.sound !== 'none') els.audio.pause();
                 } else {
                     if(!state.selectedTaskId && state.timer.mode === 'focus') {
-                        window.app.showToast("Please select a task to focus on!", "error");
+                        // Silent return as requested
                         return;
                     }
                     state.timer.active = true;
@@ -978,7 +1072,17 @@
             }
         };
 
-        // Render Helpers (Unchanged)
+        // Event listeners for Prompt Modal
+        document.getElementById('prompt-cancel-btn').addEventListener('click', () => window.app.closePrompt(null));
+        document.getElementById('prompt-confirm-btn').addEventListener('click', () => window.app.closePrompt(window.app.customPrompt.input.value));
+        document.getElementById('prompt-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') window.app.closePrompt(window.app.customPrompt.input.value);
+        });
+
+        // Event listeners for duration input
+        els.pomoDurationInput.addEventListener('input', window.app.updateTotalEstDisplay);
+
+        // Render Helpers
         function updateNavStyles(view, proj) {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 const isActive = view !== 'project' && btn.id === `nav-${view}`;
@@ -1088,6 +1192,15 @@
                         <span>${t.subtasks.length} subtasks</span>
                     </div>`;
                 }
+                
+                // Calculate Times
+                const duration = t.pomoDuration || 25;
+                const completedMins = (t.completedPomos || 0) * duration;
+                const remainingMins = ((t.estimatedPomos || 1) - (t.completedPomos || 0)) * duration;
+                const doneH = Math.floor(completedMins / 60);
+                const doneM = completedMins % 60;
+                const remH = Math.floor(remainingMins > 0 ? remainingMins / 60 : 0);
+                const remM = Math.max(0, remainingMins % 60);
 
                 el.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-1 ${t.priority === 'high' ? 'bg-red-500' : t.priority === 'med' ? 'bg-yellow-500' : 'bg-transparent'}"></div>
@@ -1120,10 +1233,19 @@
                             <div class="flex items-center text-xs text-gray-600 truncate">
                                 <i class="ph-bold ph-folder mr-1 shrink-0"></i> <span class="truncate">${t.project}</span>
                             </div>
+                            <!-- Time Stats -->
+                            <div class="flex items-center text-[10px] text-gray-500 ml-auto space-x-2">
+                                <span>Done: ${doneH}h ${doneM}m</span>
+                                <span>•</span>
+                                <span>Left: ${remH}h ${remM}m</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="absolute right-2 top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <div class="absolute right-2 top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all z-20 bg-oled-surface rounded-md">
+                        <button onclick="app.startTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-purple-400 hover:text-white transition-colors" title="Start Timer">
+                            <i class="ph-fill ph-play"></i>
+                        </button>
                         <button onclick="app.editTask('${t.id}', event)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors" title="Edit Task">
                             <i class="ph-bold ph-pencil-simple"></i>
                         </button>
