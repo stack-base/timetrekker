@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TimeTrekker</title>
+    <link rel="icon" href="https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png" type="image/x-icon">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,21 +86,18 @@
             50% { opacity: 0.8; transform: scale(1.05); }
         }
         .animate-breathe { animation: breathe 4s ease-in-out infinite; }
+        
+        /* Switch Toggle */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #68D391;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #68D391;
+        }
     </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex selection:bg-purple-500/30 font-sans bg-oled-base">
-
-    <!-- Auth Protection Overlay -->
-    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-oled-base hidden flex-col items-center justify-center text-center p-6">
-        <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20">
-            <i class="ph-bold ph-lock-key text-3xl text-white"></i>
-        </div>
-        <h1 class="text-2xl font-bold text-white mb-2 font-heading">Authentication Required</h1>
-        <p class="text-gray-400 mb-8 max-w-md">Please sign in to access your tasks.</p>
-        <a href="https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application" class="px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors font-display">
-            Go to Login Page
-        </a>
-    </div>
 
     <!-- Sidebar -->
     <nav class="w-20 lg:w-64 flex-shrink-0 bg-oled-surface border-r border-oled-border flex flex-col justify-between transition-all duration-300 z-30">
@@ -209,7 +207,7 @@
                 <div class="flex items-center space-x-8 font-display">
                     <div>
                         <div class="text-3xl font-bold text-white leading-none" id="stat-pomos-today">0</div>
-                        <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mt-2">Pomos Today</div>
+                        <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mt-2">Pomos Done</div>
                     </div>
                     <div>
                         <div class="text-3xl font-bold text-white leading-none" id="stat-tasks-today">0</div>
@@ -220,14 +218,11 @@
                         <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mt-2">Est. Remain</div>
                     </div>
                 </div>
-                <!-- Mini Activity Graph -->
-                <div class="h-12 flex items-end space-x-1">
-                    <div class="w-2 bg-purple-900/40 rounded-t h-4 border-t border-purple-500/30"></div>
-                    <div class="w-2 bg-purple-900/60 rounded-t h-8 border-t border-purple-500/50"></div>
-                    <div class="w-2 bg-purple-900/80 rounded-t h-6 border-t border-purple-500/70"></div>
-                    <div class="w-2 bg-purple-900 rounded-t h-10 border-t border-purple-500"></div>
-                    <div class="w-2 bg-purple-900/50 rounded-t h-5 border-t border-purple-500/40"></div>
-                    <div class="w-2 bg-purple-900/30 rounded-t h-3 border-t border-purple-500/20"></div>
+                
+                <!-- Total Focus Time -->
+                <div class="text-right">
+                    <div class="text-3xl font-bold text-white leading-none font-display" id="stat-focus-time">0h 0m</div>
+                    <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mt-2 font-display">Total Focus Time</div>
                 </div>
             </div>
 
@@ -366,6 +361,18 @@
                     <input type="range" min="10" max="45" step="5" value="15" class="w-full accent-green-500 h-2 bg-oled-highlight rounded-lg appearance-none cursor-pointer" oninput="app.updateSettings('long', this.value)">
                     <div class="flex justify-between text-xs text-gray-400 mt-1"><span>10</span><span id="set-long-val" class="text-white font-bold">15</span><span>45</span></div>
                 </div>
+                
+                <!-- Strict Mode Toggle -->
+                <div class="flex items-center justify-between pt-4 border-t border-oled-border">
+                    <div>
+                        <label class="text-sm font-bold text-white block">Strict Mode</label>
+                        <p class="text-[10px] text-gray-500">Prevent stopping the timer early</p>
+                    </div>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="strict-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-600 transition-all duration-300 top-[-12px]" onclick="app.updateSettings('strictMode', this.checked)"/>
+                        <label for="strict-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-800 cursor-pointer border border-gray-700 top-[-12px] relative"></label>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -387,6 +394,23 @@
                     <input type="text" id="task-title" placeholder="I want to..." class="w-full bg-transparent text-2xl font-medium text-white placeholder-gray-600 border-none outline-none mb-6 font-heading" required autocomplete="off">
                     
                     <textarea id="task-note" placeholder="Add a note or description..." class="w-full bg-oled-highlight text-sm text-gray-300 placeholder-gray-600 border border-transparent focus:border-white/10 rounded-lg p-3 outline-none resize-none h-20 mb-6 transition-colors"></textarea>
+
+                    <!-- Subtasks Section -->
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide font-display">Subtasks</label>
+                        <div id="subtasks-container" class="space-y-2 mb-2">
+                            <!-- Dynamic Inputs -->
+                        </div>
+                        <button type="button" onclick="app.addSubtaskUI()" class="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center">
+                            <i class="ph-bold ph-plus mr-1"></i> Add Step
+                        </button>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide font-display">Tags</label>
+                        <input type="text" id="task-tags" placeholder="e.g. Work, Urgent, Design (comma separated)" class="w-full bg-oled-highlight border border-oled-border text-white rounded-lg px-3 py-2 outline-none focus:border-purple-500 transition-colors text-sm font-sans">
+                    </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-6 font-display">
                         <!-- Est Pomos -->
@@ -473,8 +497,8 @@
             view: 'today',
             filterProject: null,
             selectedTaskId: null,
-            editingTaskId: null, // Tracks if we are editing
-            timer: { active: false, timeLeft: 25 * 60, mode: 'focus', interval: null, settings: { focus: 25, short: 5, long: 15 } },
+            editingTaskId: null,
+            timer: { active: false, timeLeft: 25 * 60, mode: 'focus', interval: null, settings: { focus: 25, short: 5, long: 15, strictMode: false } },
             newEst: 1,
             sound: 'none'
         };
@@ -518,10 +542,12 @@
             stats: {
                 pomosToday: document.getElementById('stat-pomos-today'),
                 tasksToday: document.getElementById('stat-tasks-today'),
-                estRemain: document.getElementById('stat-est-remaining')
+                estRemain: document.getElementById('stat-est-remaining'),
+                focusTime: document.getElementById('stat-focus-time')
             },
             projectList: document.getElementById('project-list'),
             projectDatalist: document.getElementById('projects-datalist'),
+            subtasksContainer: document.getElementById('subtasks-container'),
             audio: document.getElementById('audio-player'),
             soundMenu: document.getElementById('sound-menu'),
             timerSettings: document.getElementById('timer-settings'),
@@ -640,10 +666,24 @@
                 }
             },
 
+            // --- Subtasks Logic ---
+            addSubtaskUI: (value = '') => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2 animate-fade-in';
+                div.innerHTML = `
+                    <div class="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"></div>
+                    <input type="text" class="subtask-input flex-1 bg-transparent border-b border-oled-border focus:border-purple-500 text-sm text-white py-1 outline-none transition-colors" placeholder="Step description" value="${value}">
+                    <button type="button" onclick="this.parentElement.remove()" class="text-gray-500 hover:text-red-400"><i class="ph-bold ph-x"></i></button>
+                `;
+                els.subtasksContainer.appendChild(div);
+            },
+
             // --- Add/Edit Task Logic ---
             toggleAddTaskModal: (taskToEdit = null) => {
                 if (els.modal.classList.contains('hidden')) {
                     // OPEN
+                    els.subtasksContainer.innerHTML = ''; // Reset subtasks
+                    
                     if (taskToEdit) {
                         // Edit Mode
                         state.editingTaskId = taskToEdit.id;
@@ -652,11 +692,17 @@
                         
                         document.getElementById('task-title').value = taskToEdit.title;
                         document.getElementById('task-note').value = taskToEdit.note || '';
+                        document.getElementById('task-tags').value = taskToEdit.tags ? taskToEdit.tags.join(', ') : '';
                         state.newEst = taskToEdit.estimatedPomos || 1;
                         els.estDisplay.innerText = state.newEst;
                         els.dateInput.value = taskToEdit.dueDate || '';
                         document.getElementById('task-priority').value = taskToEdit.priority || 'none';
                         document.getElementById('task-project').value = taskToEdit.project || '';
+                        
+                        // Populate subtasks
+                        if (taskToEdit.subtasks && Array.isArray(taskToEdit.subtasks)) {
+                            taskToEdit.subtasks.forEach(sub => app.addSubtaskUI(sub));
+                        }
                     } else {
                         // Create Mode
                         state.editingTaskId = null;
@@ -669,6 +715,7 @@
                         els.dateInput.value = new Date().toISOString().split('T')[0];
                         document.getElementById('task-title').value = '';
                         document.getElementById('task-note').value = '';
+                        document.getElementById('task-tags').value = '';
                         document.getElementById('task-priority').value = 'none';
                         document.getElementById('task-project').value = '';
                         
@@ -695,7 +742,7 @@
 
             adjustEst: (d) => {
                 let v = state.newEst + d;
-                if(v < 1) v = 1; if(v > 10) v = 10;
+                if(v < 1) v = 1; if(v > 50) v = 50;
                 state.newEst = v;
                 els.estDisplay.innerText = v;
             },
@@ -711,13 +758,23 @@
                 const title = document.getElementById('task-title').value;
                 if(!title) return;
                 
+                // Collect subtasks
+                const subtaskInputs = document.querySelectorAll('.subtask-input');
+                const subtasks = Array.from(subtaskInputs).map(input => input.value.trim()).filter(v => v);
+                
+                // Collect tags
+                const tagsStr = document.getElementById('task-tags').value;
+                const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
+
                 const taskData = {
                     title,
                     dueDate: els.dateInput.value,
                     estimatedPomos: state.newEst,
                     priority: document.getElementById('task-priority').value,
                     project: document.getElementById('task-project').value || 'Inbox',
-                    note: document.getElementById('task-note').value
+                    note: document.getElementById('task-note').value,
+                    subtasks: subtasks,
+                    tags: tags
                 };
 
                 const collectionRef = collection(db, 'artifacts', appId, 'users', state.user.uid, 'tasks');
@@ -760,6 +817,13 @@
             // Timer functionality
             toggleTimer: () => {
                 if(state.timer.active) {
+                    // Check Strict Mode
+                    if (state.timer.settings.strictMode && state.timer.mode === 'focus') {
+                        if (!confirm("Strict Mode is active! Giving up will stop your streak. Are you sure?")) {
+                            return; // Do not pause
+                        }
+                    }
+
                     clearInterval(state.timer.interval);
                     state.timer.active = false;
                     els.playIcon.className = "ph-fill ph-play text-4xl text-white ml-1.5";
@@ -860,11 +924,15 @@
             },
 
             updateSettings: (key, val) => {
-                state.timer.settings[key] = parseInt(val);
-                document.getElementById(`set-${key}-val`).innerText = val;
-                if(!state.timer.active && state.timer.mode === key) {
-                    state.timer.timeLeft = parseInt(val) * 60;
-                    updateTimerVisuals();
+                if (key === 'strictMode') {
+                    state.timer.settings[key] = val;
+                } else {
+                    state.timer.settings[key] = parseInt(val);
+                    document.getElementById(`set-${key}-val`).innerText = val;
+                    if(!state.timer.active && state.timer.mode === key) {
+                        state.timer.timeLeft = parseInt(val) * 60;
+                        updateTimerVisuals();
+                    }
                 }
             },
 
@@ -932,9 +1000,15 @@
             const totalPomos = state.tasks.reduce((a,b) => a + (b.completedPomos||0), 0);
             const estRem = state.tasks.filter(t=>t.status==='todo').reduce((a,b) => a + (parseInt(b.estimatedPomos)||0), 0);
 
-            els.stats.tasksToday.innerText = doneToday;
             els.stats.pomosToday.innerText = totalPomos;
+            els.stats.tasksToday.innerText = doneToday;
             els.stats.estRemain.innerText = estRem;
+            
+            // Calculate Total Focus Time
+            const focusMinutes = totalPomos * state.timer.settings.focus;
+            const hours = Math.floor(focusMinutes / 60);
+            const mins = focusMinutes % 60;
+            els.stats.focusTime.innerText = `${hours}h ${mins}m`;
         }
 
         function renderTasks() {
@@ -966,6 +1040,21 @@
                 el.className = `group flex items-start p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${isSel ? 'bg-oled-highlight border-purple-500/50' : 'bg-oled-surface border-oled-border hover:bg-oled-highlight hover:border-oled-border'}`;
                 el.onclick = () => window.app.selectTask(t.id);
 
+                let tagsHTML = '';
+                if (t.tags && t.tags.length > 0) {
+                    tagsHTML = `<div class="flex flex-wrap gap-1 mt-2">
+                        ${t.tags.map(tag => `<span class="text-[10px] bg-white/5 border border-white/5 rounded px-1.5 py-0.5 text-gray-400">${tag}</span>`).join('')}
+                    </div>`;
+                }
+
+                let subtasksHTML = '';
+                if (t.subtasks && t.subtasks.length > 0) {
+                    subtasksHTML = `<div class="flex items-center text-xs text-gray-500 mt-1">
+                        <i class="ph-bold ph-list-checks mr-1"></i>
+                        <span>${t.subtasks.length} subtasks</span>
+                    </div>`;
+                }
+
                 el.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-1 ${t.priority === 'high' ? 'bg-red-500' : t.priority === 'med' ? 'bg-yellow-500' : 'bg-transparent'}"></div>
                     
@@ -985,6 +1074,9 @@
                         </div>
                         
                         ${t.note ? `<p class="text-xs text-gray-500 line-clamp-1 mt-0.5 truncate font-display">${t.note}</p>` : ''}
+                        
+                        ${subtasksHTML}
+                        ${tagsHTML}
 
                         <div class="flex items-center mt-2 space-x-3 font-display">
                             <div class="flex items-center text-xs text-gray-400 bg-oled-highlight px-2 py-0.5 rounded border border-oled-border shrink-0">
