@@ -61,6 +61,35 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 }
 #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 2px; font-size: 13px; }
 #global-tooltip .sub { color: #a3a3a3; font-size: 11px; }
+
+/* Apple-style Liquid Glass Toggles */
+.glass-toggle-group {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 4px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.glass-toggle-btn {
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #a3a3a3;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+.glass-toggle-btn:hover {
+    color: #e5e7eb;
+}
+.glass-toggle-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    border-color: rgba(255, 255, 255, 0.05);
+}
 </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex bg-dark-bg text-text-main">
@@ -175,14 +204,6 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                 </div>
             </div>
 
-            <div class="bg-brand/5 border border-brand/20 rounded-lg p-4 flex items-start gap-3">
-                <i class="ph-fill ph-lightbulb text-brand text-xl mt-0.5"></i>
-                <div class="text-sm text-text-muted">
-                    <span class="block text-white font-semibold mb-1">Smart Insights</span>
-                    <span id="insight-text">Not enough data to generate insights yet. Start tracking your focus sessions!</span>
-                </div>
-            </div>
-
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Total Focus</div>
@@ -240,6 +261,14 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                     <div class="text-[10px] text-text-faint mt-1">Active projects</div>
                 </div>
             </div>
+            
+            <div class="bg-brand/5 border border-brand/20 rounded-lg p-4 flex items-start gap-3">
+                <i class="ph-fill ph-lightbulb text-brand text-xl mt-0.5"></i>
+                <div class="text-sm text-text-muted">
+                    <span class="block text-white font-semibold mb-1">Smart Insights</span>
+                    <span id="insight-text">Not enough data to generate insights yet. Start tracking your focus sessions!</span>
+                </div>
+            </div>
 
             <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
                  <h3 class="text-lg font-semibold text-white mb-6">Pomodoro Records</h3>
@@ -253,25 +282,53 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-white mb-4">Focus Trend</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-white">Focus Trend</h3>
+                        <div class="glass-toggle-group">
+                            <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="glass-toggle-btn">Line</button>
+                            <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="glass-toggle-btn active">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-[250px] w-full relative"><canvas id="focusBarChart"></canvas></div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-white mb-4">Task Completion Trend</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-white">Task Completion</h3>
+                        <div class="glass-toggle-group">
+                            <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="glass-toggle-btn">Line</button>
+                            <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="glass-toggle-btn active">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-[250px] w-full relative"><canvas id="taskBarChart"></canvas></div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-white mb-4">Hourly Productivity</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Hourly Productivity</h3>
+                            <p class="text-xs text-text-muted mt-0.5">Which hours of the day you focus the most.</p>
+                        </div>
+                        <div class="glass-toggle-group">
+                            <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="glass-toggle-btn">Line</button>
+                            <button onclick="app.toggleChartType('hourly', 'bar')" id="btn-hourly-bar" class="glass-toggle-btn active">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-[250px] w-full relative"><canvas id="hourlyChart"></canvas></div>
-                    <p class="text-xs text-text-muted mt-2 text-center">Which hours of the day you focus the most.</p>
                 </div>
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-white mb-4">Weekly Performance</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Weekly Performance</h3>
+                             <p class="text-xs text-text-muted mt-0.5">Your best days of the week.</p>
+                        </div>
+                        <div class="glass-toggle-group">
+                            <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="glass-toggle-btn">Line</button>
+                            <button onclick="app.toggleChartType('weekday', 'bar')" id="btn-weekday-bar" class="glass-toggle-btn active">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-[250px] w-full relative"><canvas id="weekdayChart"></canvas></div>
-                    <p class="text-xs text-text-muted mt-2 text-center">Your best days of the week.</p>
                 </div>
             </div>
 
@@ -390,7 +447,17 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"},appId='timetrekker-v1',fb=initializeApp(C),auth=getAuth(fb),db=getFirestore(fb),D=document,$=id=>D.getElementById(id);
-const state={user:null,tasks:[],logs:[],projects:new Set(['Inbox','Work','Personal','Study']),view:'today',filterProject:null,selectedTaskId:null,editingTaskId:null,timer:{mode:'focus',status:'idle',endTime:null,remaining:1500,totalDuration:1500,activeTaskId:null,interval:null,settings:{focus:25,short:5,long:15,strictMode:false}},newEst:1,sound:'none',charts:{focusBar:null,taskBar:null,project:null,hourly:null,weekday:null,priority:null},analytics:{range:'week',metric:'time'}};
+
+// Add chartTypes to state to track Bar vs Line preference
+const state={
+    user:null,tasks:[],logs:[],projects:new Set(['Inbox','Work','Personal','Study']),view:'today',filterProject:null,selectedTaskId:null,editingTaskId:null,
+    timer:{mode:'focus',status:'idle',endTime:null,remaining:1500,totalDuration:1500,activeTaskId:null,interval:null,settings:{focus:25,short:5,long:15,strictMode:false}},
+    newEst:1,sound:'none',
+    charts:{focusBar:null,taskBar:null,project:null,hourly:null,weekday:null,priority:null},
+    chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' }, // New State
+    analytics:{range:'week',metric:'time'}
+};
+
 const sounds={none:'',rain:'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',cafe:'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',forest:'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg'};
 const els={taskList:$('task-list'),taskViewContainer:$('task-view-container'),analyticsViewContainer:$('analytics-view-container'),pageTitle:$('page-title'),emptyState:$('empty-state'),modal:$('add-task-modal'),modalPanel:$('add-task-panel'),modalTitle:$('modal-title'),saveTaskBtn:$('save-task-btn'),estDisplay:$('est-display'),dateInput:$('task-date'),timerDisplay:$('timer-display'),timerProgress:$('timer-progress'),timerMode:$('timer-mode'),playIcon:$('play-icon'),focusActive:$('focus-active'),focusEmpty:$('focus-empty'),focusTitle:$('focus-task-title'),focusProject:$('focus-project-badge'),focusCompleted:$('focus-completed'),focusTotal:$('focus-total'),timerPanel:$('timer-panel'),navCounts:{today:$('count-today'),tomorrow:$('count-tomorrow'),upcoming:$('count-upcoming'),past:$('count-past')},stats:{pomosToday:$('stat-pomos-today'),tasksToday:$('stat-tasks-today'),estRemain:$('stat-est-remaining'),focusTime:$('stat-focus-time')},analytics:{
     timeTotal:$('ana-time-total'),timeWeek:$('ana-time-week'),timeToday:$('ana-time-today'),
@@ -407,8 +474,9 @@ const els={taskList:$('task-list'),taskViewContainer:$('task-view-container'),an
 Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#333';
-Chart.defaults.scale.grid.color='rgba(255,255,255,0.05)';
+Chart.defaults.scale.grid.color='rgba(255,255,255,0.03)'; // More subtle grid
 Chart.defaults.scale.grid.borderColor='transparent';
+Chart.defaults.scale.grid.borderDash=[4,4]; // Dashed grid lines
 Chart.defaults.plugins.tooltip.backgroundColor='rgba(32, 32, 32, 0.95)';
 Chart.defaults.plugins.tooltip.titleColor='#fff';
 Chart.defaults.plugins.tooltip.bodyColor='#a3a3a3';
@@ -433,6 +501,21 @@ closePrompt:v=>{const p=app.customPrompt;p.el.classList.add('opacity-0');setTime
 setView:v=>{state.view=v;state.filterProject=null;els.pageTitle.innerText=v.charAt(0).toUpperCase()+v.slice(1);updateNavStyles(v);app.toggleSidebar(false);if(v==='analytics'){els.taskViewContainer.classList.add('hidden');els.analyticsViewContainer.classList.remove('hidden');els.headerActions.classList.add('invisible');updateAnalytics()}else{els.taskViewContainer.classList.remove('hidden');els.analyticsViewContainer.classList.add('hidden');els.headerActions.classList.remove('invisible');renderTasks()}},
 setProjectView:p=>{state.view='project';state.filterProject=p;els.pageTitle.innerText=p;updateNavStyles('project',p);app.toggleSidebar(false);els.taskViewContainer.classList.remove('hidden');els.analyticsViewContainer.classList.add('hidden');els.headerActions.classList.remove('invisible');renderTasks()},
 setRange:r=>{state.analytics.range=r;['week','month','year'].forEach(k=>{const b=$(`btn-range-${k}`);b.className=k===r?"px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all":"px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all"});updateAnalytics()},
+
+// New Function: Switch Chart Type
+toggleChartType: (chartKey, type) => {
+    state.chartTypes[chartKey] = type;
+    // Update button visual states
+    ['bar', 'line'].forEach(t => {
+        const btn = $(`btn-${chartKey}-${t}`);
+        if(btn) {
+            if(t === type) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    });
+    updateAnalytics(); // Re-render charts
+},
+
 toggleFocusPanel:f=>{const p=els.timerPanel,i=!p.classList.contains('translate-x-full');(f!==null?f:!i)?p.classList.remove('translate-x-full'):p.classList.add('translate-x-full')},
 toggleSidebar:f=>{const s=els.sidebar,o=els.sidebarOverlay,h=s.classList.contains('-translate-x-full');const show=(typeof f==='boolean')?f:h;if(show){s.classList.remove('-translate-x-full');o.classList.remove('hidden');requestAnimationFrame(()=>o.classList.remove('opacity-0'))}else{s.classList.add('-translate-x-full');o.classList.add('opacity-0');setTimeout(()=>o.classList.add('hidden'),300)}},
 promptNewProject:async()=>{const n=await app.showPrompt("Enter project name:");if(n){state.projects.add(n);updateProjectsUI()}},
@@ -462,6 +545,14 @@ updateSettings:(k,v)=>{if(k==='strictMode')state.timer.settings[k]=v;else{state.
 signOut:()=>signOut(auth).then(()=>window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application')
 };
 window.app=app;
+
+// Helper to create beautiful gradient for Line Charts (Apple Style)
+function createGradient(ctx, color) {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, color + '90'); // High opacity at top
+    gradient.addColorStop(1, color + '05'); // Fade out at bottom
+    return gradient;
+}
 
 function updateAnalytics(){
     if((!state.logs.length && !state.tasks.length) && state.view==='analytics')return;
@@ -556,7 +647,7 @@ function updateAnalytics(){
         row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row);
     }
 
-    // --- Charts Logic (Polished) ---
+    // --- Charts Logic (Polished with Toggles) ---
     const r=state.analytics.range; 
     let lbl=[], dpFocus=[], dpTask=[];
     let dlb=r==='week'?7:(r==='month'?30:12);
@@ -581,36 +672,56 @@ function updateAnalytics(){
 
     const commonOptions = {
         responsive: true, maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)', borderDash: [4, 4] } }, x: { grid: { display: false } } },
+        scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)', borderDash: [4, 4] } }, x: { grid: { display: false } } },
         plugins: { legend: { display: false } },
-        elements: { bar: { borderRadius: 4, hoverBackgroundColor: '#fff' } }
+        elements: { bar: { borderRadius: 4, hoverBackgroundColor: '#fff' }, line: { tension: 0.4 } },
+        interaction: { mode: 'index', intersect: false }
+    };
+
+    // Helper to get Chart Config based on type (Bar vs Line)
+    const getChartConfig = (ctx, type, labels, data, color, tooltipLabel) => {
+        const isLine = type === 'line';
+        return {
+            type: type,
+            data: {
+                labels: labels, 
+                datasets: [{
+                    label: tooltipLabel, 
+                    data: data, 
+                    backgroundColor: isLine ? createGradient(ctx, color) : color,
+                    borderColor: color,
+                    borderRadius: 4,
+                    fill: isLine,
+                    borderWidth: isLine ? 2 : 0,
+                    pointRadius: isLine ? 0 : 0,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c)=>c.raw + ' ' + (tooltipLabel.includes('Hours') ? 'hrs' : (tooltipLabel.includes('Tasks')?'tasks':'mins')) } } } }
+        };
     };
 
     // Chart: Focus Trend
     if(state.charts.focusBar)state.charts.focusBar.destroy();
-    state.charts.focusBar = new Chart(els.analytics.focusBarChart.getContext('2d'), {
-        type: 'bar', data: {labels: lbl, datasets: [{label: 'Focus Hours', data: dpFocus, backgroundColor: '#ff5757', borderRadius: 4}]},
-        options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c)=>c.raw+' hrs' } } } }
-    });
+    const ctxFocus = els.analytics.focusBarChart.getContext('2d');
+    state.charts.focusBar = new Chart(ctxFocus, getChartConfig(ctxFocus, state.chartTypes.focus, lbl, dpFocus, '#ff5757', 'Focus Hours'));
+
     // Chart: Task Trend
     if(state.charts.taskBar)state.charts.taskBar.destroy();
-    state.charts.taskBar = new Chart(els.analytics.taskBarChart.getContext('2d'), {
-        type: 'bar', data: {labels: lbl, datasets: [{label: 'Tasks Done', data: dpTask, backgroundColor: '#3b82f6', borderRadius: 4}]},
-        options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c)=>c.raw+' tasks' } } } }
-    });
+    const ctxTask = els.analytics.taskBarChart.getContext('2d');
+    state.charts.taskBar = new Chart(ctxTask, getChartConfig(ctxTask, state.chartTypes.task, lbl, dpTask, '#3b82f6', 'Tasks Done'));
+
     // Chart: Hourly
     if(state.charts.hourly)state.charts.hourly.destroy();
-    state.charts.hourly = new Chart(els.analytics.hourlyChart.getContext('2d'), {
-        type: 'bar', data: {labels: Array.from({length:24},(_,i)=>i), datasets: [{label: 'Mins', data: hours, backgroundColor: '#10b981', borderRadius: 2}]},
-        options: { ...commonOptions, scales: { x:{grid:{display:false}}, y:{display:false} } }
-    });
+    const ctxHourly = els.analytics.hourlyChart.getContext('2d');
+    state.charts.hourly = new Chart(ctxHourly, getChartConfig(ctxHourly, state.chartTypes.hourly, Array.from({length:24},(_,i)=>i), hours, '#10b981', 'Minutes'));
+
     // Chart: Weekday
     if(state.charts.weekday)state.charts.weekday.destroy();
-    state.charts.weekday = new Chart(els.analytics.weekdayChart.getContext('2d'), {
-        type: 'bar', data: {labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets: [{label: 'Mins', data: weekdays, backgroundColor: '#f59e0b', borderRadius: 4}]},
-        options: { ...commonOptions, scales: { x:{grid:{display:false}}, y:{display:false} } }
-    });
-    // Chart: Project
+    const ctxWeekday = els.analytics.weekdayChart.getContext('2d');
+    state.charts.weekday = new Chart(ctxWeekday, getChartConfig(ctxWeekday, state.chartTypes.weekday, ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], weekdays, '#f59e0b', 'Minutes'));
+
+    // Chart: Project (Doughnut - Unchanged)
     const pm={}; state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});
     const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);
     if(state.charts.project)state.charts.project.destroy();
@@ -620,7 +731,7 @@ function updateAnalytics(){
     });
     els.analytics.projList.innerHTML = sp.map(x=>`<div class="flex justify-between text-xs text-text-muted"><span>${x[0]}</span><span>${Math.round(x[1])}m</span></div>`).join('');
 
-    // Chart: Priority
+    // Chart: Priority (Doughnut - Unchanged)
     const prioCounts={high:0, med:0, low:0, none:0};
     tasksDone.forEach(t=>priCounts[t.priority||'none']++);
     if(state.charts.priority)state.charts.priority.destroy();
