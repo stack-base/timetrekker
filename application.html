@@ -14,9 +14,10 @@ tailwind.config={
     extend:{
       fontFamily:{sans:['Inter','sans-serif']},
       colors:{
-        brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a'}, // Professional Pomodoro Red
-        dark:{bg:'#121212',sidebar:'#1e1e1e',card:'#252525',border:'#333333',hover:'#2f2f2f'},
-        text:{main:'#e5e7eb',muted:'#9ca3af',faint:'#4b5563'}
+        brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a'},
+        dark:{bg:'#181818',sidebar:'#202020',card:'#282828',border:'#333333',hover:'#383838'},
+        text:{main:'#e5e7eb',muted:'#a3a3a3',faint:'#525252'},
+        priority:{high:'#ef4444',med:'#eab308',low:'#3b82f6',none:'#525252'}
       }
     }
   }
@@ -24,30 +25,18 @@ tailwind.config={
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script src="https://unpkg.com/@phosphor-icons/web"></script>
 <style>
-/* Professional Scrollbar */
 ::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:#1e1e1e}
-::-webkit-scrollbar-thumb{background:#4b5563;border-radius:4px;border: 2px solid #1e1e1e}
-::-webkit-scrollbar-thumb:hover{background:#6b7280}
-
-/* Base Styles */
-body { background-color: #121212; color: #e5e7eb; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-.transition-smooth { transition: all 0.2s ease-in-out; }
-
-/* Checkbox Styling */
-.custom-checkbox input:checked + div { background-color: #ff5757; border-color: #ff5757; }
-.custom-checkbox input:checked + div svg { display: block; }
-
-/* Clean Fade Animation */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
-
-/* Range Slider Styling */
-input[type=range] { -webkit-appearance: none; background: transparent; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ff5757; cursor: pointer; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
-
-.chart-container { position: relative; width: 100%; height: 100%; }
+::-webkit-scrollbar-track{background:#202020}
+::-webkit-scrollbar-thumb{background:#404040;border-radius:4px;border:2px solid #202020}
+::-webkit-scrollbar-thumb:hover{background:#505050}
+body{background-color:#181818;color:#e5e7eb;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+.custom-checkbox input:checked+div{background-color:#ff5757;border-color:#ff5757}
+.custom-checkbox input:checked+div svg{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}.animate-fade-in{animation:fadeIn .2s ease-out forwards}
+input[type=range]{-webkit-appearance:none;background:transparent}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#404040;border-radius:2px}
+.chart-container{position:relative;width:100%;height:100%}
 </style>
 </head>
 <body class="h-screen w-full overflow-hidden flex bg-dark-bg text-text-main">
@@ -71,7 +60,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
     <div class="flex flex-col h-full overflow-hidden">
         <div class="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-dark-border shrink-0">
             <div class="flex items-center">
-                <div class="w-8 h-8 rounded bg-brand flex items-center justify-center text-white shadow-sm"><i class="ph-bold ph-check text-lg"></i></div>
+                <img src="https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png" class="w-8 h-8 rounded shadow-sm" alt="StackBase">
                 <span class="block md:hidden lg:block ml-3 font-bold text-lg text-white tracking-tight">TimeTrekker</span>
             </div>
             <button onclick="app.toggleSidebar(false)" class="md:hidden text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
@@ -81,54 +70,36 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
             <button onclick="app.toggleFocusPanel(true)" class="xl:hidden w-full flex items-center px-3 py-2 mb-4 rounded bg-brand/10 text-brand border border-brand/20 hover:bg-brand/20 transition-colors">
                 <i class="ph-fill ph-timer text-xl"></i><span class="ml-3 font-medium">Focus Mode</span>
             </button>
-
             <button onclick="app.setView('past')" id="nav-past" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
-                <i class="ph-regular ph-clock-counter-clockwise text-xl group-hover:text-brand transition-colors"></i>
-                <span class="block md:hidden lg:block ml-3 font-medium text-sm">Past</span>
-                <span id="count-past" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
+                <i class="ph-regular ph-clock-counter-clockwise text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Past</span><span id="count-past" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
             </button>
             <button onclick="app.setView('today')" id="nav-today" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
-                <i class="ph-regular ph-sun text-xl group-hover:text-brand transition-colors"></i>
-                <span class="block md:hidden lg:block ml-3 font-medium text-sm">Today</span>
-                <span id="count-today" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
+                <i class="ph-regular ph-sun text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Today</span><span id="count-today" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
             </button>
             <button onclick="app.setView('tomorrow')" id="nav-tomorrow" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
-                <i class="ph-regular ph-calendar-plus text-xl group-hover:text-brand transition-colors"></i>
-                <span class="block md:hidden lg:block ml-3 font-medium text-sm">Tomorrow</span>
-                <span id="count-tomorrow" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
+                <i class="ph-regular ph-calendar-plus text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Tomorrow</span><span id="count-tomorrow" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
             </button>
             <button onclick="app.setView('upcoming')" id="nav-upcoming" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
-                <i class="ph-regular ph-calendar text-xl group-hover:text-brand transition-colors"></i>
-                <span class="block md:hidden lg:block ml-3 font-medium text-sm">Upcoming</span>
-                <span id="count-upcoming" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
+                <i class="ph-regular ph-calendar text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Upcoming</span><span id="count-upcoming" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
             </button>
             <button onclick="app.setView('analytics')" id="nav-analytics" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
-                <i class="ph-regular ph-chart-line-up text-xl group-hover:text-brand transition-colors"></i>
-                <span class="block md:hidden lg:block ml-3 font-medium text-sm">Analytics</span>
+                <i class="ph-regular ph-chart-line-up text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Analytics</span>
             </button>
-
             <div class="mt-6 mb-2 px-3 flex items-center justify-between text-xs font-semibold text-text-faint uppercase tracking-wider">
-                <span class="block md:hidden lg:block">Projects</span>
-                <button onclick="app.promptNewProject()" class="hover:text-white transition-colors" title="New Project"><i class="ph-bold ph-plus"></i></button>
+                <span class="block md:hidden lg:block">Projects</span><button onclick="app.promptNewProject()" class="hover:text-white transition-colors" title="New Project"><i class="ph-bold ph-plus"></i></button>
             </div>
-            
             <div id="project-list" class="space-y-0.5"></div>
         </div>
-
         <div class="p-4 border-t border-dark-border shrink-0 flex flex-col gap-1">
             <button onclick="app.setView('completed')" id="nav-completed" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors">
                 <i class="ph-regular ph-check-circle text-xl"></i><span class="block md:hidden lg:block ml-3 text-sm font-medium">Completed</span>
             </button>
-            
             <div id="user-profile-display" class="hidden items-center p-2 rounded hover:bg-dark-hover transition-colors cursor-default mt-2">
                 <div id="user-avatar-initials" class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-xs font-bold text-white shrink-0">U</div>
-                <div class="flex md:hidden lg:flex flex-col ml-3 overflow-hidden">
-                    <span id="user-name-text" class="text-sm font-medium text-white truncate">User</span>
-                    <span id="user-email-text" class="text-xs text-text-muted truncate">email@example.com</span>
-                </div>
+                <div class="flex md:hidden lg:flex flex-col ml-3 overflow-hidden"><span id="user-name-text" class="text-sm font-medium text-white truncate">User</span><span id="user-email-text" class="text-xs text-text-muted truncate">email@example.com</span></div>
                 <button onclick="app.signOut()" class="ml-auto text-text-muted hover:text-red-400 p-1 md:hidden lg:block" title="Sign Out"><i class="ph-bold ph-sign-out"></i></button>
             </div>
-            <button onclick="app.signOut()" class="md:flex lg:hidden hidden justify-center items-center w-full py-2 text-text-muted hover:text-red-400"><i class="ph-bold ph-sign-out text-xl"></i></button>
+            <div class="mt-3 text-[10px] text-text-faint text-center md:hidden lg:block tracking-wide uppercase font-bold opacity-60">Powered by StackBase</div>
         </div>
     </div>
 </nav>
@@ -148,35 +119,18 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
     </header>
 
     <div class="flex-1 overflow-y-auto relative custom-scrollbar bg-dark-bg">
-        
         <div id="task-view-container" class="p-6 lg:p-10 max-w-5xl mx-auto">
             <div id="stats-summary" class="hidden md:flex items-center justify-between bg-dark-card border border-dark-border rounded-lg p-5 mb-8 shadow-sm">
                 <div class="flex space-x-12">
-                    <div>
-                        <div class="text-2xl font-bold text-white" id="stat-pomos-today">0</div>
-                        <div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Pomos</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl font-bold text-white" id="stat-tasks-today">0</div>
-                        <div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Tasks Done</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl font-bold text-white" id="stat-est-remaining">0</div>
-                        <div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Est. Pomo</div>
-                    </div>
+                    <div><div class="text-2xl font-bold text-white" id="stat-pomos-today">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Pomos</div></div>
+                    <div><div class="text-2xl font-bold text-white" id="stat-tasks-today">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Tasks Done</div></div>
+                    <div><div class="text-2xl font-bold text-white" id="stat-est-remaining">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Est. Pomo</div></div>
                 </div>
-                <div class="text-right">
-                    <div class="text-2xl font-bold text-brand" id="stat-focus-time">0h 0m</div>
-                    <div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Focus Time</div>
-                </div>
+                <div class="text-right"><div class="text-2xl font-bold text-brand" id="stat-focus-time">0h 0m</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Focus Time</div></div>
             </div>
-
             <div id="empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center text-text-faint pb-20 pointer-events-none">
-                <i class="ph-light ph-check-square-offset text-6xl mb-4 opacity-50"></i>
-                <p class="text-lg font-medium text-text-muted">No tasks found</p>
-                <p class="text-sm">Add a task to get started.</p>
+                <i class="ph-light ph-check-square-offset text-6xl mb-4 opacity-50"></i><p class="text-lg font-medium text-text-muted">No tasks found</p><p class="text-sm">Add a task to get started.</p>
             </div>
-
             <div id="task-list" class="space-y-2 pb-32"></div>
         </div>
 
@@ -189,26 +143,12 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
                     <button onclick="app.setRange('year')" id="btn-range-year" class="px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Year</button>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                    <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Total Focus</div>
-                    <div class="text-3xl font-bold text-white" id="ana-time-total">0h</div>
-                </div>
-                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                    <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Today</div>
-                    <div class="text-3xl font-bold text-brand" id="ana-time-today">0m</div>
-                </div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                    <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Completed Tasks</div>
-                    <div class="text-3xl font-bold text-white" id="ana-task-total">0</div>
-                </div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Current Streak</div>
-                    <div class="text-3xl font-bold text-green-500" id="ana-streak-days">0 Days</div>
-                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Total Focus</div><div class="text-3xl font-bold text-white" id="ana-time-total">0h</div></div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Today</div><div class="text-3xl font-bold text-brand" id="ana-time-today">0m</div></div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Completed Tasks</div><div class="text-3xl font-bold text-white" id="ana-task-total">0</div></div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Current Streak</div><div class="text-3xl font-bold text-green-500" id="ana-streak-days">0 Days</div></div>
             </div>
-
             <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-semibold text-white">Activity Curve</h3>
@@ -217,13 +157,12 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
                         <button onclick="app.setChartMetric('tasks')" id="btn-metric-tasks" class="w-16 py-1 rounded text-[10px] font-bold uppercase text-text-muted hover:text-white transition-all">Tasks</button>
                     </div>
                 </div>
-                <div class="h-[300px] w-full"><canvas id="activityChart"></canvas></div>
+                <div class="h-[300px] w-full relative"><canvas id="activityChart"></canvas></div>
             </div>
-
-            <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
+             <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4"><h3 class="text-lg font-semibold text-white">Project Distribution</h3></div>
                 <div class="flex flex-col md:flex-row gap-8">
-                    <div class="w-full md:w-1/3 h-[200px] relative">
+                    <div class="w-full md:w-1/3 h-[200px] relative flex justify-center">
                          <canvas id="projectChart"></canvas>
                          <div id="no-data-project" class="hidden absolute inset-0 flex items-center justify-center text-xs text-text-muted">No Data</div>
                     </div>
@@ -233,25 +172,17 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
                     </div>
                 </div>
             </div>
-            
             <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
                  <h3 class="text-lg font-semibold text-white mb-6">Daily Timeline</h3>
                  <div class="overflow-x-auto custom-scrollbar pb-2">
                     <div class="min-w-[600px] w-full">
-                        <div class="flex text-[10px] text-text-muted font-mono mb-2 pl-24">
-                            <span class="flex-1 border-l border-dark-border pl-1">00:00</span>
-                            <span class="flex-1 border-l border-dark-border pl-1">04:00</span>
-                            <span class="flex-1 border-l border-dark-border pl-1">08:00</span>
-                            <span class="flex-1 border-l border-dark-border pl-1">12:00</span>
-                            <span class="flex-1 border-l border-dark-border pl-1">16:00</span>
-                            <span class="flex-1 border-l border-dark-border pl-1">20:00</span>
-                        </div>
+                        <div class="flex text-[10px] text-text-muted font-mono mb-2 pl-24"><span class="flex-1 border-l border-dark-border pl-1">00:00</span><span class="flex-1 border-l border-dark-border pl-1">04:00</span><span class="flex-1 border-l border-dark-border pl-1">08:00</span><span class="flex-1 border-l border-dark-border pl-1">12:00</span><span class="flex-1 border-l border-dark-border pl-1">16:00</span><span class="flex-1 border-l border-dark-border pl-1">20:00</span></div>
                         <div id="pomo-timeline-grid" class="space-y-1"></div>
                     </div>
                  </div>
             </div>
         </div>
-        </div>
+    </div>
 </main>
 
 <aside id="timer-panel" class="fixed inset-0 z-50 flex flex-col bg-dark-card border-l border-dark-border transform translate-x-full transition-transform duration-300 xl:static xl:translate-x-0 xl:w-[400px] xl:z-20 h-full overflow-hidden shadow-2xl">
@@ -261,86 +192,38 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
              <button onclick="app.setSound('none')" id="sound-none" class="sound-option text-brand hover:text-white transition-colors flex items-center whitespace-nowrap"><i class="ph-fill ph-speaker-slash mr-1 text-lg"></i> Silent</button>
              <button onclick="app.setSound('rain')" id="sound-rain" class="sound-option text-text-muted hover:text-white transition-colors flex items-center whitespace-nowrap"><i class="ph-fill ph-cloud-rain mr-1 text-lg"></i> Rain</button>
              <button onclick="app.setSound('cafe')" id="sound-cafe" class="sound-option text-text-muted hover:text-white transition-colors flex items-center whitespace-nowrap"><i class="ph-fill ph-coffee mr-1 text-lg"></i> Cafe</button>
+             <button onclick="app.setSound('forest')" id="sound-forest" class="sound-option text-text-muted hover:text-white transition-colors flex items-center whitespace-nowrap"><i class="ph-fill ph-tree mr-1 text-lg"></i> Forest</button>
         </div>
         <button onclick="app.toggleTimerSettings()" class="text-text-muted hover:text-white"><i class="ph-fill ph-gear text-xl"></i></button>
     </div>
-
     <div class="flex-1 flex flex-col items-center justify-center p-8 relative">
         <div class="mb-12 w-full text-center min-h-[80px]">
-            <div id="focus-empty" class="flex flex-col items-center text-text-muted animate-pulse">
-                <p class="text-sm font-medium">Select a task to start focusing</p>
-            </div>
+            <div id="focus-empty" class="flex flex-col items-center text-text-muted animate-pulse"><p class="text-sm font-medium">Select a task to start focusing</p></div>
             <div id="focus-active" class="hidden animate-fade-in w-full flex flex-col items-center">
-                <div class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-dark-bg text-text-muted border border-dark-border mb-3">
-                    <span id="focus-project-badge" class="truncate max-w-[150px]">Project</span>
-                </div>
+                <div class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-dark-bg text-text-muted border border-dark-border mb-3"><span id="focus-project-badge" class="truncate max-w-[150px]">Project</span></div>
                 <h2 id="focus-task-title" class="text-xl font-bold text-white leading-snug mb-2 line-clamp-2 px-2">Task Title</h2>
-                <div class="flex items-center space-x-1 text-xs text-text-muted">
-                    <span class="text-brand font-bold" id="focus-completed">0</span><span>/</span><span id="focus-total">4</span><span>Pomos</span>
-                </div>
+                <div class="flex items-center space-x-1 text-xs text-text-muted"><span class="text-brand font-bold" id="focus-completed">0</span><span>/</span><span id="focus-total">4</span><span>Pomos</span></div>
             </div>
         </div>
-
         <div class="relative mb-16">
             <div class="relative w-64 h-64 flex items-center justify-center">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="46" fill="none" stroke="#333" stroke-width="2"/>
-                    <circle id="timer-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()">
-                    <div id="timer-display" class="text-6xl font-light text-white tracking-tighter tabular-nums">25:00</div>
-                    <div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-4 text-brand">FOCUS</div>
-                </div>
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#333" stroke-width="2"/><circle id="timer-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/></svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()"><div id="timer-display" class="text-6xl font-light text-white tracking-tighter tabular-nums">25:00</div><div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-4 text-brand">FOCUS</div></div>
             </div>
         </div>
-
         <div class="flex items-center justify-center gap-8">
              <button onclick="app.resetTimer()" class="p-4 rounded-full text-text-muted hover:text-white hover:bg-dark-hover transition-colors"><i class="ph-bold ph-arrow-counter-clockwise text-2xl"></i></button>
              <button onclick="app.toggleTimer()" id="play-btn" class="w-16 h-16 rounded-full bg-brand hover:bg-brand-hover text-white flex items-center justify-center transition-transform active:scale-95 shadow-lg"><i class="ph-fill ph-play text-3xl ml-1" id="play-icon"></i></button>
              <button onclick="app.skipTimer()" class="p-4 rounded-full text-text-muted hover:text-white hover:bg-dark-hover transition-colors"><i class="ph-bold ph-skip-forward text-2xl"></i></button>
         </div>
     </div>
-
     <div id="timer-settings" class="absolute inset-0 bg-dark-card/95 backdrop-blur z-50 hidden flex-col p-8 animate-fade-in">
-        <div class="flex justify-between items-center mb-8">
-            <h3 class="text-xl font-bold text-white">Timer Settings</h3>
-            <button onclick="app.toggleTimerSettings()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-        </div>
+        <div class="flex justify-between items-center mb-8"><h3 class="text-xl font-bold text-white">Timer Settings</h3><button onclick="app.toggleTimerSettings()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button></div>
         <div class="space-y-8">
-            <div>
-                <label class="text-xs text-text-muted uppercase font-bold mb-4 block">Focus Duration</label>
-                <div class="flex items-center gap-4">
-                    <span class="text-xs text-text-muted w-8">5m</span>
-                    <input type="range" min="5" max="60" step="5" value="25" oninput="app.updateSettings('focus',this.value)">
-                    <span class="text-sm font-bold text-white w-8 text-right" id="set-focus-val">25</span>
-                </div>
-            </div>
-             <div>
-                <label class="text-xs text-text-muted uppercase font-bold mb-4 block">Short Break</label>
-                <div class="flex items-center gap-4">
-                    <span class="text-xs text-text-muted w-8">1m</span>
-                    <input type="range" min="1" max="15" step="1" value="5" oninput="app.updateSettings('short',this.value)">
-                    <span class="text-sm font-bold text-white w-8 text-right" id="set-short-val">5</span>
-                </div>
-            </div>
-             <div>
-                <label class="text-xs text-text-muted uppercase font-bold mb-4 block">Long Break</label>
-                <div class="flex items-center gap-4">
-                    <span class="text-xs text-text-muted w-8">10m</span>
-                    <input type="range" min="10" max="45" step="5" value="15" oninput="app.updateSettings('long',this.value)">
-                    <span class="text-sm font-bold text-white w-8 text-right" id="set-long-val">15</span>
-                </div>
-            </div>
-            <div class="flex items-center justify-between pt-6 border-t border-dark-border">
-                <div>
-                    <label class="text-sm font-bold text-white block">Strict Mode</label>
-                    <p class="text-xs text-text-muted mt-1">Prevent stopping the timer early</p>
-                </div>
-                <label class="custom-checkbox relative flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer" onclick="app.updateSettings('strictMode',this.checked)">
-                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-                </label>
-            </div>
+            <div><label class="text-xs text-text-muted uppercase font-bold mb-4 block">Focus Duration</label><div class="flex items-center gap-4"><span class="text-xs text-text-muted w-8">5m</span><input type="range" min="5" max="60" step="5" value="25" oninput="app.updateSettings('focus',this.value)"><span class="text-sm font-bold text-white w-8 text-right" id="set-focus-val">25</span></div></div>
+             <div><label class="text-xs text-text-muted uppercase font-bold mb-4 block">Short Break</label><div class="flex items-center gap-4"><span class="text-xs text-text-muted w-8">1m</span><input type="range" min="1" max="15" step="1" value="5" oninput="app.updateSettings('short',this.value)"><span class="text-sm font-bold text-white w-8 text-right" id="set-short-val">5</span></div></div>
+             <div><label class="text-xs text-text-muted uppercase font-bold mb-4 block">Long Break</label><div class="flex items-center gap-4"><span class="text-xs text-text-muted w-8">10m</span><input type="range" min="10" max="45" step="5" value="15" oninput="app.updateSettings('long',this.value)"><span class="text-sm font-bold text-white w-8 text-right" id="set-long-val">15</span></div></div>
+            <div class="flex items-center justify-between pt-6 border-t border-dark-border"><div><label class="text-sm font-bold text-white block">Strict Mode</label><p class="text-xs text-text-muted mt-1">Prevent stopping the timer early</p></div><label class="custom-checkbox relative flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer" onclick="app.updateSettings('strictMode',this.checked)"><div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div></label></div>
         </div>
     </div>
     <audio id="audio-player" loop></audio>
@@ -350,52 +233,22 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
     <div class="bg-dark-card border border-dark-border w-full max-w-lg rounded-lg shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="add-task-panel">
         <form id="add-task-form" onsubmit="app.handleSaveTask(event)" class="flex flex-col max-h-[90vh]">
             <div class="p-6 overflow-y-auto custom-scrollbar">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-lg font-bold text-white" id="modal-title">New Task</h2>
-                    <button type="button" onclick="app.toggleAddTaskModal()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-                </div>
+                <div class="flex justify-between items-center mb-6"><h2 class="text-lg font-bold text-white" id="modal-title">New Task</h2><button type="button" onclick="app.toggleAddTaskModal()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button></div>
                 <input type="text" id="task-title" placeholder="What needs to be done?" class="w-full bg-transparent text-xl font-medium text-white placeholder-text-muted border-none outline-none mb-4" required autocomplete="off">
                 <textarea id="task-note" placeholder="Description or notes..." class="w-full bg-dark-bg border border-dark-border focus:border-brand rounded text-sm text-white p-3 outline-none resize-none h-24 mb-6 transition-colors"></textarea>
-                
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Est. Pomodoros</label>
-                        <div class="flex items-center h-10 bg-dark-bg border border-dark-border rounded px-1">
-                             <button type="button" onclick="app.adjustEst(-1)" class="w-8 h-full text-text-muted hover:text-white hover:bg-dark-hover rounded transition-colors"><i class="ph-bold ph-minus"></i></button>
-                             <span id="est-display" class="flex-1 text-center font-mono font-bold text-white">1</span>
-                             <button type="button" onclick="app.adjustEst(1)" class="w-8 h-full text-text-muted hover:text-white hover:bg-dark-hover rounded transition-colors"><i class="ph-bold ph-plus"></i></button>
-                        </div>
-                    </div>
-                     <div>
-                        <label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Due Date</label>
-                        <input type="date" id="task-date" class="w-full h-10 bg-dark-bg border border-dark-border rounded px-3 text-sm text-white focus:border-brand outline-none transition-colors">
-                    </div>
+                    <div><label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Est. Pomodoros</label><div class="flex items-center h-10 bg-dark-bg border border-dark-border rounded px-1"><button type="button" onclick="app.adjustEst(-1)" class="w-8 h-full text-text-muted hover:text-white hover:bg-dark-hover rounded transition-colors"><i class="ph-bold ph-minus"></i></button><span id="est-display" class="flex-1 text-center font-mono font-bold text-white">1</span><button type="button" onclick="app.adjustEst(1)" class="w-8 h-full text-text-muted hover:text-white hover:bg-dark-hover rounded transition-colors"><i class="ph-bold ph-plus"></i></button></div></div>
+                     <div><label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Due Date</label><input type="date" id="task-date" class="w-full h-10 bg-dark-bg border border-dark-border rounded px-3 text-sm text-white focus:border-brand outline-none transition-colors"></div>
                 </div>
-
                  <div class="grid grid-cols-2 gap-4 mb-4">
-                     <div class="relative" id="project-dropdown">
-                        <label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Project</label>
-                        <button type="button" onclick="app.toggleDropdown('project')" class="w-full h-10 bg-dark-bg border border-dark-border rounded px-3 flex items-center justify-between text-sm text-white focus:border-brand outline-none">
-                            <span id="selected-project" class="truncate">Inbox</span><i class="ph-fill ph-caret-down text-text-muted"></i>
-                        </button>
-                        <div id="project-options" class="absolute left-0 right-0 top-full mt-1 bg-dark-card border border-dark-border rounded shadow-xl z-20 hidden max-h-40 overflow-y-auto"></div>
-                        <input type="hidden" id="task-project" value="Inbox">
-                     </div>
-                     <div class="relative" id="priority-dropdown">
-                        <label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Priority</label>
-                        <button type="button" onclick="app.toggleDropdown('priority')" class="w-full h-10 bg-dark-bg border border-dark-border rounded px-3 flex items-center justify-between text-sm text-white focus:border-brand outline-none">
-                            <span id="selected-priority">None</span><i class="ph-fill ph-caret-down text-text-muted"></i>
-                        </button>
-                        <div id="priority-options" class="absolute left-0 right-0 top-full mt-1 bg-dark-card border border-dark-border rounded shadow-xl z-20 hidden">
-                             <button type="button" onclick="app.selectOption('priority','none','None')" class="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white">None</button>
-                             <button type="button" onclick="app.selectOption('priority','high','High Priority')" class="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-dark-hover">High Priority</button>
-                             <button type="button" onclick="app.selectOption('priority','med','Medium Priority')" class="w-full text-left px-3 py-2 text-sm text-yellow-400 hover:bg-dark-hover">Medium Priority</button>
-                             <button type="button" onclick="app.selectOption('priority','low','Low Priority')" class="w-full text-left px-3 py-2 text-sm text-blue-400 hover:bg-dark-hover">Low Priority</button>
-                        </div>
-                        <input type="hidden" id="task-priority" value="none">
-                     </div>
+                     <div class="relative" id="project-dropdown"><label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Project</label><button type="button" onclick="app.toggleDropdown('project')" class="w-full h-10 bg-dark-bg border border-dark-border rounded px-3 flex items-center justify-between text-sm text-white focus:border-brand outline-none"><span id="selected-project" class="truncate">Inbox</span><i class="ph-fill ph-caret-down text-text-muted"></i></button><div id="project-options" class="absolute left-0 right-0 top-full mt-1 bg-dark-card border border-dark-border rounded shadow-xl z-20 hidden max-h-40 overflow-y-auto"></div><input type="hidden" id="task-project" value="Inbox"></div>
+                     <div class="relative" id="priority-dropdown"><label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Priority</label><button type="button" onclick="app.toggleDropdown('priority')" class="w-full h-10 bg-dark-bg border border-dark-border rounded px-3 flex items-center justify-between text-sm text-white focus:border-brand outline-none"><span id="selected-priority">None</span><i class="ph-fill ph-caret-down text-text-muted"></i></button><div id="priority-options" class="absolute left-0 right-0 top-full mt-1 bg-dark-card border border-dark-border rounded shadow-xl z-20 hidden"><button type="button" onclick="app.selectOption('priority','none','None')" class="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white">None</button><button type="button" onclick="app.selectOption('priority','high','High Priority (! Urgent)')" class="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-dark-hover">High Priority (! Urgent)</button><button type="button" onclick="app.selectOption('priority','med','Medium Priority')" class="w-full text-left px-3 py-2 text-sm text-yellow-400 hover:bg-dark-hover">Medium Priority</button><button type="button" onclick="app.selectOption('priority','low','Low Priority')" class="w-full text-left px-3 py-2 text-sm text-blue-400 hover:bg-dark-hover">Low Priority</button></div><input type="hidden" id="task-priority" value="none"></div>
                 </div>
-                 <input type="hidden" id="task-tags" value=""><input type="hidden" id="task-pomo-duration" value="25">
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-text-muted uppercase mb-1.5 block">Tags</label>
+                    <input type="text" id="task-tags" placeholder="e.g. Work, Study, Design (comma separated)" class="w-full h-10 bg-dark-bg border border-dark-border rounded px-3 text-sm text-white focus:border-brand outline-none transition-colors">
+                </div>
+                <input type="hidden" id="task-pomo-duration" value="25">
                  <div class="mb-2"><div id="subtasks-container" class="space-y-2"></div><button type="button" onclick="app.addSubtaskUI()" class="text-xs text-brand hover:text-brand-hover font-medium flex items-center mt-2"><i class="ph-bold ph-plus mr-1"></i> Add Subtask</button></div>
             </div>
             <div class="p-4 border-t border-dark-border bg-dark-card flex justify-end gap-3">
@@ -410,7 +263,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"},appId='timetrekker-v1',fb=initializeApp(C),auth=getAuth(fb),db=getFirestore(fb),D=document,$=id=>D.getElementById(id);
 const state={user:null,tasks:[],logs:[],projects:new Set(['Inbox','Work','Personal','Study']),view:'today',filterProject:null,selectedTaskId:null,editingTaskId:null,timer:{mode:'focus',status:'idle',endTime:null,remaining:1500,totalDuration:1500,activeTaskId:null,interval:null,settings:{focus:25,short:5,long:15,strictMode:false}},newEst:1,sound:'none',charts:{activity:null,project:null},analytics:{range:'week',metric:'time',chartTypes:{activity:'line',project:'doughnut'}}};
-const sounds={none:'',rain:'https://cdn.pixabay.com/download/audio/2022/03/24/audio_03d973dfd3.mp3?filename=rain-112232.mp3',cafe:'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=cafe-ambience-6404.mp3',forest:'https://cdn.pixabay.com/download/audio/2021/09/06/audio_4488354c46.mp3?filename=forest-wind-and-birds-6869.mp3'};
+// Corrected Sound URLs
+const sounds={none:'',rain:'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',cafe:'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',forest:'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg'};
 const els={taskList:$('task-list'),taskViewContainer:$('task-view-container'),analyticsViewContainer:$('analytics-view-container'),pageTitle:$('page-title'),emptyState:$('empty-state'),modal:$('add-task-modal'),modalPanel:$('add-task-panel'),modalTitle:$('modal-title'),saveTaskBtn:$('save-task-btn'),estDisplay:$('est-display'),dateInput:$('task-date'),timerDisplay:$('timer-display'),timerProgress:$('timer-progress'),timerMode:$('timer-mode'),playIcon:$('play-icon'),focusActive:$('focus-active'),focusEmpty:$('focus-empty'),focusTitle:$('focus-task-title'),focusProject:$('focus-project-badge'),focusCompleted:$('focus-completed'),focusTotal:$('focus-total'),timerPanel:$('timer-panel'),navCounts:{today:$('count-today'),tomorrow:$('count-tomorrow'),upcoming:$('count-upcoming'),past:$('count-past')},stats:{pomosToday:$('stat-pomos-today'),tasksToday:$('stat-tasks-today'),estRemain:$('stat-est-remaining'),focusTime:$('stat-focus-time')},analytics:{timeTotal:$('ana-time-total'),timeWeek:$('ana-time-week'),timeToday:$('ana-time-today'),taskTotal:$('ana-task-total'),timelineGrid:$('pomo-timeline-grid'),streakDays:$('ana-streak-days'),activityChart:$('activityChart'),projectChart:$('projectChart'),projList:$('project-rank-list')},projectList:$('project-list'),subtasksContainer:$('subtasks-container'),audio:$('audio-player'),timerSettings:$('timer-settings'),currentDate:$('current-date-display'),sidebarOverlay:$('sidebar-overlay'),sidebar:$('sidebar'),headerActions:$('header-actions')};
 Chart.defaults.color='#9ca3af';Chart.defaults.font.family='Inter';
 onAuthStateChanged(auth,u=>{if(u){state.user=u;const p=$('user-profile-display');if(p){p.classList.remove('hidden');p.classList.add('flex');$('user-name-text').innerText=u.displayName||u.email.split('@')[0];$('user-email-text').innerText=u.email;$('user-avatar-initials').innerText=(u.displayName||u.email).charAt(0).toUpperCase()}subTasks(u.uid);subLogs(u.uid);subTimer(u.uid);els.currentDate.innerText=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}else window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application'});
@@ -436,10 +290,10 @@ deleteProject:async(p,e)=>{e.stopPropagation();if(!confirm(`Delete "${p}"? Tasks
 addSubtaskUI:(v='')=>{const d=D.createElement('div');d.className='flex items-center space-x-2 animate-fade-in';d.innerHTML=`<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${v}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`;els.subtasksContainer.appendChild(d)},
 toggleDropdown:t=>{const d=$(`${t}-options`);D.querySelectorAll('[id$="-options"]').forEach(x=>{if(x.id!==`${t}-options`)x.classList.add('hidden')});if(d.classList.contains('hidden')){d.classList.remove('hidden');d.classList.add('animate-fade-in')}else d.classList.add('hidden')},
 selectOption:(t,v,d)=>{$(`selected-${t}`).innerText=d;$(`task-${t}`).value=v;$(`${t}-options`).classList.add('hidden')},
-toggleAddTaskModal:(t=null)=>{if(els.modal.classList.contains('hidden')){els.subtasksContainer.innerHTML='';const po=$('project-options');po.innerHTML='';state.projects.forEach(p=>{const b=D.createElement('button');b.type='button';b.onclick=()=>app.selectOption('project',p,p);b.className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center";b.innerHTML=`<i class="ph-bold ph-folder mr-2"></i> ${p}`;po.appendChild(b)});if(t){state.editingTaskId=t.id;els.modalTitle.innerText="Edit Task";els.saveTaskBtn.innerText="Save Changes";$('task-title').value=t.title;$('task-note').value=t.note||'';state.newEst=t.estimatedPomos||1;els.estDisplay.innerText=state.newEst;els.dateInput.value=t.dueDate||'';const pm={none:'None',high:'High Priority',med:'Medium Priority',low:'Low Priority'};app.selectOption('priority',t.priority||'none',pm[t.priority||'none']);app.selectOption('project',t.project||'Inbox',t.project||'Inbox');if(t.subtasks)t.subtasks.forEach(s=>app.addSubtaskUI(s))}else{state.editingTaskId=null;els.modalTitle.innerText="New Task";els.saveTaskBtn.innerText="Save Task";state.newEst=1;els.estDisplay.innerText="1";els.dateInput.value=new Date().toISOString().split('T')[0];$('task-title').value='';$('task-note').value='';app.selectOption('priority','none','None');app.selectOption('project','Inbox','Inbox')}els.modal.classList.remove('hidden');setTimeout(()=>els.modal.classList.remove('opacity-0'),10);setTimeout(()=>els.modalPanel.classList.replace('scale-95','scale-100'),10);$('task-title').focus()}else{els.modal.classList.add('opacity-0');els.modalPanel.classList.replace('scale-100','scale-95');setTimeout(()=>els.modal.classList.add('hidden'),200)}},
+toggleAddTaskModal:(t=null)=>{if(els.modal.classList.contains('hidden')){els.subtasksContainer.innerHTML='';const po=$('project-options');po.innerHTML='';state.projects.forEach(p=>{const b=D.createElement('button');b.type='button';b.onclick=()=>app.selectOption('project',p,p);b.className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center";b.innerHTML=`<i class="ph-bold ph-folder mr-2"></i> ${p}`;po.appendChild(b)});if(t){state.editingTaskId=t.id;els.modalTitle.innerText="Edit Task";els.saveTaskBtn.innerText="Save Changes";$('task-title').value=t.title;$('task-note').value=t.note||'';$('task-tags').value=t.tags?t.tags.join(', '):'';state.newEst=t.estimatedPomos||1;els.estDisplay.innerText=state.newEst;els.dateInput.value=t.dueDate||'';const pm={none:'None',high:'High Priority (! Urgent)',med:'Medium Priority',low:'Low Priority'};app.selectOption('priority',t.priority||'none',pm[t.priority||'none']||'None');app.selectOption('project',t.project||'Inbox',t.project||'Inbox');if(t.subtasks)t.subtasks.forEach(s=>app.addSubtaskUI(s))}else{state.editingTaskId=null;els.modalTitle.innerText="New Task";els.saveTaskBtn.innerText="Save Task";state.newEst=1;els.estDisplay.innerText="1";els.dateInput.value=new Date().toISOString().split('T')[0];$('task-title').value='';$('task-note').value='';$('task-tags').value='';app.selectOption('priority','none','None');app.selectOption('project','Inbox','Inbox')}els.modal.classList.remove('hidden');setTimeout(()=>els.modal.classList.remove('opacity-0'),10);setTimeout(()=>els.modalPanel.classList.replace('scale-95','scale-100'),10);$('task-title').focus()}else{els.modal.classList.add('opacity-0');els.modalPanel.classList.replace('scale-100','scale-95');setTimeout(()=>els.modal.classList.add('hidden'),200)}},
 adjustEst:d=>{let v=state.newEst+d;if(v<1)v=1;if(v>50)v=50;state.newEst=v;els.estDisplay.innerText=v},
 editTask:(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(t)app.toggleAddTaskModal(t)},
-handleSaveTask:async e=>{e.preventDefault();const title=$('task-title').value;if(!title)return;const subtasks=Array.from(D.querySelectorAll('.subtask-input')).map(i=>i.value.trim()).filter(v=>v),data={title,dueDate:els.dateInput.value,estimatedPomos:state.newEst,priority:$('task-priority').value,project:$('task-project').value,note:$('task-note').value,subtasks};const ref=collection(db,'artifacts',appId,'users',state.user.uid,'tasks');state.editingTaskId?await updateDoc(doc(ref,state.editingTaskId),data):await addDoc(ref,{...data,completedPomos:0,status:'todo',createdAt:new Date().toISOString()});app.toggleAddTaskModal()},
+handleSaveTask:async e=>{e.preventDefault();const title=$('task-title').value;if(!title)return;const subtasks=Array.from(D.querySelectorAll('.subtask-input')).map(i=>i.value.trim()).filter(v=>v),tags=$('task-tags').value.split(',').map(t=>t.trim()).filter(t=>t),data={title,dueDate:els.dateInput.value,estimatedPomos:state.newEst,priority:$('task-priority').value,project:$('task-project').value,note:$('task-note').value,subtasks,tags};const ref=collection(db,'artifacts',appId,'users',state.user.uid,'tasks');state.editingTaskId?await updateDoc(doc(ref,state.editingTaskId),data):await addDoc(ref,{...data,completedPomos:0,status:'todo',createdAt:new Date().toISOString()});app.toggleAddTaskModal()},
 toggleTaskStatus:async(id,s)=>await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id),{status:s==='todo'?'done':'todo'}),
 deleteTask:async(id,e)=>{e.stopPropagation();if(confirm('Delete task?'))await deleteDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id))},
 startTask:async(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(!t)return;state.selectedTaskId=id;renderTasks();updateTimerUI(t);if(window.innerWidth<1280)app.toggleFocusPanel(true);if(state.timer.status!=='running'){const d=t.pomoDuration||25;await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',mode:'focus',taskId:id,remaining:d*60,totalDuration:d*60,endTime:new Date(Date.now()+d*60000)});app.updateSettings('focus',d)}},
@@ -462,7 +316,7 @@ $('prompt-cancel-btn').addEventListener('click',()=>app.closePrompt(null));$('pr
 function updateNavStyles(v,p){D.querySelectorAll('.nav-btn').forEach(b=>{const i=b.id===`nav-${v}`;b.classList.toggle('bg-brand',i);b.classList.toggle('bg-opacity-10',i);b.classList.toggle('text-brand',i);b.classList.toggle('text-text-muted',!i);if(i)b.classList.remove('hover:text-white');else b.classList.add('hover:text-white')});D.querySelectorAll('.project-btn').forEach(b=>{const i=v==='project'&&b.dataset.proj===p;b.classList.toggle('text-brand',i);b.classList.toggle('bg-brand',i);b.classList.toggle('bg-opacity-10',i);b.classList.toggle('text-text-muted',!i)})}
 function updateProjectsUI(){els.projectList.innerHTML='';state.projects.forEach(p=>{const d=D.createElement('div');d.innerHTML=`<div class="group relative flex items-center"><button onclick="app.setProjectView('${p}')" data-proj="${p}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${p}</span></div></button><div class="absolute right-2 flex opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${p}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${p}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`;els.projectList.appendChild(d)})}
 function updateCounts(){const t=new Date().toISOString().split('T')[0],tm=new Date(Date.now()+864e5).toISOString().split('T')[0];els.navCounts.today.innerText=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo').length;els.navCounts.tomorrow.innerText=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo').length;els.navCounts.upcoming.innerText=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo').length;els.navCounts.past.innerText=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo').length;const tp=state.tasks.reduce((a,b)=>a+(b.completedPomos||0),0);els.stats.pomosToday.innerText=tp;els.stats.tasksToday.innerText=state.tasks.filter(x=>x.status==='done'&&x.dueDate===t).length;els.stats.estRemain.innerText=state.tasks.filter(x=>x.status==='todo').reduce((a,b)=>a+(parseInt(b.estimatedPomos)||0),0);const fm=tp*state.timer.settings.focus;els.stats.focusTime.innerText=`${Math.floor(fm/60)}h ${fm%60}m`}
-function renderTasks(){const t=new Date().toISOString().split('T')[0],tm=new Date(Date.now()+864e5).toISOString().split('T')[0];let l=[];if(state.view==='today')l=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo');else if(state.view==='tomorrow')l=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo');else if(state.view==='upcoming')l=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo');else if(state.view==='past')l=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo');else if(state.view==='completed')l=state.tasks.filter(x=>x.status==='done');else if(state.view==='project')l=state.tasks.filter(x=>x.project===state.filterProject&&x.status==='todo');const pm={high:3,med:2,low:1,none:0};l.sort((a,b)=>pm[b.priority]-pm[a.priority]);els.taskList.innerHTML='';if(l.length===0)els.emptyState.classList.remove('hidden');else els.emptyState.classList.add('hidden');l.forEach(x=>{const isSel=x.id===state.selectedTaskId,pc=Math.min(100,((x.completedPomos||0)/(x.estimatedPomos||1))*100),col={high:'text-red-400',med:'text-yellow-400',low:'text-blue-400',none:'text-text-muted'}[x.priority||'none'],sty=isSel?'bg-dark-card border-brand shadow-sm z-10':'bg-dark-card border-dark-border hover:border-text-faint',el=D.createElement('div');el.className=`group flex items-start p-4 rounded-lg border transition-all duration-200 ease-out cursor-pointer relative ${sty}`;el.onclick=()=>app.selectTask(x.id);el.innerHTML=`<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority==='high'?'bg-red-500':x.priority==='med'?'bg-yellow-500':'bg-transparent'}"></div><label class="custom-checkbox flex-shrink-0 mt-0.5 w-5 h-5 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()"><input type="checkbox" class="hidden" ${x.status==='done'?'checked':''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')"><div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg"><svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div></label><div class="flex-1 min-w-0 pr-20"><div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status==='done'?'line-through text-text-muted':''}">${x.title}</h3></div>${x.note?`<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${x.note}</p>`:''}<div class="flex items-center mt-2 space-x-4"><div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${x.project}</span></div><div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-circle text-brand mr-1.5 text-[8px]"></i><span class="${pc>=100?'text-brand':''}">${x.completedPomos||0}/${x.estimatedPomos||1}</span></div></div></div><div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20"><button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors rounded"><i class="ph-fill ph-play"></i></button><button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-trash"></i></button></div>`;els.taskList.appendChild(el)})}
+function renderTasks(){const t=new Date().toISOString().split('T')[0],tm=new Date(Date.now()+864e5).toISOString().split('T')[0];let l=[];if(state.view==='today')l=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo');else if(state.view==='tomorrow')l=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo');else if(state.view==='upcoming')l=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo');else if(state.view==='past')l=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo');else if(state.view==='completed')l=state.tasks.filter(x=>x.status==='done');else if(state.view==='project')l=state.tasks.filter(x=>x.project===state.filterProject&&x.status==='todo');const pm={high:3,med:2,low:1,none:0};l.sort((a,b)=>pm[b.priority]-pm[a.priority]);els.taskList.innerHTML='';if(l.length===0)els.emptyState.classList.remove('hidden');else els.emptyState.classList.add('hidden');l.forEach(x=>{const isSel=x.id===state.selectedTaskId,pc=Math.min(100,((x.completedPomos||0)/(x.estimatedPomos||1))*100),col={high:'text-red-400',med:'text-yellow-400',low:'text-blue-400',none:'text-text-muted'}[x.priority||'none'],sty=isSel?{high:'bg-dark-card border-red-500 shadow-sm z-10',med:'bg-dark-card border-yellow-500 shadow-sm z-10',low:'bg-dark-card border-blue-500 shadow-sm z-10',none:'bg-dark-card border-brand shadow-sm z-10'}[x.priority||'none']:'bg-dark-card border-dark-border hover:border-text-faint',el=D.createElement('div');el.className=`group flex items-start p-4 rounded-lg border transition-all duration-200 ease-out cursor-pointer relative ${sty}`;el.onclick=()=>app.selectTask(x.id);el.innerHTML=`<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority==='high'?'bg-red-500':x.priority==='med'?'bg-yellow-500':'bg-transparent'}"></div><label class="custom-checkbox flex-shrink-0 mt-0.5 w-5 h-5 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()"><input type="checkbox" class="hidden" ${x.status==='done'?'checked':''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')"><div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg"><svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div></label><div class="flex-1 min-w-0 pr-20"><div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status==='done'?'line-through text-text-muted':''}">${x.title}</h3></div>${x.note?`<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${x.note}</p>`:''}<div class="flex items-center mt-2 space-x-4"><div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${x.project}</span></div><div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-circle text-brand mr-1.5 text-[8px]"></i><span class="${pc>=100?'text-brand':''}">${x.completedPomos||0}/${x.estimatedPomos||1}</span></div>${x.tags&&x.tags.length?`<div class="flex gap-1 ml-auto">${x.tags.map(t=>`<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/10 text-brand border border-brand/20">${t}</span>`).join('')}</div>`:''}</div></div></div><div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20"><button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors rounded"><i class="ph-fill ph-play"></i></button><button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-trash"></i></button></div>`;els.taskList.appendChild(el)})}
 function updateTimerUI(t){if(!t){els.focusEmpty.classList.remove('hidden');els.focusActive.classList.add('hidden');return}els.focusEmpty.classList.add('hidden');els.focusActive.classList.remove('hidden');els.focusTitle.innerText=t.title;els.focusProject.innerText=t.project||'Inbox';els.focusCompleted.innerText=t.completedPomos||0;els.focusTotal.innerText=t.estimatedPomos||1}
 app.setView('today');
 </script></body></html>
