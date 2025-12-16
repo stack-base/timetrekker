@@ -445,16 +445,50 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 </div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"},appId='timetrekker-v1',fb=initializeApp(C),auth=getAuth(fb),db=getFirestore(fb),D=document,$=id=>D.getElementById(id);
+import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp,enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-// Add chartTypes to state to track Bar vs Line preference
+// --- CONFIGURATION ---
+const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
+const appId='timetrekker-v1';
+
+// --- INIT & PERSISTENCE ---
+const fb=initializeApp(C);
+const auth=getAuth(fb);
+const db=getFirestore(fb);
+
+// Attempt offline persistence
+try { enableIndexedDbPersistence(db).catch((err) => { if (err.code == 'failed-precondition') { console.warn('Multiple tabs open, persistence disabled'); } else if (err.code == 'unimplemented') { console.warn('Browser lacks persistence support'); } }); } catch(e){}
+
+const D=document,$=id=>D.getElementById(id);
+
+// --- UTILS (Security Fix) ---
+// Escapes HTML to prevent XSS attacks when using innerHTML
+const esc = (str) => {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+};
+
+// --- STATE MANAGEMENT ---
 const state={
-    user:null,tasks:[],logs:[],projects:new Set(['Inbox','Work','Personal','Study']),view:'today',filterProject:null,selectedTaskId:null,editingTaskId:null,
+    user:null,
+    tasks:[],
+    logs:[],
+    projects:new Set(['Inbox','Work','Personal','Study']),
+    view:'today',
+    filterProject:null,
+    selectedTaskId:null,
+    editingTaskId:null,
     timer:{mode:'focus',status:'idle',endTime:null,remaining:1500,totalDuration:1500,activeTaskId:null,interval:null,settings:{focus:25,short:5,long:15,strictMode:false}},
-    newEst:1,sound:'none',
+    newEst:1,
+    sound:'none',
+    // Charts instances storage
     charts:{focusBar:null,taskBar:null,project:null,hourly:null,weekday:null,priority:null},
-    chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' }, // New State
+    // Chart view preferences
+    chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
     analytics:{range:'week',metric:'time'}
 };
 
@@ -470,13 +504,13 @@ const els={taskList:$('task-list'),taskViewContainer:$('task-view-container'),an
     projList:$('project-rank-list'),tagList:$('tag-rank-list'),sessionLogBody:$('session-log-body')
 },projectList:$('project-list'),subtasksContainer:$('subtasks-container'),audio:$('audio-player'),timerSettings:$('timer-settings'),currentDate:$('current-date-display'),sidebarOverlay:$('sidebar-overlay'),sidebar:$('sidebar'),headerActions:$('header-actions')};
 
-// ---- GLOBAL CHART POLISH CONFIGURATION ----
+// --- CHART GLOBAL CONFIG ---
 Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#333';
-Chart.defaults.scale.grid.color='rgba(255,255,255,0.03)'; // More subtle grid
+Chart.defaults.scale.grid.color='rgba(255,255,255,0.03)';
 Chart.defaults.scale.grid.borderColor='transparent';
-Chart.defaults.scale.grid.borderDash=[4,4]; // Dashed grid lines
+Chart.defaults.scale.grid.borderDash=[4,4];
 Chart.defaults.plugins.tooltip.backgroundColor='rgba(32, 32, 32, 0.95)';
 Chart.defaults.plugins.tooltip.titleColor='#fff';
 Chart.defaults.plugins.tooltip.bodyColor='#a3a3a3';
@@ -485,72 +519,316 @@ Chart.defaults.plugins.tooltip.borderWidth=1;
 Chart.defaults.plugins.tooltip.padding=10;
 Chart.defaults.plugins.tooltip.cornerRadius=6;
 Chart.defaults.plugins.tooltip.displayColors=false;
-// ------------------------------------------
 
-onAuthStateChanged(auth,u=>{if(u){state.user=u;const p=$('user-profile-display');if(p){p.classList.remove('hidden');p.classList.add('flex');$('user-name-text').innerText=u.displayName||u.email.split('@')[0];$('user-email-text').innerText=u.email;$('user-avatar-initials').innerText=(u.displayName||u.email).charAt(0).toUpperCase()}subTasks(u.uid);subLogs(u.uid);subTimer(u.uid);els.currentDate.innerText=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}else window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application'});
-const subTasks=uid=>onSnapshot(collection(db,'artifacts',appId,'users',uid,'tasks'),s=>{const t=[],p=new Set(['Inbox','Work','Personal','Study']);s.forEach(d=>{const x=d.data();t.push({id:d.id,...x});if(x.project&&x.project!=='Inbox')p.add(x.project)});state.tasks=t;state.projects=p;updateProjectsUI();updateCounts();renderTasks();if(state.timer.activeTaskId){updateTimerUI(t.find(x=>x.id===state.timer.activeTaskId))}if(state.view==='analytics')updateAnalytics()});
-const subTimer=uid=>onSnapshot(doc(db,'artifacts',appId,'users',uid,'timer','active'),s=>{if(s.exists()){const d=s.data();state.timer={...state.timer,status:d.status||'idle',mode:d.mode||'focus',endTime:d.endTime?d.endTime.toMillis():null,remaining:d.remaining||state.timer.settings[d.mode||'focus']*60,totalDuration:d.totalDuration||state.timer.settings[d.mode||'focus']*60,activeTaskId:d.taskId||null};app.setTimerModeUI(state.timer.mode);if(state.timer.activeTaskId){state.selectedTaskId=state.timer.activeTaskId;updateTimerUI(state.tasks.find(x=>x.id===state.timer.activeTaskId))}else updateTimerUI(null);if(state.timer.status==='running'){startLocalInterval();updateTimerVisuals();if(state.sound!=='none'&&els.audio.paused)els.audio.play().catch(e=>{})}else{stopLocalInterval();updateTimerVisuals();if(!els.audio.paused)els.audio.pause()}}else app.resetTimer(true)});
-const startLocalInterval=()=>{if(state.timer.interval)clearInterval(state.timer.interval);state.timer.interval=setInterval(()=>{updateTimerVisuals();if(state.timer.status==='running'&&state.timer.endTime&&Date.now()>=state.timer.endTime)app.completeTimer()},100);els.playIcon.className="ph-fill ph-pause text-3xl ml-1"};
-const stopLocalInterval=()=>{if(state.timer.interval)clearInterval(state.timer.interval);state.timer.interval=null;els.playIcon.className="ph-fill ph-play text-3xl ml-1"};
-const updateTimerVisuals=()=>{const{status,endTime,remaining,totalDuration}=state.timer;const s=status==='running'&&endTime?Math.max(0,Math.ceil((endTime-Date.now())/1000)):remaining;const m=Math.floor(s/60),sc=s%60;els.timerDisplay.innerText=`${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;els.timerProgress.style.strokeDashoffset=289*(1-(s/(totalDuration||1)));D.title=`${m}:${sc.toString().padStart(2,'0')} - TimeTrekker`};
-const subLogs=uid=>onSnapshot(query(collection(db,'artifacts',appId,'users',uid,'focus_sessions')),s=>{const l=[];s.forEach(d=>l.push({id:d.id,...d.data()}));l.sort((a,b)=>(b.completedAt?.seconds||0)-(a.completedAt?.seconds||0));state.logs=l;if(state.view==='analytics')updateAnalytics()});
-const app={
-customPrompt:{resolve:null,el:$('custom-prompt-modal'),input:$('prompt-input'),title:$('prompt-title')},
-showPrompt:(t,v='')=>new Promise(r=>{const p=app.customPrompt;p.resolve=r;p.title.innerText=t;p.input.value=v;p.el.classList.remove('hidden');setTimeout(()=>p.el.classList.remove('opacity-0'),10);p.input.focus()}),
-closePrompt:v=>{const p=app.customPrompt;p.el.classList.add('opacity-0');setTimeout(()=>{p.el.classList.add('hidden');if(p.resolve)p.resolve(v);p.resolve=null},200)},
-setView:v=>{state.view=v;state.filterProject=null;els.pageTitle.innerText=v.charAt(0).toUpperCase()+v.slice(1);updateNavStyles(v);app.toggleSidebar(false);if(v==='analytics'){els.taskViewContainer.classList.add('hidden');els.analyticsViewContainer.classList.remove('hidden');els.headerActions.classList.add('invisible');updateAnalytics()}else{els.taskViewContainer.classList.remove('hidden');els.analyticsViewContainer.classList.add('hidden');els.headerActions.classList.remove('invisible');renderTasks()}},
-setProjectView:p=>{state.view='project';state.filterProject=p;els.pageTitle.innerText=p;updateNavStyles('project',p);app.toggleSidebar(false);els.taskViewContainer.classList.remove('hidden');els.analyticsViewContainer.classList.add('hidden');els.headerActions.classList.remove('invisible');renderTasks()},
-setRange:r=>{state.analytics.range=r;['week','month','year'].forEach(k=>{const b=$(`btn-range-${k}`);b.className=k===r?"px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all":"px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all"});updateAnalytics()},
-
-// New Function: Switch Chart Type
-toggleChartType: (chartKey, type) => {
-    state.chartTypes[chartKey] = type;
-    // Update button visual states
-    ['bar', 'line'].forEach(t => {
-        const btn = $(`btn-${chartKey}-${t}`);
-        if(btn) {
-            if(t === type) btn.classList.add('active');
-            else btn.classList.remove('active');
+// --- AUTH HANDLER ---
+onAuthStateChanged(auth, u => {
+    if(u){
+        state.user=u;
+        const p=$('user-profile-display');
+        if(p){
+            p.classList.remove('hidden');p.classList.add('flex');
+            $('user-name-text').textContent=u.displayName||u.email.split('@')[0]; // Safe textContent
+            $('user-email-text').textContent=u.email;
+            $('user-avatar-initials').textContent=(u.displayName||u.email).charAt(0).toUpperCase();
         }
-    });
-    updateAnalytics(); // Re-render charts
-},
+        subTasks(u.uid);
+        subLogs(u.uid);
+        subTimer(u.uid);
+        els.currentDate.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    } else {
+        window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
+    }
+});
 
-toggleFocusPanel:f=>{const p=els.timerPanel,i=!p.classList.contains('translate-x-full');(f!==null?f:!i)?p.classList.remove('translate-x-full'):p.classList.add('translate-x-full')},
-toggleSidebar:f=>{const s=els.sidebar,o=els.sidebarOverlay,h=s.classList.contains('-translate-x-full');const show=(typeof f==='boolean')?f:h;if(show){s.classList.remove('-translate-x-full');o.classList.remove('hidden');requestAnimationFrame(()=>o.classList.remove('opacity-0'))}else{s.classList.add('-translate-x-full');o.classList.add('opacity-0');setTimeout(()=>o.classList.add('hidden'),300)}},
-promptNewProject:async()=>{const n=await app.showPrompt("Enter project name:");if(n){state.projects.add(n);updateProjectsUI()}},
-renameProject:async(o,e)=>{e.stopPropagation();const n=await app.showPrompt(`Rename "${o}" to:`,o);if(!n||n===o||!state.user)return;try{const b=writeBatch(db);(await getDocs(query(collection(db,'artifacts',appId,'users',state.user.uid,'tasks'),where("project","==",o)))).forEach(d=>b.update(d.ref,{project:n}));await b.commit();state.projects.delete(o);state.projects.add(n);state.filterProject===o?app.setProjectView(n):updateProjectsUI()}catch(err){app.showToast("Failed rename")}},
-deleteProject:async(p,e)=>{e.stopPropagation();if(!confirm(`Delete "${p}"? Tasks move to Inbox.`)||!state.user)return;try{const b=writeBatch(db);(await getDocs(query(collection(db,'artifacts',appId,'users',state.user.uid,'tasks'),where("project","==",p)))).forEach(d=>b.update(d.ref,{project:'Inbox'}));await b.commit();state.projects.delete(p);state.filterProject===p?app.setView('today'):updateProjectsUI()}catch(err){app.showToast("Failed delete")}},
-addSubtaskUI:(v='')=>{const d=D.createElement('div');d.className='flex items-center space-x-2 animate-fade-in';d.innerHTML=`<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${v}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`;els.subtasksContainer.appendChild(d)},
-toggleDropdown:t=>{const d=$(`${t}-options`);D.querySelectorAll('[id$="-options"]').forEach(x=>{if(x.id!==`${t}-options`)x.classList.add('hidden')});if(d.classList.contains('hidden')){d.classList.remove('hidden');d.classList.add('animate-fade-in')}else d.classList.add('hidden')},
-selectOption:(t,v,d)=>{$(`selected-${t}`).innerText=d;$(`task-${t}`).value=v;$(`${t}-options`).classList.add('hidden')},
-toggleAddTaskModal:(t=null)=>{if(els.modal.classList.contains('hidden')){els.subtasksContainer.innerHTML='';const po=$('project-options');po.innerHTML='';state.projects.forEach(p=>{const b=D.createElement('button');b.type='button';b.onclick=()=>app.selectOption('project',p,p);b.className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center";b.innerHTML=`<i class="ph-bold ph-folder mr-2"></i> ${p}`;po.appendChild(b)});if(t){state.editingTaskId=t.id;els.modalTitle.innerText="Edit Task";els.saveTaskBtn.innerText="Save Changes";$('task-title').value=t.title;$('task-note').value=t.note||'';$('task-tags').value=t.tags?t.tags.join(', '):'';state.newEst=t.estimatedPomos||1;els.estDisplay.innerText=state.newEst;els.dateInput.value=t.dueDate||'';const pm={none:'None',high:'High Priority (! Urgent)',med:'Medium Priority',low:'Low Priority'};app.selectOption('priority',t.priority||'none',pm[t.priority||'none']||'None');app.selectOption('project',t.project||'Inbox',t.project||'Inbox');if(t.subtasks)t.subtasks.forEach(s=>app.addSubtaskUI(s))}else{state.editingTaskId=null;els.modalTitle.innerText="New Task";els.saveTaskBtn.innerText="Save Task";state.newEst=1;els.estDisplay.innerText="1";els.dateInput.value=new Date().toISOString().split('T')[0];$('task-title').value='';$('task-note').value='';$('task-tags').value='';app.selectOption('priority','none','None');app.selectOption('project','Inbox','Inbox')}els.modal.classList.remove('hidden');setTimeout(()=>els.modal.classList.remove('opacity-0'),10);setTimeout(()=>els.modalPanel.classList.replace('scale-95','scale-100'),10);$('task-title').focus()}else{els.modal.classList.add('opacity-0');els.modalPanel.classList.replace('scale-100','scale-95');setTimeout(()=>els.modal.classList.add('hidden'),200)}},
-adjustEst:d=>{let v=state.newEst+d;if(v<1)v=1;if(v>50)v=50;state.newEst=v;els.estDisplay.innerText=v},
-editTask:(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(t)app.toggleAddTaskModal(t)},
-handleSaveTask:async e=>{e.preventDefault();const title=$('task-title').value;if(!title)return;const subtasks=Array.from(D.querySelectorAll('.subtask-input')).map(i=>i.value.trim()).filter(v=>v),tags=$('task-tags').value.split(',').map(t=>t.trim()).filter(t=>t),data={title,dueDate:els.dateInput.value,estimatedPomos:state.newEst,priority:$('task-priority').value,project:$('task-project').value,note:$('task-note').value,subtasks,tags};const ref=collection(db,'artifacts',appId,'users',state.user.uid,'tasks');state.editingTaskId?await updateDoc(doc(ref,state.editingTaskId),data):await addDoc(ref,{...data,completedPomos:0,status:'todo',createdAt:new Date().toISOString()});app.toggleAddTaskModal()},
-toggleTaskStatus:async(id,s)=>{const d={status:s==='todo'?'done':'todo'};if(s==='todo')d.completedAt=new Date().toISOString();await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id),d)},
-deleteTask:async(id,e)=>{e.stopPropagation();if(confirm('Delete task?'))await deleteDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id))},
-startTask:async(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(!t)return;state.selectedTaskId=id;renderTasks();updateTimerUI(t);if(window.innerWidth<1280)app.toggleFocusPanel(true);if(state.timer.status!=='running'){const d=t.pomoDuration||25;await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',mode:'focus',taskId:id,remaining:d*60,totalDuration:d*60,endTime:new Date(Date.now()+d*60000)});app.updateSettings('focus',d)}},
-selectTask:id=>{state.selectedTaskId=id;renderTasks();const t=state.tasks.find(x=>x.id===id);updateTimerUI(t);if(state.timer.status!=='running')updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{taskId:id}).catch(()=>{});if(window.innerWidth<1280)app.toggleFocusPanel(true)},
-showToast:(m,t='error')=>{const c=$('toast-container'),e=D.createElement('div');e.className=`px-4 py-2 rounded shadow text-white text-sm font-medium animate-fade-in ${t==='error'?'bg-red-500':'bg-green-600'}`;e.innerText=m;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300)},3000)},
-toggleTimer:async()=>{if(Notification.permission==='default')try{await Notification.requestPermission()}catch(e){}if(state.timer.status==='running'){if(state.timer.settings.strictMode&&state.timer.mode==='focus'&&!confirm("Strict Mode active! Quit?"))return;await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'paused',endTime:null,remaining:Math.max(0,Math.ceil((state.timer.endTime-Date.now())/1000))})}else{if(!state.timer.activeTaskId&&state.timer.mode==='focus'){app.showToast("Select task!","error");return}await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',endTime:new Date(Date.now()+state.timer.remaining*1000)})}},
-resetTimer:async(r=false)=>{if(!r){const d=state.timer.settings[state.timer.mode];await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'idle',endTime:null,remaining:d*60,totalDuration:d*60,mode:state.timer.mode,taskId:state.timer.activeTaskId||null})}},
-skipTimer:()=>app.completeTimer(),
-completeTimer:async()=>{if(state.timer.status==='idle')return;stopLocalInterval();const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.frequency.value=523.25;o.start();o.stop(c.currentTime+.2);try{if(Notification.permission==='granted')new Notification("Timer Complete");}catch(e){}if(state.timer.mode==='focus'){if(state.timer.activeTaskId){const t=state.tasks.find(x=>x.id===state.timer.activeTaskId);if(t){await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',t.id),{completedPomos:(t.completedPomos||0)+1});await addDoc(collection(db,'artifacts',appId,'users',state.user.uid,'focus_sessions'),{taskId:t.id,taskTitle:t.title,project:t.project||'Inbox',duration:state.timer.totalDuration/60,completedAt:serverTimestamp()})}}app.setTimerMode('short')}else app.setTimerMode('focus')},
-setTimerMode:async m=>{const v=state.timer.settings[m];await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'idle',mode:m,remaining:v*60,totalDuration:v*60,endTime:null,taskId:state.timer.activeTaskId||null})},
-setTimerModeUI:m=>{els.timerMode.innerText=m==='focus'?'FOCUS':m==='short'?'SHORT BREAK':'LONG BREAK';els.timerMode.className=`text-xs font-bold tracking-widest uppercase mt-4 ${m==='focus'?'text-brand':'text-blue-400'}`},
-setSound:t=>{state.sound=t;els.audio.src=sounds[t];D.querySelectorAll('.sound-option').forEach(b=>b.className=b.className.replace('text-brand','text-text-muted'));const a=$(`sound-${t}`);if(a)a.className=a.className.replace('text-text-muted','text-brand');t==='none'?els.audio.pause():(state.timer.status==='running'&&els.audio.play())},
-toggleTimerSettings:()=>{els.timerSettings.classList.toggle('hidden');els.timerSettings.classList.toggle('flex')},
-updateSettings:(k,v)=>{if(k==='strictMode')state.timer.settings[k]=v;else{state.timer.settings[k]=parseInt(v);$(`set-${k}-val`).innerText=v}},
-signOut:()=>signOut(auth).then(()=>window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application')
+// --- FIRESTORE SUBSCRIPTIONS ---
+const subTasks=uid=>onSnapshot(collection(db,'artifacts',appId,'users',uid,'tasks'), s=>{
+    const t=[], p=new Set(['Inbox','Work','Personal','Study']);
+    s.forEach(d=>{
+        const x=d.data();
+        t.push({id:d.id,...x});
+        if(x.project && x.project!=='Inbox') p.add(x.project);
+    });
+    state.tasks=t;
+    state.projects=p;
+    updateProjectsUI();
+    updateCounts();
+    renderTasks();
+    if(state.timer.activeTaskId) updateTimerUI(t.find(x=>x.id===state.timer.activeTaskId));
+    if(state.view==='analytics') updateAnalytics();
+}, err => console.error("Task sync error:", err));
+
+const subTimer=uid=>onSnapshot(doc(db,'artifacts',appId,'users',uid,'timer','active'), s=>{
+    if(s.exists()){
+        const d=s.data();
+        state.timer={...state.timer, status:d.status||'idle', mode:d.mode||'focus', endTime:d.endTime?d.endTime.toMillis():null, remaining:d.remaining||state.timer.settings[d.mode||'focus']*60, totalDuration:d.totalDuration||state.timer.settings[d.mode||'focus']*60, activeTaskId:d.taskId||null};
+        app.setTimerModeUI(state.timer.mode);
+        if(state.timer.activeTaskId){
+            state.selectedTaskId=state.timer.activeTaskId;
+            updateTimerUI(state.tasks.find(x=>x.id===state.timer.activeTaskId));
+        } else updateTimerUI(null);
+        
+        if(state.timer.status==='running'){
+            startLocalInterval();
+            updateTimerVisuals();
+            if(state.sound!=='none'&&els.audio.paused) els.audio.play().catch(e=>console.log("Audio play blocked"));
+        } else {
+            stopLocalInterval();
+            updateTimerVisuals();
+            if(!els.audio.paused) els.audio.pause();
+        }
+    } else app.resetTimer(true);
+}, err => console.error("Timer sync error:", err));
+
+const subLogs=uid=>onSnapshot(query(collection(db,'artifacts',appId,'users',uid,'focus_sessions')), s=>{
+    const l=[];
+    s.forEach(d=>l.push({id:d.id,...d.data()}));
+    l.sort((a,b)=>(b.completedAt?.seconds||0)-(a.completedAt?.seconds||0));
+    state.logs=l;
+    if(state.view==='analytics') updateAnalytics();
+}, err => console.error("Logs sync error:", err));
+
+// --- TIMER LOGIC ---
+const startLocalInterval=()=>{
+    if(state.timer.interval) clearInterval(state.timer.interval);
+    state.timer.interval=setInterval(()=>{
+        updateTimerVisuals();
+        if(state.timer.status==='running'&&state.timer.endTime&&Date.now()>=state.timer.endTime) app.completeTimer();
+    },100);
+    els.playIcon.className="ph-fill ph-pause text-3xl ml-1";
+};
+const stopLocalInterval=()=>{
+    if(state.timer.interval) clearInterval(state.timer.interval);
+    state.timer.interval=null;
+    els.playIcon.className="ph-fill ph-play text-3xl ml-1";
+};
+const updateTimerVisuals=()=>{
+    const{status,endTime,remaining,totalDuration}=state.timer;
+    const s=status==='running'&&endTime?Math.max(0,Math.ceil((endTime-Date.now())/1000)):remaining;
+    const m=Math.floor(s/60), sc=s%60;
+    els.timerDisplay.textContent=`${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
+    els.timerProgress.style.strokeDashoffset=289*(1-(s/(totalDuration||1)));
+    D.title=`${m}:${sc.toString().padStart(2,'0')} - TimeTrekker`;
+};
+
+// --- APP ACTIONS ---
+const app={
+    customPrompt:{resolve:null,el:$('custom-prompt-modal'),input:$('prompt-input'),title:$('prompt-title')},
+    showPrompt:(t,v='')=>new Promise(r=>{
+        const p=app.customPrompt;p.resolve=r;p.title.textContent=t;p.input.value=v;
+        p.el.classList.remove('hidden');setTimeout(()=>p.el.classList.remove('opacity-0'),10);p.input.focus()
+    }),
+    closePrompt:v=>{
+        const p=app.customPrompt;p.el.classList.add('opacity-0');
+        setTimeout(()=>{p.el.classList.add('hidden');if(p.resolve)p.resolve(v);p.resolve=null},200)
+    },
+    setView:v=>{
+        state.view=v;state.filterProject=null;
+        els.pageTitle.textContent=v.charAt(0).toUpperCase()+v.slice(1);
+        updateNavStyles(v);app.toggleSidebar(false);
+        if(v==='analytics'){
+            els.taskViewContainer.classList.add('hidden');
+            els.analyticsViewContainer.classList.remove('hidden');
+            els.headerActions.classList.add('invisible');
+            updateAnalytics();
+        } else {
+            els.taskViewContainer.classList.remove('hidden');
+            els.analyticsViewContainer.classList.add('hidden');
+            els.headerActions.classList.remove('invisible');
+            renderTasks();
+        }
+    },
+    setProjectView:p=>{
+        state.view='project';state.filterProject=p;
+        els.pageTitle.textContent=p;
+        updateNavStyles('project',p);app.toggleSidebar(false);
+        els.taskViewContainer.classList.remove('hidden');
+        els.analyticsViewContainer.classList.add('hidden');
+        els.headerActions.classList.remove('invisible');
+        renderTasks();
+    },
+    setRange:r=>{
+        state.analytics.range=r;
+        ['week','month','year'].forEach(k=>{
+            const b=$(`btn-range-${k}`);
+            b.className=k===r?"px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all":"px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all";
+        });
+        updateAnalytics();
+    },
+    toggleChartType: (chartKey, type) => {
+        state.chartTypes[chartKey] = type;
+        ['bar', 'line'].forEach(t => {
+            const btn = $(`btn-${chartKey}-${t}`);
+            if(btn) {
+                if(t === type) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+        });
+        updateAnalytics();
+    },
+    toggleFocusPanel:f=>{
+        const p=els.timerPanel,i=!p.classList.contains('translate-x-full');
+        (f!==null?f:!i)?p.classList.remove('translate-x-full'):p.classList.add('translate-x-full');
+    },
+    toggleSidebar:f=>{
+        const s=els.sidebar,o=els.sidebarOverlay,h=s.classList.contains('-translate-x-full');
+        const show=(typeof f==='boolean')?f:h;
+        if(show){s.classList.remove('-translate-x-full');o.classList.remove('hidden');requestAnimationFrame(()=>o.classList.remove('opacity-0'))}
+        else{s.classList.add('-translate-x-full');o.classList.add('opacity-0');setTimeout(()=>o.classList.add('hidden'),300)}
+    },
+    promptNewProject:async()=>{const n=await app.showPrompt("Enter project name:");if(n){state.projects.add(n);updateProjectsUI()}},
+    // Error Handling added to Async Actions
+    renameProject:async(o,e)=>{
+        e.stopPropagation();const n=await app.showPrompt(`Rename "${o}" to:`,o);
+        if(!n||n===o||!state.user)return;
+        try{
+            const b=writeBatch(db);
+            (await getDocs(query(collection(db,'artifacts',appId,'users',state.user.uid,'tasks'),where("project","==",o)))).forEach(d=>b.update(d.ref,{project:n}));
+            await b.commit();
+            state.projects.delete(o);state.projects.add(n);
+            state.filterProject===o?app.setProjectView(n):updateProjectsUI();
+        }catch(err){app.showToast("Failed rename");console.error(err)}
+    },
+    deleteProject:async(p,e)=>{
+        e.stopPropagation();if(!confirm(`Delete "${p}"? Tasks move to Inbox.`)||!state.user)return;
+        try{
+            const b=writeBatch(db);
+            (await getDocs(query(collection(db,'artifacts',appId,'users',state.user.uid,'tasks'),where("project","==",p)))).forEach(d=>b.update(d.ref,{project:'Inbox'}));
+            await b.commit();
+            state.projects.delete(p);state.filterProject===p?app.setView('today'):updateProjectsUI();
+        }catch(err){app.showToast("Failed delete");console.error(err)}
+    },
+    addSubtaskUI:(v='')=>{
+        const d=D.createElement('div');d.className='flex items-center space-x-2 animate-fade-in';
+        // Note: Using value="${esc(v)}" to fix XSS in inputs
+        d.innerHTML=`<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${esc(v)}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`;
+        els.subtasksContainer.appendChild(d)
+    },
+    toggleDropdown:t=>{
+        const d=$(`${t}-options`);
+        D.querySelectorAll('[id$="-options"]').forEach(x=>{if(x.id!==`${t}-options`)x.classList.add('hidden')});
+        if(d.classList.contains('hidden')){d.classList.remove('hidden');d.classList.add('animate-fade-in')}else d.classList.add('hidden');
+    },
+    selectOption:(t,v,d)=>{$(`selected-${t}`).innerText=d;$(`task-${t}`).value=v;$(`${t}-options`).classList.add('hidden')},
+    toggleAddTaskModal:(t=null)=>{
+        if(els.modal.classList.contains('hidden')){
+            els.subtasksContainer.innerHTML='';const po=$('project-options');po.innerHTML='';
+            state.projects.forEach(p=>{
+                const b=D.createElement('button');b.type='button';b.onclick=()=>app.selectOption('project',p,p);
+                b.className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center";
+                b.innerHTML=`<i class="ph-bold ph-folder mr-2"></i> ${esc(p)}`; // Secured
+                po.appendChild(b);
+            });
+            if(t){
+                state.editingTaskId=t.id;els.modalTitle.innerText="Edit Task";els.saveTaskBtn.innerText="Save Changes";
+                $('task-title').value=t.title;$('task-note').value=t.note||'';$('task-tags').value=t.tags?t.tags.join(', '):'';
+                state.newEst=t.estimatedPomos||1;els.estDisplay.innerText=state.newEst;els.dateInput.value=t.dueDate||'';
+                const pm={none:'None',high:'High Priority (! Urgent)',med:'Medium Priority',low:'Low Priority'};
+                app.selectOption('priority',t.priority||'none',pm[t.priority||'none']||'None');
+                app.selectOption('project',t.project||'Inbox',t.project||'Inbox');
+                if(t.subtasks)t.subtasks.forEach(s=>app.addSubtaskUI(s));
+            } else {
+                state.editingTaskId=null;els.modalTitle.innerText="New Task";els.saveTaskBtn.innerText="Save Task";state.newEst=1;els.estDisplay.innerText="1";
+                els.dateInput.value=new Date().toISOString().split('T')[0];
+                $('task-title').value='';$('task-note').value='';$('task-tags').value='';
+                app.selectOption('priority','none','None');app.selectOption('project','Inbox','Inbox');
+            }
+            els.modal.classList.remove('hidden');setTimeout(()=>els.modal.classList.remove('opacity-0'),10);setTimeout(()=>els.modalPanel.classList.replace('scale-95','scale-100'),10);$('task-title').focus();
+        } else {
+            els.modal.classList.add('opacity-0');els.modalPanel.classList.replace('scale-100','scale-95');setTimeout(()=>els.modal.classList.add('hidden'),200);
+        }
+    },
+    adjustEst:d=>{let v=state.newEst+d;if(v<1)v=1;if(v>50)v=50;state.newEst=v;els.estDisplay.innerText=v},
+    editTask:(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(t)app.toggleAddTaskModal(t)},
+    handleSaveTask:async e=>{
+        e.preventDefault();const title=$('task-title').value;if(!title)return;
+        const subtasks=Array.from(D.querySelectorAll('.subtask-input')).map(i=>i.value.trim()).filter(v=>v);
+        const tags=$('task-tags').value.split(',').map(t=>t.trim()).filter(t=>t);
+        const data={title,dueDate:els.dateInput.value,estimatedPomos:state.newEst,priority:$('task-priority').value,project:$('task-project').value,note:$('task-note').value,subtasks,tags};
+        const ref=collection(db,'artifacts',appId,'users',state.user.uid,'tasks');
+        try {
+            state.editingTaskId?await updateDoc(doc(ref,state.editingTaskId),data):await addDoc(ref,{...data,completedPomos:0,status:'todo',createdAt:new Date().toISOString()});
+            app.toggleAddTaskModal();
+        } catch(err){ app.showToast("Error saving task"); console.error(err); }
+    },
+    toggleTaskStatus:async(id,s)=>{
+        const d={status:s==='todo'?'done':'todo'};
+        if(s==='todo')d.completedAt=new Date().toISOString();
+        try { await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id),d); } catch(e){app.showToast("Connection error");}
+    },
+    deleteTask:async(id,e)=>{e.stopPropagation();if(confirm('Delete task?')) try{ await deleteDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id)) } catch(e){app.showToast("Error deleting");}},
+    startTask:async(id,e)=>{
+        e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(!t)return;
+        state.selectedTaskId=id;renderTasks();updateTimerUI(t);if(window.innerWidth<1280)app.toggleFocusPanel(true);
+        if(state.timer.status!=='running'){
+            const d=t.pomoDuration||25;
+            try {
+                await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',mode:'focus',taskId:id,remaining:d*60,totalDuration:d*60,endTime:new Date(Date.now()+d*60000)});
+                app.updateSettings('focus',d);
+            } catch(e) { app.showToast("Failed to start timer"); }
+        }
+    },
+    selectTask:id=>{
+        state.selectedTaskId=id;renderTasks();const t=state.tasks.find(x=>x.id===id);updateTimerUI(t);
+        if(state.timer.status!=='running') updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{taskId:id}).catch(()=>{});
+        if(window.innerWidth<1280)app.toggleFocusPanel(true);
+    },
+    showToast:(m,t='error')=>{
+        const c=$('toast-container'),e=D.createElement('div');
+        e.className=`px-4 py-2 rounded shadow text-white text-sm font-medium animate-fade-in ${t==='error'?'bg-red-500':'bg-green-600'}`;
+        e.innerText=m;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300)},3000);
+    },
+    toggleTimer:async()=>{
+        if(Notification.permission==='default')try{await Notification.requestPermission()}catch(e){}
+        if(state.timer.status==='running'){
+            if(state.timer.settings.strictMode&&state.timer.mode==='focus'&&!confirm("Strict Mode active! Quit?"))return;
+            await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'paused',endTime:null,remaining:Math.max(0,Math.ceil((state.timer.endTime-Date.now())/1000))}).catch(()=>{});
+        }else{
+            if(!state.timer.activeTaskId&&state.timer.mode==='focus'){app.showToast("Select task!","error");return}
+            await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',endTime:new Date(Date.now()+state.timer.remaining*1000)}).catch(()=>{});
+        }
+    },
+    resetTimer:async(r=false)=>{
+        if(!r){const d=state.timer.settings[state.timer.mode];
+        await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'idle',endTime:null,remaining:d*60,totalDuration:d*60,mode:state.timer.mode,taskId:state.timer.activeTaskId||null}).catch(()=>{});}
+    },
+    skipTimer:()=>app.completeTimer(),
+    completeTimer:async()=>{
+        if(state.timer.status==='idle')return;stopLocalInterval();
+        const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();
+        o.connect(c.destination);o.frequency.value=523.25;o.start();o.stop(c.currentTime+.2);
+        try{if(Notification.permission==='granted')new Notification("Timer Complete");}catch(e){}
+        if(state.timer.mode==='focus'){
+            if(state.timer.activeTaskId){
+                const t=state.tasks.find(x=>x.id===state.timer.activeTaskId);
+                if(t){
+                    try {
+                        await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',t.id),{completedPomos:(t.completedPomos||0)+1});
+                        await addDoc(collection(db,'artifacts',appId,'users',state.user.uid,'focus_sessions'),{taskId:t.id,taskTitle:t.title,project:t.project||'Inbox',duration:state.timer.totalDuration/60,completedAt:serverTimestamp()});
+                    } catch(e){ console.error("Completion error", e); }
+                }
+            }
+            app.setTimerMode('short');
+        }else app.setTimerMode('focus');
+    },
+    setTimerMode:async m=>{const v=state.timer.settings[m];await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'idle',mode:m,remaining:v*60,totalDuration:v*60,endTime:null,taskId:state.timer.activeTaskId||null}).catch(()=>{});},
+    setTimerModeUI:m=>{els.timerMode.innerText=m==='focus'?'FOCUS':m==='short'?'SHORT BREAK':'LONG BREAK';els.timerMode.className=`text-xs font-bold tracking-widest uppercase mt-4 ${m==='focus'?'text-brand':'text-blue-400'}`},
+    setSound:t=>{
+        state.sound=t;els.audio.src=sounds[t];
+        D.querySelectorAll('.sound-option').forEach(b=>b.className=b.className.replace('text-brand','text-text-muted'));
+        const a=$(`sound-${t}`);if(a)a.className=a.className.replace('text-text-muted','text-brand');
+        t==='none'?els.audio.pause():(state.timer.status==='running'&&els.audio.play().catch(()=>{}));
+    },
+    toggleTimerSettings:()=>{els.timerSettings.classList.toggle('hidden');els.timerSettings.classList.toggle('flex')},
+    updateSettings:(k,v)=>{if(k==='strictMode')state.timer.settings[k]=v;else{state.timer.settings[k]=parseInt(v);$(`set-${k}-val`).innerText=v}},
+    signOut:()=>signOut(auth).then(()=>window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application')
 };
 window.app=app;
 
-// Helper to create beautiful gradient for Line Charts (Apple Style)
+// --- GRADIENT HELPER FOR CHARTS ---
 function createGradient(ctx, color) {
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, color + '90'); // High opacity at top
-    gradient.addColorStop(1, color + '05'); // Fade out at bottom
+    gradient.addColorStop(0, color + '90');
+    gradient.addColorStop(1, color + '05');
     return gradient;
 }
 
@@ -567,22 +845,20 @@ function updateAnalytics(){
     const tasksToday=tasksDone.filter(t=>t.completedAt && t.completedAt.startsWith(todayStr));
     const tasksWeek=tasksDone.filter(t=>{if(!t.completedAt)return false; return new Date(t.completedAt)>=startOfWeek;});
 
-    // Formatting Utils
     const fmtTime=m=>{const h=Math.floor(m/60), rem=Math.round(m%60); return h>0 ? `${h}h ${rem}m` : `${rem}m`;};
     
-    // 1. Core Metrics
-    els.analytics.timeTotal.innerText = fmtTime(state.logs.reduce((a,b)=>a+(b.duration||25),0));
-    els.analytics.timeWeek.innerText = fmtTime(logsWeek.reduce((a,b)=>a+(b.duration||25),0));
-    els.analytics.timeToday.innerText = fmtTime(logsToday.reduce((a,b)=>a+(b.duration||25),0));
-    els.analytics.taskTotal.innerText = tasksDone.length;
-    els.analytics.taskWeek.innerText = tasksWeek.length;
-    els.analytics.taskToday.innerText = tasksToday.length;
+    // Core Metrics
+    els.analytics.timeTotal.textContent = fmtTime(state.logs.reduce((a,b)=>a+(b.duration||25),0));
+    els.analytics.timeWeek.textContent = fmtTime(logsWeek.reduce((a,b)=>a+(b.duration||25),0));
+    els.analytics.timeToday.textContent = fmtTime(logsToday.reduce((a,b)=>a+(b.duration||25),0));
+    els.analytics.taskTotal.textContent = tasksDone.length;
+    els.analytics.taskWeek.textContent = tasksWeek.length;
+    els.analytics.taskToday.textContent = tasksToday.length;
 
-    // 2. Advanced Stats
     const activeTasks=state.tasks.filter(t=>t.status==='todo').length + tasksDone.length;
-    els.analytics.completionRate.innerText = activeTasks>0 ? Math.round((tasksDone.length/activeTasks)*100)+'%' : '0%';
+    els.analytics.completionRate.textContent = activeTasks>0 ? Math.round((tasksDone.length/activeTasks)*100)+'%' : '0%';
     const avgSess = state.logs.length>0 ? Math.round(state.logs.reduce((a,b)=>a+(b.duration||25),0)/state.logs.length) : 0;
-    els.analytics.avgSession.innerText = avgSess + 'm';
+    els.analytics.avgSession.textContent = avgSess + 'm';
     
     let morning=0, night=0;
     state.logs.forEach(l=>{
@@ -592,37 +868,33 @@ function updateAnalytics(){
             if(h>=20) night+=(l.duration||25);
         }
     });
-    els.analytics.earlyBird.innerText = fmtTime(morning);
-    els.analytics.nightOwl.innerText = fmtTime(night);
-    els.analytics.projectCount.innerText = state.projects.size;
+    els.analytics.earlyBird.textContent = fmtTime(morning);
+    els.analytics.nightOwl.textContent = fmtTime(night);
+    els.analytics.projectCount.textContent = state.projects.size;
 
     let cs=0; for(let i=0;i<365;i++){const d=new Date(); d.setDate(now.getDate()-i); if(state.logs.some(l=>l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000))===getDayStr(d))) cs++; else if(i>0) break;}
-    els.analytics.streakDays.innerText = cs + ' Days';
+    els.analytics.streakDays.textContent = cs + ' Days';
 
-    // 3. Hourly Heatmap Data
+    // Chart Data Prep
     const hours=Array(24).fill(0);
     state.logs.forEach(l=>{ if(l.completedAt) hours[new Date(l.completedAt.seconds*1000).getHours()] += (l.duration||25); });
     
-    // 4. Weekday Data
     const weekdays=Array(7).fill(0);
     state.logs.forEach(l=>{ if(l.completedAt) { const d=new Date(l.completedAt.seconds*1000).getDay(); weekdays[d==0?6:d-1] += (l.duration||25); } });
 
-    // 5. Smart Insight
     const maxHour = hours.indexOf(Math.max(...hours));
     const maxDayIdx = weekdays.indexOf(Math.max(...weekdays));
     const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     if(state.logs.length > 5) {
-        els.analytics.insightText.innerText = `You are most productive around ${maxHour}:00 and your best day is ${days[maxDayIdx]}. Keep it up!`;
+        els.analytics.insightText.textContent = `You are most productive around ${maxHour}:00 and your best day is ${days[maxDayIdx]}. Keep it up!`;
     }
 
-    // 6. Timeline Render (Interactive Tooltip Logic)
+    // Timeline Rendering (Using Secure DOM Methods)
     const grid=els.analytics.timelineGrid; grid.innerHTML='';
     const tooltip = $('global-tooltip');
     const showTooltip=(e, txt, sub)=>{
-        tooltip.innerHTML = `<strong>${txt}</strong><span class="sub">${sub}</span>`;
-        tooltip.style.opacity = '1';
-        tooltip.style.left = e.pageX + 'px';
-        tooltip.style.top = e.pageY + 'px';
+        tooltip.innerHTML = `<strong>${esc(txt)}</strong><span class="sub">${esc(sub)}</span>`;
+        tooltip.style.opacity = '1'; tooltip.style.left = e.pageX + 'px'; tooltip.style.top = e.pageY + 'px';
     };
     const hideTooltip=()=>{ tooltip.style.opacity = '0'; };
 
@@ -631,7 +903,7 @@ function updateAnalytics(){
         const dayLogs=state.logs.filter(l=>l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000))===dStr);
         const row=D.createElement('div'); row.className="flex items-center h-8 hover:bg-dark-hover rounded transition-colors";
         const lbl=D.createElement('div'); lbl.className="w-24 text-[10px] text-text-muted font-bold uppercase tracking-wider pl-2 flex-shrink-0";
-        lbl.innerText=i===0?"Today":(i===1?"Yesterday":d.toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+        lbl.textContent=i===0?"Today":(i===1?"Yesterday":d.toLocaleDateString('en-US',{month:'short',day:'numeric'}));
         const bars=D.createElement('div'); bars.className="flex-1 h-full relative bg-dark-bg rounded mx-2 overflow-hidden border border-dark-border";
         for(let j=1;j<6;j++){const l=D.createElement('div'); l.className="absolute top-0 bottom-0 border-l border-dark-border opacity-30"; l.style.left=`${(j*4/24)*100}%`; bars.appendChild(l);}
         dayLogs.forEach(l=>{
@@ -639,7 +911,6 @@ function updateAnalytics(){
             const dur=l.duration||25; const lp=((sm-dur)/1440)*100; const wp=(dur/1440)*100;
             const b=D.createElement('div'); b.className="absolute top-1.5 bottom-1.5 rounded-sm bg-brand opacity-80 z-10 hover:bg-white transition-colors cursor-pointer";
             b.style.left=`${lp}%`; b.style.width=`${Math.max(wp,0.5)}%`;
-            // Tooltip Events
             b.addEventListener('mousemove', (e)=>showTooltip(e, l.taskTitle||'Focus Session', `${ld.getHours()}:${ld.getMinutes().toString().padStart(2,'0')} - ${dur} mins`));
             b.addEventListener('mouseleave', hideTooltip);
             bars.appendChild(b);
@@ -647,7 +918,7 @@ function updateAnalytics(){
         row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row);
     }
 
-    // --- Charts Logic (Polished with Toggles) ---
+    // Chart Construction
     const r=state.analytics.range; 
     let lbl=[], dpFocus=[], dpTask=[];
     let dlb=r==='week'?7:(r==='month'?30:12);
@@ -678,7 +949,6 @@ function updateAnalytics(){
         interaction: { mode: 'index', intersect: false }
     };
 
-    // Helper to get Chart Config based on type (Bar vs Line)
     const getChartConfig = (ctx, type, labels, data, color, tooltipLabel) => {
         const isLine = type === 'line';
         return {
@@ -701,27 +971,23 @@ function updateAnalytics(){
         };
     };
 
-    // Chart: Focus Trend
     if(state.charts.focusBar)state.charts.focusBar.destroy();
     const ctxFocus = els.analytics.focusBarChart.getContext('2d');
     state.charts.focusBar = new Chart(ctxFocus, getChartConfig(ctxFocus, state.chartTypes.focus, lbl, dpFocus, '#ff5757', 'Focus Hours'));
 
-    // Chart: Task Trend
     if(state.charts.taskBar)state.charts.taskBar.destroy();
     const ctxTask = els.analytics.taskBarChart.getContext('2d');
     state.charts.taskBar = new Chart(ctxTask, getChartConfig(ctxTask, state.chartTypes.task, lbl, dpTask, '#3b82f6', 'Tasks Done'));
 
-    // Chart: Hourly
     if(state.charts.hourly)state.charts.hourly.destroy();
     const ctxHourly = els.analytics.hourlyChart.getContext('2d');
     state.charts.hourly = new Chart(ctxHourly, getChartConfig(ctxHourly, state.chartTypes.hourly, Array.from({length:24},(_,i)=>i), hours, '#10b981', 'Minutes'));
 
-    // Chart: Weekday
     if(state.charts.weekday)state.charts.weekday.destroy();
     const ctxWeekday = els.analytics.weekdayChart.getContext('2d');
     state.charts.weekday = new Chart(ctxWeekday, getChartConfig(ctxWeekday, state.chartTypes.weekday, ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], weekdays, '#f59e0b', 'Minutes'));
 
-    // Chart: Project (Doughnut - Unchanged)
+    // Project & Priority Charts (Unchanged logic, just ensure destroy is called)
     const pm={}; state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});
     const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);
     if(state.charts.project)state.charts.project.destroy();
@@ -729,9 +995,8 @@ function updateAnalytics(){
         type:'doughnut', data:{labels:sp.map(x=>x[0]), datasets:[{data:sp.map(x=>x[1]),backgroundColor:['#ff5757','#8b5cf6','#3b82f6','#10b981','#f59e0b'],borderColor:'#282828',borderWidth:4, hoverOffset: 4}]},
         options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}, tooltip:{callbacks:{label:c=>c.label+': '+Math.round(c.raw)+'m'}}}}
     });
-    els.analytics.projList.innerHTML = sp.map(x=>`<div class="flex justify-between text-xs text-text-muted"><span>${x[0]}</span><span>${Math.round(x[1])}m</span></div>`).join('');
+    els.analytics.projList.innerHTML = sp.map(x=>`<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
 
-    // Chart: Priority (Doughnut - Unchanged)
     const prioCounts={high:0, med:0, low:0, none:0};
     tasksDone.forEach(t=>priCounts[t.priority||'none']++);
     if(state.charts.priority)state.charts.priority.destroy();
@@ -740,26 +1005,54 @@ function updateAnalytics(){
         options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}}}
     });
 
-    // Tag Ranking
     const tagCounts={};
     tasksDone.forEach(t=>{ if(t.tags) t.tags.forEach(tg=> tagCounts[tg]=(tagCounts[tg]||0)+1); });
     const sortedTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
     if(sortedTags.length>0) {
-        els.analytics.tagList.innerHTML = sortedTags.map((x,i)=>`<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i+1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${x[0]}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+        els.analytics.tagList.innerHTML = sortedTags.map((x,i)=>`<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i+1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
     }
 
-    // Session Log Table
     els.analytics.sessionLogBody.innerHTML = state.logs.slice(0,20).map(l=>{
         const d = l.completedAt ? new Date(l.completedAt.seconds*1000) : new Date();
-        return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</td><td class="font-medium text-white">${l.taskTitle}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${l.project}</span></td><td class="text-brand font-mono">${l.duration||25}m</td></tr>`;
+        return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration||25}m</td></tr>`;
     }).join('');
 }
 
 $('prompt-cancel-btn').addEventListener('click',()=>app.closePrompt(null));$('prompt-confirm-btn').addEventListener('click',()=>app.closePrompt(app.customPrompt.input.value));$('prompt-input').addEventListener('keypress',e=>{if(e.key==='Enter')app.closePrompt(app.customPrompt.input.value)});D.addEventListener('click',e=>{if(!e.target.closest('#project-dropdown')&&!e.target.closest('#priority-dropdown')){D.getElementById('project-options').classList.add('hidden');D.getElementById('priority-options').classList.add('hidden')}});
 function updateNavStyles(v,p){D.querySelectorAll('.nav-btn').forEach(b=>{const i=b.id===`nav-${v}`;b.classList.toggle('bg-brand',i);b.classList.toggle('bg-opacity-10',i);b.classList.toggle('text-brand',i);b.classList.toggle('text-text-muted',!i);if(i)b.classList.remove('hover:text-white');else b.classList.add('hover:text-white')});D.querySelectorAll('.project-btn').forEach(b=>{const i=v==='project'&&b.dataset.proj===p;b.classList.toggle('text-brand',i);b.classList.toggle('bg-brand',i);b.classList.toggle('bg-opacity-10',i);b.classList.toggle('text-text-muted',!i)})}
-function updateProjectsUI(){els.projectList.innerHTML='';state.projects.forEach(p=>{const d=D.createElement('div');d.innerHTML=`<div class="group relative flex items-center"><button onclick="app.setProjectView('${p}')" data-proj="${p}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${p}</span></div></button><div class="absolute right-2 flex opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${p}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${p}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`;els.projectList.appendChild(d)})}
-function updateCounts(){const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const t=getDayStr(new Date()),tm=getDayStr(new Date(Date.now()+864e5));els.navCounts.today.innerText=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo').length;els.navCounts.tomorrow.innerText=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo').length;els.navCounts.upcoming.innerText=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo').length;els.navCounts.past.innerText=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo').length;const tp=state.tasks.reduce((a,b)=>a+(b.completedPomos||0),0);els.stats.pomosToday.innerText=tp;els.stats.tasksToday.innerText=state.tasks.filter(x=>x.status==='done'&&x.dueDate===t).length;els.stats.estRemain.innerText=state.tasks.filter(x=>x.status==='todo').reduce((a,b)=>a+(parseInt(b.estimatedPomos)||0),0);const fm=tp*state.timer.settings.focus;els.stats.focusTime.innerText=`${Math.floor(fm/60)}h ${fm%60}m`}
-function renderTasks(){const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const t=getDayStr(new Date()),tm=getDayStr(new Date(Date.now()+864e5));let l=[];if(state.view==='today')l=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo');else if(state.view==='tomorrow')l=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo');else if(state.view==='upcoming')l=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo');else if(state.view==='past')l=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo');else if(state.view==='completed')l=state.tasks.filter(x=>x.status==='done');else if(state.view==='project')l=state.tasks.filter(x=>x.project===state.filterProject&&x.status==='todo');const pm={high:3,med:2,low:1,none:0};l.sort((a,b)=>pm[b.priority]-pm[a.priority]);els.taskList.innerHTML='';if(l.length===0)els.emptyState.classList.remove('hidden');else els.emptyState.classList.add('hidden');l.forEach(x=>{const isSel=x.id===state.selectedTaskId,pc=Math.min(100,((x.completedPomos||0)/(x.estimatedPomos||1))*100),col={high:'text-red-400',med:'text-yellow-400',low:'text-blue-400',none:'text-text-muted'}[x.priority||'none'],sty=isSel?{high:'bg-dark-card border-red-500 shadow-sm z-10',med:'bg-dark-card border-yellow-500 shadow-sm z-10',low:'bg-dark-card border-blue-500 shadow-sm z-10',none:'bg-dark-card border-brand shadow-sm z-10'}[x.priority||'none']:'bg-dark-card border-dark-border hover:border-text-faint',el=D.createElement('div');el.className=`group flex items-start p-4 rounded-lg border transition-all duration-200 ease-out cursor-pointer relative ${sty}`;el.onclick=()=>app.selectTask(x.id);el.innerHTML=`<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority==='high'?'bg-red-500':x.priority==='med'?'bg-yellow-500':'bg-transparent'}"></div><label class="custom-checkbox flex-shrink-0 mt-0.5 w-5 h-5 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()"><input type="checkbox" class="hidden" ${x.status==='done'?'checked':''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')"><div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg"><svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div></label><div class="flex-1 min-w-0 pr-20"><div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status==='done'?'line-through text-text-muted':''}">${x.title}</h3></div>${x.note?`<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${x.note}</p>`:''}<div class="flex items-center mt-2 space-x-4"><div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${x.project}</span></div><div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-circle text-brand mr-1.5 text-[8px]"></i><span class="${pc>=100?'text-brand':''}">${x.completedPomos||0}/${x.estimatedPomos||1}</span></div>${x.tags&&x.tags.length?`<div class="flex gap-1 ml-auto">${x.tags.map(t=>`<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/10 text-brand border border-brand/20">${t}</span>`).join('')}</div>`:''}</div></div></div><div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20"><button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors rounded"><i class="ph-fill ph-play"></i></button><button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-trash"></i></button></div>`;els.taskList.appendChild(el)})}
+function updateProjectsUI(){els.projectList.innerHTML='';state.projects.forEach(p=>{const d=D.createElement('div');d.innerHTML=`<div class="group relative flex items-center"><button onclick="app.setProjectView('${esc(p)}')" data-proj="${esc(p)}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${esc(p)}</span></div></button><div class="absolute right-2 flex opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${esc(p)}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${esc(p)}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`;els.projectList.appendChild(d)})}
+function updateCounts(){const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const t=getDayStr(new Date()),tm=getDayStr(new Date(Date.now()+864e5));els.navCounts.today.textContent=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo').length;els.navCounts.tomorrow.textContent=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo').length;els.navCounts.upcoming.textContent=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo').length;els.navCounts.past.textContent=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo').length;const tp=state.tasks.reduce((a,b)=>a+(b.completedPomos||0),0);els.stats.pomosToday.textContent=tp;els.stats.tasksToday.textContent=state.tasks.filter(x=>x.status==='done'&&x.dueDate===t).length;els.stats.estRemain.textContent=state.tasks.filter(x=>x.status==='todo').reduce((a,b)=>a+(parseInt(b.estimatedPomos)||0),0);const fm=tp*state.timer.settings.focus;els.stats.focusTime.textContent=`${Math.floor(fm/60)}h ${fm%60}m`}
+function renderTasks(){
+    const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const t=getDayStr(new Date()),tm=getDayStr(new Date(Date.now()+864e5));
+    let l=[];
+    if(state.view==='today')l=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo');
+    else if(state.view==='tomorrow')l=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo');
+    else if(state.view==='upcoming')l=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo');
+    else if(state.view==='past')l=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo');
+    else if(state.view==='completed')l=state.tasks.filter(x=>x.status==='done');
+    else if(state.view==='project')l=state.tasks.filter(x=>x.project===state.filterProject&&x.status==='todo');
+    
+    const pm={high:3,med:2,low:1,none:0};
+    l.sort((a,b)=>pm[b.priority]-pm[a.priority]);
+    
+    els.taskList.innerHTML='';
+    if(l.length===0)els.emptyState.classList.remove('hidden'); else els.emptyState.classList.add('hidden');
+    
+    l.forEach(x=>{
+        const isSel=x.id===state.selectedTaskId,pc=Math.min(100,((x.completedPomos||0)/(x.estimatedPomos||1))*100),col={high:'text-red-400',med:'text-yellow-400',low:'text-blue-400',none:'text-text-muted'}[x.priority||'none'],sty=isSel?{high:'bg-dark-card border-red-500 shadow-sm z-10',med:'bg-dark-card border-yellow-500 shadow-sm z-10',low:'bg-dark-card border-blue-500 shadow-sm z-10',none:'bg-dark-card border-brand shadow-sm z-10'}[x.priority||'none']:'bg-dark-card border-dark-border hover:border-text-faint';
+        const el=D.createElement('div');
+        el.className=`group flex items-start p-4 rounded-lg border transition-all duration-200 ease-out cursor-pointer relative ${sty}`;
+        el.onclick=()=>app.selectTask(x.id);
+        
+        // SECURE RENDERING using esc() helper
+        el.innerHTML=`<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority==='high'?'bg-red-500':x.priority==='med'?'bg-yellow-500':'bg-transparent'}"></div>
+        <label class="custom-checkbox flex-shrink-0 mt-0.5 w-5 h-5 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()"><input type="checkbox" class="hidden" ${x.status==='done'?'checked':''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')"><div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg"><svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div></label>
+        <div class="flex-1 min-w-0 pr-20"><div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status==='done'?'line-through text-text-muted':''}">${esc(x.title)}</h3></div>${x.note?`<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${esc(x.note)}</p>`:''}<div class="flex items-center mt-2 space-x-4"><div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${esc(x.project)}</span></div><div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-circle text-brand mr-1.5 text-[8px]"></i><span class="${pc>=100?'text-brand':''}">${x.completedPomos||0}/${x.estimatedPomos||1}</span></div>${x.tags&&x.tags.length?`<div class="flex gap-1 ml-auto">${x.tags.map(t=>`<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/10 text-brand border border-brand/20">${esc(t)}</span>`).join('')}</div>`:''}</div></div></div>
+        <div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20"><button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors rounded"><i class="ph-fill ph-play"></i></button><button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-trash"></i></button></div>`;
+        els.taskList.appendChild(el);
+    });
+}
 function updateTimerUI(t){if(!t){els.focusEmpty.classList.remove('hidden');els.focusActive.classList.add('hidden');return}els.focusEmpty.classList.add('hidden');els.focusActive.classList.remove('hidden');els.focusTitle.innerText=t.title;els.focusProject.innerText=t.project||'Inbox';els.focusCompleted.innerText=t.completedPomos||0;els.focusTotal.innerText=t.estimatedPomos||1}
 app.setView('today');
 </script></body></html>
