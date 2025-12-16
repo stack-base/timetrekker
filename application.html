@@ -145,22 +145,59 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                     <button onclick="app.setRange('year')" id="btn-range-year" class="px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Year</button>
                 </div>
             </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Total Focus</div><div class="text-3xl font-bold text-white" id="ana-time-total">0h</div></div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Today</div><div class="text-3xl font-bold text-brand" id="ana-time-today">0m</div></div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Completed Tasks</div><div class="text-3xl font-bold text-white" id="ana-task-total">0</div></div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5"><div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Current Streak</div><div class="text-3xl font-bold text-green-500" id="ana-streak-days">0 Days</div></div>
-            </div>
-            <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-semibold text-white">Activity Curve</h3>
-                    <div class="bg-dark-bg border border-dark-border rounded p-0.5 flex">
-                        <button onclick="app.setChartMetric('time')" id="btn-metric-time" class="w-16 py-1 rounded text-[10px] font-bold uppercase bg-brand text-white shadow-sm transition-all">Time</button>
-                        <button onclick="app.setChartMetric('tasks')" id="btn-metric-tasks" class="w-16 py-1 rounded text-[10px] font-bold uppercase text-text-muted hover:text-white transition-all">Tasks</button>
-                    </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                    <div class="flex items-center gap-2 mb-2"><div class="w-1 h-3 bg-brand rounded-full"></div><div class="text-xs text-text-muted font-bold uppercase tracking-wider">Total Focus</div></div>
+                    <div class="text-2xl font-bold text-brand" id="ana-time-total">0h</div>
                 </div>
-                <div class="h-[300px] w-full relative"><canvas id="activityChart"></canvas></div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                    <div class="flex items-center gap-2 mb-2"><div class="w-1 h-3 bg-brand rounded-full"></div><div class="text-xs text-text-muted font-bold uppercase tracking-wider">This Week</div></div>
+                    <div class="text-2xl font-bold text-brand" id="ana-time-week">0m</div>
+                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                    <div class="flex items-center gap-2 mb-2"><div class="w-1 h-3 bg-brand rounded-full"></div><div class="text-xs text-text-muted font-bold uppercase tracking-wider">Today</div></div>
+                    <div class="text-2xl font-bold text-brand" id="ana-time-today">0m</div>
+                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                    <div class="flex items-center gap-2 mb-2"><div class="w-1 h-3 bg-blue-500 rounded-full"></div><div class="text-xs text-text-muted font-bold uppercase tracking-wider">Total Tasks</div></div>
+                    <div class="text-2xl font-bold text-blue-500" id="ana-task-total">0</div>
+                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                    <div class="flex items-center gap-2 mb-2"><div class="w-1 h-3 bg-blue-500 rounded-full"></div><div class="text-xs text-text-muted font-bold uppercase tracking-wider">Week Tasks</div></div>
+                    <div class="text-2xl font-bold text-blue-500" id="ana-task-week">0</div>
+                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                    <div class="flex items-center gap-2 mb-2"><div class="w-1 h-3 bg-blue-500 rounded-full"></div><div class="text-xs text-text-muted font-bold uppercase tracking-wider">Today Tasks</div></div>
+                    <div class="text-2xl font-bold text-blue-500" id="ana-task-today">0</div>
+                </div>
             </div>
+
+            <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
+                 <h3 class="text-lg font-semibold text-white mb-6">Pomodoro Records</h3>
+                 <div class="overflow-x-auto custom-scrollbar pb-2">
+                    <div class="min-w-[600px] w-full">
+                        <div class="flex text-[10px] text-text-muted font-mono mb-2 pl-24"><span class="flex-1 border-l border-dark-border pl-1">00:00</span><span class="flex-1 border-l border-dark-border pl-1">04:00</span><span class="flex-1 border-l border-dark-border pl-1">08:00</span><span class="flex-1 border-l border-dark-border pl-1">12:00</span><span class="flex-1 border-l border-dark-border pl-1">16:00</span><span class="flex-1 border-l border-dark-border pl-1">20:00</span></div>
+                        <div id="pomo-timeline-grid" class="space-y-1"></div>
+                    </div>
+                 </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-white">Focus Time Chart</h3>
+                    </div>
+                    <div class="h-[250px] w-full relative"><canvas id="focusBarChart"></canvas></div>
+                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-white">Task Chart</h3>
+                    </div>
+                    <div class="h-[250px] w-full relative"><canvas id="taskBarChart"></canvas></div>
+                </div>
+            </div>
+
              <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4"><h3 class="text-lg font-semibold text-white">Project Distribution</h3></div>
                 <div class="flex flex-col md:flex-row gap-8">
@@ -173,15 +210,6 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                         <div id="project-rank-list" class="space-y-3 max-h-[200px] overflow-y-auto custom-scrollbar pr-2"></div>
                     </div>
                 </div>
-            </div>
-            <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                 <h3 class="text-lg font-semibold text-white mb-6">Daily Timeline</h3>
-                 <div class="overflow-x-auto custom-scrollbar pb-2">
-                    <div class="min-w-[600px] w-full">
-                        <div class="flex text-[10px] text-text-muted font-mono mb-2 pl-24"><span class="flex-1 border-l border-dark-border pl-1">00:00</span><span class="flex-1 border-l border-dark-border pl-1">04:00</span><span class="flex-1 border-l border-dark-border pl-1">08:00</span><span class="flex-1 border-l border-dark-border pl-1">12:00</span><span class="flex-1 border-l border-dark-border pl-1">16:00</span><span class="flex-1 border-l border-dark-border pl-1">20:00</span></div>
-                        <div id="pomo-timeline-grid" class="space-y-1"></div>
-                    </div>
-                 </div>
             </div>
         </div>
     </div>
@@ -264,12 +292,13 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"},appId='timetrekker-v1',fb=initializeApp(C),auth=getAuth(fb),db=getFirestore(fb),D=document,$=id=>D.getElementById(id);
-const state={user:null,tasks:[],logs:[],projects:new Set(['Inbox','Work','Personal','Study']),view:'today',filterProject:null,selectedTaskId:null,editingTaskId:null,timer:{mode:'focus',status:'idle',endTime:null,remaining:1500,totalDuration:1500,activeTaskId:null,interval:null,settings:{focus:25,short:5,long:15,strictMode:false}},newEst:1,sound:'none',charts:{activity:null,project:null},analytics:{range:'week',metric:'time',chartTypes:{activity:'line',project:'doughnut'}}};
+const state={user:null,tasks:[],logs:[],projects:new Set(['Inbox','Work','Personal','Study']),view:'today',filterProject:null,selectedTaskId:null,editingTaskId:null,timer:{mode:'focus',status:'idle',endTime:null,remaining:1500,totalDuration:1500,activeTaskId:null,interval:null,settings:{focus:25,short:5,long:15,strictMode:false}},newEst:1,sound:'none',charts:{focusBar:null,taskBar:null,project:null},analytics:{range:'week',metric:'time'}};
 const sounds={none:'',rain:'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',cafe:'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',forest:'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg'};
-const els={taskList:$('task-list'),taskViewContainer:$('task-view-container'),analyticsViewContainer:$('analytics-view-container'),pageTitle:$('page-title'),emptyState:$('empty-state'),modal:$('add-task-modal'),modalPanel:$('add-task-panel'),modalTitle:$('modal-title'),saveTaskBtn:$('save-task-btn'),estDisplay:$('est-display'),dateInput:$('task-date'),timerDisplay:$('timer-display'),timerProgress:$('timer-progress'),timerMode:$('timer-mode'),playIcon:$('play-icon'),focusActive:$('focus-active'),focusEmpty:$('focus-empty'),focusTitle:$('focus-task-title'),focusProject:$('focus-project-badge'),focusCompleted:$('focus-completed'),focusTotal:$('focus-total'),timerPanel:$('timer-panel'),navCounts:{today:$('count-today'),tomorrow:$('count-tomorrow'),upcoming:$('count-upcoming'),past:$('count-past')},stats:{pomosToday:$('stat-pomos-today'),tasksToday:$('stat-tasks-today'),estRemain:$('stat-est-remaining'),focusTime:$('stat-focus-time')},analytics:{timeTotal:$('ana-time-total'),timeToday:$('ana-time-today'),taskTotal:$('ana-task-total'),timelineGrid:$('pomo-timeline-grid'),streakDays:$('ana-streak-days'),activityChart:$('activityChart'),projectChart:$('projectChart'),projList:$('project-rank-list')},projectList:$('project-list'),subtasksContainer:$('subtasks-container'),audio:$('audio-player'),timerSettings:$('timer-settings'),currentDate:$('current-date-display'),sidebarOverlay:$('sidebar-overlay'),sidebar:$('sidebar'),headerActions:$('header-actions')};
+const els={taskList:$('task-list'),taskViewContainer:$('task-view-container'),analyticsViewContainer:$('analytics-view-container'),pageTitle:$('page-title'),emptyState:$('empty-state'),modal:$('add-task-modal'),modalPanel:$('add-task-panel'),modalTitle:$('modal-title'),saveTaskBtn:$('save-task-btn'),estDisplay:$('est-display'),dateInput:$('task-date'),timerDisplay:$('timer-display'),timerProgress:$('timer-progress'),timerMode:$('timer-mode'),playIcon:$('play-icon'),focusActive:$('focus-active'),focusEmpty:$('focus-empty'),focusTitle:$('focus-task-title'),focusProject:$('focus-project-badge'),focusCompleted:$('focus-completed'),focusTotal:$('focus-total'),timerPanel:$('timer-panel'),navCounts:{today:$('count-today'),tomorrow:$('count-tomorrow'),upcoming:$('count-upcoming'),past:$('count-past')},stats:{pomosToday:$('stat-pomos-today'),tasksToday:$('stat-tasks-today'),estRemain:$('stat-est-remaining'),focusTime:$('stat-focus-time')},analytics:{timeTotal:$('ana-time-total'),timeWeek:$('ana-time-week'),timeToday:$('ana-time-today'),taskTotal:$('ana-task-total'),taskWeek:$('ana-task-week'),taskToday:$('ana-task-today'),timelineGrid:$('pomo-timeline-grid'),focusBarChart:$('focusBarChart'),taskBarChart:$('taskBarChart'),projectChart:$('projectChart'),projList:$('project-rank-list')},projectList:$('project-list'),subtasksContainer:$('subtasks-container'),audio:$('audio-player'),timerSettings:$('timer-settings'),currentDate:$('current-date-display'),sidebarOverlay:$('sidebar-overlay'),sidebar:$('sidebar'),headerActions:$('header-actions')};
+
 Chart.defaults.color='#9ca3af';Chart.defaults.font.family='Inter';
 onAuthStateChanged(auth,u=>{if(u){state.user=u;const p=$('user-profile-display');if(p){p.classList.remove('hidden');p.classList.add('flex');$('user-name-text').innerText=u.displayName||u.email.split('@')[0];$('user-email-text').innerText=u.email;$('user-avatar-initials').innerText=(u.displayName||u.email).charAt(0).toUpperCase()}subTasks(u.uid);subLogs(u.uid);subTimer(u.uid);els.currentDate.innerText=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}else window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application'});
-const subTasks=uid=>onSnapshot(collection(db,'artifacts',appId,'users',uid,'tasks'),s=>{const t=[],p=new Set(['Inbox','Work','Personal','Study']);s.forEach(d=>{const x=d.data();t.push({id:d.id,...x});if(x.project&&x.project!=='Inbox')p.add(x.project)});state.tasks=t;state.projects=p;updateProjectsUI();updateCounts();renderTasks();if(state.timer.activeTaskId){updateTimerUI(t.find(x=>x.id===state.timer.activeTaskId))}});
+const subTasks=uid=>onSnapshot(collection(db,'artifacts',appId,'users',uid,'tasks'),s=>{const t=[],p=new Set(['Inbox','Work','Personal','Study']);s.forEach(d=>{const x=d.data();t.push({id:d.id,...x});if(x.project&&x.project!=='Inbox')p.add(x.project)});state.tasks=t;state.projects=p;updateProjectsUI();updateCounts();renderTasks();if(state.timer.activeTaskId){updateTimerUI(t.find(x=>x.id===state.timer.activeTaskId))}if(state.view==='analytics')updateAnalytics()});
 const subTimer=uid=>onSnapshot(doc(db,'artifacts',appId,'users',uid,'timer','active'),s=>{if(s.exists()){const d=s.data();state.timer={...state.timer,status:d.status||'idle',mode:d.mode||'focus',endTime:d.endTime?d.endTime.toMillis():null,remaining:d.remaining||state.timer.settings[d.mode||'focus']*60,totalDuration:d.totalDuration||state.timer.settings[d.mode||'focus']*60,activeTaskId:d.taskId||null};app.setTimerModeUI(state.timer.mode);if(state.timer.activeTaskId){state.selectedTaskId=state.timer.activeTaskId;updateTimerUI(state.tasks.find(x=>x.id===state.timer.activeTaskId))}else updateTimerUI(null);if(state.timer.status==='running'){startLocalInterval();updateTimerVisuals();if(state.sound!=='none'&&els.audio.paused)els.audio.play().catch(e=>{})}else{stopLocalInterval();updateTimerVisuals();if(!els.audio.paused)els.audio.pause()}}else app.resetTimer(true)});
 const startLocalInterval=()=>{if(state.timer.interval)clearInterval(state.timer.interval);state.timer.interval=setInterval(()=>{updateTimerVisuals();if(state.timer.status==='running'&&state.timer.endTime&&Date.now()>=state.timer.endTime)app.completeTimer()},100);els.playIcon.className="ph-fill ph-pause text-3xl ml-1"};
 const stopLocalInterval=()=>{if(state.timer.interval)clearInterval(state.timer.interval);state.timer.interval=null;els.playIcon.className="ph-fill ph-play text-3xl ml-1"};
@@ -282,7 +311,6 @@ closePrompt:v=>{const p=app.customPrompt;p.el.classList.add('opacity-0');setTime
 setView:v=>{state.view=v;state.filterProject=null;els.pageTitle.innerText=v.charAt(0).toUpperCase()+v.slice(1);updateNavStyles(v);app.toggleSidebar(false);if(v==='analytics'){els.taskViewContainer.classList.add('hidden');els.analyticsViewContainer.classList.remove('hidden');els.headerActions.classList.add('invisible');updateAnalytics()}else{els.taskViewContainer.classList.remove('hidden');els.analyticsViewContainer.classList.add('hidden');els.headerActions.classList.remove('invisible');renderTasks()}},
 setProjectView:p=>{state.view='project';state.filterProject=p;els.pageTitle.innerText=p;updateNavStyles('project',p);app.toggleSidebar(false);els.taskViewContainer.classList.remove('hidden');els.analyticsViewContainer.classList.add('hidden');els.headerActions.classList.remove('invisible');renderTasks()},
 setRange:r=>{state.analytics.range=r;['week','month','year'].forEach(k=>{const b=$(`btn-range-${k}`);b.className=k===r?"px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all":"px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all"});updateAnalytics()},
-setChartMetric:m=>{state.analytics.metric=m;$('btn-metric-time').className=m==='time'?"w-16 py-1 rounded text-[10px] font-bold uppercase bg-brand text-white shadow-sm transition-all":"w-16 py-1 rounded text-[10px] font-bold uppercase text-text-muted hover:text-white transition-all";$('btn-metric-tasks').className=m==='tasks'?"w-16 py-1 rounded text-[10px] font-bold uppercase bg-brand text-white shadow-sm transition-all":"w-16 py-1 rounded text-[10px] font-bold uppercase text-text-muted hover:text-white transition-all";updateAnalytics()},
 toggleFocusPanel:f=>{const p=els.timerPanel,i=!p.classList.contains('translate-x-full');(f!==null?f:!i)?p.classList.remove('translate-x-full'):p.classList.add('translate-x-full')},
 toggleSidebar:f=>{const s=els.sidebar,o=els.sidebarOverlay,h=s.classList.contains('-translate-x-full');const show=(typeof f==='boolean')?f:h;if(show){s.classList.remove('-translate-x-full');o.classList.remove('hidden');requestAnimationFrame(()=>o.classList.remove('opacity-0'))}else{s.classList.add('-translate-x-full');o.classList.add('opacity-0');setTimeout(()=>o.classList.add('hidden'),300)}},
 promptNewProject:async()=>{const n=await app.showPrompt("Enter project name:");if(n){state.projects.add(n);updateProjectsUI()}},
@@ -295,7 +323,7 @@ toggleAddTaskModal:(t=null)=>{if(els.modal.classList.contains('hidden')){els.sub
 adjustEst:d=>{let v=state.newEst+d;if(v<1)v=1;if(v>50)v=50;state.newEst=v;els.estDisplay.innerText=v},
 editTask:(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(t)app.toggleAddTaskModal(t)},
 handleSaveTask:async e=>{e.preventDefault();const title=$('task-title').value;if(!title)return;const subtasks=Array.from(D.querySelectorAll('.subtask-input')).map(i=>i.value.trim()).filter(v=>v),tags=$('task-tags').value.split(',').map(t=>t.trim()).filter(t=>t),data={title,dueDate:els.dateInput.value,estimatedPomos:state.newEst,priority:$('task-priority').value,project:$('task-project').value,note:$('task-note').value,subtasks,tags};const ref=collection(db,'artifacts',appId,'users',state.user.uid,'tasks');state.editingTaskId?await updateDoc(doc(ref,state.editingTaskId),data):await addDoc(ref,{...data,completedPomos:0,status:'todo',createdAt:new Date().toISOString()});app.toggleAddTaskModal()},
-toggleTaskStatus:async(id,s)=>await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id),{status:s==='todo'?'done':'todo'}),
+toggleTaskStatus:async(id,s)=>{const d={status:s==='todo'?'done':'todo'};if(s==='todo')d.completedAt=new Date().toISOString();await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id),d)},
 deleteTask:async(id,e)=>{e.stopPropagation();if(confirm('Delete task?'))await deleteDoc(doc(db,'artifacts',appId,'users',state.user.uid,'tasks',id))},
 startTask:async(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(!t)return;state.selectedTaskId=id;renderTasks();updateTimerUI(t);if(window.innerWidth<1280)app.toggleFocusPanel(true);if(state.timer.status!=='running'){const d=t.pomoDuration||25;await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',mode:'focus',taskId:id,remaining:d*60,totalDuration:d*60,endTime:new Date(Date.now()+d*60000)});app.updateSettings('focus',d)}},
 selectTask:id=>{state.selectedTaskId=id;renderTasks();const t=state.tasks.find(x=>x.id===id);updateTimerUI(t);if(state.timer.status!=='running')updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{taskId:id}).catch(()=>{});if(window.innerWidth<1280)app.toggleFocusPanel(true)},
@@ -312,7 +340,198 @@ updateSettings:(k,v)=>{if(k==='strictMode')state.timer.settings[k]=v;else{state.
 signOut:()=>signOut(auth).then(()=>window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application')
 };
 window.app=app;
-function updateAnalytics(){if(!state.logs.length&&state.view==='analytics')return;const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const now=new Date(),todayStr=getDayStr(now),startOfWeek=new Date(now),day=startOfWeek.getDay()||7;if(day!==1)startOfWeek.setDate(now.getDate()-(day-1));startOfWeek.setHours(0,0,0,0);const logsToday=state.logs.filter(l=>l.completedAt&&getDayStr(new Date(l.completedAt.seconds*1000))===todayStr),logsWeek=state.logs.filter(l=>l.completedAt&&new Date(l.completedAt.seconds*1000)>=startOfWeek),fmtTime=m=>{const h=Math.floor(m/60),rem=Math.round(m%60);return h>0?`${h}h <span class="text-lg">${rem}m</span>`:`${rem}m`},totalTime=state.logs.reduce((a,b)=>a+(b.duration||25),0),weekTime=logsWeek.reduce((a,b)=>a+(b.duration||25),0),todayTime=logsToday.reduce((a,b)=>a+(b.duration||25),0);els.analytics.timeTotal.innerHTML=fmtTime(totalTime);els.analytics.timeToday.innerHTML=fmtTime(todayTime);els.analytics.taskTotal.innerText=state.tasks.filter(t=>t.status==='done').length;const grid=els.analytics.timelineGrid;grid.innerHTML='';for(let i=0;i<7;i++){const d=new Date();d.setDate(now.getDate()-i);const dStr=getDayStr(d),dayLogs=state.logs.filter(l=>l.completedAt&&getDayStr(new Date(l.completedAt.seconds*1000))===dStr),row=D.createElement('div');row.className="flex items-center h-8 hover:bg-dark-hover rounded transition-colors";const lbl=D.createElement('div');lbl.className="w-24 text-[10px] text-text-muted font-bold uppercase tracking-wider pl-2 flex-shrink-0";lbl.innerText=i===0?"Today":(i===1?"Yesterday":d.toLocaleDateString('en-US',{month:'short',day:'numeric'}));const bars=D.createElement('div');bars.className="flex-1 h-full relative bg-dark-bg rounded mx-2 overflow-hidden border border-dark-border";dayLogs.forEach(l=>{const ld=new Date(l.completedAt.seconds*1000),sm=(ld.getHours()*60)+ld.getMinutes(),dur=l.duration||25,asm=sm-dur,lp=(asm/1440)*100,wp=(dur/1440)*100,b=D.createElement('div');b.className="absolute top-1 bottom-1 rounded-sm bg-brand opacity-80 hover:opacity-100 transition-opacity cursor-help";b.style.left=`${lp}%`;b.style.width=`${Math.max(wp,0.5)}%`;b.title=`${ld.getHours()}:${ld.getMinutes().toString().padStart(2,'0')} - ${l.taskTitle||'Focus'}`;bars.appendChild(b)});row.appendChild(lbl);row.appendChild(bars);grid.appendChild(row)}const r=state.analytics.range,lbl=[],dp=[];let dlb=r==='week'?7:(r==='month'?30:12);if(r==='year')for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);lbl.push(d.toLocaleString('default',{month:'short'}));const m=state.logs.filter(l=>{if(!l.completedAt)return!1;const ld=new Date(l.completedAt.seconds*1000);return ld.getMonth()===d.getMonth()&&ld.getFullYear()===d.getFullYear()});dp.push(state.analytics.metric==='time'?(m.reduce((a,b)=>a+(b.duration||25),0)/60).toFixed(1):m.length)}else for(let i=dlb-1;i>=0;i--){const d=new Date();d.setDate(now.getDate()-i);lbl.push(d.toLocaleDateString('en-US',{weekday:'short',day:r==='month'?'numeric':undefined}));const m=state.logs.filter(l=>l.completedAt&&getDayStr(new Date(l.completedAt.seconds*1000))===getDayStr(d));dp.push(state.analytics.metric==='time'?(m.reduce((a,b)=>a+(b.duration||25),0)/60).toFixed(1):m.length)}if(state.charts.activity)state.charts.activity.destroy();const ctx=els.analytics.activityChart.getContext('2d'),col=state.analytics.metric==='time'?'#ff5757':'#3b82f6',bgCol=state.analytics.metric==='time'?'rgba(255, 87, 87, 0.1)':'rgba(59, 130, 246, 0.1)';state.charts.activity=new Chart(ctx,{type:'line',data:{labels:lbl,datasets:[{label:state.analytics.metric==='time'?'Focus Hours':'Tasks Done',data:dp,borderColor:col,backgroundColor:bgCol,borderWidth:2,pointBackgroundColor:col,pointRadius:3,fill:!0,tension:.3}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{y:{beginAtZero:!0,grid:{color:'#333'}},x:{grid:{display:!1}}},plugins:{legend:{display:!1}}}});const pm={};state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);if(sp.length===0)$('no-data-project').classList.remove('hidden');else{$('no-data-project').classList.add('hidden');if(state.charts.project)state.charts.project.destroy();state.charts.project=new Chart(els.analytics.projectChart.getContext('2d'),{type:'doughnut',data:{labels:sp.map(x=>x[0]),datasets:[{data:sp.map(x=>(x[1]/60).toFixed(1)),backgroundColor:['#ff5757','#8b5cf6','#3b82f6','#10b981','#f59e0b'],borderColor:'#252525',borderWidth:2}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}}}});const pl=els.analytics.projList;pl.innerHTML='';sp.forEach(x=>{const d=D.createElement('div'),pct=Math.round((x[1]/(totalTime||1))*100);d.innerHTML=`<div class="flex justify-between text-xs text-text-muted mb-1 font-medium"><span>${x[0]}</span><span>${pct}%</span></div><div class="h-1.5 bg-dark-bg rounded-full overflow-hidden"><div class="h-full bg-brand" style="width:${pct}%"></div></div>`;pl.appendChild(d)})}let cs=0;for(let i=0;i<365;i++){const d=new Date();d.setDate(now.getDate()-i);if(state.logs.some(l=>l.completedAt&&getDayStr(new Date(l.completedAt.seconds*1000))===getDayStr(d)))cs++;else if(i>0)break}els.analytics.streakDays.innerText=`${cs} Days`}
+
+function updateAnalytics(){
+    if((!state.logs.length && !state.tasks.length) && state.view==='analytics')return;
+    
+    // --- Data Preparation ---
+    const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const now=new Date(), todayStr=getDayStr(now);
+    
+    // Time Utils
+    const startOfWeek=new Date(now); 
+    const day=startOfWeek.getDay()||7; 
+    if(day!==1)startOfWeek.setDate(now.getDate()-(day-1)); 
+    startOfWeek.setHours(0,0,0,0);
+    
+    // Filter Logs (Focus Time)
+    const logsToday=state.logs.filter(l=>l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000))===todayStr);
+    const logsWeek=state.logs.filter(l=>l.completedAt && new Date(l.completedAt.seconds*1000)>=startOfWeek);
+    
+    // Filter Tasks (Completed Count) - Requires 'completedAt' field on tasks (added in new toggleTaskStatus)
+    const tasksDone=state.tasks.filter(t=>t.status==='done');
+    const tasksToday=tasksDone.filter(t=>t.completedAt && t.completedAt.startsWith(todayStr));
+    const tasksWeek=tasksDone.filter(t=>{
+        if(!t.completedAt)return false;
+        return new Date(t.completedAt)>=startOfWeek;
+    });
+
+    // Calc Values
+    const fmtTime=m=>{
+        const h=Math.floor(m/60), rem=Math.round(m%60);
+        return h>0 ? `${h}<span class="text-sm text-text-muted">h</span> ${rem}<span class="text-sm text-text-muted">m</span>` : `${rem}<span class="text-sm text-text-muted">m</span>`;
+    };
+    const totalTime=state.logs.reduce((a,b)=>a+(b.duration||25),0);
+    const weekTime=logsWeek.reduce((a,b)=>a+(b.duration||25),0);
+    const todayTime=logsToday.reduce((a,b)=>a+(b.duration||25),0);
+
+    // --- Update Metrics Cards ---
+    els.analytics.timeTotal.innerHTML = fmtTime(totalTime);
+    els.analytics.timeWeek.innerHTML = fmtTime(weekTime);
+    els.analytics.timeToday.innerHTML = fmtTime(todayTime);
+    els.analytics.taskTotal.innerText = tasksDone.length;
+    els.analytics.taskWeek.innerText = tasksWeek.length;
+    els.analytics.taskToday.innerText = tasksToday.length;
+
+    // --- Update Pomodoro Records Grid ---
+    const grid=els.analytics.timelineGrid; grid.innerHTML='';
+    for(let i=0;i<14;i++){ // Show last 14 days
+        const d=new Date(); d.setDate(now.getDate()-i);
+        const dStr=getDayStr(d);
+        const dayLogs=state.logs.filter(l=>l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000))===dStr);
+        
+        const row=D.createElement('div');
+        row.className="flex items-center h-8 hover:bg-dark-hover rounded transition-colors";
+        
+        const lbl=D.createElement('div');
+        lbl.className="w-24 text-[10px] text-text-muted font-bold uppercase tracking-wider pl-2 flex-shrink-0";
+        lbl.innerText=i===0?"Today":(i===1?"Yesterday":d.toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+        
+        const bars=D.createElement('div');
+        bars.className="flex-1 h-full relative bg-dark-bg rounded mx-2 overflow-hidden border border-dark-border";
+        
+        // Grid lines for every 4 hours
+        for(let j=1;j<6;j++){
+             const l=D.createElement('div');
+             l.className="absolute top-0 bottom-0 border-l border-dark-border opacity-30";
+             l.style.left=`${(j*4/24)*100}%`;
+             bars.appendChild(l);
+        }
+
+        dayLogs.forEach(l=>{
+            const ld=new Date(l.completedAt.seconds*1000);
+            const sm=(ld.getHours()*60)+ld.getMinutes();
+            const dur=l.duration||25;
+            const asm=sm-dur;
+            const lp=(asm/1440)*100;
+            const wp=(dur/1440)*100;
+            
+            const b=D.createElement('div');
+            b.className="absolute top-1.5 bottom-1.5 rounded-sm bg-brand opacity-80 hover:opacity-100 transition-opacity cursor-help z-10";
+            b.style.left=`${lp}%`;
+            b.style.width=`${Math.max(wp,0.5)}%`;
+            b.title=`${ld.getHours()}:${ld.getMinutes().toString().padStart(2,'0')} - ${l.taskTitle||'Focus'}`;
+            bars.appendChild(b);
+        });
+        row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row);
+    }
+
+    // --- Prepare Chart Data ---
+    const r=state.analytics.range; 
+    let lbl=[], dpFocus=[], dpTask=[];
+    let dlb=r==='week'?7:(r==='month'?30:12);
+    
+    // Generate Labels & Data
+    if(r==='year'){
+        for(let i=11;i>=0;i--){
+            const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+            lbl.push(d.toLocaleString('default',{month:'short'}));
+            // Filter Logs
+            const mLogs=state.logs.filter(l=>{
+                if(!l.completedAt)return false;
+                const ld=new Date(l.completedAt.seconds*1000);
+                return ld.getMonth()===d.getMonth() && ld.getFullYear()===d.getFullYear();
+            });
+            dpFocus.push((mLogs.reduce((a,b)=>a+(b.duration||25),0)/60).toFixed(1));
+            // Filter Tasks
+            const mTasks=state.tasks.filter(t=>{
+                 if(t.status!=='done' || !t.completedAt)return false;
+                 const td=new Date(t.completedAt);
+                 return td.getMonth()===d.getMonth() && td.getFullYear()===d.getFullYear();
+            });
+            dpTask.push(mTasks.length);
+        }
+    } else {
+        for(let i=dlb-1;i>=0;i--){
+            const d=new Date(); d.setDate(now.getDate()-i);
+            const dStr=getDayStr(d);
+            lbl.push(d.toLocaleDateString('en-US',{weekday:'short',day:r==='month'?'numeric':undefined}));
+            // Focus
+            const dLogs=state.logs.filter(l=>l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000))===dStr);
+            dpFocus.push((dLogs.reduce((a,b)=>a+(b.duration||25),0)/60).toFixed(1));
+            // Tasks
+            const dTasks=state.tasks.filter(t=>t.status==='done' && t.completedAt && t.completedAt.startsWith(dStr));
+            dpTask.push(dTasks.length);
+        }
+    }
+
+    // --- Render Focus Bar Chart ---
+    if(state.charts.focusBar)state.charts.focusBar.destroy();
+    const ctxF = els.analytics.focusBarChart.getContext('2d');
+    state.charts.focusBar = new Chart(ctxF, {
+        type: 'bar',
+        data: {
+            labels: lbl,
+            datasets: [{
+                label: 'Focus Hours',
+                data: dpFocus,
+                backgroundColor: '#ff5757',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // --- Render Task Bar Chart ---
+    if(state.charts.taskBar)state.charts.taskBar.destroy();
+    const ctxT = els.analytics.taskBarChart.getContext('2d');
+    state.charts.taskBar = new Chart(ctxT, {
+        type: 'bar',
+        data: {
+            labels: lbl,
+            datasets: [{
+                label: 'Tasks Done',
+                data: dpTask,
+                backgroundColor: '#3b82f6',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, grid: { color: '#333' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // --- Project Chart (Existing Logic) ---
+    const pm={}; state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});
+    const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);
+    
+    if(sp.length===0) $('no-data-project').classList.remove('hidden');
+    else {
+        $('no-data-project').classList.add('hidden');
+        if(state.charts.project)state.charts.project.destroy();
+        state.charts.project=new Chart(els.analytics.projectChart.getContext('2d'),{
+            type:'doughnut',
+            data:{
+                labels:sp.map(x=>x[0]),
+                datasets:[{data:sp.map(x=>(x[1]/60).toFixed(1)),backgroundColor:['#ff5757','#8b5cf6','#3b82f6','#10b981','#f59e0b'],borderColor:'#252525',borderWidth:2}]
+            },
+            options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}}}
+        });
+        const pl=els.analytics.projList; pl.innerHTML='';
+        sp.forEach(x=>{
+            const d=D.createElement('div'),pct=Math.round((x[1]/(totalTime||1))*100);
+            d.innerHTML=`<div class="flex justify-between text-xs text-text-muted mb-1 font-medium"><span>${x[0]}</span><span>${pct}%</span></div><div class="h-1.5 bg-dark-bg rounded-full overflow-hidden"><div class="h-full bg-brand" style="width:${pct}%"></div></div>`;
+            pl.appendChild(d);
+        });
+    }
+}
+
 $('prompt-cancel-btn').addEventListener('click',()=>app.closePrompt(null));$('prompt-confirm-btn').addEventListener('click',()=>app.closePrompt(app.customPrompt.input.value));$('prompt-input').addEventListener('keypress',e=>{if(e.key==='Enter')app.closePrompt(app.customPrompt.input.value)});D.addEventListener('click',e=>{if(!e.target.closest('#project-dropdown')&&!e.target.closest('#priority-dropdown')){D.getElementById('project-options').classList.add('hidden');D.getElementById('priority-options').classList.add('hidden')}});
 function updateNavStyles(v,p){D.querySelectorAll('.nav-btn').forEach(b=>{const i=b.id===`nav-${v}`;b.classList.toggle('bg-brand',i);b.classList.toggle('bg-opacity-10',i);b.classList.toggle('text-brand',i);b.classList.toggle('text-text-muted',!i);if(i)b.classList.remove('hover:text-white');else b.classList.add('hover:text-white')});D.querySelectorAll('.project-btn').forEach(b=>{const i=v==='project'&&b.dataset.proj===p;b.classList.toggle('text-brand',i);b.classList.toggle('bg-brand',i);b.classList.toggle('bg-opacity-10',i);b.classList.toggle('text-text-muted',!i)})}
 function updateProjectsUI(){els.projectList.innerHTML='';state.projects.forEach(p=>{const d=D.createElement('div');d.innerHTML=`<div class="group relative flex items-center"><button onclick="app.setProjectView('${p}')" data-proj="${p}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${p}</span></div></button><div class="absolute right-2 flex opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${p}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${p}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`;els.projectList.appendChild(d)})}
