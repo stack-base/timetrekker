@@ -112,6 +112,52 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                     <div id="top-projects-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2"></div>
                 </div>
             </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-6 border-b border-dark-border flex justify-between items-center bg-dark-card/50">
+                        <h3 class="text-lg font-bold text-white">Recent Sessions</h3>
+                        <span class="text-xs px-2 py-1 rounded bg-brand/10 text-brand border border-brand/20">Live Feed</span>
+                    </div>
+                    <div class="flex-1 overflow-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-dark-sidebar sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Timestamp</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Task</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="live-feed-body" class="text-sm">
+                                <tr><td colspan="3" class="p-4 text-center text-text-muted italic">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-6 border-b border-dark-border bg-dark-card/50">
+                        <h3 class="text-lg font-bold text-white">System Health</h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Task Completion Rate</span><span class="text-white font-bold" id="health-completion">0%</span></div>
+                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-completion" class="bg-green-500 h-full rounded-full" style="width: 0%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">High Priority Task Ratio</span><span class="text-white font-bold" id="health-priority">0%</span></div>
+                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-priority" class="bg-red-500 h-full rounded-full" style="width: 0%"></div></div>
+                        </div>
+                        
+                        <div class="p-4 rounded border border-dark-border bg-dark-bg mt-6">
+                            <div class="text-xs text-text-muted font-bold uppercase mb-2">Console Logs</div>
+                            <div id="console-log" class="text-[10px] font-mono text-text-faint h-24 overflow-y-auto">
+                                > Initializing Admin Console...<br>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="view-users" class="view-section hidden animate-fade-in">
@@ -266,21 +312,33 @@ const app = {
             log('Fetching global sessions...');
             const qSessions = query(collectionGroup(db, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500));
             const snapSessions = await getDocs(qSessions);
-            state.sessions = snapSessions.docs.map(d => ({...d.data(), _uid: d.ref.parent.parent.id})); 
+            // SAFE MAP: Protects against docs that don't have a parent ID (root level data)
+            state.sessions = snapSessions.docs.map(d => {
+                const uid = d.ref.parent?.parent?.id || 'unknown';
+                return {...d.data(), _uid: uid};
+            });
             
             log('Fetching global tasks...');
             const qTasks = query(collectionGroup(db, 'tasks'), limit(500));
             const snapTasks = await getDocs(qTasks);
-            state.tasks = snapTasks.docs.map(d => ({...d.data(), _uid: d.ref.parent.parent.id}));
+            state.tasks = snapTasks.docs.map(d => {
+                const uid = d.ref.parent?.parent?.id || 'unknown';
+                return {...d.data(), _uid: uid};
+            });
 
             log(`Loaded ${state.sessions.length} sessions and ${state.tasks.length} tasks.`);
             
-            await processUsers(); // Now async
+            // 1. Render Stats Immediately (Fast)
             updateKPIs();
             updateCharts();
+            updateFeed();
             
-            if(state.view === 'users') renderUsersTable();
-            if(state.view === 'tasks') renderTasksTable();
+            // 2. Fetch Profiles in Background (Slow)
+            processUsers().then(() => {
+                log('Profiles loaded. Updating views...');
+                if(state.view === 'users') renderUsersTable();
+                if(state.view === 'tasks') renderTasksTable(); // Refresh to show names
+            });
             
         } catch (e) {
             log(`ERROR: ${e.message}`);
@@ -305,28 +363,31 @@ async function processUsers() {
         if(t > map[s._uid].lastActive) map[s._uid].lastActive = t;
     });
 
+    state.usersMap = map; // Save stats immediately so "Users" view works
+
     // Attempt to fetch Profile Data for each UID
     log(`Fetching profiles for ${Object.keys(map).length} users...`);
-    const uids = Object.keys(map);
-    const fetches = uids.map(async (uid) => {
+    const uids = Object.keys(map).filter(u => u !== 'unknown');
+    
+    // Process concurrently but safely
+    await Promise.all(uids.map(async (uid) => {
         try {
             const snap = await getDoc(doc(db, 'artifacts', appId, 'users', uid));
             if (snap.exists()) {
                 const d = snap.data();
-                map[uid].name = d.displayName || d.name || d.fullName;
-                map[uid].email = d.email;
-                map[uid].avatar = d.photoURL || d.avatar;
-                map[uid].provider = d.providerId || d.loginMethod || 'Email/Password'; // Guessing field names
-                map[uid].profileLoaded = true;
-            } else {
-                map[uid].profileLoaded = false;
+                if(map[uid]) {
+                    map[uid].name = d.displayName || d.name || d.fullName;
+                    map[uid].email = d.email;
+                    map[uid].avatar = d.photoURL || d.avatar;
+                    map[uid].provider = d.providerId || d.loginMethod || 'Email/Password';
+                    map[uid].profileLoaded = true;
+                }
             }
         } catch (e) {
-            // Ignore errors for individual user fetches
+            // Silently fail for individual profiles
         }
-    });
-
-    await Promise.all(fetches);
+    }));
+    
     state.usersMap = map;
 }
 
