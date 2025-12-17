@@ -124,7 +124,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                             <thead class="bg-dark-sidebar sticky top-0 z-10">
                                 <tr>
                                     <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Timestamp</th>
-                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Task</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">User & Task</th>
                                     <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Duration</th>
                                 </tr>
                             </thead>
@@ -312,7 +312,6 @@ const app = {
             log('Fetching global sessions...');
             const qSessions = query(collectionGroup(db, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500));
             const snapSessions = await getDocs(qSessions);
-            // SAFE MAP: Protects against docs that don't have a parent ID (root level data)
             state.sessions = snapSessions.docs.map(d => {
                 const uid = d.ref.parent?.parent?.id || 'unknown';
                 return {...d.data(), _uid: uid};
@@ -331,11 +330,12 @@ const app = {
             // 1. Render Stats Immediately (Fast)
             updateKPIs();
             updateCharts();
-            updateFeed();
+            updateFeed(); // Initial feed (likely unknown names)
             
             // 2. Fetch Profiles in Background (Slow)
             processUsers().then(() => {
                 log('Profiles loaded. Updating views...');
+                updateFeed(); // Update feed again with loaded names
                 if(state.view === 'users') renderUsersTable();
                 if(state.view === 'tasks') renderTasksTable(); // Refresh to show names
             });
@@ -366,20 +366,21 @@ async function processUsers() {
     state.usersMap = map; // Save stats immediately so "Users" view works
 
     // Attempt to fetch Profile Data for each UID
-    log(`Fetching profiles for ${Object.keys(map).length} users...`);
     const uids = Object.keys(map).filter(u => u !== 'unknown');
+    log(`Fetching profiles for ${uids.length} users...`);
     
-    // Process concurrently but safely
+    // Process concurrently
     await Promise.all(uids.map(async (uid) => {
         try {
             const snap = await getDoc(doc(db, 'artifacts', appId, 'users', uid));
             if (snap.exists()) {
                 const d = snap.data();
                 if(map[uid]) {
-                    map[uid].name = d.displayName || d.name || d.fullName;
+                    // Check all possible name fields
+                    map[uid].name = d.displayName || d.fullName || d.name || d.username;
                     map[uid].email = d.email;
-                    map[uid].avatar = d.photoURL || d.avatar;
-                    map[uid].provider = d.providerId || d.loginMethod || 'Email/Password';
+                    map[uid].avatar = d.photoURL || d.avatar || d.profilePic;
+                    map[uid].provider = d.providerId || d.loginMethod || 'Email';
                     map[uid].profileLoaded = true;
                 }
             }
@@ -444,15 +445,16 @@ function renderTasksTable() {
         
         // Try to get user name if available
         const user = state.usersMap[t._uid];
-        const userName = user && user.profileLoaded ? (user.name || user.email) : t._uid.substring(0,8)+'...';
-        
+        const userName = user && user.profileLoaded ? (user.name || user.email) : (t._uid ? t._uid.substring(0,8)+'...' : 'Unknown');
+        const userHint = user && user.profileLoaded ? ` title="${user.email}"` : '';
+
         return `<tr class="border-b border-dark-border hover:bg-dark-hover">
             <td class="p-4 ${statusClass} uppercase text-[10px] font-bold">${t.status}</td>
             <td class="p-4 text-white font-medium">${t.title || 'Untitled'}</td>
             <td class="p-4 text-text-muted"><span class="bg-dark-bg px-2 py-1 rounded border border-dark-border text-xs">${t.project || 'Inbox'}</span></td>
             <td class="p-4 ${priClass} text-xs uppercase font-bold">${t.priority || 'None'}</td>
             <td class="p-4 text-text-muted text-xs">${t.dueDate || '-'}</td>
-            <td class="p-4 text-text-faint text-xs truncate max-w-[150px]" title="${t._uid}">${userName}</td>
+            <td class="p-4 text-text-faint text-xs truncate max-w-[150px]"${userHint}>${userName}</td>
         </tr>`;
     }).join('');
 }
@@ -470,14 +472,25 @@ function updateKPIs(){
     document.getElementById('health-completion').innerText = `${rate}%`;
     document.getElementById('bar-completion').style.width = `${rate}%`;
 }
-// Charts and Feed logic same as before...
+
 function updateFeed(){
     const b = document.getElementById('live-feed-body');
+    if(state.sessions.length === 0) {
+        b.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-text-muted italic">No recent activity.</td></tr>`;
+        return;
+    }
+    
     b.innerHTML = state.sessions.slice(0, 20).map(s => {
         const d = s.completedAt ? new Date(s.completedAt.seconds*1000) : new Date();
+        const user = state.usersMap[s._uid];
+        const userName = user && user.profileLoaded ? user.name : 'User';
+        
         return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
             <td class="p-4 text-text-muted">${d.toLocaleDateString()} <span class="text-text-faint">${d.toLocaleTimeString()}</span></td>
-            <td class="p-4 text-white font-medium">${s.taskTitle || 'Unknown Task'}</td>
+            <td class="p-4">
+                <div class="text-white font-medium text-sm">${s.taskTitle || 'Unknown Task'}</div>
+                <div class="text-xs text-text-muted">by ${userName}</div>
+            </td>
             <td class="p-4 text-brand">${s.duration||25}m</td>
         </tr>`
     }).join('');
