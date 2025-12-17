@@ -663,12 +663,17 @@ const esc = (str) => { if (!str) return ''; const div = document.createElement('
 const state = {
     user: null, tasks: [], logs: [], projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
     view: 'today', filterProject: null, selectedTaskId: null, editingTaskId: null,
+    
+    // UPDATED TIMER STATE
     timer: {
         mode: 'focus', status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, activeTaskId: null, interval: null,
         pomoCountCurrentSession: 0, 
         settings: {
             focus: 25, short: 5, long: 15, strictMode: false,
-            longBreakInterval: 4, autoStartPomo: false, autoStartBreak: false, disableBreak: false
+            longBreakInterval: 4,  // NEW
+            autoStartPomo: false,  // NEW
+            autoStartBreak: false, // NEW
+            disableBreak: false    // NEW
         }
     },
     newEst: 1, sound: 'none',
@@ -693,6 +698,7 @@ analytics:{
 },projectList:$('project-list'),subtasksContainer:$('subtasks-container'),audio:$('audio-player'),currentDate:$('current-date-display'),sidebarOverlay:$('sidebar-overlay'),sidebar:$('sidebar'),headerActions:$('header-actions'),
 settingsModal:$('global-settings-modal'),settingsPanel:$('settings-panel'),settingsTitle:$('settings-view-title'),strictToggle:$('strict-mode-toggle'),
 settingsAvatar:$('settings-avatar'),settingsName:$('settings-name'),settingsEmail:$('settings-email'),
+// New Task Elements
 taskPomoDisplay:$('task-pomo-display'),totalTimeCalc:$('total-time-calc'),taskRepeat:$('task-repeat'),taskReminder:$('task-reminder')
 };
 
@@ -706,29 +712,9 @@ Chart.defaults.plugins.tooltip.bodyColor='#a3a3a3';
 Chart.defaults.plugins.tooltip.borderColor='#333';
 Chart.defaults.plugins.tooltip.borderWidth=1;
 
-// --- AUTHENTICATION & PROFILE SYNC ---
-onAuthStateChanged(auth, async u => {
+onAuthStateChanged(auth, u => {
     if(u){
         state.user=u;
-        
-        // ---------------------------------------------------------
-        // CRITICAL UPDATE: Save User Profile to Firestore on Login
-        // ---------------------------------------------------------
-        try {
-            const userRef = doc(db, 'artifacts', appId, 'users', u.uid);
-            await setDoc(userRef, {
-                uid: u.uid,
-                displayName: u.displayName || u.email.split('@')[0],
-                email: u.email,
-                photoURL: u.photoURL || null,
-                lastLogin: serverTimestamp()
-            }, { merge: true }); 
-            console.log("User profile synced to Firestore");
-        } catch (e) {
-            console.error("Error syncing profile:", e);
-        }
-        // ---------------------------------------------------------
-
         const p=$('user-profile-display');
         if(p){
             p.classList.remove('hidden');p.classList.add('flex');
@@ -744,6 +730,7 @@ onAuthStateChanged(auth, async u => {
         subTimer(u.uid);
         els.currentDate.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
         
+        // Reminder Check Loop
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -758,7 +745,7 @@ onAuthStateChanged(auth, async u => {
                     });
                 }
             }
-        }, 10000);
+        }, 10000); // Check every 10s to ensure we catch the minute change
 
     } else {
         window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
@@ -784,7 +771,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'ti
             remaining: d.remaining || state.timer.settings[d.mode || 'focus'] * 60,
             totalDuration: d.totalDuration || state.timer.settings[d.mode || 'focus'] * 60,
             activeTaskId: d.taskId || null,
-            pomoCountCurrentSession: d.sessionCount || 0
+            pomoCountCurrentSession: d.sessionCount || 0 // NEW: Load session count
         };
         app.setTimerModeUI(state.timer.mode);
         if (state.timer.activeTaskId) { state.selectedTaskId = state.timer.activeTaskId; updateTimerUI(state.tasks.find(x => x.id === state.timer.activeTaskId)); } else updateTimerUI(null);
@@ -841,11 +828,15 @@ const app={
     completeTimer: async () => {
         if (state.timer.status === 'idle') return;
         stopLocalInterval();
+        
+        // Sound & Notification
         const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator();
         o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .2);
         try { if (Notification.permission === 'granted') new Notification("Timer Complete") } catch (e) { }
 
+        // Logic
         if (state.timer.mode === 'focus') {
+            // Task Completion Update
             if (state.timer.activeTaskId) {
                 const t = state.tasks.find(x => x.id === state.timer.activeTaskId);
                 if (t) {
@@ -855,20 +846,28 @@ const app={
                     } catch (e) { }
                 }
             }
+            
+            // Check flow
             if (state.timer.settings.disableBreak) {
+                // Break Disabled: Loop Focus
                 await app.setTimerMode('focus');
                 if (state.timer.settings.autoStartPomo) app.toggleTimer();
             } else {
+                // Handle Break
                 const newCount = (state.timer.pomoCountCurrentSession || 0) + 1;
                 let nextMode = 'short';
+                
                 if (newCount >= state.timer.settings.longBreakInterval) {
                     nextMode = 'long';
                 }
+                
+                // Update mode and session count
                 await app.setTimerMode(nextMode, nextMode === 'long' ? 0 : newCount);
                 if (state.timer.settings.autoStartBreak) app.toggleTimer();
             }
         } else {
-            await app.setTimerMode('focus', state.timer.pomoCountCurrentSession);
+            // Break is over -> Back to Focus
+            await app.setTimerMode('focus', state.timer.pomoCountCurrentSession); // Keep count unless it was long break (handled previously)
             if (state.timer.settings.autoStartPomo) app.toggleTimer();
         }
     },
@@ -895,11 +894,14 @@ const app={
         if (els.settingsModal.classList.contains('hidden')) {
             els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); setTimeout(() => els.settingsPanel.classList.replace('scale-95', 'scale-100'), 10);
             app.switchSettingsTab('timer');
+            
+            // Initialize Inputs
             $('strict-mode-toggle').checked = state.timer.settings.strictMode;
             $('auto-pomo-toggle').checked = state.timer.settings.autoStartPomo;
             $('auto-break-toggle').checked = state.timer.settings.autoStartBreak;
             $('disable-break-toggle').checked = state.timer.settings.disableBreak;
             $('set-longBreakInterval-val-g').innerText = state.timer.settings.longBreakInterval;
+            
             app.setSound(state.sound);
         } else {
             els.settingsModal.classList.add('opacity-0'); els.settingsPanel.classList.replace('scale-100', 'scale-95'); setTimeout(() => els.settingsModal.classList.add('hidden'), 200);
@@ -914,9 +916,9 @@ const app={
     },
     updateSettings: (k, v) => {
         if (['strictMode', 'autoStartPomo', 'autoStartBreak', 'disableBreak'].includes(k)) {
-            state.timer.settings[k] = v;
+            state.timer.settings[k] = v; // Boolean values
         } else {
-            state.timer.settings[k] = parseInt(v);
+            state.timer.settings[k] = parseInt(v); // Numeric values
             const d = $(`set-${k}-val`); if (d) d.innerText = v;
             const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v;
         }
