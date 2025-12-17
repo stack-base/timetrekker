@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Console</title>
+<title>TimeTrekker Admin</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -37,7 +37,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-red-600 flex items-center justify-center shadow-lg shadow-brand/20">
             <i class="ph-bold ph-chart-polar text-white text-lg"></i>
         </div>
-        <span class="ml-3 font-bold text-lg text-white tracking-tight">Admin Console</span>
+        <span class="ml-3 font-bold text-lg text-white tracking-tight">TT Admin</span>
     </div>
     <nav class="flex-1 p-4 space-y-1">
         <button onclick="app.setView('overview')" id="nav-overview" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors active">
@@ -142,11 +142,11 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                     <div class="p-6 space-y-6">
                         <div>
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Task Completion Rate</span><span class="text-white font-bold" id="health-completion">0%</span></div>
-                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-completion" class="bg-green-500 h-full rounded-full" style="width: 0%"></div></div>
+                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-completion" class="bg-green-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
                         </div>
                         <div>
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">High Priority Task Ratio</span><span class="text-white font-bold" id="health-priority">0%</span></div>
-                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-priority" class="bg-red-500 h-full rounded-full" style="width: 0%"></div></div>
+                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-priority" class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
                         </div>
                         
                         <div class="p-4 rounded border border-dark-border bg-dark-bg mt-6">
@@ -165,7 +165,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                 <div class="p-6 border-b border-dark-border bg-dark-card/50 flex items-start justify-between">
                     <div>
                         <h3 class="text-lg font-bold text-white">Active Users</h3>
-                        <p class="text-xs text-text-muted mt-1">Users are detected by activity. Profile info is fetched from Firestore if available.</p>
+                        <p class="text-xs text-text-muted mt-1">Full user directory from Firestore.</p>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -242,7 +242,8 @@ const log=(msg)=>{
 
 const state = { 
     sessions: [], 
-    tasks: [], 
+    tasks: [],
+    usersList: [], // Store actual user documents here
     charts: {}, 
     view: 'overview',
     usersMap: {} 
@@ -312,7 +313,6 @@ const app = {
             log('Fetching global sessions...');
             const qSessions = query(collectionGroup(db, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500));
             const snapSessions = await getDocs(qSessions);
-            // SAFE MAP: Protects against docs that don't have a parent ID (root level data)
             state.sessions = snapSessions.docs.map(d => {
                 const uid = d.ref.parent?.parent?.id || 'unknown';
                 return {...d.data(), _uid: uid};
@@ -326,68 +326,65 @@ const app = {
                 return {...d.data(), _uid: uid};
             });
 
-            log(`Loaded ${state.sessions.length} sessions and ${state.tasks.length} tasks.`);
-            
-            // 1. Render Stats Immediately (Fast)
+            // --- FIX 1: Fetch Actual User List from 'users' collection ---
+            log('Fetching user profiles...');
+            const qUsers = query(collection(db, 'artifacts', appId, 'users'));
+            const snapUsers = await getDocs(qUsers);
+            state.usersList = snapUsers.docs.map(d => ({id: d.id, ...d.data()}));
+            log(`Found ${state.usersList.length} registered users.`);
+
+            // Process data for charts/tables
+            processUsers();
+
+            // Render
             updateKPIs();
             updateCharts();
             updateFeed();
             
-            // 2. Fetch Profiles in Background (Slow)
-            processUsers().then(() => {
-                log('Profiles loaded. Updating views...');
-                if(state.view === 'users') renderUsersTable();
-                if(state.view === 'tasks') renderTasksTable(); // Refresh to show names
-            });
+            if(state.view === 'users') renderUsersTable();
+            if(state.view === 'tasks') renderTasksTable();
             
         } catch (e) {
             log(`ERROR: ${e.message}`);
             if(e.message.includes('index')) alert('Missing Firestore Index! Check Console.');
-            else if(e.message.includes('permission') || e.code === 'permission-denied') alert('Permission Denied. Update Firestore Rules.');
+            else if(e.message.includes('permission') || e.code === 'permission-denied') alert('Permission Denied. Check Rules.');
         }
     }
 };
 window.app = app;
 
-async function processUsers() {
+function processUsers() {
     const map = {};
-    // Calculate stats first
+    
+    // 1. Initialize map with ACTUAL users from Firestore
+    state.usersList.forEach(u => {
+        map[u.id] = {
+            uid: u.id,
+            name: u.displayName || u.name || u.email.split('@')[0],
+            email: u.email,
+            avatar: u.photoURL,
+            provider: u.providerId || 'Unknown',
+            tasks: 0,
+            focus: 0,
+            lastActive: u.lastLogin ? (u.lastLogin.seconds * 1000) : 0,
+            profileLoaded: true
+        };
+    });
+
+    // 2. Add activity data from tasks
     state.tasks.forEach(t => {
-        if(!map[t._uid]) map[t._uid] = { uid: t._uid, tasks: 0, focus: 0, lastActive: 0, profileLoaded: false };
+        if(!map[t._uid]) map[t._uid] = { uid: t._uid, tasks: 0, focus: 0, lastActive: 0, profileLoaded: false, name: 'Anonymous', email: t._uid };
         map[t._uid].tasks++;
     });
+
+    // 3. Add activity data from sessions
     state.sessions.forEach(s => {
-        if(!map[s._uid]) map[s._uid] = { uid: s._uid, tasks: 0, focus: 0, lastActive: 0, profileLoaded: false };
+        if(!map[s._uid]) map[s._uid] = { uid: s._uid, tasks: 0, focus: 0, lastActive: 0, profileLoaded: false, name: 'Anonymous', email: s._uid };
         map[s._uid].focus += (s.duration || 25);
         const t = s.completedAt ? s.completedAt.seconds * 1000 : 0;
         if(t > map[s._uid].lastActive) map[s._uid].lastActive = t;
     });
 
-    state.usersMap = map; // Save stats immediately so "Users" view works
-
-    // Attempt to fetch Profile Data for each UID
-    log(`Fetching profiles for ${Object.keys(map).length} users...`);
-    const uids = Object.keys(map).filter(u => u !== 'unknown');
-    
-    // Process concurrently but safely
-    await Promise.all(uids.map(async (uid) => {
-        try {
-            const snap = await getDoc(doc(db, 'artifacts', appId, 'users', uid));
-            if (snap.exists()) {
-                const d = snap.data();
-                if(map[uid]) {
-                    map[uid].name = d.displayName || d.name || d.fullName;
-                    map[uid].email = d.email;
-                    map[uid].avatar = d.photoURL || d.avatar;
-                    map[uid].provider = d.providerId || d.loginMethod || 'Email/Password';
-                    map[uid].profileLoaded = true;
-                }
-            }
-        } catch (e) {
-            // Silently fail for individual profiles
-        }
-    }));
-    
     state.usersMap = map;
 }
 
@@ -397,32 +394,24 @@ function renderUsersTable() {
     if(users.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-text-muted">No user data found.</td></tr>`; return; }
     
     tbody.innerHTML = users.map(u => {
-        const last = u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'N/A';
+        const last = u.lastActive ? new Date(u.lastActive).toLocaleDateString() + ' ' + new Date(u.lastActive).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : 'Never';
         const h = Math.floor(u.focus/60);
         
-        // Profile Display Logic
-        let avatarHTML, nameHTML, emailHTML, providerHTML;
-        
-        if (u.profileLoaded) {
-            const initial = (u.name || u.email || '?').charAt(0).toUpperCase();
-            avatarHTML = u.avatar ? `<img src="${u.avatar}" class="w-8 h-8 rounded-full bg-gray-700 object-cover">` : `<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">${initial}</div>`;
-            nameHTML = `<div class="text-white font-medium text-sm">${u.name || 'No Name'}</div>`;
-            emailHTML = `<div class="text-xs text-text-muted">${u.email || 'No Email'}</div>`;
-            providerHTML = `<span class="px-2 py-1 rounded bg-dark-bg border border-dark-border text-xs text-text-muted">${u.provider}</span>`;
+        let avatarHTML;
+        if (u.avatar) {
+             avatarHTML = `<img src="${u.avatar}" class="w-8 h-8 rounded-full bg-gray-700 object-cover">`;
         } else {
-            avatarHTML = `<div class="w-8 h-8 rounded-full bg-dark-border flex items-center justify-center text-xs font-bold text-text-muted"><i class="ph-bold ph-user"></i></div>`;
-            nameHTML = `<div class="text-text-muted italic text-sm">Anonymous User</div>`;
-            emailHTML = `<div class="text-[10px] font-mono text-text-faint">${u.uid}</div>`;
-            providerHTML = `<span class="text-xs text-text-faint">Unknown</span>`;
+            const initial = (u.name || u.email || '?').charAt(0).toUpperCase();
+            avatarHTML = `<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">${initial}</div>`;
         }
 
         return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
             <td class="p-4">${avatarHTML}</td>
             <td class="p-4">
-                ${nameHTML}
-                ${emailHTML}
+                <div class="text-white font-medium text-sm">${u.name || 'No Name'}</div>
+                <div class="text-xs text-text-muted">${u.email || 'No Email'}</div>
             </td>
-            <td class="p-4">${providerHTML}</td>
+            <td class="p-4"><span class="px-2 py-1 rounded bg-dark-bg border border-dark-border text-xs text-text-muted">${u.provider}</span></td>
             <td class="p-4">
                 <div class="flex flex-col gap-1">
                     <span class="text-xs text-text-muted"><strong class="text-white">${u.tasks}</strong> tasks</span>
@@ -444,7 +433,7 @@ function renderTasksTable() {
         
         // Try to get user name if available
         const user = state.usersMap[t._uid];
-        const userName = user && user.profileLoaded ? (user.name || user.email) : t._uid.substring(0,8)+'...';
+        const userName = user ? (user.name || user.email) : t._uid.substring(0,8)+'...';
         
         return `<tr class="border-b border-dark-border hover:bg-dark-hover">
             <td class="p-4 ${statusClass} uppercase text-[10px] font-bold">${t.status}</td>
@@ -460,19 +449,32 @@ function renderTasksTable() {
 function updateKPIs(){
     const totalTime = state.sessions.reduce((a,b)=>a+(b.duration||25),0);
     const h = Math.floor(totalTime/60);
+    
+    // Total Users: Use the map size (merged list)
     document.getElementById('kpi-users').innerText = Object.keys(state.usersMap).length; 
     document.getElementById('kpi-focus').innerText = `${h}h`;
     document.getElementById('kpi-tasks').innerText = state.tasks.length;
+    
     const avg = state.sessions.length ? Math.round(totalTime/state.sessions.length) : 0;
     document.getElementById('kpi-avg').innerText = `${avg}m`;
+    
+    // --- FIX 2: System Health Calculation ---
     const done = state.tasks.filter(t=>t.status==='done').length;
     const rate = state.tasks.length ? Math.round((done/state.tasks.length)*100) : 0;
+    
+    const high = state.tasks.filter(t => t.priority === 'high').length;
+    const priRate = state.tasks.length ? Math.round((high/state.tasks.length)*100) : 0;
+
     document.getElementById('health-completion').innerText = `${rate}%`;
     document.getElementById('bar-completion').style.width = `${rate}%`;
+    
+    document.getElementById('health-priority').innerText = `${priRate}%`;
+    document.getElementById('bar-priority').style.width = `${priRate}%`;
 }
-// Charts and Feed logic same as before...
+
 function updateFeed(){
     const b = document.getElementById('live-feed-body');
+    if(state.sessions.length === 0) { b.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-text-muted italic">No recent activity.</td></tr>`; return; }
     b.innerHTML = state.sessions.slice(0, 20).map(s => {
         const d = s.completedAt ? new Date(s.completedAt.seconds*1000) : new Date();
         return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
