@@ -162,20 +162,18 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
 
         <div id="view-users" class="view-section hidden animate-fade-in">
              <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
-                <div class="p-6 border-b border-dark-border bg-dark-card/50 flex items-start justify-between">
-                    <div>
-                        <h3 class="text-lg font-bold text-white">Active Users</h3>
-                        <p class="text-xs text-text-muted mt-1">Users are detected by activity. Profile info is fetched from Firestore if available.</p>
-                    </div>
+                <div class="p-6 border-b border-dark-border bg-dark-card/50">
+                    <h3 class="text-lg font-bold text-white">Active Users Directory</h3>
+                    <p class="text-xs text-text-muted mt-1">Users are synced from 'users' collection and cross-referenced with tasks.</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                          <thead class="bg-dark-sidebar border-b border-dark-border">
                             <tr>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-16"></th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">User Profile</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Login/Provider</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Engagement</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">User</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Email</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Tasks</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Focus Time</th>
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">Last Active</th>
                             </tr>
                         </thead>
@@ -190,7 +188,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                 <div class="p-6 border-b border-dark-border bg-dark-card/50 flex justify-between items-center">
                     <div>
                         <h3 class="text-lg font-bold text-white">Global Task Master List</h3>
-                        <p class="text-xs text-text-muted mt-1">Most recent 500 tasks from all users.</p>
+                        <p class="text-xs text-text-muted mt-1">Showing most recent 500 tasks from all users.</p>
                     </div>
                     <div class="relative">
                         <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></i>
@@ -206,7 +204,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">Project</th>
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">Priority</th>
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">Due Date</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">User</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">User ID</th>
                             </tr>
                         </thead>
                         <tbody id="tasks-table-body" class="text-sm"></tbody>
@@ -221,8 +219,9 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import{getFirestore,collection,collectionGroup,getDocs,query,where,orderBy,limit,doc,getDoc}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import{getFirestore,collection,collectionGroup,getDocs,query,where,orderBy,limit}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
+// --- CONFIGURATION ---
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
 
@@ -234,20 +233,27 @@ Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#2a2a2a';
 
+// --- LOGGING ---
 const log=(msg)=>{
     const b=document.getElementById('console-log');
-    if(b) { b.innerHTML+=`> ${msg}<br>`; b.scrollTop=b.scrollHeight; }
+    if(b) {
+        b.innerHTML+=`> ${msg}<br>`;
+        b.scrollTop=b.scrollHeight;
+    }
     console.log(`[Admin] ${msg}`);
 };
 
+// --- STATE ---
 const state = { 
     sessions: [], 
-    tasks: [], 
+    tasks: [],
+    userProfiles: {}, // New: Store user details
     charts: {}, 
     view: 'overview',
-    usersMap: {} 
+    usersMap: {} // Derived from data
 };
 
+// --- UI HELPERS ---
 const showLoginModal = () => {
     if(document.getElementById('dev-login-modal')) return;
     const div = document.createElement('div');
@@ -274,6 +280,7 @@ const showLoginModal = () => {
     };
 };
 
+// --- AUTH & INIT ---
 onAuthStateChanged(auth, async u => {
     const modal = document.getElementById('dev-login-modal');
     if(u){
@@ -288,14 +295,19 @@ onAuthStateChanged(auth, async u => {
 });
 
 const app = {
-    signOut: async () => { try { await signOut(auth); window.location.reload(); } catch (e) { log(e.message); } },
+    signOut: async () => {
+        try { await signOut(auth); window.location.reload(); } catch (e) { log(e.message); }
+    },
     setView: (v) => {
         state.view = v;
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(`view-${v}`).classList.remove('hidden');
+        
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`nav-${v}`).classList.add('active');
+        
         document.getElementById('page-title').innerText = v === 'overview' ? 'Product Analytics' : (v === 'users' ? 'User Directory' : 'Tasks Master');
+        
         if(v === 'users') renderUsersTable();
         if(v === 'tasks') renderTasksTable();
     },
@@ -309,36 +321,35 @@ const app = {
     },
     refreshData: async () => {
         try {
+            // 1. Fetch User Profiles
+            log('Fetching user profiles...');
+            const qUsers = query(collection(db, 'artifacts', appId, 'users'));
+            const snapUsers = await getDocs(qUsers);
+            state.userProfiles = {};
+            snapUsers.forEach(doc => { state.userProfiles[doc.id] = doc.data(); });
+            log(`Loaded ${Object.keys(state.userProfiles).length} user profiles.`);
+
+            // 2. Fetch Global Data
             log('Fetching global sessions...');
             const qSessions = query(collectionGroup(db, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500));
             const snapSessions = await getDocs(qSessions);
-            // SAFE MAP: Protects against docs that don't have a parent ID (root level data)
-            state.sessions = snapSessions.docs.map(d => {
-                const uid = d.ref.parent?.parent?.id || 'unknown';
-                return {...d.data(), _uid: uid};
-            });
+            state.sessions = snapSessions.docs.map(d => ({...d.data(), _uid: d.ref.parent.parent.id})); 
             
             log('Fetching global tasks...');
             const qTasks = query(collectionGroup(db, 'tasks'), limit(500));
             const snapTasks = await getDocs(qTasks);
-            state.tasks = snapTasks.docs.map(d => {
-                const uid = d.ref.parent?.parent?.id || 'unknown';
-                return {...d.data(), _uid: uid};
-            });
+            state.tasks = snapTasks.docs.map(d => ({...d.data(), _uid: d.ref.parent.parent.id})); 
 
             log(`Loaded ${state.sessions.length} sessions and ${state.tasks.length} tasks.`);
             
-            // 1. Render Stats Immediately (Fast)
+            processUsers();
             updateKPIs();
             updateCharts();
             updateFeed();
             
-            // 2. Fetch Profiles in Background (Slow)
-            processUsers().then(() => {
-                log('Profiles loaded. Updating views...');
-                if(state.view === 'users') renderUsersTable();
-                if(state.view === 'tasks') renderTasksTable(); // Refresh to show names
-            });
+            // Re-render current view if needed
+            if(state.view === 'users') renderUsersTable();
+            if(state.view === 'tasks') renderTasksTable();
             
         } catch (e) {
             log(`ERROR: ${e.message}`);
@@ -349,44 +360,38 @@ const app = {
 };
 window.app = app;
 
-async function processUsers() {
+function processUsers() {
     const map = {};
-    // Calculate stats first
+    
+    // 1. Initialize map with known User Profile data
+    if(state.userProfiles) {
+        Object.values(state.userProfiles).forEach(u => {
+            if(u.uid) {
+                map[u.uid] = { 
+                    uid: u.uid, 
+                    displayName: u.displayName || 'Unknown', 
+                    email: u.email || 'No Email', 
+                    tasks: 0, 
+                    focus: 0, 
+                    lastActive: u.lastLogin ? (u.lastLogin.seconds * 1000) : 0 
+                };
+            }
+        });
+    }
+
+    // 2. Add data from tasks (create entry if missing)
     state.tasks.forEach(t => {
-        if(!map[t._uid]) map[t._uid] = { uid: t._uid, tasks: 0, focus: 0, lastActive: 0, profileLoaded: false };
+        if(!map[t._uid]) map[t._uid] = { uid: t._uid, displayName: 'Anonymous', email: 'N/A', tasks: 0, focus: 0, lastActive: 0 };
         map[t._uid].tasks++;
     });
+
+    // 3. Add data from sessions
     state.sessions.forEach(s => {
-        if(!map[s._uid]) map[s._uid] = { uid: s._uid, tasks: 0, focus: 0, lastActive: 0, profileLoaded: false };
+        if(!map[s._uid]) map[s._uid] = { uid: s._uid, displayName: 'Anonymous', email: 'N/A', tasks: 0, focus: 0, lastActive: 0 };
         map[s._uid].focus += (s.duration || 25);
         const t = s.completedAt ? s.completedAt.seconds * 1000 : 0;
         if(t > map[s._uid].lastActive) map[s._uid].lastActive = t;
     });
-
-    state.usersMap = map; // Save stats immediately so "Users" view works
-
-    // Attempt to fetch Profile Data for each UID
-    log(`Fetching profiles for ${Object.keys(map).length} users...`);
-    const uids = Object.keys(map).filter(u => u !== 'unknown');
-    
-    // Process concurrently but safely
-    await Promise.all(uids.map(async (uid) => {
-        try {
-            const snap = await getDoc(doc(db, 'artifacts', appId, 'users', uid));
-            if (snap.exists()) {
-                const d = snap.data();
-                if(map[uid]) {
-                    map[uid].name = d.displayName || d.name || d.fullName;
-                    map[uid].email = d.email;
-                    map[uid].avatar = d.photoURL || d.avatar;
-                    map[uid].provider = d.providerId || d.loginMethod || 'Email/Password';
-                    map[uid].profileLoaded = true;
-                }
-            }
-        } catch (e) {
-            // Silently fail for individual profiles
-        }
-    }));
     
     state.usersMap = map;
 }
@@ -396,39 +401,21 @@ function renderUsersTable() {
     const users = Object.values(state.usersMap);
     if(users.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-text-muted">No user data found.</td></tr>`; return; }
     
+    // Sort by last active desc
+    users.sort((a,b) => b.lastActive - a.lastActive);
+    
     tbody.innerHTML = users.map(u => {
-        const last = u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'N/A';
+        const last = u.lastActive ? new Date(u.lastActive).toLocaleDateString() + ' ' + new Date(u.lastActive).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
         const h = Math.floor(u.focus/60);
         
-        // Profile Display Logic
-        let avatarHTML, nameHTML, emailHTML, providerHTML;
-        
-        if (u.profileLoaded) {
-            const initial = (u.name || u.email || '?').charAt(0).toUpperCase();
-            avatarHTML = u.avatar ? `<img src="${u.avatar}" class="w-8 h-8 rounded-full bg-gray-700 object-cover">` : `<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">${initial}</div>`;
-            nameHTML = `<div class="text-white font-medium text-sm">${u.name || 'No Name'}</div>`;
-            emailHTML = `<div class="text-xs text-text-muted">${u.email || 'No Email'}</div>`;
-            providerHTML = `<span class="px-2 py-1 rounded bg-dark-bg border border-dark-border text-xs text-text-muted">${u.provider}</span>`;
-        } else {
-            avatarHTML = `<div class="w-8 h-8 rounded-full bg-dark-border flex items-center justify-center text-xs font-bold text-text-muted"><i class="ph-bold ph-user"></i></div>`;
-            nameHTML = `<div class="text-text-muted italic text-sm">Anonymous User</div>`;
-            emailHTML = `<div class="text-[10px] font-mono text-text-faint">${u.uid}</div>`;
-            providerHTML = `<span class="text-xs text-text-faint">Unknown</span>`;
-        }
-
-        return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
-            <td class="p-4">${avatarHTML}</td>
+        return `<tr class="border-b border-dark-border hover:bg-dark-hover">
             <td class="p-4">
-                ${nameHTML}
-                ${emailHTML}
+                <div class="font-bold text-white text-sm">${u.displayName}</div>
+                <div class="text-xs text-text-muted font-mono">${u.uid.substring(0,8)}...</div>
             </td>
-            <td class="p-4">${providerHTML}</td>
-            <td class="p-4">
-                <div class="flex flex-col gap-1">
-                    <span class="text-xs text-text-muted"><strong class="text-white">${u.tasks}</strong> tasks</span>
-                    <span class="text-xs text-brand"><strong class="text-brand">${h}h ${u.focus%60}m</strong> focus</span>
-                </div>
-            </td>
+            <td class="p-4 text-text-muted text-sm">${u.email}</td>
+            <td class="p-4 text-text-muted">${u.tasks}</td>
+            <td class="p-4 text-brand font-medium">${h}h ${u.focus%60}m</td>
             <td class="p-4 text-text-muted text-xs">${last}</td>
         </tr>`;
     }).join('');
@@ -438,21 +425,21 @@ function renderTasksTable() {
     const tbody = document.getElementById('tasks-table-body');
     if(state.tasks.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-text-muted">No tasks found.</td></tr>`; return; }
     
+    // Sort tasks
+    state.tasks.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+
     tbody.innerHTML = state.tasks.map(t => {
         const statusClass = t.status === 'done' ? 'text-green-500' : 'text-text-muted';
         const priClass = t.priority === 'high' ? 'text-red-500' : (t.priority === 'med' ? 'text-yellow-500' : 'text-text-muted');
-        
-        // Try to get user name if available
-        const user = state.usersMap[t._uid];
-        const userName = user && user.profileLoaded ? (user.name || user.email) : t._uid.substring(0,8)+'...';
-        
+        const user = state.usersMap[t._uid] || { displayName: 'Unknown' };
+
         return `<tr class="border-b border-dark-border hover:bg-dark-hover">
             <td class="p-4 ${statusClass} uppercase text-[10px] font-bold">${t.status}</td>
             <td class="p-4 text-white font-medium">${t.title || 'Untitled'}</td>
             <td class="p-4 text-text-muted"><span class="bg-dark-bg px-2 py-1 rounded border border-dark-border text-xs">${t.project || 'Inbox'}</span></td>
             <td class="p-4 ${priClass} text-xs uppercase font-bold">${t.priority || 'None'}</td>
             <td class="p-4 text-text-muted text-xs">${t.dueDate || '-'}</td>
-            <td class="p-4 text-text-faint text-xs truncate max-w-[150px]" title="${t._uid}">${userName}</td>
+            <td class="p-4 text-text-faint font-mono text-[10px]" title="${t._uid}">${user.displayName}</td>
         </tr>`;
     }).join('');
 }
@@ -469,14 +456,23 @@ function updateKPIs(){
     const rate = state.tasks.length ? Math.round((done/state.tasks.length)*100) : 0;
     document.getElementById('health-completion').innerText = `${rate}%`;
     document.getElementById('bar-completion').style.width = `${rate}%`;
+    const high = state.tasks.filter(t=>t.priority==='high').length;
+    const hRate = state.tasks.length ? Math.round((high/state.tasks.length)*100) : 0;
+    document.getElementById('health-priority').innerText = `${hRate}%`;
+    document.getElementById('bar-priority').style.width = `${hRate}%`;
 }
-// Charts and Feed logic same as before...
+
 function updateFeed(){
     const b = document.getElementById('live-feed-body');
     b.innerHTML = state.sessions.slice(0, 20).map(s => {
         const d = s.completedAt ? new Date(s.completedAt.seconds*1000) : new Date();
+        const user = state.usersMap[s._uid] || { displayName: 'Unknown' };
+        
         return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
-            <td class="p-4 text-text-muted">${d.toLocaleDateString()} <span class="text-text-faint">${d.toLocaleTimeString()}</span></td>
+            <td class="p-4 text-text-muted">
+                ${d.toLocaleDateString()} <span class="text-text-faint">${d.toLocaleTimeString()}</span>
+                <div class="text-[10px] text-brand/70">${user.displayName}</div>
+            </td>
             <td class="p-4 text-white font-medium">${s.taskTitle || 'Unknown Task'}</td>
             <td class="p-4 text-brand">${s.duration||25}m</td>
         </tr>`
