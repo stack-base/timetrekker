@@ -661,7 +661,7 @@ const esc = (str) => { if (!str) return ''; const div = document.createElement('
 
 // --- STATE MANAGEMENT ---
 const state = {
-    user: null, tasks: [], logs: [], projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
+    user: null, userProfile: null, tasks: [], logs: [], projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
     view: 'today', filterProject: null, selectedTaskId: null, editingTaskId: null,
     
     // UPDATED TIMER STATE
@@ -712,33 +712,19 @@ Chart.defaults.plugins.tooltip.bodyColor='#a3a3a3';
 Chart.defaults.plugins.tooltip.borderColor='#333';
 Chart.defaults.plugins.tooltip.borderWidth=1;
 
-onAuthStateChanged(auth, async u => {
+// --- AUTHENTICATION & PROFILE FETCHING ---
+onAuthStateChanged(auth, u => {
     if(u){
         state.user=u;
         const p=$('user-profile-display');
         if(p){
             p.classList.remove('hidden');p.classList.add('flex');
-            $('user-name-text').textContent=u.displayName||u.email.split('@')[0];
-            $('user-email-text').textContent=u.email;
-            $('user-avatar-initials').textContent=(u.displayName||u.email).charAt(0).toUpperCase();
-            els.settingsName.textContent=u.displayName||u.email.split('@')[0];
-            els.settingsEmail.textContent=u.email;
-            els.settingsAvatar.textContent=(u.displayName||u.email).charAt(0).toUpperCase();
+            // Initial render with Auth data while fetching DB profile
+            updateProfileUI(u.displayName || u.email.split('@')[0], u.email, (u.displayName||u.email).charAt(0).toUpperCase());
         }
-
-        // --- NEW: SAVE USER PROFILE TO DB ---
-        // This makes the user visible in the Admin Dashboard
-        try {
-            await setDoc(doc(db, 'artifacts', appId, 'users', u.uid), {
-                displayName: u.displayName || u.email.split('@')[0],
-                email: u.email,
-                photoURL: u.photoURL || null,
-                lastLogin: new Date().toISOString()
-            }, { merge: true });
-        } catch (e) {
-            console.error("Failed to save user profile", e);
-        }
-        // ------------------------------------
+        
+        // Fetch User Profile from DB (artifacts/{appId}/users/{uid})
+        subUserProfile(u.uid);
 
         subTasks(u.uid);
         subLogs(u.uid);
@@ -760,10 +746,32 @@ onAuthStateChanged(auth, async u => {
                     });
                 }
             }
-        }, 10000); // Check every 10s to ensure we catch the minute change
+        }, 10000); 
 
     } else {
         window.location.href='https://stack-base.github.io/account/login.html?redirectUrl=https://stack-base.github.io/timetrekker/application';
+    }
+});
+
+const updateProfileUI = (name, email, initial) => {
+    $('user-name-text').textContent = name;
+    $('user-email-text').textContent = email;
+    $('user-avatar-initials').textContent = initial;
+    els.settingsName.textContent = name;
+    els.settingsEmail.textContent = email;
+    els.settingsAvatar.textContent = initial;
+};
+
+const subUserProfile = uid => onSnapshot(doc(db, 'artifacts', appId, 'users', uid), docSnap => {
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        state.userProfile = data;
+        // Prioritize DB data -> Auth data -> Default
+        const displayName = data.displayName || state.user.displayName || state.user.email.split('@')[0];
+        const email = data.email || state.user.email;
+        const initial = (displayName || email).charAt(0).toUpperCase();
+        
+        updateProfileUI(displayName, email, initial);
     }
 });
 
@@ -786,7 +794,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'ti
             remaining: d.remaining || state.timer.settings[d.mode || 'focus'] * 60,
             totalDuration: d.totalDuration || state.timer.settings[d.mode || 'focus'] * 60,
             activeTaskId: d.taskId || null,
-            pomoCountCurrentSession: d.sessionCount || 0 // NEW: Load session count
+            pomoCountCurrentSession: d.sessionCount || 0 
         };
         app.setTimerModeUI(state.timer.mode);
         if (state.timer.activeTaskId) { state.selectedTaskId = state.timer.activeTaskId; updateTimerUI(state.tasks.find(x => x.id === state.timer.activeTaskId)); } else updateTimerUI(null);
@@ -1084,5 +1092,6 @@ function renderTasks(){
         els.taskList.appendChild(el)
     })
 }
+function updateTimerUI(t){if(!t){els.focusEmpty.classList.remove('hidden');els.focusActive.classList.add('hidden');return}els.focusEmpty.classList.add('hidden');els.focusActive.classList.remove('hidden');els.focusTitle.innerText=t.title;els.focusProject.innerText=t.project||'Inbox';els.focusCompleted.innerText=t.completedPomos||0;els.focusTotal.innerText=t.estimatedPomos||1}
 app.setView('today');
 </script></body></html>
