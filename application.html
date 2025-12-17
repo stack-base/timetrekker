@@ -646,7 +646,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp,enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,getDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp,enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
@@ -712,9 +712,43 @@ Chart.defaults.plugins.tooltip.bodyColor='#a3a3a3';
 Chart.defaults.plugins.tooltip.borderColor='#333';
 Chart.defaults.plugins.tooltip.borderWidth=1;
 
+// --- NEW FUNCTION TO SYNC USER PROFILE ---
+async function syncUserProfile(u) {
+    if (!u) return;
+    try {
+        const userRef = doc(db, 'artifacts', appId, 'users', u.uid);
+        const userSnap = await getDoc(userRef);
+
+        // We update if the doc doesn't exist OR to keep data fresh (e.g. changed profile pic)
+        // Using setDoc with merge:true ensures we don't overwrite existing custom fields if you add them later
+        const profileData = {
+            displayName: u.displayName || u.email.split('@')[0],
+            email: u.email,
+            photoURL: u.photoURL,
+            providerId: u.providerData.length > 0 ? u.providerData[0].providerId : 'password',
+            lastLogin: serverTimestamp(),
+            uid: u.uid // Store UID inside document for easier searching
+        };
+
+        if (!userSnap.exists()) {
+            console.log('Creating new user profile in Firestore...');
+            await setDoc(userRef, { ...profileData, createdAt: serverTimestamp() });
+        } else {
+            // Optional: Update lastLogin every time they visit
+            await setDoc(userRef, profileData, { merge: true });
+        }
+    } catch (e) {
+        console.error("Error syncing user profile:", e);
+    }
+}
+
 onAuthStateChanged(auth, u => {
     if(u){
         state.user=u;
+        
+        // TRIGGER SYNC HERE
+        syncUserProfile(u);
+
         const p=$('user-profile-display');
         if(p){
             p.classList.remove('hidden');p.classList.add('flex');
