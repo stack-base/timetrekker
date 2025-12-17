@@ -51,10 +51,13 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
         </button>
     </nav>
     <div class="p-4 border-t border-dark-border">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 mb-4">
              <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">A</div>
-             <div class="flex flex-col"><span class="text-sm font-medium text-white">Admin Console</span><span class="text-xs text-text-muted">Connected</span></div>
+             <div class="flex flex-col min-w-0"><span class="text-sm font-medium text-white truncate">Admin Console</span><span class="text-xs text-text-muted">Connected</span></div>
         </div>
+        <button onclick="app.signOut()" class="w-full flex items-center justify-center px-3 py-2 rounded border border-red-900/30 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-wide">
+            <i class="ph-bold ph-sign-out mr-2"></i> Sign Out
+        </button>
     </div>
 </aside>
 
@@ -157,7 +160,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import{getAuth,onAuthStateChanged,signInWithEmailAndPassword}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import{getFirestore,collection,collectionGroup,getDocs,query,where,orderBy,limit}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // --- CONFIGURATION ---
@@ -249,6 +252,24 @@ onAuthStateChanged(auth, async u => {
 });
 
 const app = {
+    signOut: async () => {
+        try {
+            await signOut(auth);
+            log('Signed out successfully');
+            state.sessions = [];
+            state.tasks = [];
+            // Clear Charts
+            if(state.charts.activity) { state.charts.activity.destroy(); state.charts.activity = null; }
+            if(state.charts.proj) { state.charts.proj.destroy(); state.charts.proj = null; }
+            // UI Reset
+            document.getElementById('live-feed-body').innerHTML = '<tr><td colspan="3" class="p-4 text-center text-text-muted italic">Signed out.</td></tr>';
+            ['kpi-users','kpi-focus','kpi-tasks','kpi-avg','health-completion','health-priority'].forEach(id => document.getElementById(id).innerText = '--');
+            document.getElementById('bar-completion').style.width = '0%';
+            document.getElementById('bar-priority').style.width = '0%';
+        } catch (e) {
+            log(`Error signing out: ${e.message}`);
+        }
+    },
     refreshData: async () => {
         try {
             // 1. Fetch Global Sessions
