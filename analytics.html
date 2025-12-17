@@ -436,7 +436,6 @@ function renderUsersTable() {
     }).join('');
 }
 
-// Helper to format minutes into "1h 30m"
 const fmtTime = (m) => {
     const h = Math.floor(m / 60);
     const rm = m % 60;
@@ -444,7 +443,6 @@ const fmtTime = (m) => {
     return h > 0 ? `${h}h ${rm}m` : `${rm}m`;
 };
 
-// Helper to get relative date label
 const getDateLabel = (dateStr) => {
     if(!dateStr) return 'No Due Date';
     const today = new Date().toISOString().split('T')[0];
@@ -477,9 +475,8 @@ function renderTasksTable() {
 
     if(filteredTasks.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-text-muted">No tasks found.</td></tr>`; return; }
     
-    // Group tasks by Date Label
     const groups = {};
-    const sortOrder = ['Overdue', 'Today', 'Tomorrow', 'No Due Date']; // Priority order for known keys
+    const sortOrder = ['Overdue', 'Today', 'Tomorrow', 'No Due Date'];
     
     filteredTasks.forEach(t => {
         const label = getDateLabel(t.dueDate);
@@ -487,7 +484,6 @@ function renderTasksTable() {
         groups[label].push(t);
     });
 
-    // Sort keys: Known keys first, then dates, then No Date
     const sortedKeys = Object.keys(groups).sort((a,b) => {
         const idxA = sortOrder.indexOf(a);
         const idxB = sortOrder.indexOf(b);
@@ -502,10 +498,8 @@ function renderTasksTable() {
     let html = '';
     
     sortedKeys.forEach(label => {
-        // Group Header
         html += `<tr class="bg-dark-sidebar/50 border-b border-dark-border"><td colspan="6" class="p-2 px-4 text-xs font-bold text-brand uppercase tracking-wider">${label}</td></tr>`;
         
-        // Tasks in Group
         html += groups[label].map(t => {
             const statusClass = t.status === 'done' ? 'text-green-500' : 'text-text-muted';
             const icon = t.status === 'done' ? '<i class="ph-fill ph-check-circle text-green-500 text-lg"></i>' : '<i class="ph-regular ph-circle text-text-muted text-lg"></i>';
@@ -516,39 +510,47 @@ function renderTasksTable() {
                 none: '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-dark-card border border-dark-border text-text-faint">NONE</span>'
             }[t.priority || 'none'];
 
-            // Duration Math
             const dur = t.pomoDuration || 25;
             const estPomos = t.estimatedPomos || 1;
             const donePomos = t.completedPomos || 0;
             const totalDur = estPomos * dur;
             const doneDur = donePomos * dur;
 
-            // User info (only show if Global view)
             const user = state.usersMap[t._uid];
             const userName = user ? (user.name || user.email) : 'Unknown';
             const userTag = !state.filterUser ? `<div class="text-[10px] text-text-faint mt-1"><i class="ph-bold ph-user mr-1"></i>${userName}</div>` : '';
 
-            // Repeat Badge
             const repeatBadge = (t.repeat && t.repeat !== 'none') ? `<span class="ml-2 text-[10px] text-brand bg-brand/10 px-1 rounded border border-brand/20"><i class="ph-bold ph-arrows-clockwise mr-0.5"></i>${t.repeat}</span>` : '';
+            
+            const noteHtml = t.note ? `<div class="text-xs text-text-muted mt-1 italic line-clamp-2">${t.note}</div>` : '';
+            const subtasksHtml = (t.subtasks && t.subtasks.length > 0) ? 
+                `<div class="mt-2 space-y-0.5">${t.subtasks.map(s => `<div class="flex items-center text-[10px] text-text-muted"><i class="ph-bold ph-caret-right mr-1 text-text-faint"></i>${s}</div>`).join('')}</div>` : '';
+            const tagsHtml = (t.tags && t.tags.length > 0) ?
+                `<div class="flex flex-wrap gap-1 mt-2">${t.tags.map(tag => `<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/5 text-brand border border-brand/10">${tag}</span>`).join('')}</div>` : '';
+            const reminderHtml = t.reminder ? `<div class="text-[10px] text-text-muted mt-1 flex items-center"><i class="ph-bold ph-bell mr-1"></i>${t.reminder}</div>` : '';
 
             return `<tr class="task-row border-b border-dark-border hover:bg-dark-hover group">
-                <td class="p-4 w-8">${icon}</td>
-                <td class="p-4">
+                <td class="p-4 w-8 align-top pt-5">${icon}</td>
+                <td class="p-4 align-top">
                     <div class="text-white font-medium text-sm flex items-center">${t.title || 'Untitled'} ${repeatBadge}</div>
-                    <div class="flex items-center gap-2 mt-1">
+                    ${noteHtml}
+                    ${subtasksHtml}
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
                         <span class="bg-dark-bg px-1.5 py-0.5 rounded border border-dark-border text-[10px] text-text-muted">${t.project || 'Inbox'}</span>
                         ${userTag}
+                        ${reminderHtml}
                     </div>
+                    ${tagsHtml}
                 </td>
-                <td class="p-4">${priBadge}</td>
-                <td class="p-4">
+                <td class="p-4 align-top pt-4">${priBadge}</td>
+                <td class="p-4 align-top pt-4">
                     <div class="text-xs text-white font-mono"><span class="text-brand font-bold">${donePomos}</span> / ${estPomos}</div>
                     <div class="w-16 h-1 bg-dark-bg rounded-full mt-1 overflow-hidden"><div class="h-full bg-brand" style="width:${Math.min((donePomos/estPomos)*100, 100)}%"></div></div>
                 </td>
-                <td class="p-4">
+                <td class="p-4 align-top pt-4">
                     <div class="text-xs text-text-muted">${fmtTime(doneDur)} / ${fmtTime(totalDur)}</div>
                 </td>
-                <td class="p-4 text-right text-text-muted text-xs font-mono">${t.dueDate || '-'}</td>
+                <td class="p-4 text-right text-text-muted text-xs font-mono align-top pt-4">${t.dueDate || '-'}</td>
             </tr>`;
         }).join('');
     });
