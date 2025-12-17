@@ -207,12 +207,12 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                     <table class="w-full text-left border-collapse">
                          <thead class="bg-dark-sidebar sticky top-0 z-10 border-b border-dark-border">
                             <tr>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Status</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Task Title</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Project</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Task Details</th>
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">Priority</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Due Date</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">User</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Pomos</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Duration</th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Due Date</th>
                             </tr>
                         </thead>
                         <tbody id="tasks-table-body" class="text-sm"></tbody>
@@ -253,7 +253,7 @@ const state = {
     charts: {}, 
     view: 'overview',
     usersMap: {},
-    filterUser: null // NEW: Stores the UID to filter by
+    filterUser: null
 };
 
 const showLoginModal = () => {
@@ -299,7 +299,6 @@ const app = {
     signOut: async () => { try { await signOut(auth); window.location.reload(); } catch (e) { log(e.message); } },
     setView: (v) => {
         state.view = v;
-        // Reset filter if clicking directly on Tasks nav button (optional, but good UX)
         if(v === 'tasks' && !state.keepFilter) state.filterUser = null;
         state.keepFilter = false;
 
@@ -311,10 +310,9 @@ const app = {
         if(v === 'users') renderUsersTable();
         if(v === 'tasks') renderTasksTable();
     },
-    // --- NEW FUNCTION: Filter tasks by a specific user UID ---
     filterTasksByUser: (uid) => {
         state.filterUser = uid;
-        state.keepFilter = true; // Flag to prevent setView from clearing it
+        state.keepFilter = true;
         app.setView('tasks');
     },
     clearTaskFilter: () => {
@@ -322,7 +320,7 @@ const app = {
         renderTasksTable();
     },
     filterTasks: (q) => {
-        const trs = document.getElementById('tasks-table-body').querySelectorAll('tr');
+        const trs = document.getElementById('tasks-table-body').querySelectorAll('.task-row');
         q = q.toLowerCase();
         trs.forEach(tr => {
             const txt = tr.innerText.toLowerCase();
@@ -438,18 +436,34 @@ function renderUsersTable() {
     }).join('');
 }
 
+// Helper to format minutes into "1h 30m"
+const fmtTime = (m) => {
+    const h = Math.floor(m / 60);
+    const rm = m % 60;
+    if (h === 0 && rm === 0) return '0m';
+    return h > 0 ? `${h}h ${rm}m` : `${rm}m`;
+};
+
+// Helper to get relative date label
+const getDateLabel = (dateStr) => {
+    if(!dateStr) return 'No Due Date';
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    if(dateStr < today) return 'Overdue';
+    if(dateStr === today) return 'Today';
+    if(dateStr === tomorrow) return 'Tomorrow';
+    return dateStr;
+};
+
 function renderTasksTable() {
     const tbody = document.getElementById('tasks-table-body');
     const headerTitle = document.getElementById('tasks-header-title');
     const headerDesc = document.getElementById('tasks-header-desc');
     const clearBtn = document.getElementById('clear-filter-btn');
 
-    // Filter tasks based on state
     let filteredTasks = state.tasks;
     if (state.filterUser) {
         filteredTasks = state.tasks.filter(t => t._uid === state.filterUser);
-        
-        // Update Header UI
         const user = state.usersMap[state.filterUser];
         const uName = user ? (user.name || user.email) : 'User';
         headerTitle.innerHTML = `Tasks for <span class="text-brand">${uName}</span>`;
@@ -463,23 +477,83 @@ function renderTasksTable() {
 
     if(filteredTasks.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-text-muted">No tasks found.</td></tr>`; return; }
     
-    tbody.innerHTML = filteredTasks.map(t => {
-        const statusClass = t.status === 'done' ? 'text-green-500' : 'text-text-muted';
-        const priClass = t.priority === 'high' ? 'text-red-500' : (t.priority === 'med' ? 'text-yellow-500' : 'text-text-muted');
+    // Group tasks by Date Label
+    const groups = {};
+    const sortOrder = ['Overdue', 'Today', 'Tomorrow', 'No Due Date']; // Priority order for known keys
+    
+    filteredTasks.forEach(t => {
+        const label = getDateLabel(t.dueDate);
+        if(!groups[label]) groups[label] = [];
+        groups[label].push(t);
+    });
+
+    // Sort keys: Known keys first, then dates, then No Date
+    const sortedKeys = Object.keys(groups).sort((a,b) => {
+        const idxA = sortOrder.indexOf(a);
+        const idxB = sortOrder.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        if (a === 'No Due Date') return 1;
+        if (b === 'No Due Date') return -1;
+        return a.localeCompare(b);
+    });
+
+    let html = '';
+    
+    sortedKeys.forEach(label => {
+        // Group Header
+        html += `<tr class="bg-dark-sidebar/50 border-b border-dark-border"><td colspan="6" class="p-2 px-4 text-xs font-bold text-brand uppercase tracking-wider">${label}</td></tr>`;
         
-        // Try to get user name if available
-        const user = state.usersMap[t._uid];
-        const userName = user ? (user.name || user.email) : t._uid.substring(0,8)+'...';
-        
-        return `<tr class="border-b border-dark-border hover:bg-dark-hover">
-            <td class="p-4 ${statusClass} uppercase text-[10px] font-bold">${t.status}</td>
-            <td class="p-4 text-white font-medium">${t.title || 'Untitled'}</td>
-            <td class="p-4 text-text-muted"><span class="bg-dark-bg px-2 py-1 rounded border border-dark-border text-xs">${t.project || 'Inbox'}</span></td>
-            <td class="p-4 ${priClass} text-xs uppercase font-bold">${t.priority || 'None'}</td>
-            <td class="p-4 text-text-muted text-xs">${t.dueDate || '-'}</td>
-            <td class="p-4 text-text-faint text-xs truncate max-w-[150px]" title="${t._uid}">${userName}</td>
-        </tr>`;
-    }).join('');
+        // Tasks in Group
+        html += groups[label].map(t => {
+            const statusClass = t.status === 'done' ? 'text-green-500' : 'text-text-muted';
+            const icon = t.status === 'done' ? '<i class="ph-fill ph-check-circle text-green-500 text-lg"></i>' : '<i class="ph-regular ph-circle text-text-muted text-lg"></i>';
+            const priBadge = {
+                high: '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20">HIGH</span>',
+                med: '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">MED</span>',
+                low: '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">LOW</span>',
+                none: '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-dark-card border border-dark-border text-text-faint">NONE</span>'
+            }[t.priority || 'none'];
+
+            // Duration Math
+            const dur = t.pomoDuration || 25;
+            const estPomos = t.estimatedPomos || 1;
+            const donePomos = t.completedPomos || 0;
+            const totalDur = estPomos * dur;
+            const doneDur = donePomos * dur;
+
+            // User info (only show if Global view)
+            const user = state.usersMap[t._uid];
+            const userName = user ? (user.name || user.email) : 'Unknown';
+            const userTag = !state.filterUser ? `<div class="text-[10px] text-text-faint mt-1"><i class="ph-bold ph-user mr-1"></i>${userName}</div>` : '';
+
+            // Repeat Badge
+            const repeatBadge = (t.repeat && t.repeat !== 'none') ? `<span class="ml-2 text-[10px] text-brand bg-brand/10 px-1 rounded border border-brand/20"><i class="ph-bold ph-arrows-clockwise mr-0.5"></i>${t.repeat}</span>` : '';
+
+            return `<tr class="task-row border-b border-dark-border hover:bg-dark-hover group">
+                <td class="p-4 w-8">${icon}</td>
+                <td class="p-4">
+                    <div class="text-white font-medium text-sm flex items-center">${t.title || 'Untitled'} ${repeatBadge}</div>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="bg-dark-bg px-1.5 py-0.5 rounded border border-dark-border text-[10px] text-text-muted">${t.project || 'Inbox'}</span>
+                        ${userTag}
+                    </div>
+                </td>
+                <td class="p-4">${priBadge}</td>
+                <td class="p-4">
+                    <div class="text-xs text-white font-mono"><span class="text-brand font-bold">${donePomos}</span> / ${estPomos}</div>
+                    <div class="w-16 h-1 bg-dark-bg rounded-full mt-1 overflow-hidden"><div class="h-full bg-brand" style="width:${Math.min((donePomos/estPomos)*100, 100)}%"></div></div>
+                </td>
+                <td class="p-4">
+                    <div class="text-xs text-text-muted">${fmtTime(doneDur)} / ${fmtTime(totalDur)}</div>
+                </td>
+                <td class="p-4 text-right text-text-muted text-xs font-mono">${t.dueDate || '-'}</td>
+            </tr>`;
+        }).join('');
+    });
+    
+    tbody.innerHTML = html;
 }
 
 function updateKPIs(){
