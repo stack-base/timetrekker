@@ -712,9 +712,26 @@ Chart.defaults.plugins.tooltip.bodyColor='#a3a3a3';
 Chart.defaults.plugins.tooltip.borderColor='#333';
 Chart.defaults.plugins.tooltip.borderWidth=1;
 
-onAuthStateChanged(auth, u => {
+onAuthStateChanged(auth, async u => {
     if(u){
         state.user=u;
+
+        // --- NEW: Save User Profile to Firestore ---
+        try {
+            const userRef = doc(db, 'artifacts', appId, 'users', u.uid);
+            await setDoc(userRef, {
+                uid: u.uid,
+                displayName: u.displayName || u.email.split('@')[0],
+                email: u.email,
+                photoURL: u.photoURL || null,
+                lastLogin: serverTimestamp(),
+                accountCreated: u.metadata.creationTime || null
+            }, { merge: true });
+        } catch (err) {
+            console.error("Error saving user profile:", err);
+        }
+        // -------------------------------------------
+
         const p=$('user-profile-display');
         if(p){
             p.classList.remove('hidden');p.classList.add('flex');
