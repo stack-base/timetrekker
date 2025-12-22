@@ -15,15 +15,19 @@ tailwind.config={
       fontFamily:{sans:['Inter','sans-serif']},
       colors:{
         brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a'},
-        // UPDATED: Pure Black Color Palette
+        // UPDATED: High Contrast Pure Black Palette
         dark:{
-            bg:'#000000',
-            sidebar:'#000000',
-            card:'#000000',
-            border:'#262626', // Subtle border for separation on pure black
-            hover:'#111111'
+            bg:'#000000',      // Pure Black
+            sidebar:'#000000', // Pure Black
+            card:'#000000',    // Pure Black
+            border:'#333333',  // Much more visible border (was #262626)
+            hover:'#1a1a1a'    // Slightly lighter hover state
         },
-        text:{main:'#e5e7eb',muted:'#737373',faint:'#404040'},
+        text:{
+            main:'#ffffff',    // Pure White text (was #e5e7eb)
+            muted:'#a3a3a3',   // Lighter gray for better visibility (was #737373)
+            faint:'#525252'    // Visible but subtle (was #404040)
+        },
         priority:{high:'#ef4444',med:'#eab308',low:'#3b82f6',none:'#525252'}
       }
     }
@@ -32,37 +36,37 @@ tailwind.config={
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script src="https://unpkg.com/@phosphor-icons/web"></script>
 <style>
-/* UPDATED: Darker Scrollbars */
+/* UPDATED: Scrollbars to match new borders */
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:#000000}
-::-webkit-scrollbar-thumb{background:#262626;border-radius:4px;border:2px solid #000000}
-::-webkit-scrollbar-thumb:hover{background:#404040}
+::-webkit-scrollbar-thumb{background:#333333;border-radius:4px;border:2px solid #000000}
+::-webkit-scrollbar-thumb:hover{background:#525252}
 .no-scrollbar::-webkit-scrollbar {display: none;}
 .no-scrollbar {-ms-overflow-style: none; scrollbar-width: none;}
 
 /* UPDATED: Body Background */
-body{background-color:#000000;color:#e5e7eb;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+body{background-color:#000000;color:#ffffff;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 
 .custom-checkbox input:checked+div{background-color:#ff5757;border-color:#ff5757}
 .custom-checkbox input:checked+div svg{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}.animate-fade-in{animation:fadeIn .2s ease-out forwards}
 input[type=range]{-webkit-appearance:none;background:transparent}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#262626;border-radius:2px}
+input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#333333;border-radius:2px} /* Updated track color */
 .chart-container{position:relative;width:100%;height:100%}
 
-/* Table Styles */
-.analysis-table th { text-align:left; font-size:11px; text-transform:uppercase; color:#737373; padding:12px; border-bottom:1px solid #262626; }
-.analysis-table td { font-size:13px; color:#e5e7eb; padding:12px; border-bottom:1px solid #262626; }
+/* Table Styles - Updated Borders */
+.analysis-table th { text-align:left; font-size:11px; text-transform:uppercase; color:#a3a3a3; padding:12px; border-bottom:1px solid #333333; }
+.analysis-table td { font-size:13px; color:#ffffff; padding:12px; border-bottom:1px solid #333333; }
 .analysis-table tr:last-child td { border-bottom:none; }
 
-/* Custom Global Tooltip - Pure Black */
+/* Custom Global Tooltip - Pure Black & Visible Border */
 #global-tooltip {
     pointer-events: none;
     position: fixed;
     z-index: 9999;
     background: #000000;
-    border: 1px solid #333;
+    border: 1px solid #404040; /* Lighter border for tooltip */
     padding: 8px 12px;
     border-radius: 6px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8);
@@ -74,35 +78,35 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
     white-space: nowrap;
 }
 #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 2px; font-size: 13px; }
-#global-tooltip .sub { color: #737373; font-size: 11px; }
+#global-tooltip .sub { color: #a3a3a3; font-size: 11px; }
 
 /* Apple-style Liquid Glass Toggles */
 .glass-toggle-group {
     display: inline-flex;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.05); /* Slightly more visible bg */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     padding: 4px;
     border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15); /* More visible border */
 }
 .glass-toggle-btn {
     padding: 4px 12px;
     border-radius: 9999px;
     font-size: 11px;
     font-weight: 600;
-    color: #737373;
+    color: #a3a3a3;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
 }
 .glass-toggle-btn:hover {
-    color: #e5e7eb;
+    color: #ffffff;
 }
 .glass-toggle-btn.active {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
     box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    border-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 </style>
 </head>
@@ -414,7 +418,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
         </div>
         <div class="relative mb-16">
             <div class="relative w-64 h-64 flex items-center justify-center">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#262626" stroke-width="2"/><circle id="timer-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/></svg>
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#333333" stroke-width="2"/><circle id="timer-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/></svg>
                 <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()"><div id="timer-display" class="text-6xl font-light text-white tracking-tighter tabular-nums">25:00</div><div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-4 text-brand">FOCUS</div></div>
             </div>
         </div>
@@ -715,8 +719,8 @@ taskPomoDisplay:$('task-pomo-display'),totalTimeCalc:$('total-time-calc'),taskRe
 };
 
 Chart.defaults.font.family='Inter';
-Chart.defaults.color='#737373';
-Chart.defaults.borderColor='#262626';
+Chart.defaults.color='#a3a3a3';
+Chart.defaults.borderColor='#333333';
 Chart.defaults.scale.grid.color='rgba(255,255,255,0.03)';
 Chart.defaults.plugins.tooltip.backgroundColor='rgba(0, 0, 0, 0.95)';
 Chart.defaults.plugins.tooltip.titleColor='#fff';
