@@ -764,17 +764,17 @@ onAuthStateChanged(auth, u => {
         subTimer(u.uid);
         els.currentDate.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
         
-        // Reminder Check Loop
+        // Reminder Check Loop - FIXED FOR ANDROID WEBVIEW
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             if (state.lastCheckTime !== currentTime) {
                 state.lastCheckTime = currentTime;
-                if(Notification.permission === 'granted'){
+                if('Notification' in window && Notification.permission === 'granted'){
                      const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
                      state.tasks.forEach(t => {
                         if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
-                            new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png' });
+                            try{new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png' });}catch(e){}
                         }
                     });
                 }
@@ -845,7 +845,12 @@ const app={
     addSubtaskUI:(v='')=>{const d=D.createElement('div');d.className='flex items-center space-x-2 animate-fade-in';d.innerHTML=`<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${esc(v)}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`;els.subtasksContainer.appendChild(d)},
     toggleDropdown:t=>{const d=$(`${t}-options`);D.querySelectorAll('[id$="-options"]').forEach(x=>{if(x.id!==`${t}-options`)x.classList.add('hidden')});d.classList.toggle('hidden');if(!d.classList.contains('hidden'))d.classList.add('animate-fade-in')},
     selectOption:(t,v,d)=>{$(`selected-${t}`).innerText=d;$(`task-${t}`).value=v;$(`${t}-options`).classList.add('hidden')},
-    toggleAddTaskModal:(t=null)=>{if(Notification.permission==='default') Notification.requestPermission(); if(els.modal.classList.contains('hidden')){els.subtasksContainer.innerHTML='';const po=$('project-options');po.innerHTML='';state.projects.forEach(p=>{const b=D.createElement('button');b.type='button';b.onclick=()=>app.selectOption('project',p,p);b.className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center";b.innerHTML=`<i class="ph-bold ph-folder mr-2"></i> ${esc(p)}`;po.appendChild(b)});if(t){state.editingTaskId=t.id;els.modalTitle.innerText="Edit Task";els.saveTaskBtn.innerText="Save Changes";$('task-title').value=t.title;$('task-note').value=t.note||'';$('task-tags').value=t.tags?t.tags.join(', '):'';state.newEst=t.estimatedPomos||1;els.estDisplay.innerText=state.newEst;els.taskPomoDisplay.innerText=t.pomoDuration||25;els.dateInput.value=t.dueDate||'';app.selectOption('priority',t.priority||'none',{high:'High Priority (! Urgent)',med:'Medium Priority',low:'Low Priority',none:'None'}[t.priority||'none']);app.selectOption('project',t.project||'Inbox',t.project||'Inbox');app.selectOption('repeat',t.repeat||'none',t.repeat?t.repeat.charAt(0).toUpperCase()+t.repeat.slice(1):'None');els.taskReminder.value=t.reminder||'';if(t.subtasks)t.subtasks.forEach(s=>app.addSubtaskUI(s))}else{state.editingTaskId=null;els.modalTitle.innerText="New Task";els.saveTaskBtn.innerText="Save Task";state.newEst=1;els.estDisplay.innerText="1";els.taskPomoDisplay.innerText=25;els.dateInput.value=new Date().toISOString().split('T')[0];$('task-title').value='';$('task-note').value='';$('task-tags').value='';app.selectOption('priority','none','None');app.selectOption('project','Inbox','Inbox');app.selectOption('repeat','none','None');els.taskReminder.value=''}app.updateTotalEst();els.modal.classList.remove('hidden');setTimeout(()=>els.modal.classList.remove('opacity-0'),10);setTimeout(()=>els.modalPanel.classList.replace('scale-95','scale-100'),10);$('task-title').focus()}else{els.modal.classList.add('opacity-0');els.modalPanel.classList.replace('scale-100','scale-95');setTimeout(()=>els.modal.classList.add('hidden'),200)}},
+    
+    // --- FIXED FOR ANDROID WEBVIEW ---
+    toggleAddTaskModal:(t=null)=>{
+        try { if('Notification' in window && Notification.permission==='default') Notification.requestPermission().catch(()=>{}); } catch(e){}
+        if(els.modal.classList.contains('hidden')){els.subtasksContainer.innerHTML='';const po=$('project-options');po.innerHTML='';state.projects.forEach(p=>{const b=D.createElement('button');b.type='button';b.onclick=()=>app.selectOption('project',p,p);b.className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center";b.innerHTML=`<i class="ph-bold ph-folder mr-2"></i> ${esc(p)}`;po.appendChild(b)});if(t){state.editingTaskId=t.id;els.modalTitle.innerText="Edit Task";els.saveTaskBtn.innerText="Save Changes";$('task-title').value=t.title;$('task-note').value=t.note||'';$('task-tags').value=t.tags?t.tags.join(', '):'';state.newEst=t.estimatedPomos||1;els.estDisplay.innerText=state.newEst;els.taskPomoDisplay.innerText=t.pomoDuration||25;els.dateInput.value=t.dueDate||'';app.selectOption('priority',t.priority||'none',{high:'High Priority (! Urgent)',med:'Medium Priority',low:'Low Priority',none:'None'}[t.priority||'none']);app.selectOption('project',t.project||'Inbox',t.project||'Inbox');app.selectOption('repeat',t.repeat||'none',t.repeat?t.repeat.charAt(0).toUpperCase()+t.repeat.slice(1):'None');els.taskReminder.value=t.reminder||'';if(t.subtasks)t.subtasks.forEach(s=>app.addSubtaskUI(s))}else{state.editingTaskId=null;els.modalTitle.innerText="New Task";els.saveTaskBtn.innerText="Save Task";state.newEst=1;els.estDisplay.innerText="1";els.taskPomoDisplay.innerText=25;els.dateInput.value=new Date().toISOString().split('T')[0];$('task-title').value='';$('task-note').value='';$('task-tags').value='';app.selectOption('priority','none','None');app.selectOption('project','Inbox','Inbox');app.selectOption('repeat','none','None');els.taskReminder.value=''}app.updateTotalEst();els.modal.classList.remove('hidden');setTimeout(()=>els.modal.classList.remove('opacity-0'),10);setTimeout(()=>els.modalPanel.classList.replace('scale-95','scale-100'),10);$('task-title').focus()}else{els.modal.classList.add('opacity-0');els.modalPanel.classList.replace('scale-100','scale-95');setTimeout(()=>els.modal.classList.add('hidden'),200)}},
+    
     adjustEst:d=>{let v=state.newEst+d;if(v<1)v=1;if(v>50)v=50;state.newEst=v;els.estDisplay.innerText=v;app.updateTotalEst()},
     adjustPomoDuration:d=>{let c=parseInt(els.taskPomoDisplay.innerText),v=c+d;if(v<5)v=5;if(v>60)v=60;els.taskPomoDisplay.innerText=v;app.updateTotalEst()},
     updateTotalEst:()=>{const d=parseInt(els.taskPomoDisplay.innerText),n=state.newEst,t=d*n,h=Math.floor(t/60),m=t%60;els.totalTimeCalc.innerText=h>0?`${h}h ${m}m`:`${m}m`},
@@ -856,7 +861,12 @@ const app={
     startTask:async(id,e)=>{e.stopPropagation();const t=state.tasks.find(x=>x.id===id);if(!t)return;state.selectedTaskId=id;renderTasks();updateTimerUI(t);if(window.innerWidth<1280)app.toggleFocusPanel(true);if(state.timer.status!=='running'){const d=t.pomoDuration||25;try{await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',mode:'focus',taskId:id,remaining:d*60,totalDuration:d*60,endTime:new Date(Date.now()+d*60000)});app.updateSettings('focus',d)}catch(e){app.showToast("Failed to start")}}},
     selectTask:id=>{state.selectedTaskId=id;renderTasks();const t=state.tasks.find(x=>x.id===id);updateTimerUI(t);if(state.timer.status!=='running')updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{taskId:id}).catch(()=>{});if(window.innerWidth<1280)app.toggleFocusPanel(true)},
     showToast:(m,t='error')=>{const c=$('toast-container'),e=D.createElement('div');e.className=`px-4 py-2 rounded shadow text-white text-sm font-medium animate-fade-in ${t==='error'?'bg-red-500':'bg-green-600'}`;e.innerText=m;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300)},3000)},
-    toggleTimer:async()=>{if(Notification.permission==='default')try{await Notification.requestPermission()}catch(e){}if(state.timer.status==='running'){if(state.timer.settings.strictMode&&state.timer.mode==='focus'&&!confirm("Strict Mode active! Quit?"))return;await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'paused',endTime:null,remaining:Math.max(0,Math.ceil((state.timer.endTime-Date.now())/1000))}).catch(()=>{})}else{if(!state.timer.activeTaskId&&state.timer.mode==='focus'){app.showToast("Select task!","error");return}await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',endTime:new Date(Date.now()+state.timer.remaining*1000)}).catch(()=>{})}},
+    
+    // --- FIXED FOR ANDROID WEBVIEW ---
+    toggleTimer:async()=>{
+        try { if('Notification' in window && Notification.permission==='default') Notification.requestPermission().catch(()=>{}); } catch(e){}
+        if(state.timer.status==='running'){if(state.timer.settings.strictMode&&state.timer.mode==='focus'&&!confirm("Strict Mode active! Quit?"))return;await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'paused',endTime:null,remaining:Math.max(0,Math.ceil((state.timer.endTime-Date.now())/1000))}).catch(()=>{})}else{if(!state.timer.activeTaskId&&state.timer.mode==='focus'){app.showToast("Select task!","error");return}await updateDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'running',endTime:new Date(Date.now()+state.timer.remaining*1000)}).catch(()=>{})}},
+    
     resetTimer:async(r=false)=>{if(!r){const d=state.timer.settings[state.timer.mode];await setDoc(doc(db,'artifacts',appId,'users',state.user.uid,'timer','active'),{status:'idle',endTime:null,remaining:d*60,totalDuration:d*60,mode:state.timer.mode,taskId:state.timer.activeTaskId||null}).catch(()=>{})}},
     skipTimer:()=>app.completeTimer(),
     completeTimer: async () => {
@@ -866,7 +876,7 @@ const app={
         // Sound & Notification
         const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator();
         o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .2);
-        try { if (Notification.permission === 'granted') new Notification("Timer Complete") } catch (e) { }
+        try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete") } catch (e) { }
 
         // Logic
         if (state.timer.mode === 'focus') {
