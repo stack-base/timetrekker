@@ -15,8 +15,15 @@ tailwind.config={
       fontFamily:{sans:['Inter','sans-serif']},
       colors:{
         brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a'},
-        dark:{bg:'#181818',sidebar:'#202020',card:'#282828',border:'#333333',hover:'#383838'},
-        text:{main:'#e5e7eb',muted:'#a3a3a3',faint:'#525252'},
+        // UPDATED: Pure Black Color Palette
+        dark:{
+            bg:'#000000',
+            sidebar:'#000000',
+            card:'#000000',
+            border:'#262626', // Subtle border for separation on pure black
+            hover:'#111111'
+        },
+        text:{main:'#e5e7eb',muted:'#737373',faint:'#404040'},
         priority:{high:'#ef4444',med:'#eab308',low:'#3b82f6',none:'#525252'}
       }
     }
@@ -25,35 +32,40 @@ tailwind.config={
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script src="https://unpkg.com/@phosphor-icons/web"></script>
 <style>
+/* UPDATED: Darker Scrollbars */
 ::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:#202020}
-::-webkit-scrollbar-thumb{background:#404040;border-radius:4px;border:2px solid #202020}
-::-webkit-scrollbar-thumb:hover{background:#505050}
+::-webkit-scrollbar-track{background:#000000}
+::-webkit-scrollbar-thumb{background:#262626;border-radius:4px;border:2px solid #000000}
+::-webkit-scrollbar-thumb:hover{background:#404040}
 .no-scrollbar::-webkit-scrollbar {display: none;}
 .no-scrollbar {-ms-overflow-style: none; scrollbar-width: none;}
-body{background-color:#181818;color:#e5e7eb;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+
+/* UPDATED: Body Background */
+body{background-color:#000000;color:#e5e7eb;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+
 .custom-checkbox input:checked+div{background-color:#ff5757;border-color:#ff5757}
 .custom-checkbox input:checked+div svg{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}.animate-fade-in{animation:fadeIn .2s ease-out forwards}
 input[type=range]{-webkit-appearance:none;background:transparent}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#404040;border-radius:2px}
+input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#262626;border-radius:2px}
 .chart-container{position:relative;width:100%;height:100%}
+
 /* Table Styles */
-.analysis-table th { text-align:left; font-size:11px; text-transform:uppercase; color:#a3a3a3; padding:12px; border-bottom:1px solid #333; }
-.analysis-table td { font-size:13px; color:#e5e7eb; padding:12px; border-bottom:1px solid #282828; }
+.analysis-table th { text-align:left; font-size:11px; text-transform:uppercase; color:#737373; padding:12px; border-bottom:1px solid #262626; }
+.analysis-table td { font-size:13px; color:#e5e7eb; padding:12px; border-bottom:1px solid #262626; }
 .analysis-table tr:last-child td { border-bottom:none; }
-/* Custom Global Tooltip */
+
+/* Custom Global Tooltip - Pure Black */
 #global-tooltip {
     pointer-events: none;
     position: fixed;
     z-index: 9999;
-    background: rgba(32, 32, 32, 0.95);
-    border: 1px solid #404040;
-    backdrop-filter: blur(4px);
+    background: #000000;
+    border: 1px solid #333;
     padding: 8px 12px;
     border-radius: 6px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8);
     font-size: 12px;
     color: white;
     opacity: 0;
@@ -62,7 +74,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
     white-space: nowrap;
 }
 #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 2px; font-size: 13px; }
-#global-tooltip .sub { color: #a3a3a3; font-size: 11px; }
+#global-tooltip .sub { color: #737373; font-size: 11px; }
 
 /* Apple-style Liquid Glass Toggles */
 .glass-toggle-group {
@@ -79,7 +91,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
     border-radius: 9999px;
     font-size: 11px;
     font-weight: 600;
-    color: #a3a3a3;
+    color: #737373;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
 }
@@ -99,7 +111,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 <div id="global-tooltip"></div>
 <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
 
-<div id="custom-prompt-modal" class="fixed inset-0 bg-black/60 z-[110] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200 backdrop-blur-sm">
+<div id="custom-prompt-modal" class="fixed inset-0 bg-black/80 z-[110] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200 backdrop-blur-sm">
     <div class="bg-dark-card border border-dark-border w-full max-w-sm rounded-lg shadow-xl p-6 transform scale-95 transition-transform duration-200">
         <h3 id="prompt-title" class="text-lg font-semibold text-white mb-4">Enter Value</h3>
         <input type="text" id="prompt-input" class="w-full bg-dark-bg border border-dark-border text-white rounded px-3 py-2 outline-none focus:border-brand transition-colors text-sm mb-6" autocomplete="off">
@@ -110,7 +122,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
     </div>
 </div>
 
-<div id="sidebar-overlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden backdrop-blur-sm md:hidden transition-opacity opacity-0"></div>
+<div id="sidebar-overlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-black/80 z-30 hidden backdrop-blur-sm md:hidden transition-opacity opacity-0"></div>
 
 <nav id="sidebar" class="fixed inset-y-0 left-0 z-40 w-full bg-dark-sidebar border-r border-dark-border flex flex-col justify-between transition-transform duration-300 -translate-x-full md:translate-x-0 md:static md:w-20 lg:w-64 shadow-lg">
     <div class="flex flex-col h-full overflow-hidden">
@@ -163,7 +175,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                 <i class="ph-bold ph-gear text-xl"></i><span class="block md:hidden lg:block ml-3 text-sm font-medium">Settings</span>
             </button>
             <div id="user-profile-display" class="hidden items-center p-2 rounded hover:bg-dark-hover transition-colors cursor-default mt-2">
-                <div id="user-avatar-initials" class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-xs font-bold text-white shrink-0">U</div>
+                <div id="user-avatar-initials" class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-xs font-bold text-white shrink-0">U</div>
                 <div class="flex md:hidden lg:flex flex-col ml-3 overflow-hidden"><span id="user-name-text" class="text-sm font-medium text-white truncate">User</span><span id="user-email-text" class="text-xs text-text-muted truncate">email@example.com</span></div>
             </div>
             <div class="mt-3 text-[10px] text-text-faint text-center md:hidden lg:block tracking-wide uppercase font-bold opacity-60">Powered by StackBase</div>
@@ -402,7 +414,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
         </div>
         <div class="relative mb-16">
             <div class="relative w-64 h-64 flex items-center justify-center">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#333" stroke-width="2"/><circle id="timer-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/></svg>
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#262626" stroke-width="2"/><circle id="timer-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/></svg>
                 <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()"><div id="timer-display" class="text-6xl font-light text-white tracking-tighter tabular-nums">25:00</div><div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-4 text-brand">FOCUS</div></div>
             </div>
         </div>
@@ -415,7 +427,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
     <audio id="audio-player" loop></audio>
 </aside>
 
-<div id="add-task-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+<div id="add-task-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
     <div class="bg-dark-card border border-dark-border w-full max-w-lg rounded-lg shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="add-task-panel">
         <form id="add-task-form" onsubmit="app.handleSaveTask(event)" class="flex flex-col max-h-[90vh]">
             <div class="p-6 overflow-y-auto custom-scrollbar">
@@ -491,7 +503,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
     </div>
 </div>
 
-<div id="global-settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[120] hidden flex items-center justify-center p-0 md:p-4 opacity-0 transition-opacity duration-200">
+<div id="global-settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[120] hidden flex items-center justify-center p-0 md:p-4 opacity-0 transition-opacity duration-200">
     <div class="bg-dark-card border-0 md:border border-dark-border w-full h-full md:h-[600px] md:max-w-3xl rounded-none md:rounded-xl shadow-2xl flex flex-col transform scale-100 md:scale-95 transition-transform duration-200 overflow-hidden" id="settings-panel">
         <div class="flex flex-col md:flex-row h-full">
             <aside class="w-full md:w-48 bg-dark-sidebar border-b md:border-b-0 md:border-r border-dark-border flex flex-col shrink-0">
@@ -703,10 +715,10 @@ taskPomoDisplay:$('task-pomo-display'),totalTimeCalc:$('total-time-calc'),taskRe
 };
 
 Chart.defaults.font.family='Inter';
-Chart.defaults.color='#a3a3a3';
-Chart.defaults.borderColor='#333';
+Chart.defaults.color='#737373';
+Chart.defaults.borderColor='#262626';
 Chart.defaults.scale.grid.color='rgba(255,255,255,0.03)';
-Chart.defaults.plugins.tooltip.backgroundColor='rgba(32, 32, 32, 0.95)';
+Chart.defaults.plugins.tooltip.backgroundColor='rgba(0, 0, 0, 0.95)';
 Chart.defaults.plugins.tooltip.titleColor='#fff';
 Chart.defaults.plugins.tooltip.bodyColor='#a3a3a3';
 Chart.defaults.plugins.tooltip.borderColor='#333';
@@ -993,8 +1005,8 @@ function updateAnalytics(){
     if(state.charts.taskBar)state.charts.taskBar.destroy();const ctxT=els.analytics.taskBarChart.getContext('2d');state.charts.taskBar=new Chart(ctxT,gC(ctxT,state.chartTypes.task,lbl,dpTask,'#3b82f6','Tasks Done'));
     if(state.charts.hourly)state.charts.hourly.destroy();const ctxH=els.analytics.hourlyChart.getContext('2d');state.charts.hourly=new Chart(ctxH,gC(ctxH,state.chartTypes.hourly,Array.from({length:24},(_,i)=>i),hours,'#10b981','Minutes'));
     if(state.charts.weekday)state.charts.weekday.destroy();const ctxW=els.analytics.weekdayChart.getContext('2d');state.charts.weekday=new Chart(ctxW,gC(ctxW,state.chartTypes.weekday,['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],weekdays,'#f59e0b','Minutes'));
-    const pm={};state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);if(state.charts.project)state.charts.project.destroy();state.charts.project=new Chart(els.analytics.projectChart.getContext('2d'),{type:'doughnut',data:{labels:sp.map(x=>x[0]),datasets:[{data:sp.map(x=>x[1]),backgroundColor:['#ff5757','#8b5cf6','#3b82f6','#10b981','#f59e0b'],borderColor:'#282828',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1},tooltip:{callbacks:{label:c=>c.label+': '+Math.round(c.raw)+'m'}}}}});els.analytics.projList.innerHTML=sp.map(x=>`<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
-    const pri={high:0,med:0,low:0,none:0};tasksDone.forEach(t=>pri[t.priority||'none']++);if(state.charts.priority)state.charts.priority.destroy();state.charts.priority=new Chart(els.analytics.priorityChart.getContext('2d'),{type:'doughnut',data:{labels:['High','Med','Low','None'],datasets:[{data:[pri.high,pri.med,pri.low,pri.none],backgroundColor:['#ef4444','#eab308','#3b82f6','#525252'],borderColor:'#282828',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}}}});
+    const pm={};state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);if(state.charts.project)state.charts.project.destroy();state.charts.project=new Chart(els.analytics.projectChart.getContext('2d'),{type:'doughnut',data:{labels:sp.map(x=>x[0]),datasets:[{data:sp.map(x=>x[1]),backgroundColor:['#ff5757','#8b5cf6','#3b82f6','#10b981','#f59e0b'],borderColor:'#000000',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1},tooltip:{callbacks:{label:c=>c.label+': '+Math.round(c.raw)+'m'}}}}});els.analytics.projList.innerHTML=sp.map(x=>`<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
+    const pri={high:0,med:0,low:0,none:0};tasksDone.forEach(t=>pri[t.priority||'none']++);if(state.charts.priority)state.charts.priority.destroy();state.charts.priority=new Chart(els.analytics.priorityChart.getContext('2d'),{type:'doughnut',data:{labels:['High','Med','Low','None'],datasets:[{data:[pri.high,pri.med,pri.low,pri.none],backgroundColor:['#ef4444','#eab308','#3b82f6','#525252'],borderColor:'#000000',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}}}});
     const tc={};tasksDone.forEach(t=>{if(t.tags)t.tags.forEach(g=>tc[g]=(tc[g]||0)+1)});const st=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,5);if(st.length>0)els.analytics.tagList.innerHTML=st.map((x,i)=>`<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i+1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
     els.analytics.sessionLogBody.innerHTML=state.logs.slice(0,20).map(l=>{const d=l.completedAt?new Date(l.completedAt.seconds*1000):new Date();return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration||25}m</td></tr>`}).join('');
 }
