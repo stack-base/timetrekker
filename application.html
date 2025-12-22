@@ -294,6 +294,17 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                     <div class="h-[180px] w-full relative flex justify-center mb-4"><canvas id="projectChart"></canvas></div>
                     <div id="project-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2 max-h-[150px]"></div>
                 </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-4 md:p-6 shadow-sm flex flex-col">
+                    <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Priorities</h3>
+                    <div class="h-[180px] w-full relative flex justify-center mb-4"><canvas id="priorityChart"></canvas></div>
+                    <div class="text-center text-xs text-text-muted">High vs Med vs Low</div>
+                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-4 md:p-6 shadow-sm flex flex-col">
+                     <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Top Tags</h3>
+                     <div id="tag-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                         <p class="text-sm text-text-muted italic">No tags data available.</p>
+                     </div>
+                </div>
             </div>
         </div>
     </div>
@@ -563,9 +574,9 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 </div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,getDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp,enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,setDoc,getDoc,onSnapshot,query,where,getDocs,writeBatch,orderBy,serverTimestamp,enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
@@ -578,12 +589,13 @@ try { enableIndexedDbPersistence(db).catch((err) => { console.warn('Persistence 
 const D=document,$=id=>D.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 
+function createGradient(ctx,color){const g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,color+'90');g.addColorStop(1,color+'05');return g}
+
 // --- STATE MANAGEMENT ---
 const state = {
     user: null, tasks: [], logs: [], projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
     view: 'today', filterProject: null, selectedTaskId: null, editingTaskId: null,
     
-    // UPDATED TIMER STATE
     timer: {
         mode: 'focus', status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, activeTaskId: null, interval: null,
         pomoCountCurrentSession: 0, 
@@ -617,7 +629,6 @@ analytics:{
 },projectList:$('project-list'),subtasksContainer:$('subtasks-container'),audio:$('audio-player'),currentDate:$('current-date-display'),sidebarOverlay:$('sidebar-overlay'),sidebar:$('sidebar'),headerActions:$('header-actions'),
 settingsModal:$('global-settings-modal'),settingsPanel:$('settings-panel'),settingsTitle:$('settings-view-title'),strictToggle:$('strict-mode-toggle'),
 settingsAvatar:$('settings-avatar'),settingsName:$('settings-name'),settingsEmail:$('settings-email'),
-// New Task Elements
 taskPomoDisplay:$('task-pomo-display'),totalTimeCalc:$('total-time-calc'),taskRepeat:$('task-repeat'),taskReminder:$('task-reminder')
 };
 
@@ -864,7 +875,6 @@ const app={
 };
 window.app=app;
 
-function createGradient(ctx,color){const g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,color+'90');g.addColorStop(1,color+'05');return g}
 function updateAnalytics(){
     if((!state.logs.length&&!state.tasks.length)&&state.view==='analytics')return;
     const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),now=new Date(),todayStr=getDayStr(now),startOfWeek=new Date(now);const day=startOfWeek.getDay()||7;if(day!==1)startOfWeek.setDate(now.getDate()-(day-1));startOfWeek.setHours(0,0,0,0);
@@ -882,14 +892,33 @@ function updateAnalytics(){
     const r=state.analytics.range;let lbl=[],dpFocus=[],dpTask=[],dlb=r==='week'?7:(r==='month'?30:12);if(r==='year'){for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);lbl.push(d.toLocaleString('default',{month:'short'}));const mLogs=state.logs.filter(l=>{if(!l.completedAt)return!1;const ld=new Date(l.completedAt.seconds*1000);return ld.getMonth()===d.getMonth()&&ld.getFullYear()===d.getFullYear()});dpFocus.push((mLogs.reduce((a,b)=>a+(b.duration||25),0)/60).toFixed(1));const mTasks=state.tasks.filter(t=>{if(t.status!=='done'||!t.completedAt)return!1;const td=new Date(t.completedAt);return td.getMonth()===d.getMonth()&&td.getFullYear()===d.getFullYear()});dpTask.push(mTasks.length)}}else{for(let i=dlb-1;i>=0;i--){const d=new Date();d.setDate(now.getDate()-i);const dStr=getDayStr(d);lbl.push(d.toLocaleDateString('en-US',{weekday:'short',day:r==='month'?'numeric':undefined}));const dLogs=state.logs.filter(l=>l.completedAt&&getDayStr(new Date(l.completedAt.seconds*1000))===dStr);dpFocus.push((dLogs.reduce((a,b)=>a+(b.duration||25),0)/60).toFixed(1));const dTasks=state.tasks.filter(t=>t.status==='done'&&t.completedAt&&t.completedAt.startsWith(dStr));dpTask.push(dTasks.length)}}
     const cOpts={responsive:!0,maintainAspectRatio:!1,scales:{y:{beginAtZero:!0,grid:{color:'rgba(255,255,255,0.03)',borderDash:[4,4]}},x:{grid:{display:!1}}},plugins:{legend:{display:!1}},elements:{bar:{borderRadius:4,hoverBackgroundColor:'#fff'},line:{tension:0.4}},interaction:{mode:'index',intersect:!1}};
     const gC=(ctx,t,l,d,c,tl)=>{const i=t==='line';return{type:t,data:{labels:l,datasets:[{label:tl,data:d,backgroundColor:i?createGradient(ctx,c):c,borderColor:c,borderRadius:4,fill:i,borderWidth:i?2:0,pointRadius:i?0:0,pointHoverRadius:6}]},options:{...cOpts,plugins:{...cOpts.plugins,tooltip:{callbacks:{label:x=>x.raw+' '+(tl.includes('Hours')?'hrs':(tl.includes('Tasks')?'tasks':'mins'))}}}}}};
-    if(state.charts.focusBar)state.charts.focusBar.destroy();const ctxF=els.analytics.focusBarChart.getContext('2d');state.charts.focusBar=new Chart(ctxF,gC(ctxF,state.chartTypes.focus,lbl,dpFocus,'#ff5757','Focus Hours'));
-    if(state.charts.taskBar)state.charts.taskBar.destroy();const ctxT=els.analytics.taskBarChart.getContext('2d');state.charts.taskBar=new Chart(ctxT,gC(ctxT,state.chartTypes.task,lbl,dpTask,'#3b82f6','Tasks Done'));
-    if(state.charts.hourly)state.charts.hourly.destroy();const ctxH=els.analytics.hourlyChart.getContext('2d');state.charts.hourly=new Chart(ctxH,gC(ctxH,state.chartTypes.hourly,Array.from({length:24},(_,i)=>i),hours,'#10b981','Minutes'));
-    if(state.charts.weekday)state.charts.weekday.destroy();const ctxW=els.analytics.weekdayChart.getContext('2d');state.charts.weekday=new Chart(ctxW,gC(ctxW,state.chartTypes.weekday,['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],weekdays,'#f59e0b','Minutes'));
-    const pm={};state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);if(state.charts.project)state.charts.project.destroy();state.charts.project=new Chart(els.analytics.projectChart.getContext('2d'),{type:'doughnut',data:{labels:sp.map(x=>x[0]),datasets:[{data:sp.map(x=>x[1]),backgroundColor:['#ff5757','#8b5cf6','#3b82f6','#10b981','#f59e0b'],borderColor:'#000000',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1},tooltip:{callbacks:{label:c=>c.label+': '+Math.round(c.raw)+'m'}}}}});els.analytics.projList.innerHTML=sp.map(x=>`<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
-    const pri={high:0,med:0,low:0,none:0};tasksDone.forEach(t=>pri[t.priority||'none']++);if(state.charts.priority)state.charts.priority.destroy();state.charts.priority=new Chart(els.analytics.priorityChart.getContext('2d'),{type:'doughnut',data:{labels:['High','Med','Low','None'],datasets:[{data:[pri.high,pri.med,pri.low,pri.none],backgroundColor:['#ef4444','#eab308','#3b82f6','#525252'],borderColor:'#000000',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}}}});
-    const tc={};tasksDone.forEach(t=>{if(t.tags)t.tags.forEach(g=>tc[g]=(tc[g]||0)+1)});const st=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,5);if(st.length>0)els.analytics.tagList.innerHTML=st.map((x,i)=>`<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i+1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
-    els.analytics.sessionLogBody.innerHTML=state.logs.slice(0,20).map(l=>{const d=l.completedAt?new Date(l.completedAt.seconds*1000):new Date();return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration||25}m</td></tr>`}).join('');
+    
+    // SAFEGUARDS ADDED TO PREVENT CRASHES IF ELEMENTS ARE MISSING
+    if(els.analytics.focusBarChart && state.charts.focusBar)state.charts.focusBar.destroy();
+    if(els.analytics.focusBarChart){const ctxF=els.analytics.focusBarChart.getContext('2d');state.charts.focusBar=new Chart(ctxF,gC(ctxF,state.chartTypes.focus,lbl,dpFocus,'#ff5757','Focus Hours'));}
+    
+    if(els.analytics.taskBarChart && state.charts.taskBar)state.charts.taskBar.destroy();
+    if(els.analytics.taskBarChart){const ctxT=els.analytics.taskBarChart.getContext('2d');state.charts.taskBar=new Chart(ctxT,gC(ctxT,state.chartTypes.task,lbl,dpTask,'#3b82f6','Tasks Done'));}
+    
+    if(els.analytics.hourlyChart && state.charts.hourly)state.charts.hourly.destroy();
+    if(els.analytics.hourlyChart){const ctxH=els.analytics.hourlyChart.getContext('2d');state.charts.hourly=new Chart(ctxH,gC(ctxH,state.chartTypes.hourly,Array.from({length:24},(_,i)=>i),hours,'#10b981','Minutes'));}
+    
+    if(els.analytics.weekdayChart && state.charts.weekday)state.charts.weekday.destroy();
+    if(els.analytics.weekdayChart){const ctxW=els.analytics.weekdayChart.getContext('2d');state.charts.weekday=new Chart(ctxW,gC(ctxW,state.chartTypes.weekday,['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],weekdays,'#f59e0b','Minutes'));}
+    
+    const pm={};state.logs.forEach(l=>{const p=l.project||'Inbox';pm[p]=(pm[p]||0)+(l.duration||25)});const sp=Object.entries(pm).sort((a,b)=>b[1]-a[1]);
+    if(els.analytics.projectChart && state.charts.project)state.charts.project.destroy();
+    if(els.analytics.projectChart){state.charts.project=new Chart(els.analytics.projectChart.getContext('2d'),{type:'doughnut',data:{labels:sp.map(x=>x[0]),datasets:[{data:sp.map(x=>x[1]),backgroundColor:['#ff5757','#8b5cf6','#3b82f6','#10b981','#f59e0b'],borderColor:'#000000',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1},tooltip:{callbacks:{label:c=>c.label+': '+Math.round(c.raw)+'m'}}}}});}
+    if(els.analytics.projList) els.analytics.projList.innerHTML=sp.map(x=>`<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
+    
+    const pri={high:0,med:0,low:0,none:0};tasksDone.forEach(t=>pri[t.priority||'none']++);
+    if(els.analytics.priorityChart && state.charts.priority)state.charts.priority.destroy();
+    if(els.analytics.priorityChart){state.charts.priority=new Chart(els.analytics.priorityChart.getContext('2d'),{type:'doughnut',data:{labels:['High','Med','Low','None'],datasets:[{data:[pri.high,pri.med,pri.low,pri.none],backgroundColor:['#ef4444','#eab308','#3b82f6','#525252'],borderColor:'#000000',borderWidth:4,hoverOffset:4}]},options:{responsive:!0,maintainAspectRatio:!1,cutout:'75%',plugins:{legend:{display:!1}}}});}
+    
+    const tc={};tasksDone.forEach(t=>{if(t.tags)t.tags.forEach(g=>tc[g]=(tc[g]||0)+1)});const st=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(els.analytics.tagList && st.length>0) els.analytics.tagList.innerHTML=st.map((x,i)=>`<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i+1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+    
+    if(els.analytics.sessionLogBody) els.analytics.sessionLogBody.innerHTML=state.logs.slice(0,20).map(l=>{const d=l.completedAt?new Date(l.completedAt.seconds*1000):new Date();return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration||25}m</td></tr>`}).join('');
 }
 
 $('prompt-cancel-btn').addEventListener('click',()=>app.closePrompt(null));$('prompt-confirm-btn').addEventListener('click',()=>app.closePrompt(app.customPrompt.input.value));$('prompt-input').addEventListener('keypress',e=>{if(e.key==='Enter')app.closePrompt(app.customPrompt.input.value)});D.addEventListener('click',e=>{if(!e.target.closest('#project-dropdown')&&!e.target.closest('#priority-dropdown')&&!e.target.closest('#repeat-dropdown')){D.getElementById('project-options').classList.add('hidden');D.getElementById('priority-options').classList.add('hidden');D.getElementById('repeat-options').classList.add('hidden')}});
@@ -898,9 +927,7 @@ function updateProjectsUI(){els.projectList.innerHTML='';state.projects.forEach(
 function updateCounts(){
     const getDayStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const t=getDayStr(new Date()), tm=getDayStr(new Date(Date.now()+864e5));
-    
     els.navCounts.all.textContent = state.tasks.length; 
-
     const tasksTodo=state.tasks.filter(x=>x.status==='todo');
     let tasksViewTodo;
     if(state.view === 'all') tasksViewTodo = state.tasks;
@@ -909,21 +936,17 @@ function updateCounts(){
     else if(state.view==='upcoming') tasksViewTodo = tasksTodo.filter(x=>x.dueDate>tm);
     else if(state.view==='project') tasksViewTodo = tasksTodo.filter(x=>x.project===state.filterProject);
     else tasksViewTodo = tasksTodo.filter(x=>x.dueDate===t); 
-
     els.navCounts.today.textContent=state.tasks.filter(x=>x.dueDate===t&&x.status==='todo').length;
     els.navCounts.tomorrow.textContent=state.tasks.filter(x=>x.dueDate===tm&&x.status==='todo').length;
     els.navCounts.upcoming.textContent=state.tasks.filter(x=>x.dueDate>tm&&x.status==='todo').length;
     els.navCounts.past.textContent=state.tasks.filter(x=>x.dueDate<t&&x.status==='todo').length;
-    
     const tp=state.tasks.reduce((a,b)=>a+(b.completedPomos||0),0);
     els.stats.pomosToday.textContent=tp;
     els.stats.tasksToday.textContent=state.tasks.filter(x=>x.status==='done'&&x.dueDate===t).length;
-    
     els.stats.estRemain.textContent=tasksViewTodo.reduce((a,b)=>a+(parseInt(b.estimatedPomos)||0),0);
     const fm=tp*state.timer.settings.focus;
     els.stats.focusTime.textContent=`${Math.floor(fm/60)}h ${fm%60}m`;
     els.stats.tasksRemain.textContent=tasksViewTodo.length;
-    
     const totalEstMin=tasksViewTodo.reduce((a,b)=>a+((parseInt(b.estimatedPomos)||1)*(b.pomoDuration||25)),0);
     els.stats.estTime.textContent=Math.floor(totalEstMin/60)>0?`${Math.floor(totalEstMin/60)}h ${totalEstMin%60}m`:`${totalEstMin}m`;
 }
@@ -939,58 +962,25 @@ function renderTasks(){
     else if (state.view === 'past') l = state.tasks.filter(x => x.dueDate < t && x.status === 'todo');
     else if (state.view === 'completed') l = state.tasks.filter(x => x.status === 'done');
     else if (state.view === 'project') l = state.tasks.filter(x => x.project === state.filterProject && x.status === 'todo');
-
     const pm = { high: 3, med: 2, low: 1, none: 0 };
     l.sort((a, b) => {
         if(a.status !== b.status) return a.status === 'todo' ? -1 : 1; 
         return pm[b.priority] - pm[a.priority];
     });
-
     els.taskList.innerHTML = '';
     if (l.length === 0) els.emptyState.classList.remove('hidden');
     else els.emptyState.classList.add('hidden');
-
     l.forEach(x => {
         const isSel = x.id === state.selectedTaskId,
               pc = Math.min(100, ((x.completedPomos || 0) / (x.estimatedPomos || 1)) * 100),
               sty = isSel ? { high: 'bg-dark-card border-red-500 shadow-sm z-10', med: 'bg-dark-card border-yellow-500 shadow-sm z-10', low: 'bg-dark-card border-blue-500 shadow-sm z-10', none: 'bg-dark-card border-brand shadow-sm z-10' }[x.priority || 'none'] : 'bg-dark-card border-dark-border hover:border-text-faint';
-
-        const dur = x.pomoDuration || 25;
-        const cP = x.completedPomos || 0;
-        const eP = x.estimatedPomos || 1;
-        const rP = Math.max(0, eP - cP); 
+        const dur = x.pomoDuration || 25, cP = x.completedPomos || 0, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP); 
         const cMin = cP * dur, rMin = rP * dur;   
         const fmt = m => { const h = Math.floor(m / 60), rm = m % 60; return h > 0 ? `${h}h ${rm}m` : `${rm}m`; };
-
         const el = D.createElement('div');
         el.className = `group flex items-start p-4 rounded-lg border transition-all duration-200 ease-out cursor-pointer relative active:scale-[0.99] touch-manipulation ${sty}`;
         el.onclick = () => app.selectTask(x.id);
-        el.innerHTML = `<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority === 'high' ? 'bg-red-500' : x.priority === 'med' ? 'bg-yellow-500' : 'bg-transparent'}"></div>
-        <label class="custom-checkbox flex-shrink-0 mt-0.5 w-6 h-6 mr-4 cursor-pointer relative z-10 p-0.5" onclick="event.stopPropagation()">
-            <input type="checkbox" class="hidden" ${x.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')">
-            <div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg">
-                <svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-            </div>
-        </label>
-        <div class="flex-1 min-w-0 pr-24 sm:pr-20">
-            <div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3></div>
-            ${x.note ? `<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${esc(x.note)}</p>` : ''}
-            ${x.subtasks && x.subtasks.length > 0 ? `<div class="mt-3 space-y-1 border-t border-dashed border-dark-border pt-2">${x.subtasks.map(s => `<div class="flex items-start text-xs text-text-muted"><i class="ph-bold ph-caret-right text-[10px] mt-0.5 mr-1.5 text-text-faint"></i><span>${esc(s)}</span></div>`).join('')}</div>` : ''}
-            
-            <div class="flex flex-wrap items-center mt-2 gap-y-2 gap-x-4">
-                <div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${esc(x.project)}</span></div>
-                <div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-check-circle text-brand mr-1.5 text-[10px]"></i><span>${cP} / ${rP} rem</span></div>
-                <div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-clock text-brand mr-1.5 text-[10px]"></i><span class="${pc >= 100 ? 'text-brand' : ''}">${fmt(cMin)} / ${fmt(rMin)}</span></div>
-                ${x.repeat && x.repeat !== 'none' ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-arrows-clockwise mr-1.5 text-text-faint"></i><span>${x.repeat.charAt(0).toUpperCase() + x.repeat.slice(1)}</span></div>` : ''}
-                ${x.reminder ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-bell mr-1.5 text-text-faint"></i><span>${x.reminder}</span></div>` : ''}
-                ${x.tags && x.tags.length ? `<div class="flex gap-1 ml-auto">${x.tags.map(t => `<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/10 text-brand border border-brand/20">${esc(t)}</span>`).join('')}</div>` : ''}
-            </div>
-        </div>
-        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1 transition-all z-20">
-            <button onclick="app.startTask('${x.id}',event)" class="w-10 h-10 flex items-center justify-center text-brand hover:bg-brand hover:text-white active:bg-brand active:text-white transition-colors rounded active:scale-90"><i class="ph-fill ph-play text-xl"></i></button>
-            <button onclick="app.editTask('${x.id}',event)" class="w-10 h-10 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover active:bg-dark-active transition-colors rounded active:scale-90"><i class="ph-bold ph-pencil-simple text-xl"></i></button>
-            <button onclick="app.deleteTask('${x.id}',event)" class="w-10 h-10 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover active:bg-dark-active transition-colors rounded active:scale-90"><i class="ph-bold ph-trash text-xl"></i></button>
-        </div>`;
+        el.innerHTML = `<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority === 'high' ? 'bg-red-500' : x.priority === 'med' ? 'bg-yellow-500' : 'bg-transparent'}"></div><label class="custom-checkbox flex-shrink-0 mt-0.5 w-6 h-6 mr-4 cursor-pointer relative z-10 p-0.5" onclick="event.stopPropagation()"><input type="checkbox" class="hidden" ${x.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')"><div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg"><svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div></label><div class="flex-1 min-w-0 pr-24 sm:pr-20"><div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3></div>${x.note ? `<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${esc(x.note)}</p>` : ''}${x.subtasks && x.subtasks.length > 0 ? `<div class="mt-3 space-y-1 border-t border-dashed border-dark-border pt-2">${x.subtasks.map(s => `<div class="flex items-start text-xs text-text-muted"><i class="ph-bold ph-caret-right text-[10px] mt-0.5 mr-1.5 text-text-faint"></i><span>${esc(s)}</span></div>`).join('')}</div>` : ''}<div class="flex flex-wrap items-center mt-2 gap-y-2 gap-x-4"><div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${esc(x.project)}</span></div><div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-check-circle text-brand mr-1.5 text-[10px]"></i><span>${cP} / ${rP} rem</span></div><div class="flex items-center text-xs text-text-muted"><i class="ph-fill ph-clock text-brand mr-1.5 text-[10px]"></i><span class="${pc >= 100 ? 'text-brand' : ''}">${fmt(cMin)} / ${fmt(rMin)}</span></div>${x.repeat && x.repeat !== 'none' ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-arrows-clockwise mr-1.5 text-text-faint"></i><span>${x.repeat.charAt(0).toUpperCase() + x.repeat.slice(1)}</span></div>` : ''}${x.reminder ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-bell mr-1.5 text-text-faint"></i><span>${x.reminder}</span></div>` : ''}${x.tags && x.tags.length ? `<div class="flex gap-1 ml-auto">${x.tags.map(t => `<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/10 text-brand border border-brand/20">${esc(t)}</span>`).join('')}</div>` : ''}</div></div><div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1 transition-all z-20"><button onclick="app.startTask('${x.id}',event)" class="w-10 h-10 flex items-center justify-center text-brand hover:bg-brand hover:text-white active:bg-brand active:text-white transition-colors rounded active:scale-90"><i class="ph-fill ph-play text-xl"></i></button><button onclick="app.editTask('${x.id}',event)" class="w-10 h-10 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover active:bg-dark-active transition-colors rounded active:scale-90"><i class="ph-bold ph-pencil-simple text-xl"></i></button><button onclick="app.deleteTask('${x.id}',event)" class="w-10 h-10 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover active:bg-dark-active transition-colors rounded active:scale-90"><i class="ph-bold ph-trash text-xl"></i></button></div>`;
         els.taskList.appendChild(el)
     })
 }
