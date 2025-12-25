@@ -149,7 +149,6 @@
             </div>
 
             <div id="view-settings" class="view-section hidden space-y-6 pt-2">
-                
                 <div class="p-4 bg-dark-card rounded-xl border border-dark-border flex items-center gap-4">
                      <div id="settings-avatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center font-bold text-white text-lg">U</div>
                      <div class="overflow-hidden">
@@ -157,7 +156,6 @@
                          <div id="settings-email" class="text-xs text-text-muted truncate">Loading...</div>
                      </div>
                 </div>
-
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
                     <div class="px-4 py-3 bg-dark-active/50 border-b border-dark-border text-xs font-bold uppercase text-text-muted">Timer Configuration</div>
                     <div class="p-4 space-y-6">
@@ -179,20 +177,14 @@
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
                     <div class="divide-y divide-dark-border">
                         <div class="p-4 flex items-center justify-between">
-                            <div>
-                                <div class="text-sm font-bold text-white">Auto-Start Pomodoro</div>
-                                <div class="text-[10px] text-text-muted">Start focus automatically after break</div>
-                            </div>
+                            <div><div class="text-sm font-bold text-white">Auto-Start Pomodoro</div><div class="text-[10px] text-text-muted">Start focus automatically after break</div></div>
                             <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
                                 <input type="checkbox" id="toggle-auto-pomo" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartPomo', this.checked)"/>
                                 <label for="toggle-auto-pomo" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-between">
-                            <div>
-                                <div class="text-sm font-bold text-white">Strict Mode</div>
-                                <div class="text-[10px] text-text-muted">Prevents pausing the timer</div>
-                            </div>
+                            <div><div class="text-sm font-bold text-white">Strict Mode</div><div class="text-[10px] text-text-muted">Prevents pausing the timer</div></div>
                             <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
                                 <input type="checkbox" id="toggle-strict" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('strictMode', this.checked)"/>
                                 <label for="toggle-strict" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
@@ -232,17 +224,59 @@
         </div>
     </nav>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden opacity-0 transition-opacity backdrop-blur-sm" onclick="app.closeTaskModal()"></div>
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden opacity-0 transition-opacity backdrop-blur-sm" onclick="app.closeAllSheets()"></div>
+
+    <div id="detail-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
+        <span class="sheet-handle flex-shrink-0" onclick="app.closeDetailSheet()"></span>
+        <div class="px-5 pb-5 flex-1 overflow-y-auto">
+            
+            <div class="flex justify-end items-center mb-2 gap-4">
+                <button onclick="app.editCurrentTask()" class="text-text-muted hover:text-white p-2"><i class="ph-bold ph-pencil-simple text-xl"></i></button>
+                <button onclick="app.deleteCurrentTask()" class="text-text-muted hover:text-red-500 p-2"><i class="ph-bold ph-trash text-xl"></i></button>
+                <button onclick="app.closeDetailSheet()" class="text-text-muted hover:text-white p-2"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="dt-project" class="bg-brand/10 text-brand px-2 py-0.5 rounded text-[10px] font-bold border border-brand/20 uppercase tracking-wide">Project</span>
+                    <span id="dt-priority" class="hidden bg-dark-active text-text-muted px-2 py-0.5 rounded text-[10px] font-bold border border-dark-border uppercase tracking-wide">Priority</span>
+                </div>
+                
+                <h2 id="dt-title" class="text-2xl font-bold text-white leading-tight">Task Title</h2>
+                
+                <p id="dt-note" class="text-sm text-text-muted leading-relaxed hidden">No notes added.</p>
+                
+                <div class="grid grid-cols-2 gap-3 py-2">
+                     <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Due Date</div>
+                         <div id="dt-date" class="text-sm font-medium text-white">None</div>
+                     </div>
+                     <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Est. Pomodoros</div>
+                         <div class="flex items-center text-sm font-medium text-white"><i class="ph-fill ph-timer mr-1.5 text-brand"></i><span id="dt-est">1</span></div>
+                     </div>
+                </div>
+
+                <div id="dt-subtasks-container" class="hidden">
+                    <h3 class="text-xs font-bold text-text-muted uppercase mb-2">Subtasks</h3>
+                    <div id="dt-subtasks-list" class="space-y-2"></div>
+                </div>
+                
+                <div id="dt-tags-container" class="hidden flex flex-wrap gap-2 pt-2"></div>
+            </div>
+
+            <button onclick="app.startFocusFromDetail()" class="w-full mt-8 py-3.5 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm flex items-center justify-center">
+                <i class="ph-fill ph-play-circle text-xl mr-2"></i> Start Focus Session
+            </button>
+        </div>
+    </div>
+
     <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
         <span class="sheet-handle flex-shrink-0" onclick="app.closeTaskModal()"></span>
         <div class="px-5 pb-5 flex-1 overflow-y-auto">
-            
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-white" id="sheet-title">Task Details</h3>
-                <div class="flex items-center gap-3">
-                    <button onclick="app.startFocusFromModal()" class="text-brand font-bold text-sm hidden" id="modal-focus-btn"><i class="ph-fill ph-play-circle text-lg align-middle"></i> Start</button>
-                    <button onclick="app.closeTaskModal()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
-                </div>
+                <h3 class="text-lg font-bold text-white" id="sheet-title">New Task</h3>
+                <button onclick="app.closeTaskModal()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
             </div>
 
             <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-xl font-bold text-white placeholder-text-muted/50 border-none outline-none mb-4 p-0">
@@ -278,32 +312,12 @@
             <textarea id="inp-note" placeholder="Add notes..." class="w-full h-20 bg-dark-bg rounded-lg p-3 text-sm text-text-muted resize-none border border-dark-border outline-none focus:border-brand mb-4"></textarea>
             
             <div class="space-y-4 mb-6">
-                <div>
-                    <label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Tags</label>
-                    <input type="text" id="inp-tags" placeholder="e.g. Work, Design (comma separated)" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none transition-colors">
-                </div>
-                
+                <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Tags</label><input type="text" id="inp-tags" placeholder="e.g. Work, Design (comma separated)" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none transition-colors"></div>
                 <div class="grid grid-cols-2 gap-4">
-                     <div>
-                        <label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Repeat</label>
-                        <select id="inp-repeat" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none">
-                            <option value="none">None</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="weekdays">Weekdays</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Reminder</label>
-                        <input type="time" id="inp-reminder" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none">
-                    </div>
+                     <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Repeat</label><select id="inp-repeat" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none"><option value="none">None</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="weekdays">Weekdays</option></select></div>
+                     <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Reminder</label><input type="time" id="inp-reminder" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none"></div>
                 </div>
-
-                <div>
-                    <label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Subtasks</label>
-                    <div id="subtask-list" class="space-y-2 mb-2"></div>
-                    <button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold flex items-center py-1"><i class="ph-bold ph-plus mr-1"></i> Add Subtask</button>
-                </div>
+                <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Subtasks</label><div id="subtask-list" class="space-y-2 mb-2"></div><button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold flex items-center py-1"><i class="ph-bold ph-plus mr-1"></i> Add Subtask</button></div>
             </div>
 
             <button onclick="app.saveTask()" id="btn-save-task" class="w-full py-3.5 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm">Save Task</button>

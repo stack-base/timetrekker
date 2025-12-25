@@ -34,7 +34,8 @@ const state = {
         settings: { focus: 25, short: 5, long: 15, strictMode: false, autoStartPomo: false }
     },
     sound: 'none',
-    editingId: null, // Tracks if we are editing an existing task
+    editingId: null, // ID of task being edited
+    viewingTask: null, // Object of task being viewed
     chartInstance: null,
     chartView: 'weekly'
 };
@@ -43,11 +44,11 @@ const state = {
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
-        // Header Avatar
+        // Populate Header
         $('header-avatar').textContent = (u.displayName || u.email || 'U').charAt(0).toUpperCase();
         $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         
-        // Settings Profile population
+        // Populate Settings Profile
         $('settings-avatar').textContent = (u.displayName || u.email || 'U').charAt(0).toUpperCase();
         $('settings-name').textContent = u.displayName || 'User Account';
         $('settings-email').textContent = u.email;
@@ -74,7 +75,7 @@ onAuthStateChanged(auth, u => {
                     total: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId
                 };
-                // Sync Settings
+                // Sync Settings from DB if available
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
                 
                 app.updateTimerUI();
@@ -125,6 +126,7 @@ const app = {
         const view = $(`view-${tab}`);
         if(view) view.classList.remove('hidden');
         
+        // Update Bottom Nav
         document.querySelectorAll('.nav-item').forEach(el => {
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
             el.querySelector('i').classList.remove('ph-fill');
@@ -138,12 +140,15 @@ const app = {
             activeBtn.querySelector('i').classList.add('ph-fill');
         }
 
+        // Toggle Header Elements
         const isTask = tab === 'tasks';
         $('view-header').classList.toggle('hidden', !isTask);
         $('task-filters').classList.toggle('hidden', !isTask);
         $('fab-add').classList.toggle('hidden', !isTask);
 
         if(tab === 'analytics') app.renderAnalytics();
+        
+        // Update settings UI values if switching to settings
         if(tab === 'settings') {
             $('toggle-strict').checked = state.timer.settings.strictMode;
             $('toggle-auto-pomo').checked = state.timer.settings.autoStartPomo;
@@ -180,19 +185,19 @@ const app = {
 
         filtered.forEach(t => {
             const el = document.createElement('div');
-            // Priority Coloring
             const priColor = t.priority === 'high' ? 'border-red-500/50' : t.priority === 'med' ? 'border-yellow-500/50' : t.priority === 'low' ? 'border-blue-500/50' : 'border-dark-border';
             
             el.className = `bg-dark-card border ${priColor} p-4 rounded-xl flex items-start gap-3 active:scale-[0.98] transition-transform select-none relative`;
-            // CLICK OPENS DETAILS NOW, NOT TIMER
+            
+            // KEY CHANGE: Clicking the card opens details, not timer
             el.onclick = (e) => {
-                if(!e.target.closest('.check-area') && !e.target.closest('.play-btn') && !e.target.closest('.del-btn')) app.openTaskModal(t);
+                if(!e.target.closest('.check-area') && !e.target.closest('.play-btn') && !e.target.closest('.del-btn')) {
+                    app.openTaskDetail(t);
+                }
             };
 
             const isDone = t.status === 'done';
-            const subtext = t.subtasks && t.subtasks.length > 0 ? `${t.subtasks.length} subtasks` : '';
-            const tags = t.tags && t.tags.length > 0 ? t.tags.map(tag => `<span class="bg-dark-active px-1.5 py-0.5 rounded text-[10px] text-text-muted border border-white/5">${tag}</span>`).join('') : '';
-
+            
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
                     <div class="w-6 h-6 rounded-full border-2 ${isDone ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center">
@@ -202,14 +207,11 @@ const app = {
                 <div class="flex-1 min-w-0">
                     <h3 class="text-white font-medium truncate ${isDone ? 'line-through text-text-muted':''}">${t.title}</h3>
                     ${t.note ? `<p class="text-text-muted text-xs truncate mt-0.5">${t.note}</p>` : ''}
-                    
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                         <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand font-medium border border-brand/20">${t.project || 'Inbox'}</span>
-                        ${subtext ? `<span class="text-[10px] text-text-muted flex items-center"><i class="ph-bold ph-list-dashes mr-1"></i>${subtext}</span>` : ''}
-                        ${tags}
+                        ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold">! Urgent</span>' : ''}
                     </div>
                 </div>
-                
                 <button class="play-btn w-8 h-8 rounded-full bg-dark-active flex items-center justify-center text-brand active:scale-90 transition-transform ml-1" onclick="event.stopPropagation(); app.startFocus(state.tasks.find(x=>x.id==='${t.id}'))">
                     <i class="ph-fill ph-play"></i>
                 </button>
@@ -218,9 +220,108 @@ const app = {
         });
     },
 
-    // MODAL (Now functions as View/Edit)
+    // --- VIEW MODE LOGIC ---
+    openTaskDetail: (t) => {
+        haptic();
+        state.viewingTask = t;
+
+        // Populate Detail Sheet
+        $('dt-title').textContent = t.title;
+        $('dt-project').textContent = t.project || 'Inbox';
+        $('dt-date').textContent = t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'No Date';
+        $('dt-est').textContent = t.estimatedPomos || 1;
+        
+        // Notes
+        const noteEl = $('dt-note');
+        if(t.note) { noteEl.textContent = t.note; noteEl.classList.remove('hidden'); }
+        else { noteEl.classList.add('hidden'); }
+
+        // Priority
+        const priEl = $('dt-priority');
+        if(t.priority && t.priority !== 'none') {
+            priEl.textContent = t.priority + ' Priority';
+            priEl.className = `bg-dark-active px-2 py-0.5 rounded text-[10px] font-bold border border-dark-border uppercase tracking-wide ${t.priority==='high'?'text-red-500':t.priority==='med'?'text-yellow-500':'text-blue-500'}`;
+            priEl.classList.remove('hidden');
+        } else { priEl.classList.add('hidden'); }
+
+        // Subtasks
+        const subCon = $('dt-subtasks-container');
+        const subList = $('dt-subtasks-list');
+        subList.innerHTML = '';
+        if(t.subtasks && t.subtasks.length > 0) {
+            subCon.classList.remove('hidden');
+            t.subtasks.forEach(s => {
+                const row = document.createElement('div');
+                row.className = "flex items-center text-sm text-text-muted";
+                row.innerHTML = `<i class="ph-bold ph-caret-right text-xs mr-2 text-text-muted"></i><span>${s}</span>`;
+                subList.appendChild(row);
+            });
+        } else { subCon.classList.add('hidden'); }
+
+        // Tags
+        const tagCon = $('dt-tags-container');
+        tagCon.innerHTML = '';
+        if(t.tags && t.tags.length > 0) {
+            tagCon.classList.remove('hidden');
+            t.tags.forEach(tag => {
+                const sp = document.createElement('span');
+                sp.className = "bg-dark-active border border-dark-border text-xs px-2 py-1 rounded text-text-muted";
+                sp.textContent = tag;
+                tagCon.appendChild(sp);
+            });
+        } else { tagCon.classList.add('hidden'); }
+
+        // Open Sheet
+        $('modal-overlay').classList.remove('hidden');
+        setTimeout(() => {
+            $('modal-overlay').classList.remove('opacity-0');
+            $('detail-sheet').classList.remove('translate-y-full');
+        }, 10);
+    },
+
+    closeDetailSheet: () => {
+        $('detail-sheet').classList.add('translate-y-full');
+        // Only close overlay if we aren't immediately opening another modal (like Edit)
+        if(!state.editingId) {
+             $('modal-overlay').classList.add('opacity-0');
+             setTimeout(() => { 
+                 $('modal-overlay').classList.add('hidden'); 
+                 state.viewingTask = null;
+             }, 300);
+        } else {
+             state.viewingTask = null;
+        }
+    },
+
+    startFocusFromDetail: () => {
+        if(state.viewingTask) {
+            app.startFocus(state.viewingTask);
+            app.closeDetailSheet();
+        }
+    },
+
+    editCurrentTask: () => {
+        if(state.viewingTask) {
+            const t = state.viewingTask;
+            // 1. Hide Detail Sheet
+            $('detail-sheet').classList.add('translate-y-full');
+            state.viewingTask = null;
+            // 2. Open Edit Modal (Keep overlay visible for smoothness)
+            setTimeout(() => app.openTaskModal(t), 200);
+        }
+    },
+
+    deleteCurrentTask: async () => {
+        if(state.viewingTask && confirm('Delete this task?')) {
+            await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.viewingTask.id));
+            app.closeDetailSheet();
+        }
+    },
+
+    // --- ADD/EDIT MODAL ---
     openTaskModal: (task = null) => {
         haptic();
+        // Populate Projects
         const sel = $('inp-project');
         sel.innerHTML = '';
         state.projects.forEach(p => {
@@ -236,7 +337,6 @@ const app = {
             state.editingId = task.id;
             $('sheet-title').textContent = "Edit Task";
             $('btn-save-task').textContent = "Save Changes";
-            $('modal-focus-btn').classList.remove('hidden');
             
             $('inp-title').value = task.title;
             $('inp-est').value = task.estimatedPomos || 1;
@@ -254,7 +354,6 @@ const app = {
             state.editingId = null;
             $('sheet-title').textContent = "New Task";
             $('btn-save-task').textContent = "Create Task";
-            $('modal-focus-btn').classList.add('hidden');
             
             $('inp-title').value = '';
             $('inp-est').value = 1;
@@ -275,12 +374,17 @@ const app = {
     },
 
     closeTaskModal: () => {
-        $('modal-overlay').classList.add('opacity-0');
         $('modal-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
         setTimeout(() => {
             $('modal-overlay').classList.add('hidden');
             state.editingId = null;
         }, 300);
+    },
+    
+    closeAllSheets: () => {
+        app.closeDetailSheet();
+        app.closeTaskModal();
     },
 
     addSubtaskInput: (val = '') => {
@@ -347,15 +451,6 @@ const app = {
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', mode: 'focus', taskId: t.id, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000)
         });
-    },
-    startFocusFromModal: () => {
-        if(state.editingId) {
-            const t = state.tasks.find(x => x.id === state.editingId);
-            if(t) {
-                app.closeTaskModal();
-                app.startFocus(t);
-            }
-        }
     },
     toggleTimer: async () => {
         haptic();
