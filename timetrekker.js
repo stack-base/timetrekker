@@ -467,5 +467,34 @@ function renderTasks(){
         els.taskList.appendChild(el)
     })
 }
+
+// --- PASTE THE NEW FUNCTION HERE ---
+function updateTimerUI(t) {
+    if (t) {
+        state.timer.activeTaskId = t.id;
+        els.focusEmpty.classList.add('hidden');
+        els.focusActive.classList.remove('hidden');
+        els.focusTitle.textContent = t.title;
+        els.focusProject.textContent = t.project || 'Inbox';
+        els.focusProject.className = "truncate max-w-[150px] text-brand"; 
+        els.focusCompleted.textContent = t.completedPomos || 0;
+        els.focusTotal.textContent = t.estimatedPomos || 1;
+        
+        if(state.timer.status === 'running') {
+            const m = Math.floor(state.timer.remaining/60);
+            const s = state.timer.remaining%60;
+            document.title = `${m}:${s.toString().padStart(2,'0')} - ${t.title}`;
+        } else {
+             document.title = `${t.title} - TimeTrekker`;
+        }
+    } else {
+        state.timer.activeTaskId = null;
+        els.focusEmpty.classList.remove('hidden');
+        els.focusActive.classList.add('hidden');
+        document.title = 'TimeTrekker';
+    }
+}
+// --- END PASTE ---
+
 updateTimerUI(null);
 app.setView('today');
