@@ -149,6 +149,7 @@
             </div>
 
             <div id="view-settings" class="view-section hidden space-y-6 pt-2">
+                
                 <div class="p-4 bg-dark-card rounded-xl border border-dark-border flex items-center gap-4">
                      <div id="settings-avatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center font-bold text-white text-lg">U</div>
                      <div class="overflow-hidden">
@@ -156,6 +157,7 @@
                          <div id="settings-email" class="text-xs text-text-muted truncate">Loading...</div>
                      </div>
                 </div>
+
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
                     <div class="px-4 py-3 bg-dark-active/50 border-b border-dark-border text-xs font-bold uppercase text-text-muted">Timer Configuration</div>
                     <div class="p-4 space-y-6">
@@ -171,16 +173,34 @@
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Long Break</span><span class="font-bold text-white" id="set-long-display">15m</span></div>
                             <input type="range" min="5" max="45" step="5" value="15" class="w-full" oninput="app.updateSetting('long', this.value)">
                         </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Long Break After</span><span class="font-bold text-white" id="set-long-interval-display">4x</span></div>
+                            <input type="range" id="inp-long-interval" min="2" max="10" step="1" value="4" class="w-full" oninput="app.updateSetting('longBreakInterval', this.value)">
+                        </div>
                     </div>
                 </div>
 
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
                     <div class="divide-y divide-dark-border">
                         <div class="p-4 flex items-center justify-between">
-                            <div><div class="text-sm font-bold text-white">Auto-Start Pomodoro</div><div class="text-[10px] text-text-muted">Start focus automatically after break</div></div>
+                            <div><div class="text-sm font-bold text-white">Auto-Start Focus</div><div class="text-[10px] text-text-muted">Start focus automatically after break</div></div>
                             <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
                                 <input type="checkbox" id="toggle-auto-pomo" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartPomo', this.checked)"/>
                                 <label for="toggle-auto-pomo" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
+                            </div>
+                        </div>
+                        <div class="p-4 flex items-center justify-between">
+                            <div><div class="text-sm font-bold text-white">Auto-Start Break</div><div class="text-[10px] text-text-muted">Start break automatically after focus</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" id="toggle-auto-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartBreak', this.checked)"/>
+                                <label for="toggle-auto-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
+                            </div>
+                        </div>
+                        <div class="p-4 flex items-center justify-between">
+                            <div><div class="text-sm font-bold text-white">Disable Break</div><div class="text-[10px] text-text-muted">Skip breaks entirely</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" id="toggle-disable-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('disableBreak', this.checked)"/>
+                                <label for="toggle-disable-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-between">
@@ -196,7 +216,16 @@
                 <button onclick="app.signOut()" class="w-full flex items-center justify-center p-4 bg-dark-card rounded-xl text-red-500 font-medium border border-dark-border active:bg-red-500/10 transition-colors">
                     <i class="ph-bold ph-sign-out text-xl mr-3"></i> Sign Out
                 </button>
-                <div class="pb-8 text-center text-xs text-text-muted opacity-50">TimeTrekker Mobile v2.0</div>
+
+                <div class="p-6 text-center space-y-2 opacity-60 pb-12">
+                    <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-brand to-red-600 flex items-center justify-center shadow-lg shadow-brand/20 mb-3">
+                        <i class="ph-bold ph-check text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-white">TimeTrekker Mobile</h3>
+                    <p class="text-xs text-text-muted">Version 2.0.0</p>
+                    <p class="text-[10px] text-text-muted leading-tight">Designed for focus and simplicity.<br>&copy; 2025 StackBase.</p>
+                </div>
+
             </div>
 
         </div>

@@ -31,11 +31,18 @@ const state = {
     activeTab: 'tasks', activeFilter: 'today',
     timer: { 
         status: 'idle', endTime: null, remaining: 1500, total: 1500, taskId: null, mode: 'focus',
-        settings: { focus: 25, short: 5, long: 15, strictMode: false, autoStartPomo: false }
+        settings: { 
+            focus: 25, short: 5, long: 15, 
+            longBreakInterval: 4, 
+            strictMode: false, 
+            autoStartPomo: false,
+            autoStartBreak: false,
+            disableBreak: false
+        }
     },
     sound: 'none',
-    editingId: null, // ID of task being edited
-    viewingTask: null, // Object of task being viewed
+    editingId: null,
+    viewingTask: null,
     chartInstance: null,
     chartView: 'weekly'
 };
@@ -44,11 +51,9 @@ const state = {
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
-        // Populate Header
         $('header-avatar').textContent = (u.displayName || u.email || 'U').charAt(0).toUpperCase();
         $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         
-        // Populate Settings Profile
         $('settings-avatar').textContent = (u.displayName || u.email || 'U').charAt(0).toUpperCase();
         $('settings-name').textContent = u.displayName || 'User Account';
         $('settings-email').textContent = u.email;
@@ -75,7 +80,7 @@ onAuthStateChanged(auth, u => {
                     total: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId
                 };
-                // Sync Settings from DB if available
+                // Sync Settings
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
                 
                 app.updateTimerUI();
@@ -126,7 +131,6 @@ const app = {
         const view = $(`view-${tab}`);
         if(view) view.classList.remove('hidden');
         
-        // Update Bottom Nav
         document.querySelectorAll('.nav-item').forEach(el => {
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
             el.querySelector('i').classList.remove('ph-fill');
@@ -140,7 +144,6 @@ const app = {
             activeBtn.querySelector('i').classList.add('ph-fill');
         }
 
-        // Toggle Header Elements
         const isTask = tab === 'tasks';
         $('view-header').classList.toggle('hidden', !isTask);
         $('task-filters').classList.toggle('hidden', !isTask);
@@ -148,13 +151,19 @@ const app = {
 
         if(tab === 'analytics') app.renderAnalytics();
         
-        // Update settings UI values if switching to settings
+        // Update settings UI values
         if(tab === 'settings') {
-            $('toggle-strict').checked = state.timer.settings.strictMode;
-            $('toggle-auto-pomo').checked = state.timer.settings.autoStartPomo;
-            $('set-focus-display').innerText = state.timer.settings.focus + 'm';
-            $('set-short-display').innerText = state.timer.settings.short + 'm';
-            $('set-long-display').innerText = state.timer.settings.long + 'm';
+            const s = state.timer.settings;
+            $('toggle-strict').checked = s.strictMode;
+            $('toggle-auto-pomo').checked = s.autoStartPomo;
+            $('toggle-auto-break').checked = s.autoStartBreak;
+            $('toggle-disable-break').checked = s.disableBreak;
+            
+            $('set-focus-display').innerText = s.focus + 'm';
+            $('set-short-display').innerText = s.short + 'm';
+            $('set-long-display').innerText = s.long + 'm';
+            $('set-long-interval-display').innerText = s.longBreakInterval + 'x';
+            $('inp-long-interval').value = s.longBreakInterval;
         }
     },
 
@@ -186,10 +195,7 @@ const app = {
         filtered.forEach(t => {
             const el = document.createElement('div');
             const priColor = t.priority === 'high' ? 'border-red-500/50' : t.priority === 'med' ? 'border-yellow-500/50' : t.priority === 'low' ? 'border-blue-500/50' : 'border-dark-border';
-            
             el.className = `bg-dark-card border ${priColor} p-4 rounded-xl flex items-start gap-3 active:scale-[0.98] transition-transform select-none relative`;
-            
-            // KEY CHANGE: Clicking the card opens details, not timer
             el.onclick = (e) => {
                 if(!e.target.closest('.check-area') && !e.target.closest('.play-btn') && !e.target.closest('.del-btn')) {
                     app.openTaskDetail(t);
@@ -197,7 +203,6 @@ const app = {
             };
 
             const isDone = t.status === 'done';
-            
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
                     <div class="w-6 h-6 rounded-full border-2 ${isDone ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center">
@@ -220,23 +225,20 @@ const app = {
         });
     },
 
-    // --- VIEW MODE LOGIC ---
+    // --- VIEW MODE ---
     openTaskDetail: (t) => {
         haptic();
         state.viewingTask = t;
 
-        // Populate Detail Sheet
         $('dt-title').textContent = t.title;
         $('dt-project').textContent = t.project || 'Inbox';
         $('dt-date').textContent = t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'No Date';
         $('dt-est').textContent = t.estimatedPomos || 1;
         
-        // Notes
         const noteEl = $('dt-note');
         if(t.note) { noteEl.textContent = t.note; noteEl.classList.remove('hidden'); }
         else { noteEl.classList.add('hidden'); }
 
-        // Priority
         const priEl = $('dt-priority');
         if(t.priority && t.priority !== 'none') {
             priEl.textContent = t.priority + ' Priority';
@@ -244,7 +246,6 @@ const app = {
             priEl.classList.remove('hidden');
         } else { priEl.classList.add('hidden'); }
 
-        // Subtasks
         const subCon = $('dt-subtasks-container');
         const subList = $('dt-subtasks-list');
         subList.innerHTML = '';
@@ -258,7 +259,6 @@ const app = {
             });
         } else { subCon.classList.add('hidden'); }
 
-        // Tags
         const tagCon = $('dt-tags-container');
         tagCon.innerHTML = '';
         if(t.tags && t.tags.length > 0) {
@@ -271,7 +271,6 @@ const app = {
             });
         } else { tagCon.classList.add('hidden'); }
 
-        // Open Sheet
         $('modal-overlay').classList.remove('hidden');
         setTimeout(() => {
             $('modal-overlay').classList.remove('opacity-0');
@@ -281,7 +280,6 @@ const app = {
 
     closeDetailSheet: () => {
         $('detail-sheet').classList.add('translate-y-full');
-        // Only close overlay if we aren't immediately opening another modal (like Edit)
         if(!state.editingId) {
              $('modal-overlay').classList.add('opacity-0');
              setTimeout(() => { 
@@ -303,10 +301,8 @@ const app = {
     editCurrentTask: () => {
         if(state.viewingTask) {
             const t = state.viewingTask;
-            // 1. Hide Detail Sheet
             $('detail-sheet').classList.add('translate-y-full');
             state.viewingTask = null;
-            // 2. Open Edit Modal (Keep overlay visible for smoothness)
             setTimeout(() => app.openTaskModal(t), 200);
         }
     },
@@ -318,10 +314,9 @@ const app = {
         }
     },
 
-    // --- ADD/EDIT MODAL ---
+    // --- FORM MODAL ---
     openTaskModal: (task = null) => {
         haptic();
-        // Populate Projects
         const sel = $('inp-project');
         sel.innerHTML = '';
         state.projects.forEach(p => {
@@ -333,7 +328,6 @@ const app = {
         $('subtask-list').innerHTML = '';
 
         if (task) {
-            // Edit Mode
             state.editingId = task.id;
             $('sheet-title').textContent = "Edit Task";
             $('btn-save-task').textContent = "Save Changes";
@@ -350,7 +344,6 @@ const app = {
             
             if(task.subtasks) task.subtasks.forEach(s => app.addSubtaskInput(s));
         } else {
-            // New Task Mode
             state.editingId = null;
             $('sheet-title').textContent = "New Task";
             $('btn-save-task').textContent = "Create Task";
@@ -417,11 +410,9 @@ const app = {
         
         try {
             if(state.editingId) {
-                // Update
                 await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.editingId), data);
                 app.showToast('Task updated');
             } else {
-                // Create
                 await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), {
                     ...data,
                     status: 'todo',
@@ -539,8 +530,9 @@ const app = {
 
     // SETTINGS & ANALYTICS
     updateSetting: (k, v) => {
-        state.timer.settings[k] = ['strictMode','autoStartPomo'].includes(k) ? v : parseInt(v);
-        if(!['strictMode','autoStartPomo'].includes(k)) $(`set-${k}-display`).innerText = v + 'm';
+        state.timer.settings[k] = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
+        if(k === 'longBreakInterval') $('set-long-interval-display').innerText = v + 'x';
+        else if(!['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k)) $(`set-${k}-display`).innerText = v + 'm';
     },
 
     toggleChart: (type) => {
