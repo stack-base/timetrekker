@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, enableIndexedDbPersistence, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // --- CONFIG ---
 const FIREBASE_CONFIG = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
@@ -21,8 +21,25 @@ try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
 // --- HELPERS ---
 const $ = id => document.getElementById(id);
 const haptic = () => { try { if(navigator.vibrate) navigator.vibrate(10); } catch(e){} };
-const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-const esc = str => { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; };
+const esc = str => { 
+    if(!str) return ''; 
+    const d = document.createElement('div'); 
+    d.textContent = str; 
+    return d.innerHTML; 
+};
+
+// *** CRITICAL FIX: Robust Date Parser ***
+const parseDate = (d) => {
+    if (!d) return new Date(); // Fallback to now
+    if (d.toDate) return d.toDate(); // Firestore Timestamp
+    if (d.seconds) return new Date(d.seconds * 1000); // Raw seconds object
+    return new Date(d); // String or Date object
+};
+
+const getDayStr = d => {
+    const date = parseDate(d);
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+};
 
 // --- STATE ---
 const state = {
@@ -33,48 +50,60 @@ const state = {
         settings: { focus: 25, short: 5, long: 15, strictMode: false, autoStartPomo: false }
     },
     sound: 'none',
-    chartFocus: null, chartProjects: null
+    chartFocus: null
 };
 
-// --- AUTH ---
+// --- AUTH & DATA ---
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
+        $('loading-screen').classList.add('opacity-0');
+        setTimeout(() => $('loading-screen').classList.add('hidden'), 500);
+
+        // UI Init
         $('user-avatar').textContent = (u.email||'U').charAt(0).toUpperCase();
         $('date-display').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         $('settings-name').textContent = u.displayName || 'User';
         $('settings-email').textContent = u.email;
 
-        // Tasks Sub
+        // --- Data Subscriptions ---
+        // 1. Tasks
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
-            state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
-            state.projects = new Set(['Inbox']);
-            state.tasks.forEach(t => { if(t.project) state.projects.add(t.project); });
-            app.renderTasks();
-            app.renderAnalytics();
+            try {
+                state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
+                state.projects = new Set(['Inbox']);
+                state.tasks.forEach(t => { if(t.project) state.projects.add(t.project); });
+                app.renderTasks();
+                // If tasks update, analytics might change (completed counts)
+                app.renderAnalyticsStats();
+            } catch(e) { console.error("Task sync error", e); }
         });
         
-        // Timer Sub
+        // 2. Timer
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
-            if(s.exists()) {
-                const d = s.data();
-                state.timer = { ...state.timer, ...d, endTime: d.endTime ? d.endTime.toMillis() : null };
-                // Load settings if present
-                if(d.settings) state.timer.settings = { ...state.timer.settings, ...d.settings };
-                
-                app.updateTimerUI();
-                app.syncSettingsUI();
-                
-                if(state.timer.status === 'running') startTimerLoop(); else stopTimerLoop();
-            } else {
-                app.resetTimer(true); // First run setup
-            }
+            try {
+                if(s.exists()) {
+                    const d = s.data();
+                    state.timer = { ...state.timer, ...d, endTime: d.endTime ? d.endTime.toMillis() : null };
+                    if(d.settings) state.timer.settings = { ...state.timer.settings, ...d.settings };
+                    app.updateTimerUI();
+                    app.syncSettingsUI();
+                    if(state.timer.status === 'running') startTimerLoop(); else stopTimerLoop();
+                }
+            } catch(e) { console.error("Timer sync error", e); }
         });
 
-        // Logs Sub
-        onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
-            state.logs = s.docs.map(d => d.data()).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
-            app.renderAnalytics();
+        // 3. Logs (Analytics)
+        onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions'), s => {
+            try {
+                state.logs = s.docs.map(d => d.data()).sort((a,b) => {
+                    const da = parseDate(a.completedAt).getTime();
+                    const db = parseDate(b.completedAt).getTime();
+                    return db - da; 
+                });
+                app.renderAnalyticsStats();
+                if(state.view === 'analytics') app.renderAnalyticsChart();
+            } catch(e) { console.error("Logs sync error", e); }
         });
 
     } else {
@@ -90,8 +119,6 @@ const startTimerLoop = () => {
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
     $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
-    
-    // Audio Autoplay Hack (needs user interaction first usually)
     const audio = $('audio-player');
     if(audio && audio.paused && state.sound !== 'none') audio.play().catch(()=>{});
 };
@@ -103,7 +130,7 @@ const stopTimerLoop = () => {
     if(audio) audio.pause();
 };
 
-// --- APP CONTROLLER ---
+// --- APP LOGIC ---
 const app = {
     
     // NAVIGATION
@@ -111,40 +138,42 @@ const app = {
         haptic();
         state.view = view;
         
-        // Hide all views
+        // Hide views
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-        $(`view-${view}`).classList.remove('hidden');
+        const target = $(`view-${view}`);
+        if(target) target.classList.remove('hidden');
         
-        // Reset Nav Icons
+        // Nav Icons
         document.querySelectorAll('nav button').forEach(btn => {
             btn.classList.replace('text-brand', 'text-text-muted');
             btn.querySelector('i').classList.remove('ph-fill');
             btn.querySelector('i').classList.add('ph-bold');
         });
         
-        // Active Nav Icon
+        // Active Icon
         const btn = $(`nav-${view}`);
-        btn.classList.replace('text-text-muted', 'text-brand');
-        btn.querySelector('i').classList.remove('ph-bold');
-        btn.querySelector('i').classList.add('ph-fill');
-        btn.querySelector('.icon-container').classList.add('active-nav-icon');
-        setTimeout(() => btn.querySelector('.icon-container').classList.remove('active-nav-icon'), 300);
+        if(btn) {
+            btn.classList.replace('text-text-muted', 'text-brand');
+            btn.querySelector('i').classList.remove('ph-bold');
+            btn.querySelector('i').classList.add('ph-fill');
+        }
 
-        if(view === 'analytics') app.renderAnalytics();
+        if(view === 'analytics') setTimeout(() => app.renderAnalyticsChart(), 100); // Delay for layout
     },
 
     setFilter: (f) => {
         haptic();
         state.filter = f;
         document.querySelectorAll('#view-tasks .chip').forEach(c => {
-            c.className = c.id === `chip-${f}` ? 'chip active' : 'chip inactive';
+            c.className = c.id === `chip-${f}` ? 'chip active px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap' : 'chip inactive px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap';
         });
         app.renderTasks();
     },
 
-    // TASKS
+    // TASKS UI
     renderTasks: () => {
         const container = $('task-list');
+        if(!container) return;
         container.innerHTML = '';
         const today = getDayStr(new Date());
         
@@ -158,33 +187,26 @@ const app = {
 
         list.forEach(t => {
             const el = document.createElement('div');
-            el.className = `bg-dark-surface border border-dark-border p-4 rounded-2xl flex items-start gap-3 active:scale-[0.98] transition-transform select-none relative overflow-hidden`;
+            el.className = `bg-dark-surface border border-dark-border p-4 rounded-[18px] flex items-start gap-3 active:scale-[0.98] transition-transform select-none relative overflow-hidden shadow-sm`;
             
-            // Border color for priority
-            if(t.priority === 'high') el.style.borderLeft = '4px solid #ef4444';
-            else if(t.priority === 'med') el.style.borderLeft = '4px solid #eab308';
-            
-            el.onclick = (e) => {
-                if(!e.target.closest('.check-area') && !e.target.closest('.action-btn')) app.openTaskModal(t);
-            };
-
-            const isDone = t.status === 'done';
+            // Priority Indicator
+            const borderCol = t.priority === 'high' ? '#ef4444' : (t.priority === 'med' ? '#eab308' : 'transparent');
             
             el.innerHTML = `
-                <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
-                    <div class="w-6 h-6 rounded-full border-2 ${isDone ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center transition-colors">
-                        ${isDone ? '<i class="ph-bold ph-check text-white text-xs"></i>' : ''}
+                <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: ${borderCol}"></div>
+                <div class="check-area pt-1 pl-2" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
+                    <div class="w-6 h-6 rounded-full border-2 ${t.status==='done' ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center transition-colors">
+                        ${t.status==='done' ? '<i class="ph-bold ph-check text-white text-xs"></i>' : ''}
                     </div>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <h3 class="text-white font-medium truncate ${isDone ? 'line-through text-text-muted':''} text-[15px]">${esc(t.title)}</h3>
+                <div class="flex-1 min-w-0" onclick="app.openTaskModal(state.tasks.find(x=>x.id==='${t.id}'))">
+                    <h3 class="text-white font-medium truncate ${t.status==='done' ? 'line-through text-text-muted':''} text-[15px]">${esc(t.title)}</h3>
                     <div class="flex flex-wrap items-center gap-2 mt-1.5">
-                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-dark-active text-text-muted font-medium">${esc(t.project || 'Inbox')}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-text-muted font-medium border border-white/5">${esc(t.project || 'Inbox')}</span>
                         ${t.estimatedPomos > 1 ? `<span class="text-[10px] text-text-muted flex items-center"><i class="ph-bold ph-timer mr-1"></i>${t.completedPomos||0}/${t.estimatedPomos}</span>` : ''}
-                        ${t.priority === 'high' ? `<span class="text-[10px] text-red-400 font-bold">! Urgent</span>` : ''}
                     </div>
                 </div>
-                <button class="action-btn text-brand p-2 bg-brand/10 rounded-full" onclick="event.stopPropagation(); app.startFocus(this, '${t.id}')">
+                <button class="text-brand p-2 bg-brand/10 rounded-full" onclick="event.stopPropagation(); app.startFocus(this, '${t.id}')">
                     <i class="ph-fill ph-play"></i>
                 </button>
             `;
@@ -192,10 +214,10 @@ const app = {
         });
     },
 
-    // TASK MODAL
+    // CRUD
     openTaskModal: (task = null) => {
         haptic();
-        // Populate Projects
+        // Fill Projects
         const sel = $('inp-project');
         sel.innerHTML = '<option value="Inbox" class="bg-dark-surface">Inbox</option>';
         state.projects.forEach(p => {
@@ -206,8 +228,8 @@ const app = {
             }
         });
 
-        // Reset or Fill
         $('subtasks-container').innerHTML = '';
+        
         if(task) {
             $('modal-title').textContent = 'Edit Task';
             $('inp-id').value = task.id;
@@ -245,18 +267,8 @@ const app = {
     addSubtaskUI: (val = '') => {
         const div = document.createElement('div');
         div.className = 'flex items-center gap-2';
-        div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand"></div><input type="text" class="subtask-inp bg-transparent border-b border-dark-border w-full text-sm text-white py-1 outline-none focus:border-brand" value="${esc(val)}" placeholder="Subtask..."><button onclick="this.parentElement.remove()" class="text-text-muted"><i class="ph-bold ph-x"></i></button>`;
+        div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-inp bg-transparent border-b border-dark-border w-full text-sm text-white py-1 outline-none focus:border-brand" value="${esc(val)}" placeholder="Subtask..."><button onclick="this.parentElement.remove()" class="text-text-muted p-2"><i class="ph-bold ph-x"></i></button>`;
         $('subtasks-container').appendChild(div);
-    },
-
-    promptNewProject: async () => {
-        const p = prompt("New Project Name:");
-        if(p) {
-            const sel = $('inp-project');
-            const opt = document.createElement('option');
-            opt.value = p; opt.textContent = p; opt.className = 'bg-dark-surface'; opt.selected = true;
-            sel.appendChild(opt);
-        }
     },
 
     saveTask: async () => {
@@ -298,15 +310,9 @@ const app = {
         });
     },
 
-    // TIMER
+    // TIMER LOGIC
     startFocus: async (btn, id) => {
         haptic();
-        // Visual feedback
-        if(btn) {
-            const icon = btn.querySelector('i');
-            icon.className = "ph-bold ph-spinner animate-spin";
-        }
-        
         app.navTo('timer');
         const d = state.timer.settings.focus;
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
@@ -319,9 +325,6 @@ const app = {
     toggleTimer: async () => {
         haptic();
         if(state.timer.status === 'running') {
-            if(state.timer.settings.strictMode && state.timer.mode === 'focus') {
-                if(!confirm("Strict Mode is on. Are you sure?")) return;
-            }
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
                 status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000))
             });
@@ -333,8 +336,8 @@ const app = {
         }
     },
 
-    resetTimer: async (force = false) => {
-        if(!force) haptic();
+    resetTimer: async () => {
+        haptic();
         const d = state.timer.settings[state.timer.mode];
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'idle', remaining: d * 60, totalDuration: d * 60, endTime: null
@@ -348,7 +351,6 @@ const app = {
         haptic();
         const { mode, taskId } = state.timer;
         
-        // Log if focus
         if(mode === 'focus' && taskId) {
             const t = state.tasks.find(x => x.id === taskId);
             if(t) {
@@ -357,11 +359,8 @@ const app = {
             }
         }
         
-        // Switch Modes
-        let nextMode = 'focus';
-        if(mode === 'focus') nextMode = 'short'; // simplified logic
-        else nextMode = 'focus';
-
+        // Simple Mode switching
+        const nextMode = mode === 'focus' ? 'short' : 'focus';
         const d = state.timer.settings[nextMode];
         const updates = { status: 'idle', mode: nextMode, remaining: d*60, totalDuration: d*60, endTime: null };
         
@@ -402,7 +401,7 @@ const app = {
         }
     },
 
-    // SETTINGS
+    // ANALYTICS & SETTINGS
     syncSettingsUI: () => {
         const s = state.timer.settings;
         if(!s) return;
@@ -418,7 +417,6 @@ const app = {
         const s = { ...state.timer.settings };
         if(key === 'strictMode' || key === 'autoStartPomo') s[key] = val;
         else s[key] = parseInt(val);
-        
         state.timer.settings = s;
         app.syncSettingsUI();
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { settings: s });
@@ -438,24 +436,20 @@ const app = {
             const btn = $(`sound-btn-${k}`);
             if(k === type) {
                 btn.classList.replace('text-text-muted','text-brand');
-                btn.classList.replace('bg-transparent','bg-dark-active');
+                btn.classList.replace('bg-dark-active','bg-brand/10');
             } else {
                 btn.classList.replace('text-brand','text-text-muted');
-                btn.classList.replace('bg-dark-active','bg-transparent');
+                btn.classList.replace('bg-brand/10','bg-dark-active');
             }
         });
     },
 
-    // ANALYTICS
-    renderAnalytics: () => {
-        if(state.view !== 'analytics') return;
-        
+    renderAnalyticsStats: () => {
         const logs = state.logs;
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         $('ana-focus-time').textContent = Math.floor(totalMin / 60) + 'h ' + (totalMin % 60) + 'm';
         $('ana-tasks-done').textContent = state.tasks.filter(t => t.status === 'done').length;
 
-        // Log list
         const list = $('analytics-log-list');
         if(logs.length > 0) {
             list.innerHTML = logs.slice(0, 5).map(l => `
@@ -468,41 +462,42 @@ const app = {
                 </div>
             `).join('');
         }
+    },
 
-        // Charts
+    renderAnalyticsChart: () => {
         const ctxF = $('chart-focus');
-        if(ctxF) {
-            if(state.chartFocus) state.chartFocus.destroy();
-            const labels = [], data = [];
-            for(let i=6; i>=0; i--) {
-                const d = new Date(); d.setDate(d.getDate() - i);
-                labels.push(d.toLocaleDateString('en-US', {weekday:'short'}));
-                const ds = getDayStr(d);
-                data.push(logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000)) === ds).reduce((a,b)=>a+(b.duration||25),0));
-            }
-            state.chartFocus = new Chart(ctxF, {
-                type: 'bar',
-                data: { labels, datasets: [{ data, backgroundColor: '#ff5757', borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false } } }
-            });
+        if(!ctxF) return;
+        
+        if(state.chartFocus) state.chartFocus.destroy();
+        
+        const logs = state.logs;
+        const labels = [], data = [];
+        
+        for(let i=6; i>=0; i--) {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            labels.push(d.toLocaleDateString('en-US', {weekday:'short'}));
+            const ds = getDayStr(d);
+            data.push(logs.filter(l => l.completedAt && getDayStr(new Date(parseDate(l.completedAt))) === ds).reduce((a,b)=>a+(b.duration||25),0));
         }
         
-        const ctxP = $('chart-projects');
-        if(ctxP) {
-             if(state.chartProjects) state.chartProjects.destroy();
-             const pMap = {};
-             logs.forEach(l => { const p = l.project||'Inbox'; pMap[p] = (pMap[p]||0) + (l.duration||25); });
-             state.chartProjects = new Chart(ctxP, {
-                 type: 'doughnut',
-                 data: { labels: Object.keys(pMap), datasets: [{ data: Object.values(pMap), backgroundColor: ['#ff5757','#3b82f6','#eab308','#10b981'], borderWidth: 0 }] },
-                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, color: '#a1a1aa', font: { size: 10 } } } } }
-             });
-        }
+        state.chartFocus = new Chart(ctxF, {
+            type: 'bar',
+            data: { labels, datasets: [{ data, backgroundColor: '#ff5757', borderRadius: 4, barThickness: 12 }] },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: false } }, 
+                scales: { 
+                    x: { grid: { display: false }, ticks: { color: '#666', font: { size: 10 } } }, 
+                    y: { display: false } 
+                } 
+            }
+        });
     },
 
     showToast: (msg) => {
         const t = document.createElement('div');
-        t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-xl shadow-up text-center animate-[bounce_0.2s]";
+        t.className = "bg-dark-surface border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-xl shadow-material text-center animate-[bounce_0.2s]";
         t.textContent = msg;
         $('toast-container').appendChild(t);
         setTimeout(() => t.remove(), 2500);
@@ -510,5 +505,6 @@ const app = {
     signOut: () => signOut(auth)
 };
 
+// Make Global
 window.app = app;
 app.navTo('tasks');

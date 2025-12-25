@@ -3,19 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="description" content="TimeTrekker Mobile">
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>TimeTrekker</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script src="https://cdn.tailwindcss.com"></script>
+
 <script>
     tailwind.config = {
         darkMode: 'class',
@@ -23,84 +19,98 @@
             extend: {
                 fontFamily: { sans: ['Inter', 'sans-serif'] },
                 colors: {
-                    brand: { DEFAULT: '#ff5757', hover: '#e04848', surface: 'rgba(255, 87, 87, 0.1)' },
-                    dark: { bg: '#000000', surface: '#121212', border: '#27272a', active: '#27272a' },
-                    text: { main: '#ffffff', muted: '#a1a1aa' }
+                    brand: { DEFAULT: '#ff5757', hover: '#e04848', surface: 'rgba(255, 87, 87, 0.08)' },
+                    dark: { bg: '#000000', surface: '#1e1e1e', border: '#333333', active: '#2d2d2d' },
+                    text: { main: '#ffffff', muted: '#a3a3a3' }
                 },
                 spacing: { 'safe-b': 'env(safe-area-inset-bottom)', 'safe-t': 'env(safe-area-inset-top)' },
-                boxShadow: { 'up': '0 -4px 20px rgba(0,0,0,0.5)' }
+                boxShadow: { 'material': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)' }
             }
         }
     };
 </script>
 
-<script type="module" src="mobile.js" defer></script>
-
 <style>
+    /* App-like behavior resets */
     body { background-color: #000000; color: #ffffff; -webkit-tap-highlight-color: transparent; overflow: hidden; user-select: none; }
+    
+    /* Scrollbar hiding */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .sheet-handle { width: 32px; height: 4px; background: #3f3f46; border-radius: 99px; margin: 12px auto; }
     
-    /* Animations */
-    .view-transition { transition: opacity 0.2s ease-in-out; }
-    .active-nav-icon { animation: bounce 0.3s; }
-    @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-    
+    /* Material Design Ripple Effect */
+    .ripple { position: relative; overflow: hidden; transform: translate3d(0, 0, 0); }
+    .ripple::after { content: ""; display: block; position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; background-image: radial-gradient(circle, #fff 10%, transparent 10.01%); background-repeat: no-repeat; background-position: 50%; transform: scale(10, 10); opacity: 0; transition: transform .5s, opacity 1s; }
+    .ripple:active::after { transform: scale(0, 0); opacity: 0.2; transition: 0s; }
+
+    /* Bottom Sheet Handle */
+    .sheet-handle { width: 32px; height: 4px; background: #4b5563; border-radius: 99px; margin: 12px auto; }
+
     /* Chips */
-    .chip { display: flex; align-items: center; padding: 6px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap; transition: all 0.2s; border: 1px solid transparent; }
-    .chip.active { background-color: #ff5757; color: white; border-color: #ff5757; }
-    .chip.inactive { background-color: #121212; color: #a1a1aa; border-color: #27272a; }
+    .chip { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    .chip.active { background-color: #ff5757; color: white; border-color: transparent; }
+    .chip.inactive { background-color: transparent; color: #a3a3a3; border: 1px solid #333333; }
 </style>
+
+<script type="module" src="mobile.js" defer></script>
+
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main font-sans">
 
-    <div id="toast-container" class="fixed top-safe-t mt-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
+    <div id="loading-screen" class="fixed inset-0 z-[100] bg-dark-bg flex flex-col items-center justify-center transition-opacity duration-500">
+        <i class="ph-bold ph-spinner animate-spin text-4xl text-brand"></i>
+        <p class="mt-4 text-xs font-medium text-text-muted tracking-widest uppercase">TimeTrekker</p>
+    </div>
+
+    <div id="toast-container" class="fixed top-safe-t mt-6 left-1/2 -translate-x-1/2 z-[90] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
 
     <main id="main-container" class="flex-1 relative overflow-hidden flex flex-col w-full h-full">
         
-        <div id="view-tasks" class="view-section absolute inset-0 flex flex-col bg-dark-bg pt-safe-t pb-[80px]">
-            <header class="px-5 py-4 flex items-center justify-between bg-dark-bg/95 backdrop-blur z-20">
+        <div id="view-tasks" class="view-section absolute inset-0 flex flex-col bg-dark-bg pt-safe-t pb-[70px]">
+            <header class="px-5 py-3 flex items-center justify-between bg-dark-bg/95 backdrop-blur z-20 shrink-0">
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight text-white">My Tasks</h1>
-                    <p id="date-display" class="text-xs text-text-muted font-medium mt-0.5 opacity-80">Loading...</p>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">Tasks</h1>
+                    <p id="date-display" class="text-xs text-text-muted font-medium mt-0.5">Today</p>
                 </div>
-                <div id="user-avatar" class="w-9 h-9 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center text-xs font-bold text-white shadow-sm">U</div>
+                <div id="user-avatar" class="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-red-700 border border-white/10 flex items-center justify-center text-xs font-bold text-white shadow-lg">U</div>
             </header>
 
-            <div class="px-5 pb-2 shrink-0 overflow-x-auto no-scrollbar flex gap-2 mb-2">
-                <button onclick="app.setFilter('today')" id="chip-today" class="chip active">Today</button>
-                <button onclick="app.setFilter('upcoming')" id="chip-upcoming" class="chip inactive">Upcoming</button>
-                <button onclick="app.setFilter('project')" id="chip-project" class="chip inactive">Projects</button>
-                <button onclick="app.setFilter('completed')" id="chip-completed" class="chip inactive">Done</button>
+            <div class="px-5 py-2 shrink-0 overflow-x-auto no-scrollbar flex gap-2 mb-2">
+                <button onclick="app.setFilter('today')" id="chip-today" class="chip active px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap">Today</button>
+                <button onclick="app.setFilter('upcoming')" id="chip-upcoming" class="chip inactive px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap">Upcoming</button>
+                <button onclick="app.setFilter('project')" id="chip-project" class="chip inactive px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap">Projects</button>
+                <button onclick="app.setFilter('completed')" id="chip-completed" class="chip inactive px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap">Done</button>
             </div>
 
             <div class="flex-1 overflow-y-auto no-scrollbar px-4 pb-24 relative" id="task-list-container">
-                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-32 opacity-40">
-                    <i class="ph ph-check-circle text-5xl mb-4 text-brand"></i>
-                    <p class="text-sm font-medium">No tasks found</p>
-                    <p class="text-xs mt-1">Tap + to create one</p>
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
+                    <div class="w-16 h-16 rounded-full bg-dark-surface flex items-center justify-center mb-4 text-brand">
+                        <i class="ph-fill ph-check text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-medium text-white">All caught up</p>
+                    <p class="text-xs text-text-muted mt-1">Tap + to add a new task</p>
                 </div>
                 <div id="task-list" class="space-y-3 pb-8"></div>
             </div>
 
-            <button onclick="app.openTaskModal()" class="fixed right-5 bottom-24 z-30 w-14 h-14 bg-brand text-white rounded-2xl shadow-lg shadow-brand/30 flex items-center justify-center active:scale-95 transition-transform">
+            <button onclick="app.openTaskModal()" class="ripple fixed right-5 bottom-24 z-30 w-14 h-14 bg-brand text-white rounded-[16px] shadow-lg shadow-brand/30 flex items-center justify-center active:scale-95 transition-transform">
                 <i class="ph-bold ph-plus text-2xl"></i>
             </button>
         </div>
 
-        <div id="view-timer" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[80px] overflow-y-auto no-scrollbar">
+        <div id="view-timer" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[70px] overflow-y-auto no-scrollbar">
             <div class="flex-1 flex flex-col items-center justify-center min-h-[600px]">
+                
                 <div class="text-center px-6 mb-8 w-full">
-                    <div id="timer-empty-state" class="text-text-muted text-sm py-2 px-4 rounded-full bg-dark-surface border border-dark-border inline-block animate-pulse">
-                        Select a task to focus
+                    <div id="timer-empty-state" class="text-text-muted text-xs font-medium py-2 px-4 rounded-full bg-dark-surface border border-dark-border inline-block animate-pulse">
+                        Select a task from your list
                     </div>
-                    <div id="timer-active-state" class="hidden">
+                    <div id="timer-active-state" class="hidden animate-fade-in">
                         <div class="flex justify-center mb-3">
-                            <span id="timer-project-badge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-dark-surface text-brand border border-dark-border">Inbox</span>
+                            <span id="timer-project-badge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-dark-active text-brand border border-white/5">Inbox</span>
                         </div>
-                        <h2 id="timer-task-title" class="text-xl font-bold text-white leading-tight line-clamp-2 mb-2">Task Title</h2>
-                        <div class="flex items-center justify-center gap-1.5 text-xs text-text-muted">
+                        <h2 id="timer-task-title" class="text-xl font-bold text-white leading-tight line-clamp-2 mb-2 px-4">Task Title</h2>
+                        <div class="flex items-center justify-center gap-2 text-xs text-text-muted">
                             <i class="ph-fill ph-check-circle text-brand"></i>
                             <span class="font-medium text-white"><span id="timer-completed-count">0</span>/<span id="timer-total-count">4</span></span>
                             <span>pomos</span>
@@ -110,56 +120,56 @@
 
                 <div class="relative w-72 h-72 mb-10 flex items-center justify-center">
                      <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="46" fill="none" stroke="#121212" stroke-width="2.5"/>
-                        <circle id="timer-ring-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
+                        <circle cx="50" cy="50" r="46" fill="none" stroke="#1e1e1e" stroke-width="2"/>
+                        <circle id="timer-ring-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <div id="timer-display" class="text-[4rem] font-light tracking-tighter tabular-nums leading-none">25:00</div>
+                        <div id="timer-display" class="text-[4rem] font-light tracking-tighter tabular-nums leading-none text-white">25:00</div>
                         <div id="timer-mode-label" class="text-xs font-bold tracking-[0.2em] uppercase text-brand mt-4">FOCUS</div>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-6 mb-12">
-                    <button onclick="app.resetTimer()" class="w-12 h-12 rounded-full bg-dark-surface text-text-muted flex items-center justify-center hover:text-white transition-colors border border-dark-border">
+                <div class="flex items-center gap-8 mb-12">
+                    <button onclick="app.resetTimer()" class="ripple w-12 h-12 rounded-full bg-dark-surface text-text-muted flex items-center justify-center hover:text-white transition-colors border border-dark-border">
                         <i class="ph-bold ph-arrow-counter-clockwise text-xl"></i>
                     </button>
-                    <button onclick="app.toggleTimer()" class="w-20 h-20 rounded-3xl bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-95 transition-transform">
+                    <button onclick="app.toggleTimer()" class="ripple w-20 h-20 rounded-[24px] bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-95 transition-transform">
                         <i id="play-icon" class="ph-fill ph-play text-3xl ml-1"></i>
                     </button>
-                    <button onclick="app.skipTimer()" class="w-12 h-12 rounded-full bg-dark-surface text-text-muted flex items-center justify-center hover:text-white transition-colors border border-dark-border">
+                    <button onclick="app.skipTimer()" class="ripple w-12 h-12 rounded-full bg-dark-surface text-text-muted flex items-center justify-center hover:text-white transition-colors border border-dark-border">
                         <i class="ph-bold ph-skip-forward text-xl"></i>
                     </button>
                 </div>
 
                 <div class="w-full px-6">
-                    <div class="flex justify-between items-center bg-dark-surface p-1 rounded-2xl border border-dark-border">
-                        <button onclick="app.setSound('none')" id="sound-btn-none" class="flex-1 py-3 rounded-xl text-xs font-medium text-brand bg-dark-active transition-all"><i class="ph-fill ph-speaker-slash text-lg block mb-1"></i>Silent</button>
-                        <button onclick="app.setSound('rain')" id="sound-btn-rain" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all"><i class="ph-fill ph-cloud-rain text-lg block mb-1"></i>Rain</button>
-                        <button onclick="app.setSound('cafe')" id="sound-btn-cafe" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all"><i class="ph-fill ph-coffee text-lg block mb-1"></i>Cafe</button>
-                        <button onclick="app.setSound('forest')" id="sound-btn-forest" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all"><i class="ph-fill ph-tree text-lg block mb-1"></i>Forest</button>
+                    <div class="flex justify-between items-center bg-dark-surface p-1.5 rounded-2xl border border-dark-border">
+                        <button onclick="app.setSound('none')" id="sound-btn-none" class="flex-1 py-3 rounded-xl text-xs font-medium text-brand bg-dark-active transition-all">Silent</button>
+                        <button onclick="app.setSound('rain')" id="sound-btn-rain" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all">Rain</button>
+                        <button onclick="app.setSound('cafe')" id="sound-btn-cafe" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all">Cafe</button>
+                        <button onclick="app.setSound('forest')" id="sound-btn-forest" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all">Forest</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="view-analytics" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[80px] overflow-y-auto no-scrollbar">
-            <header class="px-5 py-4 shrink-0 bg-dark-bg/95 backdrop-blur sticky top-0 z-20">
+        <div id="view-analytics" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[70px] overflow-y-auto no-scrollbar">
+            <header class="px-5 py-3 shrink-0 bg-dark-bg/95 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-2xl font-bold tracking-tight text-white">Analytics</h1>
             </header>
             
             <div class="px-4 pb-8 space-y-4">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-dark-surface border border-dark-border p-4 rounded-2xl">
-                        <div class="flex items-center gap-2 mb-2 text-brand">
+                        <div class="flex items-center gap-2 mb-1 text-brand">
                             <i class="ph-fill ph-clock"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wide">Focus Time</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wide opacity-80">Focus</span>
                         </div>
                         <div class="text-2xl font-bold text-white" id="ana-focus-time">0h 0m</div>
                     </div>
                     <div class="bg-dark-surface border border-dark-border p-4 rounded-2xl">
-                        <div class="flex items-center gap-2 mb-2 text-blue-500">
+                        <div class="flex items-center gap-2 mb-1 text-blue-500">
                             <i class="ph-fill ph-check-square-offset"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wide">Tasks Done</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wide opacity-80">Completed</span>
                         </div>
                         <div class="text-2xl font-bold text-white" id="ana-tasks-done">0</div>
                     </div>
@@ -169,24 +179,18 @@
                     <h3 class="text-sm font-bold text-white mb-4">Focus Activity</h3>
                     <div class="h-48 w-full"><canvas id="chart-focus"></canvas></div>
                 </div>
-                 <div class="bg-dark-surface border border-dark-border p-5 rounded-2xl">
-                    <h3 class="text-sm font-bold text-white mb-4">Project Distribution</h3>
-                    <div class="h-48 w-full flex justify-center"><canvas id="chart-projects"></canvas></div>
-                </div>
 
                 <div class="bg-dark-surface border border-dark-border rounded-2xl overflow-hidden">
-                    <div class="px-5 py-3 border-b border-dark-border flex justify-between items-center">
+                    <div class="px-5 py-3 border-b border-dark-border flex justify-between items-center bg-white/5">
                         <span class="text-xs font-bold uppercase text-text-muted">Recent Sessions</span>
                     </div>
-                    <div id="analytics-log-list" class="divide-y divide-dark-border">
-                        <div class="p-4 text-center text-xs text-text-muted">No sessions yet</div>
-                    </div>
+                    <div id="analytics-log-list" class="divide-y divide-dark-border"></div>
                 </div>
             </div>
         </div>
 
-        <div id="view-settings" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[80px] overflow-y-auto no-scrollbar">
-            <header class="px-5 py-4 shrink-0 bg-dark-bg/95 backdrop-blur sticky top-0 z-20">
+        <div id="view-settings" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[70px] overflow-y-auto no-scrollbar">
+            <header class="px-5 py-3 shrink-0 bg-dark-bg/95 backdrop-blur sticky top-0 z-20">
                 <h1 class="text-2xl font-bold tracking-tight text-white">Settings</h1>
             </header>
             
@@ -194,32 +198,32 @@
                 <div class="bg-dark-surface border border-dark-border rounded-2xl p-4 flex items-center gap-4">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-lg font-bold text-white shadow">U</div>
                     <div>
-                        <h3 class="font-bold text-white" id="settings-name">User</h3>
+                        <h3 class="font-bold text-white text-lg" id="settings-name">User</h3>
                         <p class="text-xs text-text-muted" id="settings-email">Syncing...</p>
                     </div>
                 </div>
 
                 <div>
-                    <h3 class="px-2 text-xs font-bold uppercase text-text-muted mb-2">Timer Configuration</h3>
+                    <h3 class="px-2 text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Timer</h3>
                     <div class="bg-dark-surface border border-dark-border rounded-2xl overflow-hidden divide-y divide-dark-border">
                         <div class="p-4 flex items-center justify-between">
                             <span class="text-sm font-medium">Focus Duration</span>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-brand font-bold" id="lbl-focus">25m</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-brand font-bold w-8 text-right" id="lbl-focus">25m</span>
                                 <input type="range" class="w-24 accent-brand" min="5" max="60" step="5" value="25" oninput="app.updateSetting('focus', this.value)">
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-between">
                             <span class="text-sm font-medium">Short Break</span>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-blue-400 font-bold" id="lbl-short">5m</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-blue-400 font-bold w-8 text-right" id="lbl-short">5m</span>
                                 <input type="range" class="w-24 accent-blue-500" min="1" max="15" step="1" value="5" oninput="app.updateSetting('short', this.value)">
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-between">
                             <span class="text-sm font-medium">Long Break</span>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-blue-400 font-bold" id="lbl-long">15m</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-blue-400 font-bold w-8 text-right" id="lbl-long">15m</span>
                                 <input type="range" class="w-24 accent-blue-500" min="5" max="45" step="5" value="15" oninput="app.updateSetting('long', this.value)">
                             </div>
                         </div>
@@ -227,7 +231,7 @@
                 </div>
 
                 <div>
-                    <h3 class="px-2 text-xs font-bold uppercase text-text-muted mb-2">Behavior</h3>
+                    <h3 class="px-2 text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Preferences</h3>
                     <div class="bg-dark-surface border border-dark-border rounded-2xl overflow-hidden divide-y divide-dark-border">
                          <div class="p-4 flex items-center justify-between">
                             <div><div class="text-sm font-medium">Strict Mode</div><div class="text-[10px] text-text-muted">Prevent stopping timer</div></div>
@@ -240,62 +244,60 @@
                     </div>
                 </div>
 
-                <button onclick="app.signOut()" class="w-full py-4 rounded-2xl bg-dark-surface border border-red-900/30 text-red-500 font-medium flex items-center justify-center active:bg-red-900/10">
+                <button onclick="app.signOut()" class="ripple w-full py-4 rounded-2xl bg-dark-surface border border-red-900/30 text-red-500 font-medium flex items-center justify-center active:bg-red-900/10 transition-colors">
                     <i class="ph-bold ph-sign-out text-lg mr-2"></i> Sign Out
                 </button>
-                <div class="text-center text-[10px] text-text-muted opacity-50 pb-4">TimeTrekker Mobile v2.0</div>
+                <div class="text-center text-[10px] text-text-muted opacity-50 pb-4">TimeTrekker Mobile v2.1</div>
             </div>
         </div>
-
     </main>
 
-    <nav class="fixed bottom-0 left-0 w-full bg-dark-surface border-t border-dark-border pb-safe-b z-40 h-[65px] flex justify-around items-center px-2">
-        <button onclick="app.navTo('tasks')" id="nav-tasks" class="flex flex-col items-center justify-center w-full h-full text-brand transition-colors group">
-            <div class="icon-container mb-0.5"><i class="ph-fill ph-check-circle text-2xl group-active:scale-90 transition-transform"></i></div>
+    <nav class="fixed bottom-0 left-0 w-full bg-[#000000] border-t border-dark-border pb-safe-b z-40 h-[65px] flex justify-around items-center px-2">
+        <button onclick="app.navTo('tasks')" id="nav-tasks" class="ripple flex flex-col items-center justify-center w-full h-full text-brand transition-colors group">
+            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-fill ph-check-circle text-2xl"></i></div>
             <span class="text-[10px] font-medium">Tasks</span>
         </button>
-        <button onclick="app.navTo('timer')" id="nav-timer" class="flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
-            <div class="icon-container mb-0.5"><i class="ph-bold ph-timer text-2xl group-active:scale-90 transition-transform"></i></div>
+        <button onclick="app.navTo('timer')" id="nav-timer" class="ripple flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
+            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-bold ph-timer text-2xl"></i></div>
             <span class="text-[10px] font-medium">Focus</span>
         </button>
-        <button onclick="app.navTo('analytics')" id="nav-analytics" class="flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
-            <div class="icon-container mb-0.5"><i class="ph-bold ph-chart-bar text-2xl group-active:scale-90 transition-transform"></i></div>
+        <button onclick="app.navTo('analytics')" id="nav-analytics" class="ripple flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
+            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-bold ph-chart-bar text-2xl"></i></div>
             <span class="text-[10px] font-medium">Stats</span>
         </button>
-        <button onclick="app.navTo('settings')" id="nav-settings" class="flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
-            <div class="icon-container mb-0.5"><i class="ph-bold ph-gear text-2xl group-active:scale-90 transition-transform"></i></div>
+        <button onclick="app.navTo('settings')" id="nav-settings" class="ripple flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
+            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-bold ph-gear text-2xl"></i></div>
             <span class="text-[10px] font-medium">Settings</span>
         </button>
     </nav>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 hidden opacity-0 transition-opacity duration-300" onclick="app.closeTaskModal()"></div>
-    <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl z-50 transform translate-y-full transition-transform duration-300 ease-out max-h-[92vh] flex flex-col border-t border-dark-border shadow-up pb-safe-b">
+    <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-[#121212] rounded-t-[28px] z-50 transform translate-y-full transition-transform duration-300 cubic-bezier(0.2, 0.8, 0.2, 1) max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b">
         <div class="sheet-handle flex-shrink-0" onclick="app.closeTaskModal()"></div>
         
         <div class="px-6 pb-6 flex-1 overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-bold text-white" id="modal-title">New Task</h2>
-                <button onclick="app.closeTaskModal()" class="w-8 h-8 rounded-full bg-dark-surface flex items-center justify-center text-text-muted"><i class="ph-bold ph-x"></i></button>
+                <button onclick="app.closeTaskModal()" class="w-8 h-8 rounded-full bg-dark-surface flex items-center justify-center text-text-muted hover:text-white transition-colors"><i class="ph-bold ph-x"></i></button>
             </div>
 
             <input type="hidden" id="inp-id">
-            <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-xl font-bold text-white placeholder-text-muted/40 border-none outline-none mb-6 p-0">
+            <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-2xl font-bold text-white placeholder-text-muted/40 border-none outline-none mb-6 p-0">
 
             <div class="flex gap-3 mb-6 overflow-x-auto no-scrollbar pb-2">
-                <div class="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 flex items-center shrink-0 min-w-[110px]">
+                <div class="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 flex items-center shrink-0 min-w-[120px]">
                     <i class="ph-bold ph-calendar text-text-muted mr-2"></i>
-                    <input type="date" id="inp-date" class="bg-transparent text-xs text-white outline-none w-full font-medium">
+                    <input type="date" id="inp-date" class="bg-transparent text-xs text-white outline-none w-full font-medium appearance-none">
                 </div>
                 <div class="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 flex items-center shrink-0">
                     <i class="ph-bold ph-folder text-text-muted mr-2"></i>
-                    <select id="inp-project" class="bg-transparent text-xs text-white outline-none font-medium w-24">
+                    <select id="inp-project" class="bg-transparent text-xs text-white outline-none font-medium w-24 appearance-none">
                         <option value="Inbox" class="bg-dark-surface">Inbox</option>
                     </select>
-                    <button onclick="app.promptNewProject()" class="ml-2 text-brand"><i class="ph-bold ph-plus"></i></button>
                 </div>
                 <div class="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 flex items-center shrink-0">
                     <i class="ph-bold ph-warning-circle text-text-muted mr-2"></i>
-                    <select id="inp-priority" class="bg-transparent text-xs text-white outline-none font-medium">
+                    <select id="inp-priority" class="bg-transparent text-xs text-white outline-none font-medium appearance-none">
                         <option value="none" class="bg-dark-surface">No Priority</option>
                         <option value="high" class="bg-dark-surface">High (!)</option>
                         <option value="med" class="bg-dark-surface">Medium</option>
@@ -309,22 +311,22 @@
                 </div>
             </div>
 
-            <textarea id="inp-note" placeholder="Add description..." class="w-full h-20 bg-dark-surface rounded-xl p-3 text-sm text-white resize-none border border-dark-border outline-none focus:border-brand mb-4"></textarea>
+            <textarea id="inp-note" placeholder="Add description..." class="w-full h-24 bg-dark-surface rounded-xl p-3 text-sm text-white resize-none border border-dark-border outline-none focus:border-brand mb-4"></textarea>
 
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-2">
-                    <label class="text-xs font-bold uppercase text-text-muted">Subtasks</label>
+                    <label class="text-xs font-bold uppercase text-text-muted tracking-wide">Subtasks</label>
                     <button type="button" onclick="app.addSubtaskUI()" class="text-xs text-brand font-bold uppercase">+ Add</button>
                 </div>
                 <div id="subtasks-container" class="space-y-2"></div>
             </div>
 
             <div class="mb-6">
-                 <label class="text-xs font-bold uppercase text-text-muted block mb-2">Tags</label>
-                 <input type="text" id="inp-tags" placeholder="Work, Design (comma separated)" class="w-full bg-dark-surface border border-dark-border rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-brand">
+                 <label class="text-xs font-bold uppercase text-text-muted block mb-2 tracking-wide">Tags</label>
+                 <input type="text" id="inp-tags" placeholder="Work, Design (comma separated)" class="w-full bg-dark-surface border border-dark-border rounded-xl px-3 py-3 text-sm text-white outline-none focus:border-brand">
             </div>
 
-            <button onclick="app.saveTask()" class="w-full py-4 bg-brand text-white font-bold rounded-2xl shadow-lg shadow-brand/20 active:scale-95 transition-transform flex items-center justify-center">
+            <button onclick="app.saveTask()" class="ripple w-full py-4 bg-brand text-white font-bold rounded-2xl shadow-lg shadow-brand/20 active:scale-95 transition-transform flex items-center justify-center">
                 <i class="ph-bold ph-check mr-2"></i> Save Task
             </button>
         </div>
