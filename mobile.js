@@ -14,15 +14,16 @@ try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
 
 // --- UTILS ---
 const $ = id => document.getElementById(id);
-const haptic = () => { if(navigator.vibrate) navigator.vibrate(10); };
+const haptic = () => { try { if(navigator.vibrate) navigator.vibrate(10); } catch(e){} };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
 // --- STATE ---
 const state = {
     user: null, tasks: [], logs: [], 
+    projects: new Set(['Inbox']),
     activeTab: 'tasks', activeFilter: 'today',
     timer: { status: 'idle', endTime: null, remaining: 1500, total: 1500, taskId: null },
-    editingId: null, chart: null
+    chartInstance: null
 };
 
 // --- AUTH & DATA ---
@@ -32,9 +33,10 @@ onAuthStateChanged(auth, u => {
         $('user-avatar').textContent = (u.email||'U').charAt(0).toUpperCase();
         $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         
-        // Data Subs
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
+            state.projects = new Set(['Inbox']);
+            state.tasks.forEach(t => { if(t.project) state.projects.add(t.project); });
             app.renderTasks();
             app.renderAnalytics();
         });
@@ -55,7 +57,7 @@ onAuthStateChanged(auth, u => {
         });
 
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
-            state.logs = s.docs.map(d => d.data());
+            state.logs = s.docs.map(d => d.data()).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
             app.renderAnalytics();
         });
 
@@ -72,10 +74,17 @@ const startTimerLoop = () => {
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
     $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
+    
+    // Play audio safely
+    const audio = $('audio-player');
+    if(audio && audio.paused) audio.play().catch(e => console.log("Audio autoplay prevented", e));
 };
+
 const stopTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
     $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
+    const audio = $('audio-player');
+    if(audio) audio.pause();
 };
 
 // --- APP CONTROLLER ---
@@ -86,9 +95,9 @@ const app = {
         haptic();
         state.activeTab = tab;
         
-        // UI Toggles
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-        $(`view-${tab}`).classList.remove('hidden');
+        const view = $(`view-${tab}`);
+        if(view) view.classList.remove('hidden');
         
         document.querySelectorAll('.nav-item').forEach(el => {
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
@@ -97,11 +106,12 @@ const app = {
         });
         
         const activeBtn = $(`tab-${tab}`);
-        activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors`;
-        activeBtn.querySelector('i').classList.remove('ph-bold');
-        activeBtn.querySelector('i').classList.add('ph-fill');
+        if(activeBtn) {
+            activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors`;
+            activeBtn.querySelector('i').classList.remove('ph-bold');
+            activeBtn.querySelector('i').classList.add('ph-fill');
+        }
 
-        // Contextual Header
         if(tab === 'tasks') {
             $('view-header').classList.remove('hidden');
             $('task-filters').classList.remove('hidden');
@@ -111,6 +121,8 @@ const app = {
             $('task-filters').classList.add('hidden');
             $('fab-add').classList.add('hidden');
         }
+        
+        if(tab === 'analytics') app.renderAnalytics();
     },
 
     setFilter: (f) => {
@@ -125,6 +137,7 @@ const app = {
     // TASK UI
     renderTasks: () => {
         const list = $('task-list');
+        if(!list) return;
         list.innerHTML = '';
         const today = getDayStr(new Date());
         
@@ -132,7 +145,6 @@ const app = {
         if(state.activeFilter === 'today') filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate === today);
         else if(state.activeFilter === 'upcoming') filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate > today);
         else if(state.activeFilter === 'completed') filtered = state.tasks.filter(t => t.status === 'done');
-        // Project view simplified for mobile: just show all active grouped by project or list
         
         if(filtered.length === 0) $('empty-state').classList.remove('hidden');
         else $('empty-state').classList.add('hidden');
@@ -140,9 +152,8 @@ const app = {
         filtered.forEach(t => {
             const el = document.createElement('div');
             el.className = `bg-dark-card border border-dark-border p-4 rounded-xl flex items-start gap-3 active:scale-[0.98] transition-transform select-none`;
-            // Long press logic could go here
             el.onclick = (e) => {
-                if(!e.target.closest('.check-area')) app.startFocus(t);
+                if(!e.target.closest('.check-area') && !e.target.closest('.del-btn')) app.startFocus(t);
             };
 
             const isDone = t.status === 'done';
@@ -160,7 +171,7 @@ const app = {
                         ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold">! Urgent</span>' : ''}
                     </div>
                 </div>
-                <button class="text-text-muted p-2" onclick="event.stopPropagation(); app.deleteTask('${t.id}')"><i class="ph-bold ph-trash"></i></button>
+                <button class="del-btn text-text-muted p-2" onclick="event.stopPropagation(); app.deleteTask('${t.id}')"><i class="ph-bold ph-trash"></i></button>
             `;
             list.appendChild(el);
         });
@@ -169,6 +180,15 @@ const app = {
     // MODAL
     openTaskModal: () => {
         haptic();
+        // Populate projects
+        const sel = $('inp-project');
+        sel.innerHTML = '';
+        state.projects.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p; opt.textContent = p; opt.className = 'bg-dark-card';
+            sel.appendChild(opt);
+        });
+
         $('modal-overlay').classList.remove('hidden');
         $('inp-date').value = getDayStr(new Date());
         setTimeout(() => {
@@ -186,7 +206,6 @@ const app = {
         }, 300);
     },
     
-    // CRUD
     saveTask: async () => {
         const title = $('inp-title').value;
         if(!title) return;
@@ -195,20 +214,23 @@ const app = {
             estimatedPomos: parseInt($('inp-est').value) || 1,
             dueDate: $('inp-date').value,
             priority: $('inp-priority').value,
-            project: 'Inbox', // Simplified for mobile v1
+            project: $('inp-project').value || 'Inbox',
             note: $('inp-note').value,
             status: 'todo',
             createdAt: new Date().toISOString(),
             completedPomos: 0
         };
         app.closeTaskModal();
-        await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), data);
-        app.showToast('Task added');
+        try {
+            await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), data);
+            app.showToast('Task added');
+        } catch(e) { app.showToast('Error saving'); }
     },
     toggleStatus: async (id, s) => {
         haptic();
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
-            status: s === 'todo' ? 'done' : 'todo' 
+            status: s === 'todo' ? 'done' : 'todo',
+            completedAt: s === 'todo' ? new Date().toISOString() : null
         });
     },
     deleteTask: async (id) => {
@@ -225,12 +247,10 @@ const app = {
     toggleTimer: async () => {
         haptic();
         if(state.timer.status === 'running') {
-            // Pause
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
                 status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000))
             });
         } else {
-            // Resume/Start
             if(!state.timer.taskId) { app.showToast('Select a task first'); app.switchTab('tasks'); return; }
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
                 status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000)
@@ -245,12 +265,11 @@ const app = {
     completeTimer: async () => {
         stopTimerLoop();
         haptic();
-        // Simple completion logic
         if(state.timer.taskId) {
             const t = state.tasks.find(x => x.id === state.timer.taskId);
             if(t) {
                 await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedPomos: (t.completedPomos||0) + 1 });
-                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskId: t.id, duration: 25, completedAt: serverTimestamp() });
+                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, duration: 25, completedAt: serverTimestamp() });
             }
         }
         app.resetTimer();
@@ -262,7 +281,8 @@ const app = {
         const m = Math.floor(s/60), sc = s%60;
         
         $('timer-display').textContent = `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
-        $('timer-progress').style.strokeDashoffset = 283 * (1 - (s / (total || 1)));
+        const offset = 283 * (1 - (s / (total || 1)));
+        $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
 
         if(taskId) {
             const t = state.tasks.find(x => x.id === taskId);
@@ -277,21 +297,68 @@ const app = {
         }
     },
 
-    // ANALYTICS & MISC
+    // ANALYTICS
     renderAnalytics: () => {
+        if(state.activeTab !== 'analytics') return;
+        
         const logs = state.logs;
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         $('stat-focus-time').textContent = Math.floor(totalMin / 60) + 'h ' + (totalMin % 60) + 'm';
         $('stat-tasks-done').textContent = state.tasks.filter(t => t.status === 'done').length;
 
         const list = $('mobile-logs');
-        list.innerHTML = logs.slice(0, 5).map(l => `
-            <div class="px-4 py-3 flex justify-between items-center text-sm">
-                <span class="text-white truncate max-w-[60%]">${l.taskTitle || 'Focus Session'}</span>
-                <span class="text-brand font-mono">${l.duration||25}m</span>
-            </div>
-        `).join('');
+        if(list) {
+            list.innerHTML = logs.slice(0, 10).map(l => `
+                <div class="px-4 py-3 flex justify-between items-center text-sm">
+                    <span class="text-white truncate max-w-[60%]">${l.taskTitle || 'Focus Session'}</span>
+                    <span class="text-brand font-mono">${l.duration||25}m</span>
+                </div>
+            `).join('');
+        }
+
+        // Render Chart
+        const ctx = $('mobileChart');
+        if(ctx) {
+            // Get last 7 days data
+            const labels = [];
+            const data = [];
+            for(let i=6; i>=0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const dayStr = getDayStr(d);
+                labels.push(d.toLocaleDateString('en-US', {weekday:'short'}));
+                
+                const dayLogs = logs.filter(l => {
+                    if(!l.completedAt) return false;
+                    return getDayStr(new Date(l.completedAt.seconds*1000)) === dayStr;
+                });
+                data.push(dayLogs.reduce((a,b)=>a+(b.duration||25),0));
+            }
+
+            if(state.chartInstance) state.chartInstance.destroy();
+            state.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Minutes',
+                        data: data,
+                        backgroundColor: '#ff5757',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#333' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
     },
+    
     showToast: (msg) => {
         const t = document.createElement('div');
         t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl text-center animate-slide-up";

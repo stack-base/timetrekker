@@ -14,7 +14,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
     tailwind.config = {
@@ -36,21 +35,11 @@
 <script type="module" src="mobile.js" defer></script>
 
 <style>
-    /* Mobile Resets */
     body { background-color: #000000; color: #ffffff; -webkit-tap-highlight-color: transparent; overflow: hidden; user-select: none; }
-    
-    /* Hide Scrollbar but allow scroll */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* Custom Checkbox */
-    .custom-checkbox input:checked + div { background-color: #ff5757; border-color: #ff5757; }
-    
-    /* Animations */
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    
-    /* Bottom Sheet Handle */
     .sheet-handle { width: 36px; height: 5px; background: #3f3f46; border-radius: 99px; margin: 8px auto 16px auto; }
 </style>
 </head>
@@ -137,10 +126,17 @@
             </div>
 
             <div id="view-settings" class="view-section hidden space-y-1">
-                <button onclick="app.signOut()" class="w-full flex items-center p-4 bg-dark-card rounded-xl mb-6 text-red-500 font-medium">
+                <div class="p-4 bg-dark-card rounded-xl mb-4 border border-dark-border flex items-center gap-4">
+                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center font-bold text-white">U</div>
+                     <div>
+                         <div class="font-bold text-white">User Account</div>
+                         <div class="text-xs text-text-muted">Synced with TimeTrekker</div>
+                     </div>
+                </div>
+                <button onclick="app.signOut()" class="w-full flex items-center p-4 bg-dark-card rounded-xl mb-6 text-red-500 font-medium border border-dark-border">
                     <i class="ph-bold ph-sign-out text-xl mr-3"></i> Sign Out
                 </button>
-                <div class="p-4 text-center text-xs text-text-muted opacity-50">TimeTrekker Mobile v1.0</div>
+                <div class="p-4 text-center text-xs text-text-muted opacity-50">TimeTrekker Mobile v1.1</div>
             </div>
 
         </div>
@@ -182,6 +178,12 @@
                     <i class="ph-bold ph-calendar text-text-muted mr-2"></i>
                     <input type="date" id="inp-date" class="bg-transparent text-xs text-white outline-none w-24">
                 </div>
+                <div class="bg-dark-active rounded px-3 py-2 flex items-center shrink-0">
+                    <i class="ph-bold ph-folder text-text-muted mr-2"></i>
+                    <select id="inp-project" class="bg-transparent text-xs text-white outline-none w-20">
+                        <option value="Inbox" class="bg-dark-card">Inbox</option>
+                        </select>
+                </div>
                  <div class="bg-dark-active rounded px-3 py-2 flex items-center shrink-0">
                     <i class="ph-bold ph-warning-circle text-text-muted mr-2"></i>
                     <select id="inp-priority" class="bg-transparent text-xs text-white outline-none">
@@ -197,7 +199,7 @@
         </div>
     </div>
     
-    <audio id="audio-player" loop></audio>
+    <audio id="audio-player" src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" loop></audio>
 
 </body>
 </html>
