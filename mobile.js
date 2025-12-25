@@ -34,6 +34,7 @@ const state = {
         settings: { focus: 25, short: 5, long: 15, strictMode: false, autoStartPomo: false }
     },
     sound: 'none',
+    editingId: null, // Tracks if we are editing an existing task
     chartInstance: null,
     chartView: 'weekly'
 };
@@ -42,9 +43,15 @@ const state = {
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
-        $('user-avatar').textContent = (u.displayName || u.email || 'U').charAt(0).toUpperCase();
+        // Header Avatar
+        $('header-avatar').textContent = (u.displayName || u.email || 'U').charAt(0).toUpperCase();
         $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         
+        // Settings Profile population
+        $('settings-avatar').textContent = (u.displayName || u.email || 'U').charAt(0).toUpperCase();
+        $('settings-name').textContent = u.displayName || 'User Account';
+        $('settings-email').textContent = u.email;
+
         // Tasks Listener
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
@@ -67,8 +74,7 @@ onAuthStateChanged(auth, u => {
                     total: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId
                 };
-                
-                // Sync Settings if they exist in the timer doc (lightweight sync)
+                // Sync Settings
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
                 
                 app.updateTimerUI();
@@ -174,11 +180,13 @@ const app = {
 
         filtered.forEach(t => {
             const el = document.createElement('div');
+            // Priority Coloring
             const priColor = t.priority === 'high' ? 'border-red-500/50' : t.priority === 'med' ? 'border-yellow-500/50' : t.priority === 'low' ? 'border-blue-500/50' : 'border-dark-border';
             
             el.className = `bg-dark-card border ${priColor} p-4 rounded-xl flex items-start gap-3 active:scale-[0.98] transition-transform select-none relative`;
+            // CLICK OPENS DETAILS NOW, NOT TIMER
             el.onclick = (e) => {
-                if(!e.target.closest('.check-area') && !e.target.closest('.del-btn')) app.startFocus(t);
+                if(!e.target.closest('.check-area') && !e.target.closest('.play-btn') && !e.target.closest('.del-btn')) app.openTaskModal(t);
             };
 
             const isDone = t.status === 'done';
@@ -201,15 +209,17 @@ const app = {
                         ${tags}
                     </div>
                 </div>
-                ${t.priority === 'high' ? '<i class="ph-fill ph-warning text-red-500 absolute top-4 right-4 text-xs"></i>' : ''}
-                <button class="del-btn text-text-muted p-2 -mr-2 -mt-2" onclick="event.stopPropagation(); app.deleteTask('${t.id}')"><i class="ph-bold ph-trash"></i></button>
+                
+                <button class="play-btn w-8 h-8 rounded-full bg-dark-active flex items-center justify-center text-brand active:scale-90 transition-transform ml-1" onclick="event.stopPropagation(); app.startFocus(state.tasks.find(x=>x.id==='${t.id}'))">
+                    <i class="ph-fill ph-play"></i>
+                </button>
             `;
             list.appendChild(el);
         });
     },
 
-    // MODAL
-    openTaskModal: () => {
+    // MODAL (Now functions as View/Edit)
+    openTaskModal: (task = null) => {
         haptic();
         const sel = $('inp-project');
         sel.innerHTML = '';
@@ -219,31 +229,64 @@ const app = {
             sel.appendChild(opt);
         });
 
-        $('modal-overlay').classList.remove('hidden');
-        $('inp-date').value = getDayStr(new Date());
         $('subtask-list').innerHTML = '';
-        
+
+        if (task) {
+            // Edit Mode
+            state.editingId = task.id;
+            $('sheet-title').textContent = "Edit Task";
+            $('btn-save-task').textContent = "Save Changes";
+            $('modal-focus-btn').classList.remove('hidden');
+            
+            $('inp-title').value = task.title;
+            $('inp-est').value = task.estimatedPomos || 1;
+            $('inp-date').value = task.dueDate || '';
+            $('inp-project').value = task.project || 'Inbox';
+            $('inp-priority').value = task.priority || 'none';
+            $('inp-note').value = task.note || '';
+            $('inp-tags').value = task.tags ? task.tags.join(', ') : '';
+            $('inp-repeat').value = task.repeat || 'none';
+            $('inp-reminder').value = task.reminder || '';
+            
+            if(task.subtasks) task.subtasks.forEach(s => app.addSubtaskInput(s));
+        } else {
+            // New Task Mode
+            state.editingId = null;
+            $('sheet-title').textContent = "New Task";
+            $('btn-save-task').textContent = "Create Task";
+            $('modal-focus-btn').classList.add('hidden');
+            
+            $('inp-title').value = '';
+            $('inp-est').value = 1;
+            $('inp-date').value = getDayStr(new Date());
+            $('inp-project').value = 'Inbox';
+            $('inp-priority').value = 'none';
+            $('inp-note').value = '';
+            $('inp-tags').value = '';
+            $('inp-repeat').value = 'none';
+            $('inp-reminder').value = '';
+        }
+
+        $('modal-overlay').classList.remove('hidden');
         setTimeout(() => {
             $('modal-overlay').classList.remove('opacity-0');
             $('modal-sheet').classList.remove('translate-y-full');
         }, 10);
     },
+
     closeTaskModal: () => {
         $('modal-overlay').classList.add('opacity-0');
         $('modal-sheet').classList.add('translate-y-full');
         setTimeout(() => {
             $('modal-overlay').classList.add('hidden');
-            $('inp-title').value = '';
-            $('inp-note').value = '';
-            $('inp-tags').value = '';
-            $('inp-reminder').value = '';
-            $('subtask-list').innerHTML = '';
+            state.editingId = null;
         }, 300);
     },
-    addSubtaskInput: () => {
+
+    addSubtaskInput: (val = '') => {
         const div = document.createElement('div');
         div.className = 'flex items-center gap-2 animate-slide-up';
-        div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input w-full bg-transparent border-b border-dark-border text-xs text-white py-1 outline-none" placeholder="Subtask...">`;
+        div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" value="${val}" class="subtask-input w-full bg-transparent border-b border-dark-border text-xs text-white py-1 outline-none" placeholder="Subtask...">`;
         $('subtask-list').appendChild(div);
     },
     
@@ -263,17 +306,29 @@ const app = {
             note: $('inp-note').value,
             repeat: $('inp-repeat').value,
             reminder: $('inp-reminder').value,
-            tags, subtasks,
-            status: 'todo',
-            createdAt: new Date().toISOString(),
-            completedPomos: 0
+            tags, subtasks
         };
+
         app.closeTaskModal();
+        
         try {
-            await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), data);
-            app.showToast('Task added');
+            if(state.editingId) {
+                // Update
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.editingId), data);
+                app.showToast('Task updated');
+            } else {
+                // Create
+                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), {
+                    ...data,
+                    status: 'todo',
+                    createdAt: new Date().toISOString(),
+                    completedPomos: 0
+                });
+                app.showToast('Task added');
+            }
         } catch(e) { app.showToast('Error saving'); }
     },
+    
     toggleStatus: async (id, s) => {
         haptic();
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
@@ -292,6 +347,15 @@ const app = {
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', mode: 'focus', taskId: t.id, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000)
         });
+    },
+    startFocusFromModal: () => {
+        if(state.editingId) {
+            const t = state.tasks.find(x => x.id === state.editingId);
+            if(t) {
+                app.closeTaskModal();
+                app.startFocus(t);
+            }
+        }
     },
     toggleTimer: async () => {
         haptic();
@@ -326,7 +390,6 @@ const app = {
             }
         }
         
-        // Auto-switch logic
         const nextMode = state.timer.mode === 'focus' ? 'short' : 'focus';
         const d = state.timer.settings[nextMode] * 60;
         const autoStart = nextMode === 'focus' && state.timer.settings.autoStartPomo;
@@ -413,7 +476,6 @@ const app = {
             `).join('');
         }
 
-        // Render Chart
         const ctx = $('mobileChart');
         if(ctx) {
             const isWeek = state.chartView === 'weekly';

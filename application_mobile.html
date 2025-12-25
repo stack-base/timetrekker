@@ -62,7 +62,7 @@
                 <h1 id="page-title" class="text-2xl font-bold tracking-tight">Today</h1>
                 <p id="current-date" class="text-xs text-text-muted font-medium mt-0.5">Loading...</p>
             </div>
-            <div id="user-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-xs font-bold border border-white/10 shadow-lg shadow-brand/20">U</div>
+            <div id="header-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-xs font-bold border border-white/10 shadow-lg shadow-brand/20">U</div>
         </header>
 
         <div id="task-filters" class="px-5 pb-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0 mb-2">
@@ -151,10 +151,10 @@
             <div id="view-settings" class="view-section hidden space-y-6 pt-2">
                 
                 <div class="p-4 bg-dark-card rounded-xl border border-dark-border flex items-center gap-4">
-                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center font-bold text-white text-lg">U</div>
-                     <div>
-                         <div class="font-bold text-white text-lg">User Account</div>
-                         <div class="text-xs text-text-muted">Synced with TimeTrekker</div>
+                     <div id="settings-avatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center font-bold text-white text-lg">U</div>
+                     <div class="overflow-hidden">
+                         <div id="settings-name" class="font-bold text-white text-lg truncate">User Account</div>
+                         <div id="settings-email" class="text-xs text-text-muted truncate">Loading...</div>
                      </div>
                 </div>
 
@@ -238,8 +238,11 @@
         <div class="px-5 pb-5 flex-1 overflow-y-auto">
             
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-white">New Task</h3>
-                <button onclick="app.closeTaskModal()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
+                <h3 class="text-lg font-bold text-white" id="sheet-title">Task Details</h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="app.startFocusFromModal()" class="text-brand font-bold text-sm hidden" id="modal-focus-btn"><i class="ph-fill ph-play-circle text-lg align-middle"></i> Start</button>
+                    <button onclick="app.closeTaskModal()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
+                </div>
             </div>
 
             <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-xl font-bold text-white placeholder-text-muted/50 border-none outline-none mb-4 p-0">
@@ -303,7 +306,7 @@
                 </div>
             </div>
 
-            <button onclick="app.saveTask()" class="w-full py-3.5 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm">Save Task</button>
+            <button onclick="app.saveTask()" id="btn-save-task" class="w-full py-3.5 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm">Save Task</button>
         </div>
     </div>
     
