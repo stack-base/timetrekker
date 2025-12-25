@@ -259,7 +259,6 @@ const app = {
             const isDone = t.status === 'done';
             const duration = t.pomoDuration || 25;
             
-            // KEY FIX: Passed ID as string to startFocus
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
                     <div class="w-6 h-6 rounded-full border-2 ${isDone ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center">
@@ -491,17 +490,19 @@ const app = {
         }
     },
 
-    // --- FORM MODAL ---
+    // --- ENHANCED FORM MODAL LOGIC ---
+    
+    // 1. Open Modal with New UI State
     openTaskModal: (task = null) => {
         haptic();
-        // Permission for notifications
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
 
+        // Populate Projects
         const sel = $('inp-project');
         sel.innerHTML = '';
         state.projects.forEach(p => {
             const opt = document.createElement('option');
-            opt.value = p; opt.textContent = p; opt.className = 'bg-dark-card';
+            opt.value = p; opt.textContent = p; opt.className = 'bg-dark-card text-white';
             sel.appendChild(opt);
         });
 
@@ -513,13 +514,19 @@ const app = {
             $('btn-save-task').textContent = "Save Changes";
             
             $('inp-title').value = task.title;
-            $('inp-est').value = task.estimatedPomos || 1;
-            $('inp-duration').value = task.pomoDuration || 25;
-            $('disp-duration').innerText = (task.pomoDuration || 25) + 'm';
             
+            // Effort UI
+            $('inp-est').value = task.estimatedPomos || 1;
+            $('disp-est').textContent = task.estimatedPomos || 1;
+            $('inp-duration').value = task.pomoDuration || 25;
+            app.updateDurationDisplay(task.pomoDuration || 25); // Updates display and total calc
+
+            // Context UI
             $('inp-date').value = task.dueDate || '';
             $('inp-project').value = task.project || 'Inbox';
-            $('inp-priority').value = task.priority || 'none';
+            app.setPriority(task.priority || 'none'); // Visual Toggle
+            app.highlightDateButton(task.dueDate);    // Visual Toggle
+
             $('inp-note').value = task.note || '';
             $('inp-tags').value = task.tags ? task.tags.join(', ') : '';
             $('inp-repeat').value = task.repeat || 'none';
@@ -532,13 +539,19 @@ const app = {
             $('btn-save-task').textContent = "Create Task";
             
             $('inp-title').value = '';
-            $('inp-est').value = 1;
-            $('inp-duration').value = 25;
-            $('disp-duration').innerText = '25m';
             
+            // Defaults
+            $('inp-est').value = 1;
+            $('disp-est').textContent = 1;
+            $('inp-duration').value = 25;
+            app.updateDurationDisplay(25);
+
             $('inp-date').value = getDayStr(new Date());
+            app.highlightDateButton(getDayStr(new Date()));
+            
             $('inp-project').value = 'Inbox';
-            $('inp-priority').value = 'none';
+            app.setPriority('none');
+            
             $('inp-note').value = '';
             $('inp-tags').value = '';
             $('inp-repeat').value = 'none';
@@ -549,32 +562,119 @@ const app = {
         setTimeout(() => {
             $('modal-overlay').classList.remove('opacity-0');
             $('modal-sheet').classList.remove('translate-y-full');
+            // Auto focus title on new task
+            if(!task) $('inp-title').focus();
         }, 10);
     },
-    
+
+    // 2. UI Helper: Date Chips
+    setQuickDate: (type) => {
+        haptic();
+        const d = new Date();
+        if(type === 'tomorrow') d.setDate(d.getDate() + 1);
+        const str = getDayStr(d);
+        $('inp-date').value = str;
+        app.highlightDateButton(str);
+    },
+
+    highlightDateButton: (dateStr) => {
+        const today = getDayStr(new Date());
+        const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
+        const tmrwStr = getDayStr(tmrw);
+
+        const setBtn = (id, active) => {
+            $(id).className = active 
+                ? "flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all" 
+                : "flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95";
+        };
+
+        setBtn('btn-date-today', dateStr === today);
+        setBtn('btn-date-tomorrow', dateStr === tmrwStr);
+        
+        // Update label for custom picker
+        if(dateStr && dateStr !== today && dateStr !== tmrwStr) {
+            const d = new Date(dateStr);
+            $('lbl-date-pick').textContent = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            $('btn-date-pick').classList.add('text-brand', 'border-brand');
+        } else {
+            $('lbl-date-pick').textContent = 'Pick';
+            $('btn-date-pick').classList.remove('text-brand', 'border-brand');
+        }
+    },
+
+    // 3. UI Helper: Priority Buttons
+    setPriority: (level) => {
+        haptic();
+        $('inp-priority').value = level;
+        ['none', 'low', 'med', 'high'].forEach(l => {
+            const btn = $(`btn-pri-${l}`);
+            const isActive = l === level;
+            
+            // Reset base classes
+            btn.className = "h-9 rounded-lg border text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-95 ";
+            
+            if(isActive) {
+                btn.className += "border-transparent text-white shadow-md ";
+                if(l === 'high') btn.className += "bg-red-500";
+                else if(l === 'med') btn.className += "bg-yellow-500";
+                else if(l === 'low') btn.className += "bg-blue-500";
+                else btn.className += "bg-brand"; // None selected state styling
+            } else {
+                btn.className += "border-dark-border bg-dark-card ";
+                if(l === 'high') btn.className += "text-red-500";
+                else if(l === 'med') btn.className += "text-yellow-500";
+                else if(l === 'low') btn.className += "text-blue-500";
+                else btn.className += "text-text-muted";
+            }
+        });
+    },
+
+    // 4. UI Helper: Effort Stepper & Slider
+    adjustEst: (delta) => {
+        haptic();
+        let val = parseInt($('inp-est').value) || 1;
+        val += delta;
+        if(val < 1) val = 1; if(val > 10) val = 10;
+        $('inp-est').value = val;
+        $('disp-est').textContent = val;
+        app.updateTotalCalc();
+    },
+
     updateDurationDisplay: (val) => {
         $('disp-duration').innerText = val + 'm';
+        app.updateTotalCalc();
     },
 
-    closeTaskModal: () => {
-        $('modal-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => {
-            $('modal-overlay').classList.add('hidden');
-            state.editingId = null;
-        }, 300);
-    },
-    
-    closeAllSheets: () => {
-        app.closeDetailSheet();
-        app.closeTaskModal();
+    updateTotalCalc: () => {
+        const est = parseInt($('inp-est').value) || 1;
+        const dur = parseInt($('inp-duration').value) || 25;
+        const total = est * dur;
+        const h = Math.floor(total/60);
+        const m = total % 60;
+        $('total-calc-display').textContent = h > 0 ? `${h}h ${m}m Total` : `${m}m Total`;
     },
 
+    // 5. UI Helper: Smart Subtasks
     addSubtaskInput: (val = '') => {
         const div = document.createElement('div');
-        div.className = 'flex items-center gap-2 animate-slide-up';
-        div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" value="${esc(val)}" class="subtask-input w-full bg-transparent border-b border-dark-border text-xs text-white py-1 outline-none" placeholder="Subtask...">`;
+        div.className = 'flex items-center gap-3 animate-slide-up group';
+        div.innerHTML = `
+            <div class="w-1.5 h-1.5 rounded-full bg-dark-border group-focus-within:bg-brand transition-colors shrink-0"></div>
+            <input type="text" value="${esc(val)}" class="subtask-input w-full bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1.5 outline-none transition-colors" placeholder="Subtask..." onkeydown="app.handleSubtaskKey(event, this)">
+            <button onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-500 px-2"><i class="ph-bold ph-x"></i></button>
+        `;
         $('subtask-list').appendChild(div);
+    },
+
+    handleSubtaskKey: (e, input) => {
+        if(e.key === 'Enter') {
+            e.preventDefault();
+            app.addSubtaskInput();
+            // Focus the new input (last child's input)
+            const list = $('subtask-list');
+            const newInputs = list.querySelectorAll('input');
+            newInputs[newInputs.length - 1].focus();
+        }
     },
 
     promptNewProject: () => {
@@ -588,9 +688,14 @@ const app = {
         }
     },
     
+    // --- SAVE LOGIC ---
     saveTask: async () => {
         const title = $('inp-title').value;
-        if(!title) return;
+        if(!title) {
+            app.showToast("Title required");
+            $('inp-title').focus();
+            return;
+        }
         
         const subtasks = Array.from(document.querySelectorAll('.subtask-input')).map(i => i.value.trim()).filter(x => x);
         const tags = $('inp-tags').value.split(',').map(t => t.trim()).filter(x => x);
@@ -626,6 +731,20 @@ const app = {
         } catch(e) { app.showToast('Error saving'); }
     },
     
+    closeTaskModal: () => {
+        $('modal-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => {
+            $('modal-overlay').classList.add('hidden');
+            state.editingId = null;
+        }, 300);
+    },
+    
+    closeAllSheets: () => {
+        app.closeDetailSheet();
+        app.closeTaskModal();
+    },
+
     toggleStatus: async (id, s) => {
         haptic();
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 

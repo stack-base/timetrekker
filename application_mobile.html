@@ -400,64 +400,127 @@
         </div>
     </div>
 
-    <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[95vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
-        <span class="sheet-handle flex-shrink-0" onclick="app.closeTaskModal()"></span>
-        <div class="px-5 pb-5 flex-1 overflow-y-auto custom-scrollbar">
-            <div class="flex justify-between items-center mb-4">
+    <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-3xl z-50 transform translate-y-full transition-transform duration-300 max-h-[92vh] flex flex-col border-t border-dark-border shadow-2xl pb-safe-b">
+        <div class="w-full flex justify-center pt-3 pb-1" onclick="app.closeTaskModal()">
+             <span class="w-12 h-1.5 bg-dark-border rounded-full opacity-50"></span>
+        </div>
+
+        <div class="px-5 pb-4 flex-1 overflow-y-auto custom-scrollbar">
+            
+            <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold text-white" id="sheet-title">New Task</h3>
-                <button onclick="app.closeTaskModal()" class="text-text-muted hover:text-white"><i class="ph-bold ph-x text-xl"></i></button>
+                <button onclick="app.closeTaskModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-dark-active text-text-muted hover:text-white transition-colors">
+                    <i class="ph-bold ph-x"></i>
+                </button>
             </div>
 
-            <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-xl font-bold text-white placeholder-text-muted/50 border-none outline-none mb-4 p-0" autocomplete="off">
+            <div class="mb-6">
+                <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-2xl font-bold text-white placeholder-text-muted/40 border-none outline-none p-0 leading-tight" autocomplete="off">
+            </div>
             
-            <div class="flex gap-3 mb-6 overflow-x-auto no-scrollbar py-1">
-                <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border">
-                    <i class="ph-bold ph-hash text-text-muted mr-2"></i>
-                    <input type="number" id="inp-est" value="1" min="1" max="10" class="w-8 bg-transparent text-center font-bold outline-none text-white">
+            <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-calendar mr-1"></i>Schedule</span>
                 </div>
-                <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border min-w-[140px]">
-                    <i class="ph-bold ph-timer text-text-muted mr-2"></i>
-                    <div class="flex flex-col w-full">
-                        <div class="flex justify-between text-[10px] font-bold mb-1"><span class="text-text-muted">Duration</span><span class="text-white" id="disp-duration">25m</span></div>
-                        <input type="range" id="inp-duration" min="5" max="90" step="5" value="25" class="w-full h-1 bg-dark-bg rounded-lg appearance-none cursor-pointer" oninput="app.updateDurationDisplay(this.value)">
+                
+                <div class="flex gap-2 mb-3">
+                    <button type="button" onclick="app.setQuickDate('today')" id="btn-date-today" class="flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95">Today</button>
+                    <button type="button" onclick="app.setQuickDate('tomorrow')" id="btn-date-tomorrow" class="flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95">Tomorrow</button>
+                    <div class="relative flex-1">
+                        <input type="date" id="inp-date" class="absolute inset-0 opacity-0 z-10 w-full h-full">
+                        <button type="button" id="btn-date-pick" class="w-full h-full py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted flex items-center justify-center gap-1">
+                            <i class="ph-bold ph-calendar-blank"></i> <span id="lbl-date-pick">Pick</span>
+                        </button>
                     </div>
                 </div>
-                <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border">
-                    <i class="ph-bold ph-calendar text-text-muted mr-2"></i>
-                    <input type="date" id="inp-date" class="bg-transparent text-xs text-white outline-none w-24 font-medium">
-                </div>
-                <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border relative min-w-[120px]">
-                    <i class="ph-bold ph-folder text-text-muted mr-2"></i>
-                    <select id="inp-project" class="bg-transparent text-xs text-white outline-none w-full appearance-none font-medium z-10 relative pr-4">
-                        <option value="Inbox" class="bg-dark-card">Inbox</option>
-                    </select>
-                     <i class="ph-fill ph-caret-down text-text-muted absolute right-2 text-[10px]"></i>
-                     <button onclick="app.promptNewProject()" class="ml-2 pl-2 border-l border-white/10 text-brand text-xs font-bold" type="button"><i class="ph-bold ph-plus"></i></button>
-                </div>
-                 <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border relative">
-                    <i class="ph-bold ph-warning-circle text-text-muted mr-2"></i>
-                    <select id="inp-priority" class="bg-transparent text-xs text-white outline-none w-24 appearance-none font-medium z-10 relative">
-                        <option value="none" class="bg-dark-card">No Priority</option>
-                        <option value="high" class="bg-dark-card">High</option>
-                        <option value="med" class="bg-dark-card">Medium</option>
-                        <option value="low" class="bg-dark-card">Low</option>
-                    </select>
-                    <i class="ph-fill ph-caret-down text-text-muted absolute right-2 text-[10px]"></i>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border flex items-center justify-between">
+                         <div class="flex items-center gap-2 overflow-hidden">
+                             <i class="ph-bold ph-bell text-text-muted shrink-0"></i>
+                             <input type="time" id="inp-reminder" class="bg-transparent text-xs text-white outline-none w-full font-medium placeholder-text-muted">
+                         </div>
+                    </div>
+                    <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border relative flex items-center">
+                        <i class="ph-bold ph-arrows-clockwise text-text-muted shrink-0 mr-2"></i>
+                        <select id="inp-repeat" class="bg-transparent text-xs text-white outline-none w-full appearance-none font-medium z-10 relative">
+                            <option value="none">No Repeat</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="weekdays">Mon-Fri</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                        <i class="ph-fill ph-caret-down text-text-muted absolute right-3 text-[10px]"></i>
+                    </div>
                 </div>
             </div>
 
-            <textarea id="inp-note" placeholder="Add notes..." class="w-full h-20 bg-dark-bg rounded-lg p-3 text-sm text-text-muted resize-none border border-dark-border outline-none focus:border-brand mb-4"></textarea>
-            
+            <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
+                 <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-tag mr-1"></i>Context</span>
+                </div>
+                
+                <div class="flex gap-3 mb-4">
+                     <div class="flex-1 relative">
+                        <div class="bg-dark-card border border-dark-border rounded-lg flex items-center relative h-10 w-full">
+                            <div class="pl-3 pr-2 text-text-muted"><i class="ph-fill ph-folder"></i></div>
+                            <select id="inp-project" class="bg-transparent text-xs font-medium text-white w-full h-full outline-none appearance-none pr-8">
+                                <option value="Inbox">Inbox</option>
+                            </select>
+                            <div class="absolute right-2 top-0 bottom-0 flex items-center pointer-events-none text-text-muted"><i class="ph-bold ph-caret-down text-xs"></i></div>
+                        </div>
+                     </div>
+                     <button onclick="app.promptNewProject()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-card border border-dark-border text-brand hover:bg-dark-active transition-colors"><i class="ph-bold ph-plus"></i></button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2">
+                    <button type="button" onclick="app.setPriority('none')" id="btn-pri-none" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-text-muted transition-all flex items-center justify-center gap-1 active:scale-95">None</button>
+                    <button type="button" onclick="app.setPriority('low')" id="btn-pri-low" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-blue-500 transition-all flex items-center justify-center gap-1 active:scale-95"><i class="ph-fill ph-flag"></i> Low</button>
+                    <button type="button" onclick="app.setPriority('med')" id="btn-pri-med" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-yellow-500 transition-all flex items-center justify-center gap-1 active:scale-95"><i class="ph-fill ph-flag"></i> Med</button>
+                    <button type="button" onclick="app.setPriority('high')" id="btn-pri-high" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-red-500 transition-all flex items-center justify-center gap-1 active:scale-95"><i class="ph-fill ph-flag"></i> High</button>
+                    <input type="hidden" id="inp-priority" value="none">
+                </div>
+            </div>
+
+            <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
+                 <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-timer mr-1"></i>Effort</span>
+                    <span class="text-[10px] font-bold text-white" id="total-calc-display">25m Total</span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center bg-dark-card rounded-lg border border-dark-border p-1">
+                        <button type="button" onclick="app.adjustEst(-1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors"><i class="ph-bold ph-minus"></i></button>
+                        <div class="w-8 text-center font-bold text-white text-sm" id="disp-est">1</div>
+                        <button type="button" onclick="app.adjustEst(1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors"><i class="ph-bold ph-plus"></i></button>
+                        <input type="hidden" id="inp-est" value="1">
+                    </div>
+                    
+                    <div class="flex-1 bg-dark-card rounded-lg border border-dark-border px-3 py-2 flex flex-col justify-center">
+                        <div class="flex justify-between text-[10px] font-bold mb-1.5"><span class="text-text-muted">Per Pomo</span><span class="text-white" id="disp-duration">25m</span></div>
+                        <input type="range" id="inp-duration" min="5" max="60" step="5" value="25" class="w-full h-1 bg-dark-bg rounded-lg appearance-none cursor-pointer" oninput="app.updateDurationDisplay(this.value)">
+                    </div>
+                </div>
+            </div>
+
             <div class="space-y-4 mb-6">
-                <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Tags</label><input type="text" id="inp-tags" placeholder="e.g. Work, Design (comma separated)" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none transition-colors" autocomplete="off"></div>
-                <div class="grid grid-cols-2 gap-4">
-                     <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Repeat</label><select id="inp-repeat" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none"><option value="none">None</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="weekdays">Weekdays</option><option value="monthly">Monthly</option></select></div>
-                     <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Reminder</label><input type="time" id="inp-reminder" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-sm text-white focus:border-brand outline-none"></div>
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider">Subtasks</span>
+                        <button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold flex items-center py-1"><i class="ph-bold ph-plus mr-1"></i> Add</button>
+                    </div>
+                    <div id="subtask-list" class="space-y-2"></div>
                 </div>
-                <div><label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Subtasks</label><div id="subtask-list" class="space-y-2 mb-2"></div><button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold flex items-center py-1"><i class="ph-bold ph-plus mr-1"></i> Add Subtask</button></div>
+
+                <textarea id="inp-note" placeholder="Add notes..." class="w-full h-24 bg-dark-active/30 rounded-xl p-3 text-sm text-text-muted resize-none border border-dark-border outline-none focus:border-brand/50 transition-colors"></textarea>
+                
+                <div class="relative">
+                    <i class="ph-bold ph-hash absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></i>
+                    <input type="text" id="inp-tags" placeholder="Tags (comma separated)..." class="w-full bg-dark-active/30 border border-dark-border rounded-xl pl-9 pr-3 py-3 text-sm text-white focus:border-brand/50 outline-none transition-colors" autocomplete="off">
+                </div>
             </div>
 
-            <button onclick="app.saveTask()" id="btn-save-task" class="w-full py-3.5 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm">Save Task</button>
+            <button onclick="app.saveTask()" id="btn-save-task" class="w-full py-4 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm mb-safe-b">Save Task</button>
         </div>
     </div>
     
