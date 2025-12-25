@@ -1,105 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="TimeTrekker - A production-grade focus timer and task manager.">
+<meta name="theme-color" content="#000000">
 <title>TimeTrekker</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png" type="image/x-icon">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config={
-  darkMode:'class',
-  theme:{
-    extend:{
-      fontFamily:{sans:['Inter','sans-serif']},
-      colors:{
-        brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a'},
-        dark:{
-            bg:'#000000',      
-            sidebar:'#000000', 
-            card:'#000000',    
-            border:'#333333',  
-            hover:'#1a1a1a'    
-        },
-        text:{
-            main:'#ffffff',    
-            muted:'#a3a3a3',   
-            faint:'#525252'    
-        },
-        priority:{high:'#ef4444',med:'#eab308',low:'#3b82f6',none:'#525252'}
-      }
-    }
-  }
-};
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    brand: { DEFAULT: '#ff5757', hover: '#e04848', dim: '#4a1a1a' },
+                    dark: { bg: '#000000', sidebar: '#000000', card: '#000000', border: '#333333', hover: '#1a1a1a' },
+                    text: { main: '#ffffff', muted: '#a3a3a3', faint: '#525252' },
+                    priority: { high: '#ef4444', med: '#eab308', low: '#3b82f6', none: '#525252' }
+                }
+            }
+        }
+    };
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+<script type="module" src="timetrekker.js" defer></script>
+
 <style>
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:#000000}
-::-webkit-scrollbar-thumb{background:#333333;border-radius:4px;border:2px solid #000000}
-::-webkit-scrollbar-thumb:hover{background:#525252}
-.no-scrollbar::-webkit-scrollbar {display: none;}
-.no-scrollbar {-ms-overflow-style: none; scrollbar-width: none;}
-body{background-color:#000000;color:#ffffff;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
-.custom-checkbox input:checked+div{background-color:#ff5757;border-color:#ff5757}
-.custom-checkbox input:checked+div svg{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}.animate-fade-in{animation:fadeIn .2s ease-out forwards}
-input[type=range]{-webkit-appearance:none;background:transparent}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#333333;border-radius:2px} 
-.chart-container{position:relative;width:100%;height:100%}
-.analysis-table th { text-align:left; font-size:11px; text-transform:uppercase; color:#a3a3a3; padding:12px; border-bottom:1px solid #333333; }
-.analysis-table td { font-size:13px; color:#ffffff; padding:12px; border-bottom:1px solid #333333; }
-.analysis-table tr:last-child td { border-bottom:none; }
-#global-tooltip {
-    pointer-events: none;
-    position: fixed;
-    z-index: 9999;
-    background: #000000;
-    border: 1px solid #404040; 
-    padding: 8px 12px;
-    border-radius: 6px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8);
-    font-size: 12px;
-    color: white;
-    opacity: 0;
-    transition: opacity 0.1s ease;
-    transform: translate(-50%, -100%) translateY(-10px);
-    white-space: nowrap;
-}
-#global-tooltip strong { display: block; color: #ff5757; margin-bottom: 2px; font-size: 13px; }
-#global-tooltip .sub { color: #a3a3a3; font-size: 11px; }
-.glass-toggle-group {
-    display: inline-flex;
-    background: rgba(255, 255, 255, 0.05); 
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 4px;
-    border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.15); 
-}
-.glass-toggle-btn {
-    padding: 4px 12px;
-    border-radius: 9999px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #a3a3a3;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid transparent;
-}
-.glass-toggle-btn:hover {
-    color: #ffffff;
-}
-.glass-toggle-btn.active {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    border-color: rgba(255, 255, 255, 0.1);
-}
+    /* Critical CSS for layout stability */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #000000; }
+    ::-webkit-scrollbar-thumb { background: #333333; border-radius: 4px; border: 2px solid #000000; }
+    ::-webkit-scrollbar-thumb:hover { background: #525252; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    body { background-color: #000000; color: #ffffff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+    
+    .custom-checkbox input:checked + div { background-color: #ff5757; border-color: #ff5757; }
+    .custom-checkbox input:checked + div svg { display: block; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+    
+    input[type=range] { -webkit-appearance: none; background: transparent; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ff5757; cursor: pointer; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333333; border-radius: 2px; }
+    
+    .analysis-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #a3a3a3; padding: 12px; border-bottom: 1px solid #333333; }
+    .analysis-table td { font-size: 13px; color: #ffffff; padding: 12px; border-bottom: 1px solid #333333; }
+    .analysis-table tr:last-child td { border-bottom: none; }
+    
+    #global-tooltip { pointer-events: none; position: fixed; z-index: 9999; background: #000000; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8); font-size: 12px; color: white; opacity: 0; transition: opacity 0.1s ease; transform: translate(-50%, -100%) translateY(-10px); white-space: nowrap; }
+    #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 2px; font-size: 13px; }
+    #global-tooltip .sub { color: #a3a3a3; font-size: 11px; }
+    
+    .glass-toggle-group { display: inline-flex; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 4px; border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.15); }
+    .glass-toggle-btn { padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 600; color: #a3a3a3; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; }
+    .glass-toggle-btn:hover { color: #ffffff; }
+    .glass-toggle-btn.active { background: rgba(255, 255, 255, 0.15); color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.2); border-color: rgba(255, 255, 255, 0.1); }
 </style>
 </head>
-<body class="h-screen w-full overflow-hidden flex bg-dark-bg text-text-main">
+<body class="h-screen w-full flex bg-dark-bg text-text-main">
 
 <div id="global-tooltip"></div>
 <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
@@ -139,7 +109,6 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                 <span class="block md:hidden lg:block ml-3 font-medium text-sm">All Tasks</span>
                 <span id="count-all" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
             </button>
-
             <button onclick="app.setView('past')" id="nav-past" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
                 <i class="ph-regular ph-clock-counter-clockwise text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Past</span><span id="count-past" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
             </button>
@@ -152,11 +121,9 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
             <button onclick="app.setView('upcoming')" id="nav-upcoming" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
                 <i class="ph-regular ph-calendar text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Upcoming</span><span id="count-upcoming" class="block md:hidden lg:flex ml-auto text-xs bg-dark-bg text-text-muted px-2 py-0.5 rounded-full border border-dark-border">0</span>
             </button>
-            
             <button onclick="app.setView('completed')" id="nav-completed" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
                 <i class="ph-regular ph-check-circle text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Completed</span>
             </button>
-            
             <button onclick="app.setView('analytics')" id="nav-analytics" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors group">
                 <i class="ph-regular ph-chart-line-up text-xl group-hover:text-brand transition-colors"></i><span class="block md:hidden lg:block ml-3 font-medium text-sm">Analytics</span>
             </button>
@@ -247,7 +214,6 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Today Tasks</div>
                     <div class="text-2xl font-bold text-blue-500" id="ana-task-today">0</div>
                 </div>
-
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Completion %</div>
                     <div class="text-xl font-bold text-green-500" id="ana-completion-rate">0%</div>
@@ -638,7 +604,7 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
                             <i class="ph-bold ph-check text-white text-3xl"></i>
                         </div>
                         <h2 class="text-xl font-bold text-white">TimeTrekker</h2>
-                        <p class="text-sm text-text-muted mt-1">Version 1.2.0</p>
+                        <p class="text-sm text-text-muted mt-1">Version 1.2.1</p>
                         <div class="mt-8 text-xs text-text-faint space-y-2">
                             <p>Designed for focus and simplicity.</p>
                             <p>&copy; 2025 StackBase. All rights reserved.</p>
@@ -651,6 +617,5 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
     </div>
 </div>
 
-<script type="module" src="timetrekker.js"></script>
 </body>
 </html>
