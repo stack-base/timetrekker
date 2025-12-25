@@ -31,22 +31,13 @@
 </script>
 
 <style>
-    /* App-like behavior resets */
     body { background-color: #000000; color: #ffffff; -webkit-tap-highlight-color: transparent; overflow: hidden; user-select: none; }
-    
-    /* Scrollbar hiding */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* Material Design Ripple Effect */
     .ripple { position: relative; overflow: hidden; transform: translate3d(0, 0, 0); }
     .ripple::after { content: ""; display: block; position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; background-image: radial-gradient(circle, #fff 10%, transparent 10.01%); background-repeat: no-repeat; background-position: 50%; transform: scale(10, 10); opacity: 0; transition: transform .5s, opacity 1s; }
     .ripple:active::after { transform: scale(0, 0); opacity: 0.2; transition: 0s; }
-
-    /* Bottom Sheet Handle */
     .sheet-handle { width: 32px; height: 4px; background: #4b5563; border-radius: 99px; margin: 12px auto; }
-
-    /* Chips */
     .chip { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     .chip.active { background-color: #ff5757; color: white; border-color: transparent; }
     .chip.inactive { background-color: transparent; color: #a3a3a3; border: 1px solid #333333; }
@@ -58,8 +49,18 @@
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main font-sans">
 
     <div id="loading-screen" class="fixed inset-0 z-[100] bg-dark-bg flex flex-col items-center justify-center transition-opacity duration-500">
-        <i class="ph-bold ph-spinner animate-spin text-4xl text-brand"></i>
-        <p class="mt-4 text-xs font-medium text-text-muted tracking-widest uppercase">TimeTrekker</p>
+        <div id="spinner-container">
+            <i class="ph-bold ph-spinner animate-spin text-4xl text-brand"></i>
+        </div>
+        <div id="error-message" class="hidden flex-col items-center mt-4 text-center px-6">
+            <i class="ph-fill ph-warning-circle text-3xl text-red-500 mb-2"></i>
+            <p class="text-sm font-medium text-white">Something went wrong</p>
+            <p class="text-xs text-text-muted mt-1 mb-4">The app is taking too long to load.</p>
+            <button onclick="document.getElementById('loading-screen').classList.add('hidden')" class="px-4 py-2 bg-dark-surface border border-dark-border rounded-lg text-xs font-bold uppercase tracking-wider">
+                Enter Anyway
+            </button>
+        </div>
+        <p id="loading-text" class="mt-4 text-xs font-medium text-text-muted tracking-widest uppercase">TimeTrekker</p>
     </div>
 
     <div id="toast-container" class="fixed top-safe-t mt-6 left-1/2 -translate-x-1/2 z-[90] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
@@ -247,7 +248,7 @@
                 <button onclick="app.signOut()" class="ripple w-full py-4 rounded-2xl bg-dark-surface border border-red-900/30 text-red-500 font-medium flex items-center justify-center active:bg-red-900/10 transition-colors">
                     <i class="ph-bold ph-sign-out text-lg mr-2"></i> Sign Out
                 </button>
-                <div class="text-center text-[10px] text-text-muted opacity-50 pb-4">TimeTrekker Mobile v2.1</div>
+                <div class="text-center text-[10px] text-text-muted opacity-50 pb-4">TimeTrekker Mobile v2.2</div>
             </div>
         </div>
     </main>
@@ -333,5 +334,17 @@
     </div>
     
     <audio id="audio-player" loop></audio>
+
+    <script>
+        setTimeout(() => {
+            const loader = document.getElementById('loading-screen');
+            if (loader && !loader.classList.contains('hidden')) {
+                document.getElementById('spinner-container').classList.add('hidden');
+                document.getElementById('loading-text').classList.add('hidden');
+                document.getElementById('error-message').classList.remove('hidden');
+                document.getElementById('error-message').classList.add('flex');
+            }
+        }, 8000);
+    </script>
 </body>
 </html>

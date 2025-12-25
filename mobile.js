@@ -28,12 +28,12 @@ const esc = str => {
     return d.innerHTML; 
 };
 
-// *** CRITICAL FIX: Robust Date Parser ***
+// --- ROBUST DATE PARSER ---
 const parseDate = (d) => {
-    if (!d) return new Date(); // Fallback to now
+    if (!d) return new Date(); 
     if (d.toDate) return d.toDate(); // Firestore Timestamp
-    if (d.seconds) return new Date(d.seconds * 1000); // Raw seconds object
-    return new Date(d); // String or Date object
+    if (d.seconds) return new Date(d.seconds * 1000); // Seconds
+    return new Date(d); // String
 };
 
 const getDayStr = d => {
@@ -53,33 +53,37 @@ const state = {
     chartFocus: null
 };
 
-// --- AUTH & DATA ---
+// --- AUTH ---
 onAuthStateChanged(auth, u => {
     if (u) {
+        // 1. IMMEDIATE UI UNLOCK
+        const loader = $('loading-screen');
+        if(loader) {
+            loader.classList.add('opacity-0');
+            setTimeout(() => loader.classList.add('hidden'), 500);
+        }
+
         state.user = u;
-        $('loading-screen').classList.add('opacity-0');
-        setTimeout(() => $('loading-screen').classList.add('hidden'), 500);
+        
+        // 2. Safely Update Profile UI
+        try {
+            if($('user-avatar')) $('user-avatar').textContent = (u.email||'U').charAt(0).toUpperCase();
+            if($('settings-name')) $('settings-name').textContent = u.displayName || 'User';
+            if($('settings-email')) $('settings-email').textContent = u.email;
+            if($('date-display')) $('date-display').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        } catch(e) { console.warn("UI Init partial fail", e); }
 
-        // UI Init
-        $('user-avatar').textContent = (u.email||'U').charAt(0).toUpperCase();
-        $('date-display').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-        $('settings-name').textContent = u.displayName || 'User';
-        $('settings-email').textContent = u.email;
-
-        // --- Data Subscriptions ---
-        // 1. Tasks
+        // 3. Data Subs
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             try {
                 state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
                 state.projects = new Set(['Inbox']);
                 state.tasks.forEach(t => { if(t.project) state.projects.add(t.project); });
                 app.renderTasks();
-                // If tasks update, analytics might change (completed counts)
                 app.renderAnalyticsStats();
-            } catch(e) { console.error("Task sync error", e); }
+            } catch(e) { console.error("Tasks Error", e); }
         });
         
-        // 2. Timer
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             try {
                 if(s.exists()) {
@@ -90,20 +94,17 @@ onAuthStateChanged(auth, u => {
                     app.syncSettingsUI();
                     if(state.timer.status === 'running') startTimerLoop(); else stopTimerLoop();
                 }
-            } catch(e) { console.error("Timer sync error", e); }
+            } catch(e) { console.error("Timer Error", e); }
         });
 
-        // 3. Logs (Analytics)
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions'), s => {
             try {
                 state.logs = s.docs.map(d => d.data()).sort((a,b) => {
-                    const da = parseDate(a.completedAt).getTime();
-                    const db = parseDate(b.completedAt).getTime();
-                    return db - da; 
+                    return parseDate(b.completedAt).getTime() - parseDate(a.completedAt).getTime();
                 });
                 app.renderAnalyticsStats();
                 if(state.view === 'analytics') app.renderAnalyticsChart();
-            } catch(e) { console.error("Logs sync error", e); }
+            } catch(e) { console.error("Logs Error", e); }
         });
 
     } else {
@@ -118,39 +119,34 @@ const startTimerLoop = () => {
         app.updateTimerUI();
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
-    $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
+    const icon = $('play-icon'); if(icon) icon.className = "ph-fill ph-pause text-3xl ml-1";
+    
     const audio = $('audio-player');
     if(audio && audio.paused && state.sound !== 'none') audio.play().catch(()=>{});
 };
 
 const stopTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
-    $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
+    const icon = $('play-icon'); if(icon) icon.className = "ph-fill ph-play text-3xl ml-1";
     const audio = $('audio-player');
     if(audio) audio.pause();
 };
 
-// --- APP LOGIC ---
+// --- APP ---
 const app = {
-    
-    // NAVIGATION
     navTo: (view) => {
         haptic();
         state.view = view;
-        
-        // Hide views
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const target = $(`view-${view}`);
         if(target) target.classList.remove('hidden');
         
-        // Nav Icons
         document.querySelectorAll('nav button').forEach(btn => {
             btn.classList.replace('text-brand', 'text-text-muted');
             btn.querySelector('i').classList.remove('ph-fill');
             btn.querySelector('i').classList.add('ph-bold');
         });
         
-        // Active Icon
         const btn = $(`nav-${view}`);
         if(btn) {
             btn.classList.replace('text-text-muted', 'text-brand');
@@ -158,7 +154,7 @@ const app = {
             btn.querySelector('i').classList.add('ph-fill');
         }
 
-        if(view === 'analytics') setTimeout(() => app.renderAnalyticsChart(), 100); // Delay for layout
+        if(view === 'analytics') setTimeout(() => app.renderAnalyticsChart(), 50);
     },
 
     setFilter: (f) => {
@@ -170,7 +166,6 @@ const app = {
         app.renderTasks();
     },
 
-    // TASKS UI
     renderTasks: () => {
         const container = $('task-list');
         if(!container) return;
@@ -189,7 +184,6 @@ const app = {
             const el = document.createElement('div');
             el.className = `bg-dark-surface border border-dark-border p-4 rounded-[18px] flex items-start gap-3 active:scale-[0.98] transition-transform select-none relative overflow-hidden shadow-sm`;
             
-            // Priority Indicator
             const borderCol = t.priority === 'high' ? '#ef4444' : (t.priority === 'med' ? '#eab308' : 'transparent');
             
             el.innerHTML = `
@@ -214,24 +208,25 @@ const app = {
         });
     },
 
-    // CRUD
     openTaskModal: (task = null) => {
         haptic();
-        // Fill Projects
         const sel = $('inp-project');
-        sel.innerHTML = '<option value="Inbox" class="bg-dark-surface">Inbox</option>';
-        state.projects.forEach(p => {
-            if(p!=='Inbox') {
-                const opt = document.createElement('option');
-                opt.value = p; opt.textContent = p; opt.className = 'bg-dark-surface';
-                sel.appendChild(opt);
-            }
-        });
+        if(sel) {
+            sel.innerHTML = '<option value="Inbox" class="bg-dark-surface">Inbox</option>';
+            state.projects.forEach(p => {
+                if(p!=='Inbox') {
+                    const opt = document.createElement('option');
+                    opt.value = p; opt.textContent = p; opt.className = 'bg-dark-surface';
+                    sel.appendChild(opt);
+                }
+            });
+        }
 
-        $('subtasks-container').innerHTML = '';
+        const subC = $('subtasks-container');
+        if(subC) subC.innerHTML = '';
         
         if(task) {
-            $('modal-title').textContent = 'Edit Task';
+            if($('modal-title')) $('modal-title').textContent = 'Edit Task';
             $('inp-id').value = task.id;
             $('inp-title').value = task.title;
             $('inp-date').value = task.dueDate || '';
@@ -242,7 +237,7 @@ const app = {
             $('inp-tags').value = task.tags ? task.tags.join(', ') : '';
             if(task.subtasks) task.subtasks.forEach(s => app.addSubtaskUI(s));
         } else {
-            $('modal-title').textContent = 'New Task';
+            if($('modal-title')) $('modal-title').textContent = 'New Task';
             $('inp-id').value = '';
             $('inp-title').value = '';
             $('inp-date').value = getDayStr(new Date());
@@ -274,29 +269,19 @@ const app = {
     saveTask: async () => {
         const title = $('inp-title').value;
         if(!title) return;
-        
         const subtasks = Array.from(document.querySelectorAll('.subtask-inp')).map(i => i.value.trim()).filter(v=>v);
         const tags = $('inp-tags').value.split(',').map(t=>t.trim()).filter(t=>t);
 
         const data = {
-            title, 
-            dueDate: $('inp-date').value,
-            estimatedPomos: parseInt($('inp-est').value) || 1,
-            priority: $('inp-priority').value,
-            project: $('inp-project').value,
-            note: $('inp-note').value,
-            subtasks, tags
+            title, dueDate: $('inp-date').value, estimatedPomos: parseInt($('inp-est').value) || 1,
+            priority: $('inp-priority').value, project: $('inp-project').value, note: $('inp-note').value, subtasks, tags
         };
 
         const id = $('inp-id').value;
         app.closeTaskModal();
-        
         try {
-            if(id) {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), data);
-            } else {
-                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), { ...data, status: 'todo', completedPomos: 0, createdAt: new Date().toISOString() });
-            }
+            if(id) await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), data);
+            else await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), { ...data, status: 'todo', completedPomos: 0, createdAt: new Date().toISOString() });
             app.showToast('Task Saved');
         } catch(e) { app.showToast('Error saving'); }
     },
@@ -305,20 +290,17 @@ const app = {
         haptic();
         const newStatus = status === 'todo' ? 'done' : 'todo';
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
-            status: newStatus,
-            completedAt: newStatus === 'done' ? new Date().toISOString() : null
+            status: newStatus, completedAt: newStatus === 'done' ? new Date().toISOString() : null
         });
     },
 
-    // TIMER LOGIC
     startFocus: async (btn, id) => {
         haptic();
         app.navTo('timer');
         const d = state.timer.settings.focus;
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', taskId: id, remaining: d * 60, totalDuration: d * 60, 
-            endTime: new Date(Date.now() + d * 60000), mode: 'focus',
-            settings: state.timer.settings
+            endTime: new Date(Date.now() + d * 60000), mode: 'focus', settings: state.timer.settings
         });
     },
 
@@ -350,7 +332,6 @@ const app = {
         stopTimerLoop();
         haptic();
         const { mode, taskId } = state.timer;
-        
         if(mode === 'focus' && taskId) {
             const t = state.tasks.find(x => x.id === taskId);
             if(t) {
@@ -358,17 +339,13 @@ const app = {
                 await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, duration: state.timer.settings.focus, project: t.project||'Inbox', completedAt: serverTimestamp() });
             }
         }
-        
-        // Simple Mode switching
         const nextMode = mode === 'focus' ? 'short' : 'focus';
         const d = state.timer.settings[nextMode];
         const updates = { status: 'idle', mode: nextMode, remaining: d*60, totalDuration: d*60, endTime: null };
-        
         if(state.timer.settings.autoStartPomo && nextMode === 'focus') {
             updates.status = 'running';
             updates.endTime = new Date(Date.now() + d*60000);
         }
-
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), updates);
         app.showToast(mode === 'focus' ? 'Focus Complete!' : 'Break Over!');
     },
@@ -401,7 +378,6 @@ const app = {
         }
     },
 
-    // ANALYTICS & SETTINGS
     syncSettingsUI: () => {
         const s = state.timer.settings;
         if(!s) return;
@@ -415,8 +391,7 @@ const app = {
 
     updateSetting: async (key, val) => {
         const s = { ...state.timer.settings };
-        if(key === 'strictMode' || key === 'autoStartPomo') s[key] = val;
-        else s[key] = parseInt(val);
+        if(key === 'strictMode' || key === 'autoStartPomo') s[key] = val; else s[key] = parseInt(val);
         state.timer.settings = s;
         app.syncSettingsUI();
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { settings: s });
@@ -426,8 +401,7 @@ const app = {
         state.sound = type;
         const audio = $('audio-player');
         audio.src = SOUNDS[type];
-        if(type !== 'none' && state.timer.status === 'running') audio.play().catch(()=>{});
-        else audio.pause();
+        if(type !== 'none' && state.timer.status === 'running') audio.play().catch(()=>{}); else audio.pause();
         app.setSoundUI(type);
     },
 
@@ -451,7 +425,7 @@ const app = {
         $('ana-tasks-done').textContent = state.tasks.filter(t => t.status === 'done').length;
 
         const list = $('analytics-log-list');
-        if(logs.length > 0) {
+        if(list && logs.length > 0) {
             list.innerHTML = logs.slice(0, 5).map(l => `
                 <div class="px-5 py-3 flex justify-between items-center text-sm">
                     <div class="flex flex-col truncate pr-4">
@@ -467,30 +441,23 @@ const app = {
     renderAnalyticsChart: () => {
         const ctxF = $('chart-focus');
         if(!ctxF) return;
-        
         if(state.chartFocus) state.chartFocus.destroy();
         
         const logs = state.logs;
         const labels = [], data = [];
-        
         for(let i=6; i>=0; i--) {
             const d = new Date(); d.setDate(d.getDate() - i);
             labels.push(d.toLocaleDateString('en-US', {weekday:'short'}));
             const ds = getDayStr(d);
-            data.push(logs.filter(l => l.completedAt && getDayStr(new Date(parseDate(l.completedAt))) === ds).reduce((a,b)=>a+(b.duration||25),0));
+            data.push(logs.filter(l => l.completedAt && getDayStr(parseDate(l.completedAt)) === ds).reduce((a,b)=>a+(b.duration||25),0));
         }
         
         state.chartFocus = new Chart(ctxF, {
             type: 'bar',
             data: { labels, datasets: [{ data, backgroundColor: '#ff5757', borderRadius: 4, barThickness: 12 }] },
             options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { legend: { display: false } }, 
-                scales: { 
-                    x: { grid: { display: false }, ticks: { color: '#666', font: { size: 10 } } }, 
-                    y: { display: false } 
-                } 
+                responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
+                scales: { x: { grid: { display: false }, ticks: { color: '#666', font: { size: 10 } } }, y: { display: false } } 
             }
         });
     },
@@ -505,6 +472,5 @@ const app = {
     signOut: () => signOut(auth)
 };
 
-// Make Global
 window.app = app;
 app.navTo('tasks');
