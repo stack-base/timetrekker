@@ -33,6 +33,21 @@ const esc = (str) => {
     return div.innerHTML; 
 };
 
+// --- HAPTIC FEEDBACK ENGINE ---
+const haptic = (type = 'light') => {
+    if (!navigator.vibrate) return;
+    try {
+        const patterns = {
+            light: 10,       // Button taps, checkboxes
+            medium: 25,      // Timer toggle
+            heavy: 40,       // Deletions, warnings
+            success: [10, 30], // Task save
+            timerDone: [200, 100, 200] // Timer completion
+        };
+        navigator.vibrate(patterns[type] || 10);
+    } catch (e) { /* ignore */ }
+};
+
 // --- STATE MANAGEMENT ---
 const state = {
     user: null, 
@@ -67,7 +82,6 @@ const sounds = {
 };
 
 // --- CACHED ELEMENTS ---
-// Accessed via getter to ensure DOM is ready
 const getEls = () => ({
     taskList: $('task-list'), taskViewContainer: $('task-view-container'), analyticsViewContainer: $('analytics-view-container'), 
     pageTitle: $('page-title'), emptyState: $('empty-state'), modal: $('add-task-modal'), modalPanel: $('add-task-panel'), 
@@ -160,7 +174,10 @@ onAuthStateChanged(auth, u => {
                     const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
                     state.tasks.forEach(t => {
                         if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
-                            try { new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png' }); } catch (e) { }
+                            try { 
+                                haptic('light');
+                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png' }); 
+                            } catch (e) { }
                         }
                     });
                 }
@@ -182,7 +199,6 @@ const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', 
     renderTasks();
     if (state.timer.activeTaskId) {
         const activeTask = t.find(x => x.id === state.timer.activeTaskId);
-        // Robust check: if task was deleted remotely while timer running
         if(!activeTask && state.timer.status === 'running') {
              // Optional: Stop timer or keep running as "Unknown Task"
         }
@@ -267,7 +283,6 @@ const updateTimerVisuals = () => {
     els.timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${sc.toString().padStart(2, '0')}`;
     if(els.timerProgress) els.timerProgress.style.strokeDashoffset = 289 * (1 - (s / (totalDuration || 1)));
     
-    // Fallback title update for background tabs
     if(state.timer.status === 'running') D.title = `${m}:${sc.toString().padStart(2, '0')} - TimeTrekker`;
 };
 
@@ -302,11 +317,11 @@ const app = {
         els.taskViewContainer.classList.remove('hidden'); els.analyticsViewContainer.classList.add('hidden'); els.headerActions.classList.remove('invisible'); renderTasks(); updateCounts()
     },
     setRange: r => {
-        state.analytics.range = r; 
+        state.analytics.range = r; haptic('light');
         ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
         updateAnalytics()
     },
-    toggleChartType: (k, t) => { state.chartTypes[k] = t; ['bar', 'line'].forEach(x => { $(`btn-${k}-${x}`).classList.toggle('active', x === t) }); updateAnalytics() },
+    toggleChartType: (k, t) => { haptic('light'); state.chartTypes[k] = t; ['bar', 'line'].forEach(x => { $(`btn-${k}-${x}`).classList.toggle('active', x === t) }); updateAnalytics() },
     toggleFocusPanel: f => {
         const els = getEls();
         const p = els.timerPanel, i = !p.classList.contains('translate-x-full'); 
@@ -326,7 +341,7 @@ const app = {
         state.filterProject === o ? app.setProjectView(n) : updateProjectsUI()
     },
     deleteProject: async (p, e) => {
-        e.stopPropagation(); if (!confirm(`Delete "${p}"?`)) return; 
+        e.stopPropagation(); if (!confirm(`Delete "${p}"?`)) return; haptic('heavy');
         const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", p)))).forEach(d => b.update(d.ref, { project: 'Inbox' })); 
         await b.commit(); state.projects.delete(p); 
         state.filterProject === p ? app.setView('today') : updateProjectsUI()
@@ -340,17 +355,19 @@ const app = {
         els.subtasksContainer.appendChild(d)
     },
     toggleDropdown: t => {
+        haptic('light');
         const d = $(`${t}-options`); 
         D.querySelectorAll('[id$="-options"]').forEach(x => { if (x.id !== `${t}-options`) x.classList.add('hidden') }); 
         d.classList.toggle('hidden'); if (!d.classList.contains('hidden')) d.classList.add('animate-fade-in')
     },
-    selectOption: (t, v, d) => { $(`selected-${t}`).innerText = d; $(`task-${t}`).value = v; $(`${t}-options`).classList.add('hidden') },
+    selectOption: (t, v, d) => { haptic('light'); $(`selected-${t}`).innerText = d; $(`task-${t}`).value = v; $(`${t}-options`).classList.add('hidden') },
 
     toggleAddTaskModal: (t = null) => {
         const els = getEls();
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { }); } catch (e) { }
         
         if (els.modal.classList.contains('hidden')) {
+            haptic('light');
             els.subtasksContainer.innerHTML = ''; const po = $('project-options'); po.innerHTML = ''; 
             state.projects.forEach(p => {
                 const b = D.createElement('button'); b.type = 'button'; b.onclick = () => app.selectOption('project', p, p); 
@@ -370,10 +387,22 @@ const app = {
                 $('task-title').value = ''; $('task-note').value = ''; $('task-tags').value = ''; app.selectOption('priority', 'none', 'None'); 
                 app.selectOption('project', 'Inbox', 'Inbox'); app.selectOption('repeat', 'none', 'None'); els.taskReminder.value = ''
             }
-            app.updateTotalEst(); els.modal.classList.remove('hidden'); setTimeout(() => els.modal.classList.remove('opacity-0'), 10); 
-            setTimeout(() => els.modalPanel.classList.replace('scale-95', 'scale-100'), 10); $('task-title').focus()
+            app.updateTotalEst(); 
+            els.modal.classList.remove('hidden'); 
+            setTimeout(() => els.modal.classList.remove('opacity-0'), 10); 
+            // Handle bottom sheet (remove hide-translate, add show-translate) and desktop scale
+            setTimeout(() => {
+                els.modalPanel.classList.remove('translate-y-full', 'md:scale-95');
+                els.modalPanel.classList.add('translate-y-0', 'md:scale-100');
+            }, 10);
+            $('task-title').focus()
         } else {
-            els.modal.classList.add('opacity-0'); els.modalPanel.classList.replace('scale-100', 'scale-95'); setTimeout(() => els.modal.classList.add('hidden'), 200)
+            haptic('light');
+            els.modal.classList.add('opacity-0'); 
+            // Revert transition
+            els.modalPanel.classList.add('translate-y-full', 'md:scale-95');
+            els.modalPanel.classList.remove('translate-y-0', 'md:scale-100');
+            setTimeout(() => els.modal.classList.add('hidden'), 300)
         }
     },
 
@@ -397,14 +426,21 @@ const app = {
         const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'); 
         try { 
             state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedPomos: 0, status: 'todo', createdAt: new Date().toISOString() }); 
+            haptic('success');
             app.toggleAddTaskModal() 
         } catch (err) { app.showToast("Error saving") }
     },
-    toggleTaskStatus: async (id, s) => { try { await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null }) } catch (e) { app.showToast("Connection error") } },
-    deleteTask: async (id, e) => { e.stopPropagation(); if (confirm('Delete task?')) try { await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id)) } catch (e) { app.showToast("Error deleting") } },
+    toggleTaskStatus: async (id, s) => { 
+        try { 
+            haptic('light');
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null }) 
+        } catch (e) { app.showToast("Connection error") } 
+    },
+    deleteTask: async (id, e) => { e.stopPropagation(); if (confirm('Delete task?')) try { haptic('heavy'); await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id)) } catch (e) { app.showToast("Error deleting") } },
     
     startTask: async (id, e) => {
         e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (!t) return; 
+        haptic('medium');
         state.selectedTaskId = id; renderTasks(); updateTimerUI(t); 
         if (window.innerWidth < 1280) app.toggleFocusPanel(true); 
         if (state.timer.status !== 'running') {
@@ -430,6 +466,7 @@ const app = {
 
     toggleTimer: async () => {
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { }); } catch (e) { }
+        haptic('medium');
         if (state.timer.status === 'running') {
             if (state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000)) }).catch(() => { })
@@ -441,6 +478,7 @@ const app = {
 
     resetTimer: async (r = false) => {
         if (!r) {
+            haptic('light');
             const d = state.timer.settings[state.timer.mode]; 
             await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'idle', endTime: null, remaining: d * 60, totalDuration: d * 60, mode: state.timer.mode, taskId: state.timer.activeTaskId || null }).catch(() => { })
         }
@@ -449,6 +487,7 @@ const app = {
     completeTimer: async () => {
         if (state.timer.status === 'idle') return;
         stopLocalInterval();
+        haptic('timerDone');
 
         // Robust Sound
         try {
@@ -507,7 +546,14 @@ const app = {
     toggleGlobalSettings: () => {
         const els = getEls();
         if (els.settingsModal.classList.contains('hidden')) {
-            els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); setTimeout(() => els.settingsPanel.classList.replace('scale-95', 'scale-100'), 10); 
+            haptic('light');
+            els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); 
+            // Bottom Sheet Transition Logic
+            setTimeout(() => {
+                els.settingsPanel.classList.remove('translate-y-full', 'md:scale-95');
+                els.settingsPanel.classList.add('translate-y-0', 'md:scale-100');
+            }, 10);
+            
             app.switchSettingsTab('timer'); 
             $('strict-mode-toggle').checked = state.timer.settings.strictMode; 
             $('auto-pomo-toggle').checked = state.timer.settings.autoStartPomo; 
@@ -516,7 +562,11 @@ const app = {
             $('set-longBreakInterval-val-g').innerText = state.timer.settings.longBreakInterval; 
             app.setSound(state.sound);
         } else {
-            els.settingsModal.classList.add('opacity-0'); els.settingsPanel.classList.replace('scale-100', 'scale-95'); setTimeout(() => els.settingsModal.classList.add('hidden'), 200);
+            haptic('light');
+            els.settingsModal.classList.add('opacity-0'); 
+            els.settingsPanel.classList.add('translate-y-full', 'md:scale-95');
+            els.settingsPanel.classList.remove('translate-y-0', 'md:scale-100');
+            setTimeout(() => els.settingsModal.classList.add('hidden'), 300);
         }
     },
     switchSettingsTab: t => {
@@ -533,7 +583,6 @@ const app = {
 };
 
 // --- GLOBAL EXPORT ---
-// Ensure app is available globally for inline onclick handlers
 window.app = app;
 
 // --- UTILS ---
