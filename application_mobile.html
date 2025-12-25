@@ -48,19 +48,8 @@
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main font-sans">
 
-    <div id="loading-screen" class="fixed inset-0 z-[100] bg-dark-bg flex flex-col items-center justify-center transition-opacity duration-500">
-        <div id="spinner-container">
-            <i class="ph-bold ph-spinner animate-spin text-4xl text-brand"></i>
-        </div>
-        <div id="error-message" class="hidden flex-col items-center mt-4 text-center px-6">
-            <i class="ph-fill ph-warning-circle text-3xl text-red-500 mb-2"></i>
-            <p class="text-sm font-medium text-white">Something went wrong</p>
-            <p class="text-xs text-text-muted mt-1 mb-4">The app is taking too long to load.</p>
-            <button onclick="document.getElementById('loading-screen').classList.add('hidden')" class="px-4 py-2 bg-dark-surface border border-dark-border rounded-lg text-xs font-bold uppercase tracking-wider">
-                Enter Anyway
-            </button>
-        </div>
-        <p id="loading-text" class="mt-4 text-xs font-medium text-text-muted tracking-widest uppercase">TimeTrekker</p>
+    <div id="loading-screen" class="fixed inset-0 z-[100] bg-dark-bg flex flex-col items-center justify-center transition-opacity duration-300">
+        <i class="ph-bold ph-spinner animate-spin text-4xl text-brand"></i>
     </div>
 
     <div id="toast-container" class="fixed top-safe-t mt-6 left-1/2 -translate-x-1/2 z-[90] flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
@@ -68,12 +57,12 @@
     <main id="main-container" class="flex-1 relative overflow-hidden flex flex-col w-full h-full">
         
         <div id="view-tasks" class="view-section absolute inset-0 flex flex-col bg-dark-bg pt-safe-t pb-[70px]">
-            <header class="px-5 py-3 flex items-center justify-between bg-dark-bg/95 backdrop-blur z-20 shrink-0">
+            <header class="px-5 py-3 flex items-center justify-between bg-dark-bg z-20 shrink-0 border-b border-dark-border/50">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight text-white">Tasks</h1>
                     <p id="date-display" class="text-xs text-text-muted font-medium mt-0.5">Today</p>
                 </div>
-                <div id="user-avatar" class="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-red-700 border border-white/10 flex items-center justify-center text-xs font-bold text-white shadow-lg">U</div>
+                <div id="user-avatar" class="w-8 h-8 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center text-xs font-bold text-white">U</div>
             </header>
 
             <div class="px-5 py-2 shrink-0 overflow-x-auto no-scrollbar flex gap-2 mb-2">
@@ -89,7 +78,6 @@
                         <i class="ph-fill ph-check text-2xl"></i>
                     </div>
                     <p class="text-sm font-medium text-white">All caught up</p>
-                    <p class="text-xs text-text-muted mt-1">Tap + to add a new task</p>
                 </div>
                 <div id="task-list" class="space-y-3 pb-8"></div>
             </div>
@@ -103,16 +91,15 @@
             <div class="flex-1 flex flex-col items-center justify-center min-h-[600px]">
                 
                 <div class="text-center px-6 mb-8 w-full">
-                    <div id="timer-empty-state" class="text-text-muted text-xs font-medium py-2 px-4 rounded-full bg-dark-surface border border-dark-border inline-block animate-pulse">
+                    <div id="timer-empty-state" class="text-text-muted text-xs font-medium py-2 px-4 rounded-full bg-dark-surface border border-dark-border inline-block">
                         Select a task from your list
                     </div>
-                    <div id="timer-active-state" class="hidden animate-fade-in">
+                    <div id="timer-active-state" class="hidden">
                         <div class="flex justify-center mb-3">
                             <span id="timer-project-badge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-dark-active text-brand border border-white/5">Inbox</span>
                         </div>
                         <h2 id="timer-task-title" class="text-xl font-bold text-white leading-tight line-clamp-2 mb-2 px-4">Task Title</h2>
                         <div class="flex items-center justify-center gap-2 text-xs text-text-muted">
-                            <i class="ph-fill ph-check-circle text-brand"></i>
                             <span class="font-medium text-white"><span id="timer-completed-count">0</span>/<span id="timer-total-count">4</span></span>
                             <span>pomos</span>
                         </div>
@@ -141,38 +128,29 @@
                         <i class="ph-bold ph-skip-forward text-xl"></i>
                     </button>
                 </div>
-
-                <div class="w-full px-6">
-                    <div class="flex justify-between items-center bg-dark-surface p-1.5 rounded-2xl border border-dark-border">
-                        <button onclick="app.setSound('none')" id="sound-btn-none" class="flex-1 py-3 rounded-xl text-xs font-medium text-brand bg-dark-active transition-all">Silent</button>
-                        <button onclick="app.setSound('rain')" id="sound-btn-rain" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all">Rain</button>
-                        <button onclick="app.setSound('cafe')" id="sound-btn-cafe" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all">Cafe</button>
-                        <button onclick="app.setSound('forest')" id="sound-btn-forest" class="flex-1 py-3 rounded-xl text-xs font-medium text-text-muted transition-all">Forest</button>
-                    </div>
+                
+                <div class="w-full px-6 flex justify-center">
+                    <button onclick="app.setSound(state.sound === 'none' ? 'rain' : 'none')" id="sound-toggle-btn" class="flex items-center gap-2 px-4 py-2 rounded-full bg-dark-surface border border-dark-border text-xs font-bold text-text-muted">
+                        <i class="ph-fill ph-speaker-slash"></i> <span>Sound Off</span>
+                    </button>
                 </div>
             </div>
         </div>
 
         <div id="view-analytics" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[70px] overflow-y-auto no-scrollbar">
-            <header class="px-5 py-3 shrink-0 bg-dark-bg/95 backdrop-blur sticky top-0 z-20">
+            <header class="px-5 py-3 shrink-0 bg-dark-bg z-20 border-b border-dark-border/50">
                 <h1 class="text-2xl font-bold tracking-tight text-white">Analytics</h1>
             </header>
             
-            <div class="px-4 pb-8 space-y-4">
+            <div class="px-4 py-6 space-y-4">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-dark-surface border border-dark-border p-4 rounded-2xl">
-                        <div class="flex items-center gap-2 mb-1 text-brand">
-                            <i class="ph-fill ph-clock"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wide opacity-80">Focus</span>
-                        </div>
-                        <div class="text-2xl font-bold text-white" id="ana-focus-time">0h 0m</div>
+                        <div class="text-[10px] font-bold uppercase tracking-wide opacity-80 text-brand mb-1">Focus</div>
+                        <div class="text-2xl font-bold text-white" id="ana-focus-time">--</div>
                     </div>
                     <div class="bg-dark-surface border border-dark-border p-4 rounded-2xl">
-                        <div class="flex items-center gap-2 mb-1 text-blue-500">
-                            <i class="ph-fill ph-check-square-offset"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wide opacity-80">Completed</span>
-                        </div>
-                        <div class="text-2xl font-bold text-white" id="ana-tasks-done">0</div>
+                        <div class="text-[10px] font-bold uppercase tracking-wide opacity-80 text-blue-500 mb-1">Completed</div>
+                        <div class="text-2xl font-bold text-white" id="ana-tasks-done">--</div>
                     </div>
                 </div>
 
@@ -191,11 +169,11 @@
         </div>
 
         <div id="view-settings" class="view-section absolute inset-0 hidden flex-col bg-dark-bg pt-safe-t pb-[70px] overflow-y-auto no-scrollbar">
-            <header class="px-5 py-3 shrink-0 bg-dark-bg/95 backdrop-blur sticky top-0 z-20">
+            <header class="px-5 py-3 shrink-0 bg-dark-bg z-20 border-b border-dark-border/50">
                 <h1 class="text-2xl font-bold tracking-tight text-white">Settings</h1>
             </header>
             
-            <div class="px-4 pb-8 space-y-6">
+            <div class="px-4 py-6 space-y-6">
                 <div class="bg-dark-surface border border-dark-border rounded-2xl p-4 flex items-center gap-4">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-lg font-bold text-white shadow">U</div>
                     <div>
@@ -214,60 +192,32 @@
                                 <input type="range" class="w-24 accent-brand" min="5" max="60" step="5" value="25" oninput="app.updateSetting('focus', this.value)">
                             </div>
                         </div>
-                        <div class="p-4 flex items-center justify-between">
-                            <span class="text-sm font-medium">Short Break</span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm text-blue-400 font-bold w-8 text-right" id="lbl-short">5m</span>
-                                <input type="range" class="w-24 accent-blue-500" min="1" max="15" step="1" value="5" oninput="app.updateSetting('short', this.value)">
-                            </div>
-                        </div>
-                        <div class="p-4 flex items-center justify-between">
-                            <span class="text-sm font-medium">Long Break</span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm text-blue-400 font-bold w-8 text-right" id="lbl-long">15m</span>
-                                <input type="range" class="w-24 accent-blue-500" min="5" max="45" step="5" value="15" oninput="app.updateSetting('long', this.value)">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="px-2 text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Preferences</h3>
-                    <div class="bg-dark-surface border border-dark-border rounded-2xl overflow-hidden divide-y divide-dark-border">
-                         <div class="p-4 flex items-center justify-between">
-                            <div><div class="text-sm font-medium">Strict Mode</div><div class="text-[10px] text-text-muted">Prevent stopping timer</div></div>
-                            <input type="checkbox" id="tog-strict" class="accent-brand w-5 h-5" onchange="app.updateSetting('strictMode', this.checked)">
-                        </div>
-                        <div class="p-4 flex items-center justify-between">
-                            <div><div class="text-sm font-medium">Auto-start Pomos</div><div class="text-[10px] text-text-muted">Start focus after break</div></div>
-                            <input type="checkbox" id="tog-autoPomo" class="accent-brand w-5 h-5" onchange="app.updateSetting('autoStartPomo', this.checked)">
-                        </div>
                     </div>
                 </div>
 
                 <button onclick="app.signOut()" class="ripple w-full py-4 rounded-2xl bg-dark-surface border border-red-900/30 text-red-500 font-medium flex items-center justify-center active:bg-red-900/10 transition-colors">
                     <i class="ph-bold ph-sign-out text-lg mr-2"></i> Sign Out
                 </button>
-                <div class="text-center text-[10px] text-text-muted opacity-50 pb-4">TimeTrekker Mobile v2.2</div>
+                <div class="text-center text-[10px] text-text-muted opacity-50 pb-4">TimeTrekker Mobile v2.3 (Fast)</div>
             </div>
         </div>
     </main>
 
     <nav class="fixed bottom-0 left-0 w-full bg-[#000000] border-t border-dark-border pb-safe-b z-40 h-[65px] flex justify-around items-center px-2">
         <button onclick="app.navTo('tasks')" id="nav-tasks" class="ripple flex flex-col items-center justify-center w-full h-full text-brand transition-colors group">
-            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-fill ph-check-circle text-2xl"></i></div>
+            <div class="mb-0.5"><i class="ph-fill ph-check-circle text-2xl"></i></div>
             <span class="text-[10px] font-medium">Tasks</span>
         </button>
         <button onclick="app.navTo('timer')" id="nav-timer" class="ripple flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
-            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-bold ph-timer text-2xl"></i></div>
+            <div class="mb-0.5"><i class="ph-bold ph-timer text-2xl"></i></div>
             <span class="text-[10px] font-medium">Focus</span>
         </button>
         <button onclick="app.navTo('analytics')" id="nav-analytics" class="ripple flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
-            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-bold ph-chart-bar text-2xl"></i></div>
+            <div class="mb-0.5"><i class="ph-bold ph-chart-bar text-2xl"></i></div>
             <span class="text-[10px] font-medium">Stats</span>
         </button>
         <button onclick="app.navTo('settings')" id="nav-settings" class="ripple flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors group">
-            <div class="mb-0.5 transform group-active:scale-90 transition-transform"><i class="ph-bold ph-gear text-2xl"></i></div>
+            <div class="mb-0.5"><i class="ph-bold ph-gear text-2xl"></i></div>
             <span class="text-[10px] font-medium">Settings</span>
         </button>
     </nav>
@@ -275,16 +225,13 @@
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 hidden opacity-0 transition-opacity duration-300" onclick="app.closeTaskModal()"></div>
     <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-[#121212] rounded-t-[28px] z-50 transform translate-y-full transition-transform duration-300 cubic-bezier(0.2, 0.8, 0.2, 1) max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b">
         <div class="sheet-handle flex-shrink-0" onclick="app.closeTaskModal()"></div>
-        
         <div class="px-6 pb-6 flex-1 overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-bold text-white" id="modal-title">New Task</h2>
                 <button onclick="app.closeTaskModal()" class="w-8 h-8 rounded-full bg-dark-surface flex items-center justify-center text-text-muted hover:text-white transition-colors"><i class="ph-bold ph-x"></i></button>
             </div>
-
             <input type="hidden" id="inp-id">
             <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-2xl font-bold text-white placeholder-text-muted/40 border-none outline-none mb-6 p-0">
-
             <div class="flex gap-3 mb-6 overflow-x-auto no-scrollbar pb-2">
                 <div class="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 flex items-center shrink-0 min-w-[120px]">
                     <i class="ph-bold ph-calendar text-text-muted mr-2"></i>
@@ -297,36 +244,11 @@
                     </select>
                 </div>
                 <div class="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 flex items-center shrink-0">
-                    <i class="ph-bold ph-warning-circle text-text-muted mr-2"></i>
-                    <select id="inp-priority" class="bg-transparent text-xs text-white outline-none font-medium appearance-none">
-                        <option value="none" class="bg-dark-surface">No Priority</option>
-                        <option value="high" class="bg-dark-surface">High (!)</option>
-                        <option value="med" class="bg-dark-surface">Medium</option>
-                        <option value="low" class="bg-dark-surface">Low</option>
-                    </select>
-                </div>
-                <div class="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 flex items-center shrink-0">
                     <i class="ph-bold ph-timer text-text-muted mr-2"></i>
                     <input type="number" id="inp-est" value="1" min="1" max="20" class="bg-transparent text-xs text-white outline-none font-medium w-8 text-center">
                     <span class="text-[10px] text-text-muted ml-1">est</span>
                 </div>
             </div>
-
-            <textarea id="inp-note" placeholder="Add description..." class="w-full h-24 bg-dark-surface rounded-xl p-3 text-sm text-white resize-none border border-dark-border outline-none focus:border-brand mb-4"></textarea>
-
-            <div class="mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="text-xs font-bold uppercase text-text-muted tracking-wide">Subtasks</label>
-                    <button type="button" onclick="app.addSubtaskUI()" class="text-xs text-brand font-bold uppercase">+ Add</button>
-                </div>
-                <div id="subtasks-container" class="space-y-2"></div>
-            </div>
-
-            <div class="mb-6">
-                 <label class="text-xs font-bold uppercase text-text-muted block mb-2 tracking-wide">Tags</label>
-                 <input type="text" id="inp-tags" placeholder="Work, Design (comma separated)" class="w-full bg-dark-surface border border-dark-border rounded-xl px-3 py-3 text-sm text-white outline-none focus:border-brand">
-            </div>
-
             <button onclick="app.saveTask()" class="ripple w-full py-4 bg-brand text-white font-bold rounded-2xl shadow-lg shadow-brand/20 active:scale-95 transition-transform flex items-center justify-center">
                 <i class="ph-bold ph-check mr-2"></i> Save Task
             </button>
@@ -337,14 +259,9 @@
 
     <script>
         setTimeout(() => {
-            const loader = document.getElementById('loading-screen');
-            if (loader && !loader.classList.contains('hidden')) {
-                document.getElementById('spinner-container').classList.add('hidden');
-                document.getElementById('loading-text').classList.add('hidden');
-                document.getElementById('error-message').classList.remove('hidden');
-                document.getElementById('error-message').classList.add('flex');
-            }
-        }, 8000);
+            const l = document.getElementById('loading-screen');
+            if(l) l.classList.add('hidden');
+        }, 1500);
     </script>
 </body>
 </html>
