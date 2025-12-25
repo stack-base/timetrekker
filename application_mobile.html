@@ -38,8 +38,12 @@
     body { background-color: #000000; color: #ffffff; -webkit-tap-highlight-color: transparent; overflow: hidden; user-select: none; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
     .sheet-handle { width: 36px; height: 5px; background: #3f3f46; border-radius: 99px; margin: 8px auto 16px auto; }
     
     .toggle-checkbox:checked { right: 0; border-color: #ff5757; }
@@ -80,11 +84,11 @@
             
             <div id="view-tasks" class="view-section min-h-full pt-4">
                 <div class="grid grid-cols-2 gap-3 mb-6" id="mini-stats">
-                    <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col">
+                    <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col shadow-sm">
                         <span class="text-[10px] text-text-muted uppercase font-bold">Est. Duration</span>
                         <span class="text-lg font-bold text-white mt-1" id="mini-est-time">0m</span>
                     </div>
-                    <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col">
+                    <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col shadow-sm">
                         <span class="text-[10px] text-text-muted uppercase font-bold">Tasks Left</span>
                         <span class="text-lg font-bold text-brand mt-1" id="mini-tasks-left">0</span>
                     </div>
@@ -114,7 +118,7 @@
                         <circle cx="50" cy="50" r="45" fill="none" stroke="#27272a" stroke-width="2"/>
                         <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
                     </svg>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center" onclick="app.toggleTimer()">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center active:scale-95 transition-transform" onclick="app.toggleTimer()">
                         <div id="timer-display" class="text-6xl font-light tracking-tighter tabular-nums text-white">25:00</div>
                         <div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-3 text-brand">FOCUS</div>
                     </div>
@@ -128,9 +132,9 @@
                 </div>
 
                 <div class="flex items-center gap-8">
-                    <button onclick="app.resetTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border"><i class="ph-bold ph-arrow-counter-clockwise text-xl"></i></button>
-                    <button onclick="app.toggleTimer()" class="w-20 h-20 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-95 transition-transform"><i id="play-icon" class="ph-fill ph-play text-3xl ml-1"></i></button>
-                    <button onclick="app.skipTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border"><i class="ph-bold ph-skip-forward text-xl"></i></button>
+                    <button onclick="app.resetTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border active:scale-90 transition-transform"><i class="ph-bold ph-arrow-counter-clockwise text-xl"></i></button>
+                    <button onclick="app.toggleTimer()" class="w-20 h-20 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-90 transition-transform"><i id="play-icon" class="ph-fill ph-play text-3xl ml-1"></i></button>
+                    <button onclick="app.skipTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border active:scale-90 transition-transform"><i class="ph-bold ph-skip-forward text-xl"></i></button>
                 </div>
             </div>
 
@@ -143,7 +147,7 @@
                     </div>
                 </div>
 
-                <div class="flex bg-dark-card rounded-lg p-1 border border-dark-border justify-between">
+                <div class="flex bg-dark-card rounded-lg p-1 border border-dark-border justify-between shadow-sm">
                     <button onclick="app.setRange('week')" id="btn-range-week" class="flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all">Week</button>
                     <button onclick="app.setRange('month')" id="btn-range-month" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Month</button>
                     <button onclick="app.setRange('year')" id="btn-range-year" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Year</button>
@@ -234,13 +238,6 @@
                      </div>
                 </div>
 
-                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <h3 class="text-sm font-bold mb-3">Top Tags</h3>
-                    <div id="tags-list" class="flex flex-wrap gap-2">
-                            <span class="text-xs text-text-muted italic">No tags data available.</span>
-                    </div>
-                </div>
-
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
                     <div class="px-4 py-3 border-b border-dark-border text-xs font-bold uppercase text-text-muted bg-dark-card">Recent Sessions Log</div>
                     <div id="mobile-logs" class="divide-y divide-dark-border"></div>
@@ -323,7 +320,7 @@
                         <i class="ph-bold ph-check text-white text-2xl"></i>
                     </div>
                     <h3 class="font-bold text-white">TimeTrekker Mobile</h3>
-                    <p class="text-xs text-text-muted">Version 2.3.0 (Pro)</p>
+                    <p class="text-xs text-text-muted">Version 2.4.0 (Pro)</p>
                     <p class="text-[10px] text-text-muted leading-tight">Designed for focus and simplicity.<br>&copy; 2025 StackBase.</p>
                 </div>
 
@@ -339,16 +336,16 @@
 
     <nav class="fixed bottom-0 left-0 w-full bg-dark-card/95 backdrop-blur border-t border-dark-border pb-safe-b z-40">
         <div class="flex justify-around items-center h-16">
-            <button onclick="app.switchTab('tasks')" id="tab-tasks" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand">
+            <button onclick="app.switchTab('tasks')" id="tab-tasks" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-transform">
                 <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Tasks</span>
             </button>
-            <button onclick="app.switchTab('timer')" id="tab-timer" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted">
+            <button onclick="app.switchTab('timer')" id="tab-timer" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-timer text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Focus</span>
             </button>
-            <button onclick="app.switchTab('analytics')" id="tab-analytics" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted">
+            <button onclick="app.switchTab('analytics')" id="tab-analytics" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-chart-bar text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Stats</span>
             </button>
-            <button onclick="app.switchTab('settings')" id="tab-settings" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted">
+            <button onclick="app.switchTab('settings')" id="tab-settings" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-gear text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Settings</span>
             </button>
         </div>
@@ -360,9 +357,9 @@
         <div class="px-5 pb-5 flex-1 overflow-y-auto">
             
             <div class="flex justify-end items-center mb-2 gap-4">
-                <button onclick="app.editCurrentTask()" class="text-text-muted hover:text-white p-2"><i class="ph-bold ph-pencil-simple text-xl"></i></button>
-                <button onclick="app.deleteCurrentTask()" class="text-text-muted hover:text-red-500 p-2"><i class="ph-bold ph-trash text-xl"></i></button>
-                <button onclick="app.closeDetailSheet()" class="text-text-muted hover:text-white p-2"><i class="ph-bold ph-x text-xl"></i></button>
+                <button onclick="app.editCurrentTask()" class="text-text-muted hover:text-white p-2 active:scale-90 transition-transform"><i class="ph-bold ph-pencil-simple text-xl"></i></button>
+                <button onclick="app.deleteCurrentTask()" class="text-text-muted hover:text-red-500 p-2 active:scale-90 transition-transform"><i class="ph-bold ph-trash text-xl"></i></button>
+                <button onclick="app.closeDetailSheet()" class="text-text-muted hover:text-white p-2 active:scale-90 transition-transform"><i class="ph-bold ph-x text-xl"></i></button>
             </div>
 
             <div class="space-y-4">
@@ -409,7 +406,7 @@
             
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold text-white" id="sheet-title">New Task</h3>
-                <button onclick="app.closeTaskModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-dark-active text-text-muted hover:text-white transition-colors">
+                <button onclick="app.closeTaskModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-dark-active text-text-muted hover:text-white transition-colors active:scale-90">
                     <i class="ph-bold ph-x"></i>
                 </button>
             </div>
@@ -432,7 +429,7 @@
                     <button type="button" onclick="app.setQuickDate('tomorrow')" id="btn-date-tomorrow" class="flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95">Tomorrow</button>
                     <div class="relative flex-1">
                         <input type="date" id="inp-date" class="absolute inset-0 opacity-0 z-10 w-full h-full">
-                        <button type="button" id="btn-date-pick" class="w-full h-full py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted flex items-center justify-center gap-1">
+                        <button type="button" id="btn-date-pick" class="w-full h-full py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted flex items-center justify-center gap-1 active:scale-95">
                             <i class="ph-bold ph-calendar-blank"></i> <span id="lbl-date-pick">Pick</span>
                         </button>
                     </div>
@@ -476,7 +473,7 @@
                             <div class="absolute right-2 top-0 bottom-0 flex items-center pointer-events-none text-text-muted"><i class="ph-bold ph-caret-down text-xs"></i></div>
                         </div>
                      </div>
-                     <button onclick="app.promptNewProject()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-card border border-dark-border text-brand hover:bg-dark-active transition-colors"><i class="ph-bold ph-plus"></i></button>
+                     <button onclick="app.promptNewProject()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-card border border-dark-border text-brand hover:bg-dark-active transition-colors active:scale-90"><i class="ph-bold ph-plus"></i></button>
                 </div>
 
                 <div class="grid grid-cols-4 gap-2">
@@ -496,9 +493,9 @@
                 
                 <div class="flex items-center gap-4">
                     <div class="flex items-center bg-dark-card rounded-lg border border-dark-border p-1">
-                        <button type="button" onclick="app.adjustEst(-1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors"><i class="ph-bold ph-minus"></i></button>
+                        <button type="button" onclick="app.adjustEst(-1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors active:scale-90"><i class="ph-bold ph-minus"></i></button>
                         <div class="w-8 text-center font-bold text-white text-sm" id="disp-est">1</div>
-                        <button type="button" onclick="app.adjustEst(1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors"><i class="ph-bold ph-plus"></i></button>
+                        <button type="button" onclick="app.adjustEst(1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors active:scale-90"><i class="ph-bold ph-plus"></i></button>
                         <input type="hidden" id="inp-est" value="1">
                     </div>
                     
