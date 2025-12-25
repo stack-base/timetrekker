@@ -43,7 +43,7 @@ const state = {
     sound: 'none',
     editingId: null,
     viewingTask: null,
-    chartInstance: null,
+    chartInstances: { activity: null, project: null },
     chartView: 'weekly'
 };
 
@@ -80,9 +80,7 @@ onAuthStateChanged(auth, u => {
                     total: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId
                 };
-                // Sync Settings
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
-                
                 app.updateTimerUI();
                 if(state.timer.status === 'running') startTimerLoop(); else stopTimerLoop();
             }
@@ -107,7 +105,6 @@ const startTimerLoop = () => {
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
     $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
-    
     const audio = $('audio-player');
     if(audio && state.sound !== 'none' && audio.paused) audio.play().catch(() => {});
 };
@@ -121,12 +118,10 @@ const stopTimerLoop = () => {
 
 // --- APP CONTROLLER ---
 const app = {
-    
     // NAVIGATION
     switchTab: (tab) => {
         haptic();
         state.activeTab = tab;
-        
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const view = $(`view-${tab}`);
         if(view) view.classList.remove('hidden');
@@ -150,15 +145,12 @@ const app = {
         $('fab-add').classList.toggle('hidden', !isTask);
 
         if(tab === 'analytics') app.renderAnalytics();
-        
-        // Update settings UI values
         if(tab === 'settings') {
             const s = state.timer.settings;
             $('toggle-strict').checked = s.strictMode;
             $('toggle-auto-pomo').checked = s.autoStartPomo;
             $('toggle-auto-break').checked = s.autoStartBreak;
             $('toggle-disable-break').checked = s.disableBreak;
-            
             $('set-focus-display').innerText = s.focus + 'm';
             $('set-short-display').innerText = s.short + 'm';
             $('set-long-display').innerText = s.long + 'm';
@@ -182,7 +174,6 @@ const app = {
         if(!list) return;
         list.innerHTML = '';
         const today = getDayStr(new Date());
-        
         let filtered = state.tasks;
         if(state.activeFilter === 'today') filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate === today);
         else if(state.activeFilter === 'upcoming') filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate > today);
@@ -225,11 +216,155 @@ const app = {
         });
     },
 
-    // --- VIEW MODE ---
+    // --- ANALYTICS ---
+    toggleChart: (type) => {
+        state.chartView = type;
+        $('chart-btn-weekly').className = type === 'weekly' ? 'px-3 py-1 text-[10px] rounded font-bold bg-dark-bg text-white shadow' : 'px-3 py-1 text-[10px] rounded font-bold text-text-muted hover:text-white';
+        $('chart-btn-hourly').className = type === 'hourly' ? 'px-3 py-1 text-[10px] rounded font-bold bg-dark-bg text-white shadow' : 'px-3 py-1 text-[10px] rounded font-bold text-text-muted hover:text-white';
+        app.renderAnalytics();
+    },
+
+    renderAnalytics: () => {
+        if(state.activeTab !== 'analytics') return;
+        
+        const logs = state.logs;
+        const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
+        
+        // 1. Top Stats
+        $('stat-focus-time').textContent = Math.floor(totalMin / 60) + 'h ' + (totalMin % 60) + 'm';
+        $('stat-tasks-done').textContent = state.tasks.filter(t => t.status === 'done').length;
+        
+        // Avg Session
+        const avgSess = logs.length > 0 ? Math.round(totalMin / logs.length) : 0;
+        $('stat-avg-session').textContent = avgSess + 'm';
+
+        // Streak
+        let streak = 0;
+        const now = new Date();
+        for(let i=0; i<365; i++) {
+            const d = new Date(); d.setDate(now.getDate() - i);
+            const ds = getDayStr(d);
+            if(logs.some(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000)) === ds)) streak++;
+            else if(i > 0) break;
+        }
+        $('stat-streak').textContent = streak + ' Day' + (streak!==1?'s':'');
+
+        // 2. Main Activity Chart
+        const actCtx = $('activityChart');
+        if(actCtx) {
+            const isWeek = state.chartView === 'weekly';
+            let labels = [], data = [], color = isWeek ? '#ff5757' : '#10b981';
+            
+            if(isWeek) {
+                for(let i=6; i>=0; i--) {
+                    const d = new Date(); d.setDate(d.getDate() - i);
+                    labels.push(d.toLocaleDateString('en-US', {weekday:'short'}));
+                    const ds = getDayStr(d);
+                    const dayLogs = logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000)) === ds);
+                    data.push(dayLogs.reduce((a,b)=>a+(b.duration||25),0));
+                }
+            } else {
+                labels = Array.from({length:24}, (_,i)=>i);
+                data = Array(24).fill(0);
+                logs.forEach(l => { 
+                    if(l.completedAt) data[new Date(l.completedAt.seconds*1000).getHours()] += (l.duration||25); 
+                });
+            }
+
+            if(state.chartInstances.activity) state.chartInstances.activity.destroy();
+            state.chartInstances.activity = new Chart(actCtx, {
+                type: isWeek ? 'bar' : 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Minutes',
+                        data: data,
+                        backgroundColor: color,
+                        borderColor: color,
+                        borderRadius: 4,
+                        tension: 0.4,
+                        fill: !isWeek
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#27272a' }, display: false },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // 3. Project Chart
+        const projCtx = $('projectChart');
+        if(projCtx) {
+            const pm = {};
+            logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p]||0) + (l.duration||25); });
+            const sortedProj = Object.entries(pm).sort((a,b) => b[1]-a[1]);
+            
+            if(state.chartInstances.project) state.chartInstances.project.destroy();
+            state.chartInstances.project = new Chart(projCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedProj.map(x=>x[0]),
+                    datasets: [{
+                        data: sortedProj.map(x=>x[1]),
+                        backgroundColor: ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Custom Legend
+            $('project-legend').innerHTML = sortedProj.map((p,i) => `
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full" style="background:${['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i%5]}"></div>
+                        <span class="text-text-muted truncate max-w-[80px]">${p[0]}</span>
+                    </div>
+                    <span class="text-white font-mono">${Math.round(p[1])}m</span>
+                </div>
+            `).join('');
+        }
+
+        // 4. Tags
+        const tagsMap = {};
+        state.tasks.filter(t=>t.status==='done').forEach(t => {
+            if(t.tags) t.tags.forEach(tag => tagsMap[tag] = (tagsMap[tag]||0)+1);
+        });
+        const sortedTags = Object.entries(tagsMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+        if(sortedTags.length > 0) {
+            $('tags-list').innerHTML = sortedTags.map(t => `<span class="px-2 py-1 bg-dark-active rounded text-[10px] text-white border border-dark-border">${t[0]} (${t[1]})</span>`).join('');
+        }
+
+        // 5. Recent Logs
+        const list = $('mobile-logs');
+        if(list) {
+            list.innerHTML = logs.slice(0, 10).map(l => `
+                <div class="px-4 py-3 flex justify-between items-center text-sm">
+                    <div>
+                        <div class="text-white truncate max-w-[150px] font-medium">${l.taskTitle || 'Focus Session'}</div>
+                        <div class="text-[10px] text-text-muted">${l.project || 'Inbox'}</div>
+                    </div>
+                    <span class="text-brand font-mono">${Math.round(l.duration||25)}m</span>
+                </div>
+            `).join('');
+        }
+    },
+    
+    // ... (Existing Functions for Toast, Modal, Sheets etc. remain unchanged) ...
     openTaskDetail: (t) => {
         haptic();
         state.viewingTask = t;
-
         $('dt-title').textContent = t.title;
         $('dt-project').textContent = t.project || 'Inbox';
         $('dt-date').textContent = t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'No Date';
@@ -528,88 +663,13 @@ const app = {
         else $('audio-player').pause();
     },
 
-    // SETTINGS & ANALYTICS
+    // SETTINGS
     updateSetting: (k, v) => {
         state.timer.settings[k] = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
         if(k === 'longBreakInterval') $('set-long-interval-display').innerText = v + 'x';
         else if(!['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k)) $(`set-${k}-display`).innerText = v + 'm';
     },
 
-    toggleChart: (type) => {
-        state.chartView = type;
-        $('chart-btn-weekly').className = type === 'weekly' ? 'px-3 py-1 text-[10px] rounded font-bold bg-dark-bg text-white shadow' : 'px-3 py-1 text-[10px] rounded font-bold text-text-muted hover:text-white';
-        $('chart-btn-hourly').className = type === 'hourly' ? 'px-3 py-1 text-[10px] rounded font-bold bg-dark-bg text-white shadow' : 'px-3 py-1 text-[10px] rounded font-bold text-text-muted hover:text-white';
-        app.renderAnalytics();
-    },
-
-    renderAnalytics: () => {
-        if(state.activeTab !== 'analytics') return;
-        
-        const logs = state.logs;
-        const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
-        $('stat-focus-time').textContent = Math.floor(totalMin / 60) + 'h ' + (totalMin % 60) + 'm';
-        $('stat-tasks-done').textContent = state.tasks.filter(t => t.status === 'done').length;
-
-        const list = $('mobile-logs');
-        if(list) {
-            list.innerHTML = logs.slice(0, 10).map(l => `
-                <div class="px-4 py-3 flex justify-between items-center text-sm">
-                    <div>
-                        <div class="text-white truncate max-w-[150px] font-medium">${l.taskTitle || 'Focus Session'}</div>
-                        <div class="text-[10px] text-text-muted">${l.project || 'Inbox'}</div>
-                    </div>
-                    <span class="text-brand font-mono">${Math.round(l.duration||25)}m</span>
-                </div>
-            `).join('');
-        }
-
-        const ctx = $('mobileChart');
-        if(ctx) {
-            const isWeek = state.chartView === 'weekly';
-            let labels = [], data = [], color = isWeek ? '#ff5757' : '#10b981';
-            
-            if(isWeek) {
-                for(let i=6; i>=0; i--) {
-                    const d = new Date(); d.setDate(d.getDate() - i);
-                    labels.push(d.toLocaleDateString('en-US', {weekday:'short'}));
-                    const ds = getDayStr(d);
-                    const dayLogs = logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds*1000)) === ds);
-                    data.push(dayLogs.reduce((a,b)=>a+(b.duration||25),0));
-                }
-            } else {
-                labels = Array.from({length:24}, (_,i)=>i);
-                data = Array(24).fill(0);
-                logs.forEach(l => { if(l.completedAt) data[new Date(l.completedAt.seconds*1000).getHours()] += (l.duration||25); });
-            }
-
-            if(state.chartInstance) state.chartInstance.destroy();
-            state.chartInstance = new Chart(ctx, {
-                type: isWeek ? 'bar' : 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Minutes',
-                        data: data,
-                        backgroundColor: color,
-                        borderColor: color,
-                        borderRadius: 4,
-                        tension: 0.4,
-                        fill: !isWeek
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#27272a' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-        }
-    },
-    
     showToast: (msg) => {
         const t = document.createElement('div');
         t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl text-center animate-slide-up backdrop-blur";
