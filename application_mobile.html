@@ -323,7 +323,7 @@
                         <i class="ph-bold ph-check text-white text-2xl"></i>
                     </div>
                     <h3 class="font-bold text-white">TimeTrekker Mobile</h3>
-                    <p class="text-xs text-text-muted">Version 2.2.0 (Pro)</p>
+                    <p class="text-xs text-text-muted">Version 2.3.0 (Pro)</p>
                     <p class="text-[10px] text-text-muted leading-tight">Designed for focus and simplicity.<br>&copy; 2025 StackBase.</p>
                 </div>
 
@@ -414,8 +414,12 @@
                 </button>
             </div>
 
-            <div class="mb-6">
+            <div class="mb-4">
                 <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-2xl font-bold text-white placeholder-text-muted/40 border-none outline-none p-0 leading-tight" autocomplete="off">
+            </div>
+
+            <div class="mb-6">
+                 <textarea id="inp-note" placeholder="Add a description or note..." class="w-full h-20 bg-transparent text-sm text-white placeholder-text-muted/60 resize-none border-none outline-none p-0 transition-colors"></textarea>
             </div>
             
             <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
@@ -436,21 +440,23 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border flex items-center justify-between">
-                         <div class="flex items-center gap-2 overflow-hidden">
+                         <div class="flex items-center gap-2 overflow-hidden w-full">
                              <i class="ph-bold ph-bell text-text-muted shrink-0"></i>
                              <input type="time" id="inp-reminder" class="bg-transparent text-xs text-white outline-none w-full font-medium placeholder-text-muted">
                          </div>
                     </div>
-                    <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border relative flex items-center">
-                        <i class="ph-bold ph-arrows-clockwise text-text-muted shrink-0 mr-2"></i>
-                        <select id="inp-repeat" class="bg-transparent text-xs text-white outline-none w-full appearance-none font-medium z-10 relative">
-                            <option value="none">No Repeat</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="weekdays">Mon-Fri</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                        <i class="ph-fill ph-caret-down text-text-muted absolute right-3 text-[10px]"></i>
+                    <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border relative flex flex-col justify-center">
+                        <div class="text-[9px] uppercase font-bold text-text-muted mb-0.5 ml-1">Repeat</div>
+                        <div class="flex items-center relative w-full">
+                            <select id="inp-repeat" class="bg-transparent text-xs text-white outline-none w-full appearance-none font-medium z-10 relative pl-1">
+                                <option value="none">None</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="weekdays">Mon-Fri</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                            <i class="ph-fill ph-caret-down text-text-muted absolute right-0 text-[10px]"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -505,17 +511,18 @@
 
             <div class="space-y-4 mb-6">
                 <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider">Subtasks</span>
-                        <button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold flex items-center py-1"><i class="ph-bold ph-plus mr-1"></i> Add</button>
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                             <div class="bg-brand/10 text-brand p-1 rounded-md"><i class="ph-bold ph-check-square"></i></div>
+                             <span class="text-xs font-bold text-white uppercase tracking-wide">Checklist & Subtasks</span>
+                        </div>
+                        <button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold flex items-center py-1 px-2 hover:bg-brand/10 rounded transition-colors"><i class="ph-bold ph-plus mr-1"></i> Add Item</button>
                     </div>
-                    <div id="subtask-list" class="space-y-2"></div>
+                    <div id="subtask-list" class="space-y-2 pl-1"></div>
                 </div>
 
-                <textarea id="inp-note" placeholder="Add notes..." class="w-full h-24 bg-dark-active/30 rounded-xl p-3 text-sm text-text-muted resize-none border border-dark-border outline-none focus:border-brand/50 transition-colors"></textarea>
-                
-                <div class="relative">
-                    <i class="ph-bold ph-hash absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></i>
+                <div class="relative pt-2">
+                    <i class="ph-bold ph-hash absolute left-3 top-1/2 -translate-y-1/2 text-text-muted mt-1"></i>
                     <input type="text" id="inp-tags" placeholder="Tags (comma separated)..." class="w-full bg-dark-active/30 border border-dark-border rounded-xl pl-9 pr-3 py-3 text-sm text-white focus:border-brand/50 outline-none transition-colors" autocomplete="off">
                 </div>
             </div>

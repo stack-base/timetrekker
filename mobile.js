@@ -150,7 +150,8 @@ onAuthStateChanged(auth, u => {
         }, 10000);
 
     } else {
-        window.location.href = 'https://stack-base.github.io/account/login.html';
+        // Redirect logic fixed to include redirectUrl parameter
+        window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href);
     }
 });
 
@@ -634,7 +635,7 @@ const app = {
         haptic();
         let val = parseInt($('inp-est').value) || 1;
         val += delta;
-        if(val < 1) val = 1; if(val > 10) val = 10;
+        if(val < 1) val = 1; if(val > 50) val = 50; // Increased to 50
         $('inp-est').value = val;
         $('disp-est').textContent = val;
         app.updateTotalCalc();
@@ -657,10 +658,10 @@ const app = {
     // 5. UI Helper: Smart Subtasks
     addSubtaskInput: (val = '') => {
         const div = document.createElement('div');
-        div.className = 'flex items-center gap-3 animate-slide-up group';
+        div.className = 'flex items-center gap-3 animate-slide-up group pl-1';
         div.innerHTML = `
             <div class="w-1.5 h-1.5 rounded-full bg-dark-border group-focus-within:bg-brand transition-colors shrink-0"></div>
-            <input type="text" value="${esc(val)}" class="subtask-input w-full bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1.5 outline-none transition-colors" placeholder="Subtask..." onkeydown="app.handleSubtaskKey(event, this)">
+            <input type="text" value="${esc(val)}" class="subtask-input w-full bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1.5 outline-none transition-colors" placeholder="Checklist item..." onkeydown="app.handleSubtaskKey(event, this)">
             <button onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-500 px-2"><i class="ph-bold ph-x"></i></button>
         `;
         $('subtask-list').appendChild(div);
@@ -897,7 +898,8 @@ const app = {
         $('toast-container').appendChild(t);
         setTimeout(() => t.remove(), 3000);
     },
-    signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html')
+    // Updated signOut to include redirectUrl param
+    signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
 window.app = app;
