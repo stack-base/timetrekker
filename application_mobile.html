@@ -49,6 +49,9 @@
     input[type=range] { -webkit-appearance: none; background: transparent; }
     input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ff5757; cursor: pointer; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
     input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #27272a; border-radius: 2px; }
+    
+    /* Date input fix for iOS */
+    input[type="date"], input[type="time"] { color-scheme: dark; }
 </style>
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
@@ -87,7 +90,7 @@
                     <div id="focus-empty" class="text-text-muted text-sm animate-pulse">Select a task to focus</div>
                     <div id="focus-active" class="hidden animate-slide-up">
                         <span id="timer-badge" class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-dark-active text-text-muted mb-3 inline-block">Inbox</span>
-                        <h2 id="timer-task-title" class="text-xl font-bold leading-tight line-clamp-2">Task Title</h2>
+                        <h2 id="timer-task-title" class="text-xl font-bold leading-tight line-clamp-2 px-4">Task Title</h2>
                         <div class="mt-2 text-xs text-text-muted flex justify-center gap-1">
                             <span class="text-brand font-bold" id="timer-completed">0</span>/<span id="timer-total">4</span> Pomos
                         </div>
@@ -139,6 +142,11 @@
                     </div>
                 </div>
                 
+                <div class="bg-brand/5 border border-brand/20 rounded-xl p-4 mb-4 flex gap-3">
+                    <i class="ph-fill ph-lightbulb text-brand text-lg"></i>
+                    <p class="text-xs text-text-muted leading-relaxed" id="analytics-insight">Gathering data for smart insights...</p>
+                </div>
+                
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border mb-4">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-sm font-bold">Activity</h3>
@@ -156,12 +164,6 @@
                         <div class="flex items-center gap-4">
                              <div class="h-32 w-32 relative shrink-0"><canvas id="projectChart"></canvas></div>
                              <div id="project-legend" class="flex-1 space-y-2 text-xs overflow-y-auto max-h-32 pr-2 custom-scrollbar"></div>
-                        </div>
-                    </div>
-                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border">
-                        <h3 class="text-sm font-bold mb-3">Top Tags</h3>
-                        <div id="tags-list" class="flex flex-wrap gap-2">
-                             <span class="text-xs text-text-muted italic">No tags data available.</span>
                         </div>
                     </div>
                 </div>
@@ -187,15 +189,15 @@
                     <div class="p-4 space-y-6">
                         <div>
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Focus Duration</span><span class="font-bold text-white" id="set-focus-display">25m</span></div>
-                            <input type="range" min="5" max="60" step="5" value="25" class="w-full" oninput="app.updateSetting('focus', this.value)">
+                            <input type="range" id="rng-focus" min="5" max="60" step="5" value="25" class="w-full" oninput="app.updateSetting('focus', this.value)">
                         </div>
                         <div>
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Short Break</span><span class="font-bold text-white" id="set-short-display">5m</span></div>
-                            <input type="range" min="1" max="15" step="1" value="5" class="w-full" oninput="app.updateSetting('short', this.value)">
+                            <input type="range" id="rng-short" min="1" max="15" step="1" value="5" class="w-full" oninput="app.updateSetting('short', this.value)">
                         </div>
                         <div>
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Long Break</span><span class="font-bold text-white" id="set-long-display">15m</span></div>
-                            <input type="range" min="5" max="45" step="5" value="15" class="w-full" oninput="app.updateSetting('long', this.value)">
+                            <input type="range" id="rng-long" min="5" max="45" step="5" value="15" class="w-full" oninput="app.updateSetting('long', this.value)">
                         </div>
                         <div>
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Long Break After</span><span class="font-bold text-white" id="set-long-interval-display">4x</span></div>
@@ -236,6 +238,10 @@
                         </div>
                     </div>
                 </div>
+                
+                <button onclick="app.promptNewProject()" class="w-full flex items-center justify-center p-4 bg-dark-card rounded-xl text-white font-medium border border-dark-border active:bg-dark-active transition-colors">
+                    <i class="ph-bold ph-plus-circle text-xl mr-3"></i> Create New Project
+                </button>
 
                 <button onclick="app.signOut()" class="w-full flex items-center justify-center p-4 bg-dark-card rounded-xl text-red-500 font-medium border border-dark-border active:bg-red-500/10 transition-colors">
                     <i class="ph-bold ph-sign-out text-xl mr-3"></i> Sign Out
@@ -246,7 +252,7 @@
                         <i class="ph-bold ph-check text-white text-2xl"></i>
                     </div>
                     <h3 class="font-bold text-white">TimeTrekker Mobile</h3>
-                    <p class="text-xs text-text-muted">Version 2.0.0</p>
+                    <p class="text-xs text-text-muted">Version 2.0.0 (Pro)</p>
                     <p class="text-[10px] text-text-muted leading-tight">Designed for focus and simplicity.<br>&copy; 2025 StackBase.</p>
                 </div>
 
@@ -314,8 +320,6 @@
                     <h3 class="text-xs font-bold text-text-muted uppercase mb-2">Subtasks</h3>
                     <div id="dt-subtasks-list" class="space-y-2"></div>
                 </div>
-                
-                <div id="dt-tags-container" class="hidden flex flex-wrap gap-2 pt-2"></div>
             </div>
 
             <button onclick="app.startFocusFromDetail()" class="w-full mt-8 py-3.5 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm flex items-center justify-center">
