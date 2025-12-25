@@ -18,6 +18,68 @@ try {
     });
 } catch (e) { console.log('Persistence skipped'); }
 
+// --- NATIVE NAVIGATION HANDLER ---
+// Initialize history state to root
+if (!history.state) history.replaceState({ view: 'root' }, '');
+
+// Private UI helpers to hide elements without touching history
+// (These are called by the popstate listener)
+const _ui = {
+    closeProjectSheet: () => {
+        $('project-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+    },
+    closeDetailSheet: () => {
+        $('detail-sheet').classList.add('translate-y-full');
+        if(!state.editingId) {
+             $('modal-overlay').classList.add('opacity-0');
+             setTimeout(() => { 
+                 $('modal-overlay').classList.add('hidden'); 
+                 state.viewingTask = null;
+             }, 300);
+        } else {
+             state.viewingTask = null;
+        }
+    },
+    closeTaskModal: () => {
+        $('modal-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => {
+            $('modal-overlay').classList.add('hidden');
+            state.editingId = null;
+        }, 300);
+    }
+};
+
+// Listen for Back Button (or history.back calls)
+window.addEventListener('popstate', (e) => {
+    // 1. Check Modals (High Priority)
+    // We check classes to see what is currently open
+    if (!$('modal-sheet').classList.contains('translate-y-full')) {
+        _ui.closeTaskModal();
+        return;
+    }
+    if (!$('detail-sheet').classList.contains('translate-y-full')) {
+        _ui.closeDetailSheet();
+        return;
+    }
+    if (!$('project-sheet').classList.contains('translate-y-full')) {
+        _ui.closeProjectSheet();
+        return;
+    }
+
+    // 2. Check Tabs (Low Priority)
+    // If not on tasks (home), go back to tasks
+    if (state.activeTab !== 'tasks') {
+        app.switchTab('tasks', false); // false = do not push history
+        return;
+    }
+
+    // 3. If on Tasks and no modals, let browser default handle it (Exit App)
+});
+
+
 // --- UTILS ---
 const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
@@ -191,8 +253,15 @@ const stopTimerLoop = () => {
 // --- APP CONTROLLER ---
 const app = {
     // NAVIGATION
-    switchTab: (tab) => {
+    switchTab: (tab, pushHistory = true) => {
         haptic('light');
+        
+        // Push history if we are moving AWAY from tasks (Home)
+        // This ensures Back button brings us back to Tasks
+        if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) {
+            history.pushState({ view: tab }, '', `#${tab}`);
+        }
+
         state.activeTab = tab;
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const view = $(`view-${tab}`);
@@ -247,6 +316,9 @@ const app = {
     
     openProjectSheet: () => {
         haptic('light');
+        // Push state so Back Button can close it
+        history.pushState({ modal: 'project' }, '');
+
         const list = $('project-sheet-list');
         list.innerHTML = '';
         state.projects.forEach(p => {
@@ -272,9 +344,8 @@ const app = {
     },
     
     closeProjectSheet: () => {
-        $('project-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+        // Trigger back action, listener will handle UI closing
+        history.back();
     },
 
     selectProject: (p) => {
@@ -285,7 +356,8 @@ const app = {
              b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`;
         });
         $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand`;
-        app.closeProjectSheet();
+        // We use history.back() here because selectProject is called from the sheet
+        app.closeProjectSheet(); 
         app.renderTasks();
     },
 
@@ -474,6 +546,9 @@ const app = {
     // --- DETAILS & MODALS ---
     openTaskDetail: (t) => {
         haptic('light');
+        // Push state for back button
+        history.pushState({ modal: 'detail' }, '');
+
         state.viewingTask = t;
         $('dt-title').textContent = t.title;
         $('dt-project').textContent = t.project || 'Inbox';
@@ -546,21 +621,15 @@ const app = {
     },
 
     closeDetailSheet: () => {
-        $('detail-sheet').classList.add('translate-y-full');
-        if(!state.editingId) {
-             $('modal-overlay').classList.add('opacity-0');
-             setTimeout(() => { 
-                 $('modal-overlay').classList.add('hidden'); 
-                 state.viewingTask = null;
-             }, 300);
-        } else {
-             state.viewingTask = null;
-        }
+        // Trigger back action, listener will handle UI closing
+        history.back();
     },
 
     startFocusFromDetail: () => {
         if(state.viewingTask) {
             app.startFocus(state.viewingTask.id);
+            // closeDetailSheet normally just goes back, but here we want to go back AND switch tab
+            // So we call close (which pops) and then switchTab handles the rest.
             app.closeDetailSheet();
         }
     },
@@ -568,7 +637,16 @@ const app = {
     editCurrentTask: () => {
         if(state.viewingTask) {
             const t = state.viewingTask;
-            $('detail-sheet').classList.add('translate-y-full');
+            // We need to swap the detail sheet for the edit modal.
+            // Visually: Detail closes, Modal opens.
+            // History: Detail was pushed. We pop it (close), then push Modal.
+            // But we can do this via replaceState to avoid flickering steps?
+            // Simplest: just use the normal flow.
+            
+            // Manually close UI (simulating pop) to avoid async issues with history
+            _ui.closeDetailSheet();
+            history.back(); // Remove the detail sheet entry
+            
             state.viewingTask = null;
             setTimeout(() => app.openTaskModal(t), 200);
         }
@@ -586,6 +664,9 @@ const app = {
     // --- FORM MODAL ---
     openTaskModal: (task = null) => {
         haptic('light');
+        // Push state for back button
+        history.pushState({ modal: 'form' }, '');
+
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
 
         const sel = $('inp-project');
@@ -800,12 +881,8 @@ const app = {
     },
     
     closeTaskModal: () => {
-        $('modal-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => {
-            $('modal-overlay').classList.add('hidden');
-            state.editingId = null;
-        }, 300);
+        // Trigger back action, listener will handle UI closing
+        history.back();
     },
     
     closeAllSheets: () => {
