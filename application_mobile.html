@@ -74,12 +74,9 @@
         </header>
 
         <div id="task-filters" class="px-5 py-3 flex gap-2 overflow-x-auto no-scrollbar shrink-0 border-b border-dark-border/50 bg-dark-bg transition-all duration-200">
-            <button onclick="app.setFilter('all')" id="filter-all" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">All</button>
-            <button onclick="app.setFilter('past')" id="filter-past" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Past</button>
             <button onclick="app.setFilter('today')" id="filter-today" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-brand text-white transition-colors">Today</button>
-            <button onclick="app.setFilter('tomorrow')" id="filter-tomorrow" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Tomorrow</button>
             <button onclick="app.setFilter('upcoming')" id="filter-upcoming" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Upcoming</button>
-            <button onclick="app.openProjectSheet()" id="filter-folders" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors border border-dark-border"><i class="ph-bold ph-folder mr-1"></i> Folders</button>
+            <button onclick="app.setFilter('project')" id="filter-project" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Projects</button>
             <button onclick="app.setFilter('completed')" id="filter-completed" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Done</button>
         </div>
 
@@ -103,7 +100,7 @@
                 </div>
                 <div id="task-list" class="space-y-3 pb-8"></div>
             </div>
-            
+
             <div id="view-timer" class="view-section hidden flex flex-col items-center justify-center min-h-[70vh]">
                 <div id="focus-meta" class="text-center mb-8 w-full px-4 min-h-[100px] flex items-end justify-center">
                     <div id="focus-empty" class="text-text-muted text-sm animate-pulse mb-6">Select a task to focus</div>
@@ -354,16 +351,6 @@
         </div>
     </nav>
     <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden opacity-0 transition-opacity backdrop-blur-sm" onclick="app.closeAllSheets()"></div>
-
-    <div id="project-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[80vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
-        <span class="sheet-handle flex-shrink-0" onclick="app.closeProjectSheet()"></span>
-        <div class="px-5 pb-4 border-b border-dark-border">
-            <h2 class="text-lg font-bold text-white">Select Folder</h2>
-            <p class="text-xs text-text-muted">Browse tasks by project</p>
-        </div>
-        <div id="project-sheet-list" class="flex-1 overflow-y-auto">
-            </div>
-    </div>
 
     <div id="detail-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
         <span class="sheet-handle flex-shrink-0" onclick="app.closeDetailSheet()"></span>
