@@ -11,7 +11,6 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Attempt persistence but catch errors (e.g. multiple tabs)
 try { 
     enableIndexedDbPersistence(db).catch((err) => { 
         if (err.code === 'failed-precondition') console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.'); 
@@ -38,11 +37,11 @@ const haptic = (type = 'light') => {
     if (!navigator.vibrate) return;
     try {
         const patterns = {
-            light: 10,       // Button taps, checkboxes
-            medium: 25,      // Timer toggle
-            heavy: 40,       // Deletions, warnings
-            success: [10, 30], // Task save
-            timerDone: [200, 100, 200] // Timer completion
+            light: 10,       
+            medium: 25,      
+            heavy: 40,       
+            success: [10, 30], 
+            timerDone: [200, 100, 200] 
         };
         navigator.vibrate(patterns[type] || 10);
     } catch (e) { /* ignore */ }
@@ -164,7 +163,6 @@ onAuthStateChanged(auth, u => {
         
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Reminder Check
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -200,7 +198,7 @@ const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', 
     if (state.timer.activeTaskId) {
         const activeTask = t.find(x => x.id === state.timer.activeTaskId);
         if(!activeTask && state.timer.status === 'running') {
-             // Optional: Stop timer or keep running as "Unknown Task"
+             // Optional: Stop timer
         }
         updateTimerUI(activeTask);
     }
@@ -390,7 +388,6 @@ const app = {
             app.updateTotalEst(); 
             els.modal.classList.remove('hidden'); 
             setTimeout(() => els.modal.classList.remove('opacity-0'), 10); 
-            // Handle bottom sheet (remove hide-translate, add show-translate) and desktop scale
             setTimeout(() => {
                 els.modalPanel.classList.remove('translate-y-full', 'md:scale-95');
                 els.modalPanel.classList.add('translate-y-0', 'md:scale-100');
@@ -399,7 +396,6 @@ const app = {
         } else {
             haptic('light');
             els.modal.classList.add('opacity-0'); 
-            // Revert transition
             els.modalPanel.classList.add('translate-y-full', 'md:scale-95');
             els.modalPanel.classList.remove('translate-y-0', 'md:scale-100');
             setTimeout(() => els.modal.classList.add('hidden'), 300)
@@ -548,7 +544,7 @@ const app = {
         if (els.settingsModal.classList.contains('hidden')) {
             haptic('light');
             els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); 
-            // Bottom Sheet Transition Logic
+            
             setTimeout(() => {
                 els.settingsPanel.classList.remove('translate-y-full', 'md:scale-95');
                 els.settingsPanel.classList.add('translate-y-0', 'md:scale-100');
