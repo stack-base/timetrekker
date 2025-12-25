@@ -11,7 +11,6 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Robust Persistence Handling (Matches Desktop)
 try { 
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') console.warn('Multiple tabs open, persistence disabled.');
@@ -24,7 +23,6 @@ const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-// Haptics Engine
 const haptic = (type = 'light') => { 
     if(!navigator.vibrate) return; 
     try { 
@@ -40,11 +38,13 @@ const sounds = {
     forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' 
 };
 
-// --- STATE (Parity with Desktop) ---
+// --- STATE ---
 const state = {
     user: null, tasks: [], logs: [], 
     projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
-    activeTab: 'tasks', activeFilter: 'today',
+    activeTab: 'tasks', 
+    activeFilter: 'today', // all, past, today, tomorrow, upcoming, completed, project
+    filterProject: null, // Stores specific project name when activeFilter === 'project'
     viewingTask: null, editingId: null,
     timer: { 
         status: 'idle', endTime: null, remaining: 1500, total: 1500, taskId: null, mode: 'focus',
@@ -85,7 +85,6 @@ onAuthStateChanged(auth, u => {
         state.user = u;
         syncUserProfile(u);
         
-        // 1. Profile Listener
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -95,7 +94,6 @@ onAuthStateChanged(auth, u => {
                 if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
                 if($('settings-name')) $('settings-name').textContent = name;
                 if($('settings-email')) $('settings-email').textContent = u.email;
-
                 if (pic) {
                     if($('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
                     if($('settings-avatar-img')) { $('settings-avatar-img').src = pic; $('settings-avatar-img').classList.remove('hidden'); }
@@ -105,7 +103,6 @@ onAuthStateChanged(auth, u => {
 
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // 2. Tasks Listener
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
             state.projects = new Set(['Inbox', 'Work', 'Personal', 'Study']);
@@ -113,15 +110,12 @@ onAuthStateChanged(auth, u => {
             app.renderTasks();
             app.renderMiniStats();
             if(state.activeTab === 'analytics') app.renderAnalytics();
-            
-            // Sync active timer task details if running
             if (state.timer.taskId) {
                  const t = state.tasks.find(x => x.id === state.timer.taskId);
-                 if (t) app.updateTimerUI(); // Refresh UI with latest task data
+                 if (t) app.updateTimerUI();
             }
         });
         
-        // 3. Timer Listener (Exact Desktop Logic)
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -136,12 +130,9 @@ onAuthStateChanged(auth, u => {
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
-                
                 app.updateTimerUI();
-                
                 if(state.timer.status === 'running') {
                     startTimerLoop();
-                    // Audio sync
                     if (state.sound !== 'none') {
                         const audio = $('audio-player');
                         if (audio && audio.paused) audio.play().catch(()=>{});
@@ -156,13 +147,11 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // 4. Logs Listener
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
             state.logs = s.docs.map(d => d.data()).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
-        // 5. Reminders
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -190,7 +179,7 @@ const startTimerLoop = () => {
     timerInterval = setInterval(() => {
         app.updateTimerUI();
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
-    }, 100); // 100ms update for smooth progress bar
+    }, 100);
     if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
 };
 
@@ -245,12 +234,70 @@ const app = {
     setFilter: (f) => {
         haptic('light');
         state.activeFilter = f;
+        state.filterProject = null; // Reset project filter unless set specifically
+        
+        // Update UI Tabs
         document.querySelectorAll('#task-filters button').forEach(b => {
+            // Folders button is special, handled in its own render logic or stays neutral unless viewing a project
+            if(b.id === 'filter-folders') {
+                 b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted border border-dark-border`;
+                 return;
+            }
             b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${b.id === `filter-${f}` ? 'bg-brand text-white' : 'bg-dark-active text-text-muted'}`;
         });
+        
         app.renderTasks();
     },
     
+    // PROJECT BROWSING
+    openProjectSheet: () => {
+        haptic('light');
+        const list = $('project-sheet-list');
+        list.innerHTML = '';
+        state.projects.forEach(p => {
+             const count = state.tasks.filter(t => t.status === 'todo' && t.project === p).length;
+             const el = document.createElement('button');
+             el.className = "w-full flex items-center justify-between p-4 bg-dark-active/50 border-b border-dark-border first:rounded-t-xl last:border-0 hover:bg-dark-active transition-colors";
+             el.onclick = () => app.selectProject(p);
+             el.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="ph-bold ph-folder text-xl text-text-muted"></i>
+                    <span class="text-sm font-bold text-white">${esc(p)}</span>
+                </div>
+                <span class="text-xs font-medium text-text-muted bg-dark-bg px-2 py-1 rounded-md border border-dark-border">${count}</span>
+             `;
+             list.appendChild(el);
+        });
+        
+        $('modal-overlay').classList.remove('hidden');
+        setTimeout(() => {
+            $('modal-overlay').classList.remove('opacity-0');
+            $('project-sheet').classList.remove('translate-y-full');
+        }, 10);
+    },
+    
+    closeProjectSheet: () => {
+        $('project-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+    },
+
+    selectProject: (p) => {
+        haptic('light');
+        state.activeFilter = 'project';
+        state.filterProject = p;
+        
+        // Deselect other filter buttons
+        document.querySelectorAll('#task-filters button').forEach(b => {
+             b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`;
+        });
+        // Highlight Folders button
+        $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand`;
+        
+        app.closeProjectSheet();
+        app.renderTasks();
+    },
+
     setRange: (r) => {
         state.analytics.range = r; haptic('light');
         ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
@@ -262,21 +309,56 @@ const app = {
         const list = $('task-list');
         if(!list) return;
         list.innerHTML = '';
+        
         const today = getDayStr(new Date());
+        const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
+        const tomorrowStr = getDayStr(tmrw);
         
-        // Robust Sorting & Filtering (Parity with Desktop)
         let filtered = state.tasks;
-        if(state.activeFilter === 'today') filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate === today);
-        else if(state.activeFilter === 'upcoming') filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate > today);
-        else if(state.activeFilter === 'project') filtered = state.tasks.filter(t => t.status === 'todo').sort((a,b) => (a.project||'').localeCompare(b.project||''));
-        else if(state.activeFilter === 'completed') filtered = state.tasks.filter(t => t.status === 'done');
-
-        // Sort by Priority then Title
-        const priMap = { high: 3, med: 2, low: 1, none: 0 };
-        if(state.activeFilter !== 'completed') {
-            filtered.sort((a,b) => priMap[b.priority || 'none'] - priMap[a.priority || 'none']);
-        }
+        let title = "Tasks";
         
+        // Filter Logic
+        if(state.activeFilter === 'today') {
+            filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate === today);
+            title = "Today";
+        }
+        else if(state.activeFilter === 'tomorrow') {
+            filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate === tomorrowStr);
+            title = "Tomorrow";
+        }
+        else if(state.activeFilter === 'upcoming') {
+            filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate > today);
+            title = "Upcoming";
+        }
+        else if(state.activeFilter === 'past') {
+            filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate < today && t.dueDate);
+            title = "Past Tasks";
+        }
+        else if(state.activeFilter === 'project') {
+            filtered = state.tasks.filter(t => t.status === 'todo' && t.project === state.filterProject);
+            title = state.filterProject || "Project";
+        }
+        else if(state.activeFilter === 'completed') {
+            filtered = state.tasks.filter(t => t.status === 'done');
+            title = "Completed";
+        }
+        else if(state.activeFilter === 'all') {
+            filtered = state.tasks; // All tasks mixed
+            title = "All Tasks";
+        }
+
+        // Update Page Title
+        if($('page-title')) $('page-title').textContent = title;
+
+        // Sorting
+        const priMap = { high: 3, med: 2, low: 1, none: 0 };
+        filtered.sort((a,b) => {
+             // 1. Sort by Status (Todo first)
+             if (a.status !== b.status) return a.status === 'todo' ? -1 : 1;
+             // 2. Sort by Priority
+             return priMap[b.priority || 'none'] - priMap[a.priority || 'none'];
+        });
+
         if(filtered.length === 0) $('empty-state').classList.remove('hidden');
         else $('empty-state').classList.add('hidden');
 
@@ -284,7 +366,6 @@ const app = {
             const el = document.createElement('div');
             const priColor = t.priority === 'high' ? 'border-red-500/50' : t.priority === 'med' ? 'border-yellow-500/50' : t.priority === 'low' ? 'border-blue-500/50' : 'border-dark-border';
             
-            // Check if this task is currently active in timer
             const isActive = state.timer.status === 'running' && state.timer.taskId === t.id;
             const activeClass = isActive ? 'ring-1 ring-brand bg-brand/5' : '';
 
@@ -296,7 +377,6 @@ const app = {
             };
 
             const isDone = t.status === 'done';
-            const duration = t.pomoDuration || 25;
             
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
@@ -331,17 +411,14 @@ const app = {
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
     },
 
-    // --- ANALYTICS (Copied from Desktop for Parity) ---
+    // --- ANALYTICS (Matches Desktop Logic) ---
     renderAnalytics: () => {
         if(state.activeTab !== 'analytics') return;
         const logs = state.logs; const tasks = state.tasks;
         const now = new Date(); const getDS = d => getDayStr(d); const todayStr = getDS(now);
         
-        // 1. Logic
         const startOfWeek = new Date(now); const day = startOfWeek.getDay() || 7; if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); startOfWeek.setHours(0, 0, 0, 0);
-        const logsToday = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === todayStr);
         const tasksDone = tasks.filter(t => t.status === 'done');
-        
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
@@ -359,7 +436,6 @@ const app = {
         let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
         $('ana-streak-days').textContent = streak + ' Days';
 
-        // 2. Timeline Grid
         const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
         for (let i = 0; i < 7; i++) { 
             const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
@@ -374,7 +450,6 @@ const app = {
             row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
         }
 
-        // 3. Charts Logic
         const r = state.analytics.range; 
         let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
         if (r === 'year') { 
@@ -397,8 +472,7 @@ const app = {
         }
 
         const createChart = (ctxId, type, data, color, label, instanceKey) => {
-            const el = $(ctxId);
-            if(!el) return;
+            const el = $(ctxId); if(!el) return;
             const ctx = el.getContext('2d');
             if(state.chartInstances[instanceKey]) state.chartInstances[instanceKey].destroy();
             state.chartInstances[instanceKey] = new Chart(ctx, {
@@ -423,11 +497,9 @@ const app = {
             state.chartInstances.weekday = new Chart($('weekdayChart').getContext('2d'), { type: 'bar', data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: '#f59e0b', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{grid:{display:false}}, y:{display:false}} } });
         }
 
-        // Insights
         const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
         $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
 
-        // Projects & Priorities
         const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
         if($('projectChart')) {
             if (state.chartInstances.project) state.chartInstances.project.destroy();
@@ -534,13 +606,11 @@ const app = {
         }
     },
 
-    // --- ENHANCED FORM MODAL LOGIC ---
-    
+    // --- FORM MODAL ---
     openTaskModal: (task = null) => {
         haptic('light');
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
 
-        // Populate Projects
         const sel = $('inp-project');
         sel.innerHTML = '';
         state.projects.forEach(p => {
@@ -557,14 +627,11 @@ const app = {
             $('btn-save-task').textContent = "Save Changes";
             
             $('inp-title').value = task.title;
-            
-            // Effort UI
             $('inp-est').value = task.estimatedPomos || 1;
             $('disp-est').textContent = task.estimatedPomos || 1;
             $('inp-duration').value = task.pomoDuration || 25;
             app.updateDurationDisplay(task.pomoDuration || 25);
 
-            // Context UI
             $('inp-date').value = task.dueDate || '';
             $('inp-project').value = task.project || 'Inbox';
             app.setPriority(task.priority || 'none');
@@ -582,8 +649,6 @@ const app = {
             $('btn-save-task').textContent = "Create Task";
             
             $('inp-title').value = '';
-            
-            // Defaults
             $('inp-est').value = 1;
             $('disp-est').textContent = 1;
             $('inp-duration').value = 25;
@@ -594,7 +659,6 @@ const app = {
             
             $('inp-project').value = 'Inbox';
             app.setPriority('none');
-            
             $('inp-note').value = '';
             $('inp-tags').value = '';
             $('inp-repeat').value = 'none';
@@ -622,16 +686,9 @@ const app = {
         const today = getDayStr(new Date());
         const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
         const tmrwStr = getDayStr(tmrw);
-
-        const setBtn = (id, active) => {
-            $(id).className = active 
-                ? "flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all" 
-                : "flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95";
-        };
-
+        const setBtn = (id, active) => { $(id).className = active ? "flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all" : "flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95"; };
         setBtn('btn-date-today', dateStr === today);
         setBtn('btn-date-tomorrow', dateStr === tmrwStr);
-        
         if(dateStr && dateStr !== today && dateStr !== tmrwStr) {
             const d = new Date(dateStr);
             $('lbl-date-pick').textContent = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
@@ -721,7 +778,6 @@ const app = {
         }
     },
     
-    // --- SAVE LOGIC ---
     saveTask: async () => {
         const title = $('inp-title').value;
         if(!title) {
@@ -778,6 +834,7 @@ const app = {
     closeAllSheets: () => {
         app.closeDetailSheet();
         app.closeTaskModal();
+        app.closeProjectSheet();
     },
 
     toggleStatus: async (id, s) => {
@@ -788,17 +845,13 @@ const app = {
         });
     },
 
-    // TIMER LOGIC (Matches Desktop)
     startFocus: async (id) => {
         const t = state.tasks.find(x => x.id === id);
         if(!t) return;
         haptic('medium');
-
         app.switchTab('timer');
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
-        
-        // Push full timer state to Firestore to allow Desktop sync
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', mode: 'focus', taskId: t.id, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000)
         });
@@ -834,8 +887,6 @@ const app = {
     completeTimer: async () => {
         stopTimerLoop();
         haptic('timerDone');
-        
-        // Sound
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if(AudioContext) {
@@ -843,7 +894,6 @@ const app = {
                 o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .3);
             }
         } catch(e) {}
-        
         try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete"); } catch (e) {}
 
         if(state.timer.mode === 'focus' && state.timer.taskId) {
@@ -853,7 +903,6 @@ const app = {
                 const durMin = state.timer.total / 60;
                 await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, project: t.project, duration: durMin, completedAt: serverTimestamp() });
             }
-            
             if (state.timer.settings.disableBreak) {
                 await app.setTimerMode('focus'); if (state.timer.settings.autoStartPomo) app.toggleTimer();
             } else {
@@ -867,7 +916,6 @@ const app = {
             await app.setTimerMode('focus', state.timer.pomoCountCurrentSession);
             if (state.timer.settings.autoStartPomo) app.toggleTimer();
         }
-        
         app.showToast('Timer Complete');
     },
 
@@ -902,7 +950,6 @@ const app = {
                 $('timer-total').textContent = t.estimatedPomos || 1;
                 document.title = `${m}:${sc.toString().padStart(2,'0')} - ${t.title}`;
             } else {
-                 // Fallback if task deleted but timer running
                 $('timer-task-title').textContent = "Unknown Task";
             }
         } else if (mode !== 'focus') {
