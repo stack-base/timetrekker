@@ -194,6 +194,8 @@ const app = {
             };
 
             const isDone = t.status === 'done';
+            const duration = t.pomoDuration || 25;
+            
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
                     <div class="w-6 h-6 rounded-full border-2 ${isDone ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center">
@@ -206,6 +208,7 @@ const app = {
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                         <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand font-medium border border-brand/20">${t.project || 'Inbox'}</span>
                         ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold">! Urgent</span>' : ''}
+                        ${duration !== 25 ? `<span class="text-[10px] text-text-muted flex items-center"><i class="ph-fill ph-clock mr-1"></i>${duration}m</span>` : ''}
                     </div>
                 </div>
                 <button class="play-btn w-8 h-8 rounded-full bg-dark-active flex items-center justify-center text-brand active:scale-90 transition-transform ml-1" onclick="event.stopPropagation(); app.startFocus(state.tasks.find(x=>x.id==='${t.id}'))">
@@ -230,15 +233,12 @@ const app = {
         const logs = state.logs;
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
-        // 1. Top Stats
         $('stat-focus-time').textContent = Math.floor(totalMin / 60) + 'h ' + (totalMin % 60) + 'm';
         $('stat-tasks-done').textContent = state.tasks.filter(t => t.status === 'done').length;
         
-        // Avg Session
         const avgSess = logs.length > 0 ? Math.round(totalMin / logs.length) : 0;
         $('stat-avg-session').textContent = avgSess + 'm';
 
-        // Streak
         let streak = 0;
         const now = new Date();
         for(let i=0; i<365; i++) {
@@ -249,7 +249,6 @@ const app = {
         }
         $('stat-streak').textContent = streak + ' Day' + (streak!==1?'s':'');
 
-        // 2. Main Activity Chart
         const actCtx = $('activityChart');
         if(actCtx) {
             const isWeek = state.chartView === 'weekly';
@@ -298,7 +297,6 @@ const app = {
             });
         }
 
-        // 3. Project Chart
         const projCtx = $('projectChart');
         if(projCtx) {
             const pm = {};
@@ -324,7 +322,6 @@ const app = {
                 }
             });
 
-            // Custom Legend
             $('project-legend').innerHTML = sortedProj.map((p,i) => `
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-2">
@@ -336,7 +333,6 @@ const app = {
             `).join('');
         }
 
-        // 4. Tags
         const tagsMap = {};
         state.tasks.filter(t=>t.status==='done').forEach(t => {
             if(t.tags) t.tags.forEach(tag => tagsMap[tag] = (tagsMap[tag]||0)+1);
@@ -346,7 +342,6 @@ const app = {
             $('tags-list').innerHTML = sortedTags.map(t => `<span class="px-2 py-1 bg-dark-active rounded text-[10px] text-white border border-dark-border">${t[0]} (${t[1]})</span>`).join('');
         }
 
-        // 5. Recent Logs
         const list = $('mobile-logs');
         if(list) {
             list.innerHTML = logs.slice(0, 10).map(l => `
@@ -361,7 +356,7 @@ const app = {
         }
     },
     
-    // ... (Existing Functions for Toast, Modal, Sheets etc. remain unchanged) ...
+    // --- DETAILS & MODALS ---
     openTaskDetail: (t) => {
         haptic();
         state.viewingTask = t;
@@ -469,6 +464,10 @@ const app = {
             
             $('inp-title').value = task.title;
             $('inp-est').value = task.estimatedPomos || 1;
+            // Populate duration input
+            $('inp-duration').value = task.pomoDuration || 25;
+            $('disp-duration').innerText = (task.pomoDuration || 25) + 'm';
+            
             $('inp-date').value = task.dueDate || '';
             $('inp-project').value = task.project || 'Inbox';
             $('inp-priority').value = task.priority || 'none';
@@ -485,6 +484,9 @@ const app = {
             
             $('inp-title').value = '';
             $('inp-est').value = 1;
+            $('inp-duration').value = 25;
+            $('disp-duration').innerText = '25m';
+            
             $('inp-date').value = getDayStr(new Date());
             $('inp-project').value = 'Inbox';
             $('inp-priority').value = 'none';
@@ -499,6 +501,10 @@ const app = {
             $('modal-overlay').classList.remove('opacity-0');
             $('modal-sheet').classList.remove('translate-y-full');
         }, 10);
+    },
+    
+    updateDurationDisplay: (val) => {
+        $('disp-duration').innerText = val + 'm';
     },
 
     closeTaskModal: () => {
@@ -532,6 +538,7 @@ const app = {
         const data = {
             title, 
             estimatedPomos: parseInt($('inp-est').value) || 1,
+            pomoDuration: parseInt($('inp-duration').value) || 25, // Save duration
             dueDate: $('inp-date').value,
             priority: $('inp-priority').value,
             project: $('inp-project').value || 'Inbox',
@@ -573,7 +580,10 @@ const app = {
     // TIMER
     startFocus: async (t) => {
         app.switchTab('timer');
-        const d = state.timer.settings.focus * 60;
+        // KEY FIX: Use task specific duration OR default setting
+        const durationMin = t.pomoDuration || state.timer.settings.focus;
+        const d = durationMin * 60;
+        
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', mode: 'focus', taskId: t.id, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000)
         });
@@ -593,6 +603,7 @@ const app = {
         }
     },
     resetTimer: async () => {
+        // Fallback to global setting if no task, otherwise ideally we'd want the task duration but idle state usually resets to global default or last used
         const d = state.timer.settings[state.timer.mode] * 60;
         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'idle', remaining: d, totalDuration: d, endTime: null
@@ -607,7 +618,9 @@ const app = {
             const t = state.tasks.find(x => x.id === state.timer.taskId);
             if(t) {
                 await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedPomos: (t.completedPomos||0) + 1 });
-                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, project: t.project, duration: state.timer.total/60, completedAt: serverTimestamp() });
+                // Use actual totalDuration for logging accurate stats
+                const durMin = state.timer.total / 60;
+                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, project: t.project, duration: durMin, completedAt: serverTimestamp() });
             }
         }
         
@@ -663,7 +676,7 @@ const app = {
         else $('audio-player').pause();
     },
 
-    // SETTINGS
+    // SETTINGS & ANALYTICS
     updateSetting: (k, v) => {
         state.timer.settings[k] = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
         if(k === 'longBreakInterval') $('set-long-interval-display').innerText = v + 'x';

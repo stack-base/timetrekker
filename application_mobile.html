@@ -336,8 +336,15 @@
             
             <div class="flex gap-3 mb-6 overflow-x-auto no-scrollbar py-1">
                 <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border">
-                    <i class="ph-bold ph-timer text-text-muted mr-2"></i>
+                    <i class="ph-bold ph-hash text-text-muted mr-2"></i>
                     <input type="number" id="inp-est" value="1" min="1" max="10" class="w-8 bg-transparent text-center font-bold outline-none text-white">
+                </div>
+                <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border min-w-[140px]">
+                    <i class="ph-bold ph-timer text-text-muted mr-2"></i>
+                    <div class="flex flex-col w-full">
+                        <div class="flex justify-between text-[10px] font-bold mb-1"><span class="text-text-muted">Duration</span><span class="text-white" id="disp-duration">25m</span></div>
+                        <input type="range" id="inp-duration" min="5" max="90" step="5" value="25" class="w-full h-1 bg-dark-bg rounded-lg appearance-none cursor-pointer" oninput="app.updateDurationDisplay(this.value)">
+                    </div>
                 </div>
                 <div class="bg-dark-active rounded-lg px-3 py-2 flex items-center shrink-0 border border-dark-border">
                     <i class="ph-bold ph-calendar text-text-muted mr-2"></i>
