@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="TimeTrekker Mobile">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TimeTrekker</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    brand: { DEFAULT: '#ff5757', hover: '#e04848' },
+                    dark: { bg: '#000000', card: '#09090b', border: '#27272a', active: '#27272a' },
+                    text: { main: '#ffffff', muted: '#a1a1aa' }
+                },
+                spacing: { 'safe-b': 'env(safe-area-inset-bottom)', 'safe-t': 'env(safe-area-inset-top)' }
+            }
+        }
+    };
+</script>
+
+<script type="module" src="mobile.js" defer></script>
+
+<style>
+    /* Mobile Resets */
+    body { background-color: #000000; color: #ffffff; -webkit-tap-highlight-color: transparent; overflow: hidden; user-select: none; }
+    
+    /* Hide Scrollbar but allow scroll */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Custom Checkbox */
+    .custom-checkbox input:checked + div { background-color: #ff5757; border-color: #ff5757; }
+    
+    /* Animations */
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
+    /* Bottom Sheet Handle */
+    .sheet-handle { width: 36px; height: 5px; background: #3f3f46; border-radius: 99px; margin: 8px auto 16px auto; }
+</style>
+</head>
+<body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
+
+    <div id="toast-container" class="fixed top-safe-t pt-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs flex flex-col gap-2 pointer-events-none px-4"></div>
+
+    <main id="main-container" class="flex-1 relative overflow-hidden flex flex-col pt-safe-t">
+        
+        <header id="view-header" class="px-5 py-4 flex items-center justify-between shrink-0 bg-dark-bg/80 backdrop-blur z-20">
+            <div>
+                <h1 id="page-title" class="text-2xl font-bold tracking-tight">Today</h1>
+                <p id="current-date" class="text-xs text-text-muted font-medium mt-0.5">Loading...</p>
+            </div>
+            <div id="user-avatar" class="w-9 h-9 rounded-full bg-dark-border flex items-center justify-center text-xs font-bold border border-dark-border">U</div>
+        </header>
+
+        <div id="task-filters" class="px-5 pb-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0 mb-2">
+            <button onclick="app.setFilter('today')" id="filter-today" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-brand text-white transition-colors">Today</button>
+            <button onclick="app.setFilter('upcoming')" id="filter-upcoming" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Upcoming</button>
+            <button onclick="app.setFilter('project')" id="filter-project" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Projects</button>
+            <button onclick="app.setFilter('completed')" id="filter-completed" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Done</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-24 px-5 relative" id="content-scroll-area">
+            
+            <div id="view-tasks" class="view-section min-h-full">
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
+                    <i class="ph ph-check-circle text-4xl mb-3"></i>
+                    <p class="text-sm">No tasks found</p>
+                </div>
+                <div id="task-list" class="space-y-3 pb-8"></div>
+            </div>
+
+            <div id="view-timer" class="view-section hidden flex flex-col items-center justify-center min-h-[70vh]">
+                <div id="focus-meta" class="text-center mb-10 w-full px-4">
+                    <div id="focus-empty" class="text-text-muted text-sm animate-pulse">Select a task to focus</div>
+                    <div id="focus-active" class="hidden">
+                        <span id="timer-badge" class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-dark-active text-text-muted mb-3 inline-block">Inbox</span>
+                        <h2 id="timer-task-title" class="text-xl font-bold leading-tight line-clamp-2">Task Title</h2>
+                        <div class="mt-2 text-xs text-text-muted flex justify-center gap-1">
+                            <span class="text-brand" id="timer-completed">0</span>/<span id="timer-total">4</span> Pomos
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative w-72 h-72 flex items-center justify-center mb-12">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#27272a" stroke-width="3"/>
+                        <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="#ff5757" stroke-width="3" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center" onclick="app.toggleTimer()">
+                        <div id="timer-display" class="text-6xl font-light tracking-tighter tabular-nums">25:00</div>
+                        <div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-2 text-brand">FOCUS</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-8">
+                    <button onclick="app.resetTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white"><i class="ph-bold ph-arrow-counter-clockwise text-xl"></i></button>
+                    <button onclick="app.toggleTimer()" class="w-20 h-20 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-95 transition-transform"><i id="play-icon" class="ph-fill ph-play text-3xl ml-1"></i></button>
+                    <button onclick="app.skipTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white"><i class="ph-bold ph-skip-forward text-xl"></i></button>
+                </div>
+            </div>
+
+            <div id="view-analytics" class="view-section hidden pb-10">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Focus Time</div>
+                        <div class="text-2xl font-bold text-brand mt-1" id="stat-focus-time">0h</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks Done</div>
+                        <div class="text-2xl font-bold text-blue-500 mt-1" id="stat-tasks-done">0</div>
+                    </div>
+                </div>
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border mb-4">
+                    <h3 class="text-sm font-bold mb-4">Weekly Trend</h3>
+                    <div class="h-48 relative w-full"><canvas id="mobileChart"></canvas></div>
+                </div>
+                <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
+                    <div class="px-4 py-3 border-b border-dark-border text-xs font-bold uppercase text-text-muted">Recent Sessions</div>
+                    <div id="mobile-logs" class="divide-y divide-dark-border"></div>
+                </div>
+            </div>
+
+            <div id="view-settings" class="view-section hidden space-y-1">
+                <button onclick="app.signOut()" class="w-full flex items-center p-4 bg-dark-card rounded-xl mb-6 text-red-500 font-medium">
+                    <i class="ph-bold ph-sign-out text-xl mr-3"></i> Sign Out
+                </button>
+                <div class="p-4 text-center text-xs text-text-muted opacity-50">TimeTrekker Mobile v1.0</div>
+            </div>
+
+        </div>
+
+        <button onclick="app.openTaskModal()" id="fab-add" class="fixed right-5 bottom-24 z-30 w-14 h-14 bg-brand text-white rounded-full shadow-xl shadow-brand/30 flex items-center justify-center active:scale-90 transition-transform">
+            <i class="ph-bold ph-plus text-2xl"></i>
+        </button>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-card/95 backdrop-blur border-t border-dark-border pb-safe-b z-40">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="app.switchTab('tasks')" id="tab-tasks" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand">
+                <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Tasks</span>
+            </button>
+            <button onclick="app.switchTab('timer')" id="tab-timer" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted">
+                <i class="ph-bold ph-timer text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Focus</span>
+            </button>
+            <button onclick="app.switchTab('analytics')" id="tab-analytics" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted">
+                <i class="ph-bold ph-chart-bar text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Stats</span>
+            </button>
+            <button onclick="app.switchTab('settings')" id="tab-settings" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted">
+                <i class="ph-bold ph-gear text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Settings</span>
+            </button>
+        </div>
+    </nav>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden opacity-0 transition-opacity" onclick="app.closeTaskModal()"></div>
+    <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b">
+        <span class="sheet-handle flex-shrink-0" onclick="app.closeTaskModal()"></span>
+        <div class="px-5 pb-5 flex-1 overflow-y-auto">
+            <input type="text" id="inp-title" placeholder="New Task..." class="w-full bg-transparent text-xl font-bold text-white placeholder-text-muted/50 border-none outline-none mb-4 p-0">
+            <div class="flex gap-3 mb-6 overflow-x-auto no-scrollbar">
+                <div class="bg-dark-active rounded px-3 py-2 flex items-center shrink-0">
+                    <i class="ph-bold ph-timer text-text-muted mr-2"></i>
+                    <input type="number" id="inp-est" value="1" class="w-8 bg-transparent text-center font-bold outline-none">
+                </div>
+                <div class="bg-dark-active rounded px-3 py-2 flex items-center shrink-0">
+                    <i class="ph-bold ph-calendar text-text-muted mr-2"></i>
+                    <input type="date" id="inp-date" class="bg-transparent text-xs text-white outline-none w-24">
+                </div>
+                 <div class="bg-dark-active rounded px-3 py-2 flex items-center shrink-0">
+                    <i class="ph-bold ph-warning-circle text-text-muted mr-2"></i>
+                    <select id="inp-priority" class="bg-transparent text-xs text-white outline-none">
+                        <option value="none" class="bg-dark-card">No Priority</option>
+                        <option value="high" class="bg-dark-card">High</option>
+                        <option value="med" class="bg-dark-card">Medium</option>
+                        <option value="low" class="bg-dark-card">Low</option>
+                    </select>
+                </div>
+            </div>
+            <textarea id="inp-note" placeholder="Add notes..." class="w-full h-24 bg-dark-bg rounded-lg p-3 text-sm text-text-muted resize-none border border-dark-border outline-none focus:border-brand mb-4"></textarea>
+            <button onclick="app.saveTask()" class="w-full py-3 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform">Save Task</button>
+        </div>
+    </div>
+    
+    <audio id="audio-player" loop></audio>
+
+</body>
+</html>
