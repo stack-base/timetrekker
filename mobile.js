@@ -54,6 +54,9 @@ const _ui = {
 
 // Listen for Back Button (or history.back calls)
 window.addEventListener('popstate', (e) => {
+    // FORCE BLUR: Remove focus from any element to prevent grey highlight
+    if (document.activeElement) document.activeElement.blur();
+
     // 1. Check Modals (High Priority)
     // We check classes to see what is currently open
     if (!$('modal-sheet').classList.contains('translate-y-full')) {
@@ -75,7 +78,6 @@ window.addEventListener('popstate', (e) => {
         app.switchTab('tasks', false); // false = do not push history
         return;
     }
-
     // 3. If on Tasks and no modals, let browser default handle it (Exit App)
 });
 
@@ -637,12 +639,6 @@ const app = {
     editCurrentTask: () => {
         if(state.viewingTask) {
             const t = state.viewingTask;
-            // We need to swap the detail sheet for the edit modal.
-            // Visually: Detail closes, Modal opens.
-            // History: Detail was pushed. We pop it (close), then push Modal.
-            // But we can do this via replaceState to avoid flickering steps?
-            // Simplest: just use the normal flow.
-            
             // Manually close UI (simulating pop) to avoid async issues with history
             _ui.closeDetailSheet();
             history.back(); // Remove the detail sheet entry
@@ -1046,6 +1042,13 @@ const app = {
 
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
+
+// Add global listener to remove focus after clicks (Final Polish)
+document.addEventListener('click', (e) => {
+    if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+        document.activeElement.blur();
+    }
+});
 
 window.app = app;
 app.switchTab('tasks');
