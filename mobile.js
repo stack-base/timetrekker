@@ -19,11 +19,8 @@ try {
 } catch (e) { console.log('Persistence skipped'); }
 
 // --- NATIVE NAVIGATION HANDLER ---
-// Initialize history state to root
 if (!history.state) history.replaceState({ view: 'root' }, '');
 
-// Private UI helpers to hide elements without touching history
-// (These are called by the popstate listener)
 const _ui = {
     closeProjectSheet: () => {
         $('project-sheet').classList.add('translate-y-full');
@@ -38,9 +35,7 @@ const _ui = {
                  $('modal-overlay').classList.add('hidden'); 
                  state.viewingTask = null;
              }, 300);
-        } else {
-             state.viewingTask = null;
-        }
+        } else { state.viewingTask = null; }
     },
     closeTaskModal: () => {
         $('modal-sheet').classList.add('translate-y-full');
@@ -52,33 +47,12 @@ const _ui = {
     }
 };
 
-// Listen for Back Button (or history.back calls)
 window.addEventListener('popstate', (e) => {
-    // FORCE BLUR: Remove focus from any element to prevent grey highlight
     if (document.activeElement) document.activeElement.blur();
-
-    // 1. Check Modals (High Priority)
-    // We check classes to see what is currently open
-    if (!$('modal-sheet').classList.contains('translate-y-full')) {
-        _ui.closeTaskModal();
-        return;
-    }
-    if (!$('detail-sheet').classList.contains('translate-y-full')) {
-        _ui.closeDetailSheet();
-        return;
-    }
-    if (!$('project-sheet').classList.contains('translate-y-full')) {
-        _ui.closeProjectSheet();
-        return;
-    }
-
-    // 2. Check Tabs (Low Priority)
-    // If not on tasks (home), go back to tasks
-    if (state.activeTab !== 'tasks') {
-        app.switchTab('tasks', false); // false = do not push history
-        return;
-    }
-    // 3. If on Tasks and no modals, let browser default handle it (Exit App)
+    if (!$('modal-sheet').classList.contains('translate-y-full')) { _ui.closeTaskModal(); return; }
+    if (!$('detail-sheet').classList.contains('translate-y-full')) { _ui.closeDetailSheet(); return; }
+    if (!$('project-sheet').classList.contains('translate-y-full')) { _ui.closeProjectSheet(); return; }
+    if (state.activeTab !== 'tasks') { app.switchTab('tasks', false); return; }
 });
 
 
@@ -138,7 +112,14 @@ async function syncUserProfile(u) {
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
         const userSnap = await getDoc(userRef);
-        const profileData = { displayName: u.displayName || u.email.split('@')[0], email: u.email, photoURL: u.photoURL, lastLogin: serverTimestamp(), uid: u.uid };
+        const profileData = { 
+            displayName: u.displayName || u.email.split('@')[0], 
+            email: u.email, 
+            photoURL: u.photoURL, 
+            providerId: u.providerData.length > 0 ? u.providerData[0].providerId : 'password',
+            lastLogin: serverTimestamp(), 
+            uid: u.uid 
+        };
         if (!userSnap.exists()) await setDoc(userRef, { ...profileData, createdAt: serverTimestamp() });
         else await setDoc(userRef, profileData, { merge: true });
     } catch (e) { console.error("Profile Sync Error", e); }
@@ -212,7 +193,7 @@ onAuthStateChanged(auth, u => {
         });
 
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
-            state.logs = s.docs.map(d => d.data()).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
+            state.logs = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
@@ -254,16 +235,23 @@ const stopTimerLoop = () => {
 
 // --- APP CONTROLLER ---
 const app = {
+    // PROMPT HANDLING
+    customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
+    showPrompt: (t, v = '') => new Promise(r => {
+        const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v;
+        p.el.classList.remove('hidden'); setTimeout(() => p.el.classList.remove('opacity-0'), 10); p.input.focus();
+    }),
+    closePrompt: v => {
+        const p = app.customPrompt; p.el.classList.add('opacity-0');
+        setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null; }, 200);
+    },
+
     // NAVIGATION
     switchTab: (tab, pushHistory = true) => {
         haptic('light');
-        
-        // Push history if we are moving AWAY from tasks (Home)
-        // This ensures Back button brings us back to Tasks
         if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) {
             history.pushState({ view: tab }, '', `#${tab}`);
         }
-
         state.activeTab = tab;
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const view = $(`view-${tab}`);
@@ -318,22 +306,25 @@ const app = {
     
     openProjectSheet: () => {
         haptic('light');
-        // Push state so Back Button can close it
         history.pushState({ modal: 'project' }, '');
 
         const list = $('project-sheet-list');
         list.innerHTML = '';
         state.projects.forEach(p => {
              const count = state.tasks.filter(t => t.status === 'todo' && t.project === p).length;
-             const el = document.createElement('button');
-             el.className = "w-full flex items-center justify-between p-4 bg-dark-active/50 border-b border-dark-border first:rounded-t-xl last:border-0 hover:bg-dark-active transition-colors";
-             el.onclick = () => app.selectProject(p);
+             const el = document.createElement('div');
+             el.className = "w-full flex items-center justify-between p-4 bg-dark-active/50 border-b border-dark-border first:rounded-t-xl last:border-0 hover:bg-dark-active transition-colors group";
+             // Only allow rename/delete if NOT inbox (though desktop allows inbox editing, standard practice usually locks it. We will allow all like desktop).
              el.innerHTML = `
-                <div class="flex items-center gap-3">
+                <button onclick="app.selectProject('${esc(p)}')" class="flex items-center gap-3 flex-1 text-left">
                     <i class="ph-bold ph-folder text-xl text-text-muted"></i>
                     <span class="text-sm font-bold text-white">${esc(p)}</span>
+                </button>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-medium text-text-muted bg-dark-bg px-2 py-1 rounded-md border border-dark-border mr-2">${count}</span>
+                    <button onclick="app.renameProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-white bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                    <button onclick="app.deleteProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-red-500 bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-trash text-sm"></i></button>
                 </div>
-                <span class="text-xs font-medium text-text-muted bg-dark-bg px-2 py-1 rounded-md border border-dark-border">${count}</span>
              `;
              list.appendChild(el);
         });
@@ -345,10 +336,7 @@ const app = {
         }, 10);
     },
     
-    closeProjectSheet: () => {
-        // Trigger back action, listener will handle UI closing
-        history.back();
-    },
+    closeProjectSheet: () => { history.back(); },
 
     selectProject: (p) => {
         haptic('light');
@@ -358,7 +346,6 @@ const app = {
              b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`;
         });
         $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand`;
-        // We use history.back() here because selectProject is called from the sheet
         app.closeProjectSheet(); 
         app.renderTasks();
     },
@@ -548,14 +535,12 @@ const app = {
     // --- DETAILS & MODALS ---
     openTaskDetail: (t) => {
         haptic('light');
-        // Push state for back button
         history.pushState({ modal: 'detail' }, '');
 
         state.viewingTask = t;
         $('dt-title').textContent = t.title;
         $('dt-project').textContent = t.project || 'Inbox';
         
-        // --- METRICS CALCULATION ---
         const total = parseInt(t.estimatedPomos) || 1;
         const completed = parseInt(t.completedPomos) || 0;
         const left = Math.max(0, total - completed);
@@ -622,16 +607,10 @@ const app = {
         }, 10);
     },
 
-    closeDetailSheet: () => {
-        // Trigger back action, listener will handle UI closing
-        history.back();
-    },
-
+    closeDetailSheet: () => { history.back(); },
     startFocusFromDetail: () => {
         if(state.viewingTask) {
             app.startFocus(state.viewingTask.id);
-            // closeDetailSheet normally just goes back, but here we want to go back AND switch tab
-            // So we call close (which pops) and then switchTab handles the rest.
             app.closeDetailSheet();
         }
     },
@@ -639,10 +618,8 @@ const app = {
     editCurrentTask: () => {
         if(state.viewingTask) {
             const t = state.viewingTask;
-            // Manually close UI (simulating pop) to avoid async issues with history
             _ui.closeDetailSheet();
-            history.back(); // Remove the detail sheet entry
-            
+            history.back(); 
             state.viewingTask = null;
             setTimeout(() => app.openTaskModal(t), 200);
         }
@@ -660,7 +637,6 @@ const app = {
     // --- FORM MODAL ---
     openTaskModal: (task = null) => {
         haptic('light');
-        // Push state for back button
         history.pushState({ modal: 'form' }, '');
 
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
@@ -821,15 +797,53 @@ const app = {
         }
     },
 
-    promptNewProject: () => {
-        const p = prompt("Enter new project name:");
+    promptNewProject: async () => {
+        const p = await app.showPrompt("Enter new project name:");
         if (p && p.trim()) {
              state.projects.add(p.trim());
              const sel = $('inp-project');
              const opt = document.createElement('option');
              opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true;
              sel.appendChild(opt);
+             // If triggered from sheet, update list
+             if(!$('project-sheet').classList.contains('translate-y-full')) app.openProjectSheet();
         }
+    },
+    
+    renameProject: async (oldName) => {
+        const newName = await app.showPrompt(`Rename "${oldName}" to:`, oldName);
+        if (!newName || newName === oldName) return;
+        
+        try {
+            const batch = writeBatch(db);
+            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", oldName));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+                batch.update(doc.ref, { project: newName });
+            });
+            await batch.commit();
+            
+            state.projects.delete(oldName);
+            state.projects.add(newName);
+            app.openProjectSheet(); // Refresh
+            app.showToast('Project renamed');
+        } catch(e) { app.showToast('Error renaming'); }
+    },
+
+    deleteProject: async (pName) => {
+        if(!confirm(`Delete project "${pName}"? Tasks will move to Inbox.`)) return;
+        try {
+            const batch = writeBatch(db);
+            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", pName));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+                batch.update(doc.ref, { project: 'Inbox' });
+            });
+            await batch.commit();
+            state.projects.delete(pName);
+            app.openProjectSheet(); // Refresh
+            app.showToast('Project deleted');
+        } catch(e) { app.showToast('Error deleting'); }
     },
     
     saveTask: async () => {
@@ -876,10 +890,7 @@ const app = {
         } catch(e) { app.showToast('Error saving'); }
     },
     
-    closeTaskModal: () => {
-        // Trigger back action, listener will handle UI closing
-        history.back();
-    },
+    closeTaskModal: () => { history.back(); },
     
     closeAllSheets: () => {
         app.closeDetailSheet();
@@ -937,6 +948,8 @@ const app = {
     completeTimer: async () => {
         stopTimerLoop();
         haptic('timerDone');
+        
+        // Robust Audio Fallback (AudioContext)
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if(AudioContext) {
@@ -944,6 +957,7 @@ const app = {
                 o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .3);
             }
         } catch(e) {}
+        
         try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete"); } catch (e) {}
 
         if(state.timer.mode === 'focus' && state.timer.taskId) {
@@ -1043,12 +1057,11 @@ const app = {
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
-// Add global listener to remove focus after clicks (Final Polish)
-document.addEventListener('click', (e) => {
-    if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
-        document.activeElement.blur();
-    }
-});
+// GLOBAL LISTENERS FOR PROMPTS & UI
+$('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null));
+$('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value));
+$('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value); });
+document.addEventListener('click', (e) => { if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur(); });
 
 window.app = app;
 app.switchTab('tasks');
