@@ -5,6 +5,15 @@ import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, ge
 // --- CONFIGURATION ---
 const FIREBASE_CONFIG = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
 const APP_ID = 'timetrekker-v1';
+const ASSETS = {
+    icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png',
+    sounds: { 
+        none: '', 
+        rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', 
+        cafe: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', 
+        forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' 
+    }
+};
 
 // --- INIT ---
 const fb = initializeApp(FIREBASE_CONFIG);
@@ -13,48 +22,10 @@ const db = getFirestore(fb);
 
 try { 
     enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code === 'failed-precondition') console.warn('Multiple tabs open, persistence disabled.');
+        if (err.code === 'failed-precondition') console.warn('Persistence disabled (Multiple tabs open).');
         else if (err.code === 'unimplemented') console.warn('Browser does not support persistence');
     });
 } catch (e) { console.log('Persistence skipped'); }
-
-// --- NATIVE NAVIGATION HANDLER ---
-if (!history.state) history.replaceState({ view: 'root' }, '');
-
-const _ui = {
-    closeProjectSheet: () => {
-        $('project-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
-    },
-    closeDetailSheet: () => {
-        $('detail-sheet').classList.add('translate-y-full');
-        if(!state.editingId) {
-             $('modal-overlay').classList.add('opacity-0');
-             setTimeout(() => { 
-                 $('modal-overlay').classList.add('hidden'); 
-                 state.viewingTask = null;
-             }, 300);
-        } else { state.viewingTask = null; }
-    },
-    closeTaskModal: () => {
-        $('modal-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => {
-            $('modal-overlay').classList.add('hidden');
-            state.editingId = null;
-        }, 300);
-    }
-};
-
-window.addEventListener('popstate', (e) => {
-    if (document.activeElement) document.activeElement.blur();
-    if (!$('modal-sheet').classList.contains('translate-y-full')) { _ui.closeTaskModal(); return; }
-    if (!$('detail-sheet').classList.contains('translate-y-full')) { _ui.closeDetailSheet(); return; }
-    if (!$('project-sheet').classList.contains('translate-y-full')) { _ui.closeProjectSheet(); return; }
-    if (state.activeTab !== 'tasks') { app.switchTab('tasks', false); return; }
-});
-
 
 // --- UTILS ---
 const $ = id => document.getElementById(id);
@@ -67,13 +38,6 @@ const haptic = (type = 'light') => {
         const patterns = { light: 10, medium: 25, heavy: 40, success: [10, 30], timerDone: [200, 100, 200] };
         navigator.vibrate(patterns[type] || 10); 
     } catch(e){} 
-};
-
-const sounds = { 
-    none: '', 
-    rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', 
-    cafe: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', 
-    forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' 
 };
 
 // --- STATE ---
@@ -105,8 +69,10 @@ Chart.defaults.plugins.tooltip.titleColor = '#fff';
 Chart.defaults.plugins.tooltip.bodyColor = '#a1a1aa';
 Chart.defaults.plugins.tooltip.borderColor = '#333';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.displayColors = false;
 
-// --- AUTH & DATA ---
+// --- AUTH & DATA SYNC ---
 async function syncUserProfile(u) {
     if (!u) return;
     try {
@@ -130,6 +96,7 @@ onAuthStateChanged(auth, u => {
         state.user = u;
         syncUserProfile(u);
         
+        // Listen to User Profile for Updates
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -148,19 +115,25 @@ onAuthStateChanged(auth, u => {
 
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+        // Tasks Subscription
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
+            // Rebuild Project Set
             state.projects = new Set(['Inbox', 'Work', 'Personal', 'Study']);
             state.tasks.forEach(t => { if(t.project) state.projects.add(t.project); });
+            
             app.renderTasks();
             app.renderMiniStats();
             if(state.activeTab === 'analytics') app.renderAnalytics();
+            
+            // Sync active task title in timer if running
             if (state.timer.taskId) {
                  const t = state.tasks.find(x => x.id === state.timer.taskId);
                  if (t) app.updateTimerUI();
             }
         });
         
+        // Timer Subscription
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -175,7 +148,9 @@ onAuthStateChanged(auth, u => {
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
+                
                 app.updateTimerUI();
+                
                 if(state.timer.status === 'running') {
                     startTimerLoop();
                     if (state.sound !== 'none') {
@@ -192,11 +167,13 @@ onAuthStateChanged(auth, u => {
             }
         });
 
+        // Logs Subscription
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
             state.logs = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
+        // Reminders Check
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -206,7 +183,10 @@ onAuthStateChanged(auth, u => {
                     const todayStr = getDayStr(now);
                     state.tasks.forEach(t => {
                         if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
-                             try { haptic('medium'); new Notification(`Reminder: ${t.title}`, { body: "It's time for your task." }); } catch (e) {}
+                             try { 
+                                 haptic('medium'); 
+                                 new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: ASSETS.icon }); 
+                             } catch (e) {}
                         }
                     });
                 }
@@ -218,6 +198,7 @@ onAuthStateChanged(auth, u => {
     }
 });
 
+// --- TIMER ENGINE ---
 let timerInterval;
 const startTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
@@ -233,9 +214,55 @@ const stopTimerLoop = () => {
     if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
 };
 
+// Lifecycle: Force refresh on app resume (Crucial for Mobile)
+document.addEventListener("visibilitychange", () => {
+   if (!document.hidden && state.timer.status === 'running') {
+       app.updateTimerUI();
+       if(state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
+   }
+});
+
+// --- UI HELPERS ---
+const _ui = {
+    closeProjectSheet: () => {
+        $('project-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+    },
+    closeDetailSheet: () => {
+        $('detail-sheet').classList.add('translate-y-full');
+        if(!state.editingId) {
+             $('modal-overlay').classList.add('opacity-0');
+             setTimeout(() => { 
+                 $('modal-overlay').classList.add('hidden'); 
+                 state.viewingTask = null;
+             }, 300);
+        } else { state.viewingTask = null; }
+    },
+    closeTaskModal: () => {
+        $('modal-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => {
+            $('modal-overlay').classList.add('hidden');
+            state.editingId = null;
+        }, 300);
+    }
+};
+
+// Native Navigation Handler
+if (!history.state) history.replaceState({ view: 'root' }, '');
+window.addEventListener('popstate', (e) => {
+    if (document.activeElement) document.activeElement.blur();
+    if (!$('modal-sheet').classList.contains('translate-y-full')) { _ui.closeTaskModal(); return; }
+    if (!$('detail-sheet').classList.contains('translate-y-full')) { _ui.closeDetailSheet(); return; }
+    if (!$('project-sheet').classList.contains('translate-y-full')) { _ui.closeProjectSheet(); return; }
+    if (state.activeTab !== 'tasks') { app.switchTab('tasks', false); return; }
+});
+
+
 // --- APP CONTROLLER ---
 const app = {
-    // PROMPT HANDLING
+    // === PROMPT HANDLING ===
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     showPrompt: (t, v = '') => new Promise(r => {
         const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v;
@@ -246,7 +273,7 @@ const app = {
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null; }, 200);
     },
 
-    // NAVIGATION
+    // === NAVIGATION ===
     switchTab: (tab, pushHistory = true) => {
         haptic('light');
         if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) {
@@ -257,12 +284,12 @@ const app = {
         const view = $(`view-${tab}`);
         if(view) view.classList.remove('hidden');
         
+        // Tab Bar UI
         document.querySelectorAll('.nav-item').forEach(el => {
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
             el.querySelector('i').classList.remove('ph-fill');
             el.querySelector('i').classList.add('ph-bold');
         });
-        
         const activeBtn = $(`tab-${tab}`);
         if(activeBtn) {
             activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors`;
@@ -270,6 +297,7 @@ const app = {
             activeBtn.querySelector('i').classList.add('ph-fill');
         }
 
+        // Header Visibility
         const isTask = tab === 'tasks';
         if($('view-header')) $('view-header').classList.toggle('hidden', !isTask);
         if($('task-filters')) $('task-filters').classList.toggle('hidden', !isTask);
@@ -304,6 +332,7 @@ const app = {
         app.renderTasks();
     },
     
+    // === PROJECT MANAGEMENT ===
     openProjectSheet: () => {
         haptic('light');
         history.pushState({ modal: 'project' }, '');
@@ -312,18 +341,20 @@ const app = {
         list.innerHTML = '';
         state.projects.forEach(p => {
              const count = state.tasks.filter(t => t.status === 'todo' && t.project === p).length;
+             const isInbox = p === 'Inbox';
              const el = document.createElement('div');
              el.className = "w-full flex items-center justify-between p-4 bg-dark-active/50 border-b border-dark-border first:rounded-t-xl last:border-0 hover:bg-dark-active transition-colors group";
-             // Only allow rename/delete if NOT inbox (though desktop allows inbox editing, standard practice usually locks it. We will allow all like desktop).
              el.innerHTML = `
                 <button onclick="app.selectProject('${esc(p)}')" class="flex items-center gap-3 flex-1 text-left">
-                    <i class="ph-bold ph-folder text-xl text-text-muted"></i>
+                    <i class="ph-bold ph-folder text-xl ${isInbox ? 'text-brand' : 'text-text-muted'}"></i>
                     <span class="text-sm font-bold text-white">${esc(p)}</span>
                 </button>
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-medium text-text-muted bg-dark-bg px-2 py-1 rounded-md border border-dark-border mr-2">${count}</span>
+                    ${!isInbox ? `
                     <button onclick="app.renameProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-white bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                     <button onclick="app.deleteProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-red-500 bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-trash text-sm"></i></button>
+                    ` : ''}
                 </div>
              `;
              list.appendChild(el);
@@ -350,13 +381,58 @@ const app = {
         app.renderTasks();
     },
 
-    setRange: (r) => {
-        state.analytics.range = r; haptic('light');
-        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
-        app.renderAnalytics();
+    promptNewProject: async () => {
+        const p = await app.showPrompt("Enter new project name:");
+        if (p && p.trim()) {
+             state.projects.add(p.trim());
+             const sel = $('inp-project');
+             const opt = document.createElement('option');
+             opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true;
+             sel.appendChild(opt);
+             // If triggered from sheet, update list
+             if(!$('project-sheet').classList.contains('translate-y-full')) app.openProjectSheet();
+        }
+    },
+    
+    renameProject: async (oldName) => {
+        if (oldName === 'Inbox') return;
+        const newName = await app.showPrompt(`Rename "${oldName}" to:`, oldName);
+        if (!newName || newName === oldName) return;
+        
+        try {
+            const batch = writeBatch(db);
+            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", oldName));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+                batch.update(doc.ref, { project: newName });
+            });
+            await batch.commit();
+            
+            state.projects.delete(oldName);
+            state.projects.add(newName);
+            app.openProjectSheet(); 
+            app.showToast('Project renamed');
+        } catch(e) { app.showToast('Error renaming'); }
     },
 
-    // TASK UI
+    deleteProject: async (pName) => {
+        if (pName === 'Inbox') return;
+        if(!confirm(`Delete project "${pName}"? Tasks will move to Inbox.`)) return;
+        try {
+            const batch = writeBatch(db);
+            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", pName));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+                batch.update(doc.ref, { project: 'Inbox' });
+            });
+            await batch.commit();
+            state.projects.delete(pName);
+            app.openProjectSheet(); 
+            app.showToast('Project deleted');
+        } catch(e) { app.showToast('Error deleting'); }
+    },
+
+    // === TASK UI ===
     renderTasks: () => {
         const list = $('task-list');
         if(!list) return;
@@ -428,16 +504,23 @@ const app = {
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
     },
 
-    // --- ANALYTICS ---
+    // === ANALYTICS ===
+    setRange: (r) => {
+        state.analytics.range = r; haptic('light');
+        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
+        app.renderAnalytics();
+    },
+
     renderAnalytics: () => {
         if(state.activeTab !== 'analytics') return;
         const logs = state.logs; const tasks = state.tasks;
-        const now = new Date(); const getDS = d => getDayStr(d); const todayStr = getDS(now);
+        const now = new Date(); const getDS = d => getDayStr(d); 
         
         const tasksDone = tasks.filter(t => t.status === 'done');
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
+        // Stats Cards
         $('ana-time-total').textContent = fmtTime(totalMin);
         $('ana-task-total').textContent = tasksDone.length;
         $('ana-project-count').textContent = state.projects.size;
@@ -452,6 +535,7 @@ const app = {
         let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
         $('ana-streak-days').textContent = streak + ' Days';
 
+        // Pomo Grid
         const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
         for (let i = 0; i < 7; i++) { 
             const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
@@ -466,6 +550,7 @@ const app = {
             row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
         }
 
+        // Charts Data Prep
         const r = state.analytics.range; 
         let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
         if (r === 'year') { 
@@ -487,6 +572,7 @@ const app = {
             } 
         }
 
+        // Render Charts
         const createChart = (ctxId, type, data, color, label, instanceKey) => {
             const el = $(ctxId); if(!el) return;
             const ctx = el.getContext('2d');
@@ -494,7 +580,10 @@ const app = {
             state.chartInstances[instanceKey] = new Chart(ctx, {
                 type: type,
                 data: { labels: lbl, datasets: [{ label: label, data: data, backgroundColor: color, borderColor: color, borderRadius: 3, tension: 0.4, fill: type === 'line', pointRadius: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: false }, x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } } }
+                options: { 
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + (instanceKey.includes('Focus') ? ' hrs' : '') } } }, 
+                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: false }, x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } } 
+                }
             });
         };
 
@@ -532,7 +621,7 @@ const app = {
         $('mobile-logs').innerHTML = logs.slice(0, 10).map(l => { const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); return `<div class="px-4 py-3 flex justify-between items-center text-sm"><div><div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div><div class="flex items-center gap-2 text-[10px] text-text-muted"><span>${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span></div></div><span class="text-brand font-mono">${Math.round(l.duration||25)}m</span></div>` }).join('');
     },
     
-    // --- DETAILS & MODALS ---
+    // === DETAILS & MODALS ===
     openTaskDetail: (t) => {
         haptic('light');
         history.pushState({ modal: 'detail' }, '');
@@ -634,7 +723,7 @@ const app = {
         }
     },
 
-    // --- FORM MODAL ---
+    // === TASK FORM ===
     openTaskModal: (task = null) => {
         haptic('light');
         history.pushState({ modal: 'form' }, '');
@@ -796,55 +885,6 @@ const app = {
             newInputs[newInputs.length - 1].focus();
         }
     },
-
-    promptNewProject: async () => {
-        const p = await app.showPrompt("Enter new project name:");
-        if (p && p.trim()) {
-             state.projects.add(p.trim());
-             const sel = $('inp-project');
-             const opt = document.createElement('option');
-             opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true;
-             sel.appendChild(opt);
-             // If triggered from sheet, update list
-             if(!$('project-sheet').classList.contains('translate-y-full')) app.openProjectSheet();
-        }
-    },
-    
-    renameProject: async (oldName) => {
-        const newName = await app.showPrompt(`Rename "${oldName}" to:`, oldName);
-        if (!newName || newName === oldName) return;
-        
-        try {
-            const batch = writeBatch(db);
-            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", oldName));
-            const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                batch.update(doc.ref, { project: newName });
-            });
-            await batch.commit();
-            
-            state.projects.delete(oldName);
-            state.projects.add(newName);
-            app.openProjectSheet(); // Refresh
-            app.showToast('Project renamed');
-        } catch(e) { app.showToast('Error renaming'); }
-    },
-
-    deleteProject: async (pName) => {
-        if(!confirm(`Delete project "${pName}"? Tasks will move to Inbox.`)) return;
-        try {
-            const batch = writeBatch(db);
-            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", pName));
-            const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                batch.update(doc.ref, { project: 'Inbox' });
-            });
-            await batch.commit();
-            state.projects.delete(pName);
-            app.openProjectSheet(); // Refresh
-            app.showToast('Project deleted');
-        } catch(e) { app.showToast('Error deleting'); }
-    },
     
     saveTask: async () => {
         const title = $('inp-title').value;
@@ -906,6 +946,7 @@ const app = {
         });
     },
 
+    // === TIMER LOGIC ===
     startFocus: async (id) => {
         const t = state.tasks.find(x => x.id === id);
         if(!t) return;
@@ -920,6 +961,8 @@ const app = {
 
     toggleTimer: async () => {
         haptic('medium');
+        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
+        
         if(state.timer.status === 'running') {
             if(state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
@@ -958,7 +1001,7 @@ const app = {
             }
         } catch(e) {}
         
-        try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete"); } catch (e) {}
+        try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete", { icon: ASSETS.icon }); } catch (e) {}
 
         if(state.timer.mode === 'focus' && state.timer.taskId) {
             const t = state.tasks.find(x => x.id === state.timer.taskId);
@@ -1032,7 +1075,7 @@ const app = {
     setSound: (t) => {
         state.sound = t;
         const audio = $('audio-player');
-        if(audio) audio.src = sounds[t];
+        if(audio) audio.src = ASSETS.sounds[t];
         ['none','rain','cafe','forest'].forEach(x => {
             if($(`btn-sound-${x}`)) $(`btn-sound-${x}`).className = x===t ? 'text-brand p-1' : 'text-text-muted hover:text-white transition-colors p-1';
         });
@@ -1057,11 +1100,14 @@ const app = {
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
-// GLOBAL LISTENERS FOR PROMPTS & UI
+// --- GLOBAL EVENT LISTENERS ---
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null));
 $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value));
 $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value); });
 document.addEventListener('click', (e) => { if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur(); });
 
+// Global Export
 window.app = app;
+
+// Init
 app.switchTab('tasks');
