@@ -352,6 +352,7 @@ const app = {
 
     setRange: (r) => {
         state.analytics.range = r; haptic('light');
+        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
         app.renderAnalytics();
     },
 
@@ -430,37 +431,6 @@ const app = {
     // --- ANALYTICS ---
     renderAnalytics: () => {
         if(state.activeTab !== 'analytics') return;
-
-        // 1. RE-TRIGGER ANIMATIONS
-        // This ensures the slide-up effect happens every time you visit the tab
-        const view = $('view-analytics');
-        view.classList.remove('hidden');
-        const animatedElements = view.querySelectorAll('.animate-slide-up');
-        animatedElements.forEach(el => {
-            el.style.animation = 'none';
-            el.offsetHeight; /* trigger reflow */
-            el.style.animation = null; 
-        });
-
-        // 2. SET GREETING
-        const greetings = [
-            "Every minute of focus counts.",
-            "Consistency is the key to mastery.",
-            "Small steps lead to big destinations.",
-            "Stay present. Stay focused.",
-            "Your potential is limitless.",
-            "Calm mind, productive day.",
-            "One task at a time."
-        ];
-        const hour = new Date().getHours();
-        let timeGreet = "Good Morning.";
-        if(hour >= 12) timeGreet = "Good Afternoon.";
-        if(hour >= 17) timeGreet = "Good Evening.";
-        
-        const randomQuote = greetings[Math.floor(Math.random() * greetings.length)];
-        $('ana-greeting').innerHTML = `<span class="text-white">${timeGreet}</span> <span class="opacity-70">${randomQuote}</span>`;
-
-        // 3. DATA PROCESSING
         const logs = state.logs; const tasks = state.tasks;
         const now = new Date(); const getDS = d => getDayStr(d); const todayStr = getDS(now);
         
@@ -470,174 +440,96 @@ const app = {
         
         $('ana-time-total').textContent = fmtTime(totalMin);
         $('ana-task-total').textContent = tasksDone.length;
+        $('ana-project-count').textContent = state.projects.size;
         
         const activeCount = tasks.filter(t => t.status === 'todo').length + tasksDone.length; 
         $('ana-completion-rate').textContent = activeCount > 0 ? Math.round((tasksDone.length / activeCount) * 100) + '%' : '0%';
-        
-        // Streak Calculation
-        let streak = 0; 
-        for(let i=0; i<365; i++) { 
-            const d = new Date(); d.setDate(now.getDate() - i); 
-            // Check if there is a log for this day
-            if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) {
-                streak++; 
-            } else if(i > 0 && getDS(d) !== todayStr) {
-                // Break streak if missing a day (allow today to be empty if checking mid-day)
-                 if(i === 1 && streak === 0) {} // If yesterday was missed, streak is 0
-                 else if (i > 0) break;
-            }
-        } 
-        $('ana-streak-days').textContent = streak + (streak === 1 ? ' Day' : ' Days');
+        $('ana-avg-session').textContent = (logs.length > 0 ? Math.round(totalMin / logs.length) : 0) + 'm';
 
-        // Timeline Logic
+        let morning = 0, night = 0; logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); 
+        $('ana-early-bird').textContent = fmtTime(morning); $('ana-night-owl').textContent = fmtTime(night);
+        
+        let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
+        $('ana-streak-days').textContent = streak + ' Days';
+
         const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
-        for (let i = 0; i < 5; i++) { // Reduced to 5 days for mobile aesthetics
+        for (let i = 0; i < 7; i++) { 
             const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
             const dayLogs = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === dStr); 
-            
-            const row = document.createElement('div'); 
-            row.className = "flex items-center h-8 mb-1"; 
-            
-            const lbl = document.createElement('div'); 
-            lbl.className = "w-12 text-[10px] text-text-muted font-bold uppercase shrink-0 text-right pr-3"; 
-            lbl.textContent = i === 0 ? "Today" : d.toLocaleDateString('en-US', {weekday:'short'}); 
-            
-            const bars = document.createElement('div'); 
-            bars.className = "flex-1 h-2 relative bg-dark-bg rounded-full overflow-hidden"; 
-            
+            const row = document.createElement('div'); row.className = "flex items-center h-6 mb-2"; 
+            const lbl = document.createElement('div'); lbl.className = "w-16 text-[10px] text-text-muted font-bold uppercase shrink-0"; lbl.textContent = i === 0 ? "Today" : d.toLocaleDateString('en-US', {weekday:'short'}); 
+            const bars = document.createElement('div'); bars.className = "flex-1 h-full relative bg-dark-bg rounded border border-dark-border overflow-hidden mx-2"; 
             dayLogs.forEach(l => { 
-                const ld = new Date(l.completedAt.seconds * 1000);
-                const sm = (ld.getHours() * 60) + ld.getMinutes();
-                const dur = l.duration || 25; 
-                const lp = ((sm - dur) / 1440) * 100; 
-                const wp = (dur / 1440) * 100; 
-                
-                const b = document.createElement('div'); 
-                b.className = "absolute top-0 bottom-0 rounded-sm bg-brand opacity-90"; 
-                b.style.left = `${lp}%`; 
-                b.style.width = `${Math.max(wp, 1)}%`; 
-                bars.appendChild(b);
+                const ld = new Date(l.completedAt.seconds * 1000), sm = (ld.getHours() * 60) + ld.getMinutes(), dur = l.duration || 25, lp = ((sm - dur) / 1440) * 100, wp = (dur / 1440) * 100; 
+                const b = document.createElement('div'); b.className = "absolute top-1 bottom-1 rounded-sm bg-brand opacity-80"; b.style.left = `${lp}%`; b.style.width = `${Math.max(wp, 1)}%`; bars.appendChild(b) 
             }); 
-            row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row);
+            row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
         }
 
-        // Chart Config
         const r = state.analytics.range; 
-        ['week', 'month', 'year'].forEach(k => { 
-            const btn = $(`btn-range-${k}`);
-            if(k === r) btn.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-dark-active text-white border border-dark-border shadow-inner transition-all"; 
-            else btn.className = "flex-1 py-2 rounded-lg text-xs font-medium text-text-muted hover:text-white transition-all"; 
-        });
-
-        // Prepare Data
-        let lbl = [], dpFocus = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
+        let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
         if (r === 'year') { 
             for (let i = 11; i >= 0; i--) { 
-                const d = new Date(now.getFullYear(), now.getMonth() - i, 1); lbl.push(d.toLocaleString('default', { month: 'narrow' })); 
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1); lbl.push(d.toLocaleString('default', { month: 'short' })); 
                 const mLogs = logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000).getMonth() === d.getMonth()); 
                 dpFocus.push((mLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); 
+                const mTasks = tasksDone.filter(t => t.completedAt && new Date(t.completedAt).getMonth() === d.getMonth()); 
+                dpTask.push(mTasks.length); 
             } 
         } else { 
             for (let i = dlb - 1; i >= 0; i--) { 
                 const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
-                lbl.push(d.toLocaleDateString('en-US', { weekday: 'narrow' })); 
+                lbl.push(d.toLocaleDateString('en-US', { weekday: 'short' })); 
                 const dLogs = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === dStr); 
                 dpFocus.push((dLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); 
+                const dTasks = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(dStr)); 
+                dpTask.push(dTasks.length); 
             } 
         }
 
-        const createChart = (ctxId, type, data, color, instanceKey, cutout=false) => {
+        const createChart = (ctxId, type, data, color, label, instanceKey) => {
             const el = $(ctxId); if(!el) return;
             const ctx = el.getContext('2d');
             if(state.chartInstances[instanceKey]) state.chartInstances[instanceKey].destroy();
-            
-            const config = {
+            state.chartInstances[instanceKey] = new Chart(ctx, {
                 type: type,
-                data: { 
-                    labels: lbl, // overwritten for doughnut
-                    datasets: [{ 
-                        data: data, 
-                        backgroundColor: color, 
-                        borderColor: type === 'bar' ? color : 'transparent', 
-                        borderRadius: 3, 
-                        borderWidth: 0,
-                    }] 
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } }, 
-                    scales: { 
-                        y: { display: false }, 
-                        x: { display: type === 'bar', grid: { display: false }, ticks: { font: { size: 9 }, color: '#52525b' } } 
-                    } 
-                }
-            };
-
-            if(type === 'doughnut') {
-                config.options.cutout = '75%';
-                config.data.labels = []; // Clear labels for doughnut
-                config.options.scales = { x: {display:false}, y: {display:false}};
-            }
-
-            state.chartInstances[instanceKey] = new Chart(ctx, config);
+                data: { labels: lbl, datasets: [{ label: label, data: data, backgroundColor: color, borderColor: color, borderRadius: 3, tension: 0.4, fill: type === 'line', pointRadius: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: false }, x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } } }
+            });
         };
 
-        createChart('focusBarChart', 'bar', dpFocus, '#ff5757', 'focusBar');
+        createChart('focusBarChart', 'bar', dpFocus, '#ff5757', 'Hours', 'focusBar');
+        createChart('taskBarChart', 'bar', dpTask, '#3b82f6', 'Tasks', 'taskBar');
 
-        // Insight Text
         const hours = Array(24).fill(0); logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
-        const maxHour = hours.indexOf(Math.max(...hours)); 
-        const maxTimeStr = maxHour > 12 ? (maxHour-12)+'PM' : maxHour+'AM';
-        
-        if(logs.length > 2) {
-            $('insight-text').innerHTML = `You are most productive around <span class="text-brand font-bold">${maxTimeStr}</span>.<br>Maintain this rhythm.`;
-        } else {
-            $('insight-text').textContent = "Complete more sessions to unlock daily insights.";
+        if($('hourlyChart')) {
+            if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
+            state.chartInstances.hourly = new Chart($('hourlyChart').getContext('2d'), { type: 'bar', data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: '#10b981', borderRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{display:false}, y:{display:false}} } });
         }
 
-        // Doughnuts
-        const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); 
-        const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]).slice(0, 4); // Top 4 only
-        
+        const weekdays = Array(7).fill(0); logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
+        if($('weekdayChart')) {
+            if(state.chartInstances.weekday) state.chartInstances.weekday.destroy();
+            state.chartInstances.weekday = new Chart($('weekdayChart').getContext('2d'), { type: 'bar', data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: '#f59e0b', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{grid:{display:false}}, y:{display:false}} } });
+        }
+
+        const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
+        $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
+
+        const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
         if($('projectChart')) {
             if (state.chartInstances.project) state.chartInstances.project.destroy();
-            state.chartInstances.project = new Chart($('projectChart').getContext('2d'), { 
-                type: 'doughnut', 
-                data: { labels: sp.map(x=>x[0]), datasets: [{ data: sp.map(x=>x[1]), backgroundColor: ['#ff5757', '#3b82f6', '#10b981', '#f59e0b'], borderWidth: 0 }] }, 
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } }, scales:{x:{display:false},y:{display:false}} } 
-            });
+            state.chartInstances.project = new Chart($('projectChart').getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
+        $('project-legend').innerHTML = sp.map((p,i) => `<div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i%5]}"></div><span class="text-text-muted truncate max-w-[80px]">${p[0]}</span></div><span class="text-white font-mono">${Math.round(p[1])}m</span></div>`).join('');
 
         const pri = { high: 0, med: 0, low: 0, none: 0 }; tasksDone.forEach(t => pri[t.priority || 'none']++);
         if($('priorityChart')) {
             if (state.chartInstances.priority) state.chartInstances.priority.destroy();
-            state.chartInstances.priority = new Chart($('priorityChart').getContext('2d'), { 
-                type: 'doughnut', 
-                data: { labels: ['H', 'M', 'L', 'N'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 0 }] }, 
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } }, scales:{x:{display:false},y:{display:false}} } 
-            });
+            state.chartInstances.priority = new Chart($('priorityChart').getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
 
-        // Logs List
-        $('mobile-logs').innerHTML = logs.slice(0, 10).map(l => { 
-            const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); 
-            return `
-            <div class="px-5 py-3 flex justify-between items-center text-sm hover:bg-dark-active/20 transition-colors">
-                <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-8 rounded-full bg-dark-border"></div>
-                    <div>
-                        <div class="text-white truncate max-w-[140px] font-bold text-xs">${esc(l.taskTitle || 'Focus Session')}</div>
-                        <div class="flex items-center gap-2 text-[10px] text-text-muted mt-0.5">
-                            <span>${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</span>
-                            <span class="w-1 h-1 rounded-full bg-dark-border"></span>
-                            <span>${esc(l.project || 'Inbox')}</span>
-                        </div>
-                    </div>
-                </div>
-                <span class="text-brand font-mono font-bold bg-brand/10 px-2 py-1 rounded text-xs">${Math.round(l.duration||25)}m</span>
-            </div>`; 
-        }).join('');
+        $('mobile-logs').innerHTML = logs.slice(0, 10).map(l => { const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); return `<div class="px-4 py-3 flex justify-between items-center text-sm"><div><div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div><div class="flex items-center gap-2 text-[10px] text-text-muted"><span>${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span></div></div><span class="text-brand font-mono">${Math.round(l.duration||25)}m</span></div>` }).join('');
     },
     
     // --- DETAILS & MODALS ---

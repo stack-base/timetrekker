@@ -152,99 +152,110 @@
                 </div>
             </div>
 
-            <div id="view-analytics" class="view-section hidden pb-10 pt-2 space-y-5">
-                
-                <div class="text-center py-6 animate-slide-up">
-                    <div class="inline-flex items-center gap-2 mb-2 opacity-80">
-                        <i class="ph-fill ph-mountains text-brand text-xl"></i>
-                        <span class="text-xs font-bold tracking-[0.2em] uppercase text-text-muted">TimeTrekker</span>
-                    </div>
-                    <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">Analytics</h2>
-                    <p id="ana-greeting" class="text-sm text-text-muted font-medium transition-all duration-500 ease-in-out h-5">
-                        Finding your flow...
-                    </p>
-                </div>
-
-                <div class="animate-slide-up" style="animation-delay: 50ms;">
-                    <div class="flex bg-dark-card rounded-xl p-1.5 border border-dark-border justify-between shadow-sm mx-1">
-                        <button onclick="app.setRange('week')" id="btn-range-week" class="flex-1 py-2 rounded-lg text-xs font-bold bg-dark-active text-white shadow-sm transition-all">Week</button>
-                        <button onclick="app.setRange('month')" id="btn-range-month" class="flex-1 py-2 rounded-lg text-xs font-medium text-text-muted hover:text-white transition-all">Month</button>
-                        <button onclick="app.setRange('year')" id="btn-range-year" class="flex-1 py-2 rounded-lg text-xs font-medium text-text-muted hover:text-white transition-all">Year</button>
+            <div id="view-analytics" class="view-section hidden pb-10 pt-4 space-y-4">
+                <div class="bg-brand/5 border border-brand/20 rounded-xl p-4 flex items-start gap-3">
+                    <i class="ph-fill ph-lightbulb text-brand text-xl mt-0.5"></i>
+                    <div class="text-sm text-text-muted">
+                        <span class="block text-white font-semibold mb-1">Smart Insights</span>
+                        <span id="insight-text">Gathering data to generate insights...</span>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 animate-slide-up" style="animation-delay: 100ms;">
-                    <div class="bg-dark-card p-5 rounded-2xl border border-dark-border shadow-sm relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-clock text-4xl text-brand"></i></div>
-                        <div class="text-[10px] uppercase text-text-muted font-bold tracking-wider mb-1">Total Focus</div>
-                        <div class="text-2xl font-bold text-white mt-1" id="ana-time-total">0h</div>
+                <div class="flex bg-dark-card rounded-lg p-1 border border-dark-border justify-between shadow-sm">
+                    <button onclick="app.setRange('week')" id="btn-range-week" class="flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all">Week</button>
+                    <button onclick="app.setRange('month')" id="btn-range-month" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Month</button>
+                    <button onclick="app.setRange('year')" id="btn-range-year" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Year</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Total Focus</div>
+                        <div class="text-xl font-bold text-brand mt-1" id="ana-time-total">0h</div>
                     </div>
-                    <div class="bg-dark-card p-5 rounded-2xl border border-dark-border shadow-sm relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-check-circle text-4xl text-blue-500"></i></div>
-                        <div class="text-[10px] uppercase text-text-muted font-bold tracking-wider mb-1">Tasks Done</div>
-                        <div class="text-2xl font-bold text-white mt-1" id="ana-task-total">0</div>
+                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks Done</div>
+                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-total">0</div>
                     </div>
-                    <div class="bg-dark-card p-5 rounded-2xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold tracking-wider mb-1">Completion Rate</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Completion %</div>
                         <div class="text-xl font-bold text-green-500 mt-1" id="ana-completion-rate">0%</div>
                     </div>
-                    <div class="bg-dark-card p-5 rounded-2xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold tracking-wider mb-1">Current Streak</div>
+                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Avg Session</div>
+                        <div class="text-xl font-bold text-white mt-1" id="ana-avg-session">0m</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Morning Focus</div>
+                        <div class="text-xl font-bold text-yellow-500 mt-1" id="ana-early-bird">0h</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Night Focus</div>
+                        <div class="text-xl font-bold text-indigo-400 mt-1" id="ana-night-owl">0h</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Best Streak</div>
                         <div class="text-xl font-bold text-purple-500 mt-1" id="ana-streak-days">0 Days</div>
                     </div>
-                </div>
-
-                <div class="animate-slide-up" style="animation-delay: 150ms;">
-                    <div class="bg-gradient-to-br from-dark-card to-dark-active/50 border border-dark-border rounded-xl p-5 flex items-start gap-4 shadow-sm relative overflow-hidden">
-                        <div class="absolute -right-4 -top-4 w-20 h-20 bg-brand/10 rounded-full blur-2xl pointer-events-none"></div>
-                        <div class="bg-brand/20 p-2 rounded-lg text-brand shrink-0">
-                            <i class="ph-fill ph-sparkle text-xl"></i>
-                        </div>
-                        <div class="text-sm">
-                            <span class="block text-white font-bold mb-1">Focus Insight</span>
-                            <span id="insight-text" class="text-text-muted leading-relaxed text-xs">Gathering data to generate your insights...</span>
-                        </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Active Projects</div>
+                        <div class="text-xl font-bold text-white mt-1" id="ana-project-count">0</div>
                     </div>
                 </div>
 
-                <div class="space-y-4 animate-slide-up" style="animation-delay: 200ms;">
-                    
-                    <div class="bg-dark-card rounded-2xl border border-dark-border p-5 shadow-sm">
-                        <h3 class="text-xs font-bold uppercase text-text-muted mb-4 flex items-center gap-2"><i class="ph-bold ph-calendar-check"></i> Recent Activity</h3>
-                        <div class="overflow-x-auto no-scrollbar">
-                            <div class="min-w-[300px]">
-                                 <div id="pomo-timeline-grid" class="space-y-2"></div>
-                            </div>
+                <div class="bg-dark-card rounded-xl border border-dark-border p-4 shadow-sm overflow-hidden">
+                    <h3 class="text-sm font-bold mb-3 text-white">Pomodoro Records</h3>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <div class="min-w-[500px]">
+                             <div id="pomo-timeline-grid" class="space-y-1"></div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="grid grid-cols-1 gap-4">
-                        <div class="bg-dark-card p-5 rounded-2xl border border-dark-border shadow-sm">
-                            <h3 class="text-xs font-bold uppercase text-text-muted mb-4">Focus Hours</h3>
-                            <div class="h-40 relative w-full"><canvas id="focusBarChart"></canvas></div>
-                        </div>
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Focus Trend</h3>
+                    <div class="h-48 relative w-full"><canvas id="focusBarChart"></canvas></div>
+                </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                             <div class="bg-dark-card p-4 rounded-2xl border border-dark-border shadow-sm flex flex-col items-center justify-center">
-                                <h3 class="text-[10px] font-bold uppercase text-text-muted mb-2 w-full text-left">By Project</h3>
-                                <div class="h-24 w-24 relative"><canvas id="projectChart"></canvas></div>
-                            </div>
-                            <div class="bg-dark-card p-4 rounded-2xl border border-dark-border shadow-sm flex flex-col items-center justify-center">
-                                <h3 class="text-[10px] font-bold uppercase text-text-muted mb-2 w-full text-left">By Priority</h3>
-                                <div class="h-24 w-24 relative"><canvas id="priorityChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Task Completion</h3>
+                    <div class="h-48 relative w-full"><canvas id="taskBarChart"></canvas></div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Hourly Productivity</h3>
+                    <div class="h-48 relative w-full"><canvas id="hourlyChart"></canvas></div>
                 </div>
                 
-                <div class="bg-dark-card rounded-2xl border border-dark-border overflow-hidden shadow-sm animate-slide-up" style="animation-delay: 250ms;">
-                    <div class="px-5 py-4 border-b border-dark-border bg-dark-active/30 flex justify-between items-center">
-                        <span class="text-xs font-bold uppercase text-text-muted">Session Log</span>
-                        <span class="text-[10px] text-text-muted bg-dark-bg border border-dark-border px-2 py-0.5 rounded">Last 10</span>
-                    </div>
-                    <div id="mobile-logs" class="divide-y divide-dark-border"></div>
+                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Weekly Performance</h3>
+                    <div class="h-48 relative w-full"><canvas id="weekdayChart"></canvas></div>
                 </div>
 
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Project Distribution</h3>
+                    <div class="flex items-center gap-4">
+                            <div class="h-32 w-32 relative shrink-0"><canvas id="projectChart"></canvas></div>
+                            <div id="project-legend" class="flex-1 space-y-2 text-xs overflow-y-auto max-h-32 pr-2 custom-scrollbar"></div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Task Priorities</h3>
+                     <div class="flex items-center gap-4">
+                        <div class="h-32 w-32 relative shrink-0"><canvas id="priorityChart"></canvas></div>
+                        <div class="flex-1 flex flex-col justify-center text-xs space-y-2">
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-text-muted">High Priority</span></div>
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-yellow-500"></div><span class="text-text-muted">Medium Priority</span></div>
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span class="text-text-muted">Low Priority</span></div>
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-[#525252]"></div><span class="text-text-muted">None</span></div>
+                        </div>
+                     </div>
+                </div>
+
+                <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
+                    <div class="px-4 py-3 border-b border-dark-border text-xs font-bold uppercase text-text-muted bg-dark-card">Recent Sessions Log</div>
+                    <div id="mobile-logs" class="divide-y divide-dark-border"></div>
+                </div>
             </div>
 
             <div id="view-settings" class="view-section hidden space-y-6 pt-4">
