@@ -314,6 +314,7 @@ const app = {
              const count = state.tasks.filter(t => t.status === 'todo' && t.project === p).length;
              const el = document.createElement('div');
              el.className = "w-full flex items-center justify-between p-4 bg-dark-active/50 border-b border-dark-border first:rounded-t-xl last:border-0 hover:bg-dark-active transition-colors group";
+             // Only allow rename/delete if NOT inbox (though desktop allows inbox editing, standard practice usually locks it. We will allow all like desktop).
              el.innerHTML = `
                 <button onclick="app.selectProject('${esc(p)}')" class="flex items-center gap-3 flex-1 text-left">
                     <i class="ph-bold ph-folder text-xl text-text-muted"></i>
@@ -427,101 +428,37 @@ const app = {
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
     },
 
-    // --- ANALYTICS (REVAMPED) ---
+    // --- ANALYTICS ---
     renderAnalytics: () => {
         if(state.activeTab !== 'analytics') return;
-        
-        // 1. DATA PREP
         const logs = state.logs; const tasks = state.tasks;
-        const now = new Date(); const getDS = d => getDayStr(d);
+        const now = new Date(); const getDS = d => getDayStr(d); const todayStr = getDS(now);
+        
         const tasksDone = tasks.filter(t => t.status === 'done');
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
-        // 2. CALCULATE METRICS
-        const metrics = {
-            totalTime: fmtTime(totalMin),
-            totalTasks: tasksDone.length,
-            completionRate: (tasks.length > 0 ? Math.round((tasksDone.length / (tasks.filter(t=>t.status==='todo').length + tasksDone.length)) * 100) : 0),
-            avgSession: (logs.length > 0 ? Math.round(totalMin / logs.length) : 0) + 'm',
-            activeProjects: state.projects.size,
-            streak: 0
-        };
-
-        // Streak Logic
-        for(let i=0; i<365; i++) { 
-            const d = new Date(); d.setDate(now.getDate() - i); 
-            if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) metrics.streak++; 
-            else if(i > 0) break; 
-        }
-
-        // Morning/Night Logic
-        let morning = 0, night = 0; 
-        logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } });
+        $('ana-time-total').textContent = fmtTime(totalMin);
+        $('ana-task-total').textContent = tasksDone.length;
+        $('ana-project-count').textContent = state.projects.size;
         
-        // 3. RENDER HEADER & GREETING
-        const hour = now.getHours();
-        const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
-        const name = state.user.displayName ? state.user.displayName.split(' ')[0] : 'Traveler';
+        const activeCount = tasks.filter(t => t.status === 'todo').length + tasksDone.length; 
+        $('ana-completion-rate').textContent = activeCount > 0 ? Math.round((tasksDone.length / activeCount) * 100) + '%' : '0%';
+        $('ana-avg-session').textContent = (logs.length > 0 ? Math.round(totalMin / logs.length) : 0) + 'm';
+
+        let morning = 0, night = 0; logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); 
+        $('ana-early-bird').textContent = fmtTime(morning); $('ana-night-owl').textContent = fmtTime(night);
         
-        const quotes = [
-            "Focus on being productive instead of busy.",
-            "Small steps every day add up to big results.",
-            "Inhale peace, exhale stress.",
-            "The best way to predict the future is to create it.",
-            "Simplicity is the ultimate sophistication."
-        ];
-        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
+        $('ana-streak-days').textContent = streak + ' Days';
 
-        $('ana-greeting').textContent = `${greeting}, ${name}`;
-        $('ana-quote').textContent = randomQuote;
-        $('ana-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-
-        // 4. ANIMATE NUMBERS
-        const animateValue = (id, end, suffix = '') => {
-            const el = $(id); if(!el) return;
-            if(isNaN(end)) { el.textContent = end + suffix; return; }
-            
-            let start = 0;
-            const duration = 1000;
-            const stepTime = Math.abs(Math.floor(duration / end));
-            
-            if (end < 50) {
-                 let current = 0;
-                 const timer = setInterval(() => {
-                     current += 1;
-                     el.textContent = current + suffix;
-                     if (current >= end) clearInterval(timer);
-                 }, Math.max(stepTime, 50));
-            } else {
-                let startTimestamp = null;
-                const step = (timestamp) => {
-                    if (!startTimestamp) startTimestamp = timestamp;
-                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                    el.textContent = Math.floor(progress * end) + suffix;
-                    if (progress < 1) window.requestAnimationFrame(step);
-                };
-                window.requestAnimationFrame(step);
-            }
-        };
-
-        $('ana-hero-time').textContent = metrics.totalTime; 
-        animateValue('ana-hero-tasks', metrics.totalTasks);
-        animateValue('ana-completion-rate', metrics.completionRate, '%');
-        $('ana-avg-session').textContent = metrics.avgSession;
-        $('ana-early-bird').textContent = fmtTime(morning);
-        $('ana-night-owl').textContent = fmtTime(night);
-        animateValue('ana-streak-days', metrics.streak, ' Days');
-        animateValue('ana-project-count', metrics.activeProjects);
-
-        // 5. CHARTS AND TIMELINE
         const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
         for (let i = 0; i < 7; i++) { 
             const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
             const dayLogs = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === dStr); 
             const row = document.createElement('div'); row.className = "flex items-center h-6 mb-2"; 
             const lbl = document.createElement('div'); lbl.className = "w-16 text-[10px] text-text-muted font-bold uppercase shrink-0"; lbl.textContent = i === 0 ? "Today" : d.toLocaleDateString('en-US', {weekday:'short'}); 
-            const bars = document.createElement('div'); bars.className = "flex-1 h-full relative bg-dark-bg/50 rounded border border-dark-border overflow-hidden mx-2"; 
+            const bars = document.createElement('div'); bars.className = "flex-1 h-full relative bg-dark-bg rounded border border-dark-border overflow-hidden mx-2"; 
             dayLogs.forEach(l => { 
                 const ld = new Date(l.completedAt.seconds * 1000), sm = (ld.getHours() * 60) + ld.getMinutes(), dur = l.duration || 25, lp = ((sm - dur) / 1440) * 100, wp = (dur / 1440) * 100; 
                 const b = document.createElement('div'); b.className = "absolute top-1 bottom-1 rounded-sm bg-brand opacity-80"; b.style.left = `${lp}%`; b.style.width = `${Math.max(wp, 1)}%`; bars.appendChild(b) 
@@ -549,7 +486,7 @@ const app = {
                 dpTask.push(dTasks.length); 
             } 
         }
-        
+
         const createChart = (ctxId, type, data, color, label, instanceKey) => {
             const el = $(ctxId); if(!el) return;
             const ctx = el.getContext('2d');
@@ -569,6 +506,15 @@ const app = {
             if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
             state.chartInstances.hourly = new Chart($('hourlyChart').getContext('2d'), { type: 'bar', data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: '#10b981', borderRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{display:false}, y:{display:false}} } });
         }
+
+        const weekdays = Array(7).fill(0); logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
+        if($('weekdayChart')) {
+            if(state.chartInstances.weekday) state.chartInstances.weekday.destroy();
+            state.chartInstances.weekday = new Chart($('weekdayChart').getContext('2d'), { type: 'bar', data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: '#f59e0b', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{grid:{display:false}}, y:{display:false}} } });
+        }
+
+        const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
+        $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
 
         const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
         if($('projectChart')) {
