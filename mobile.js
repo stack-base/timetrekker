@@ -225,12 +225,12 @@ const startTimerLoop = () => {
         app.updateTimerUI();
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
-    if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-4xl ml-1 drop-shadow-md";
+    if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
 };
 
 const stopTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
-    if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-4xl ml-1 drop-shadow-md";
+    if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
 };
 
 // --- APP CONTROLLER ---
@@ -997,12 +997,11 @@ const app = {
         
         $('timer-display').textContent = `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
         $('timer-mode').textContent = mode === 'focus' ? 'FOCUS' : mode === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
-        $('timer-mode').className = `px-3 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold tracking-[0.2em] uppercase mt-4 border border-brand/20 ${mode==='focus'?'bg-brand/10 text-brand border-brand/20':'bg-blue-500/10 text-blue-500 border-blue-500/20'}`;
+        $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'}`;
         
-        const offset = 264 * (1 - (s / (total || 1)));
+        const offset = 283 * (1 - (s / (total || 1)));
         $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
         $('timer-progress').style.stroke = mode === 'focus' ? '#ff5757' : '#3b82f6';
-        $('timer-progress').style.filter = mode === 'focus' ? 'drop-shadow(0 0 4px rgba(255, 87, 87, 0.4))' : 'drop-shadow(0 0 4px rgba(59, 130, 246, 0.4))';
 
         if(taskId && mode === 'focus') {
             const t = state.tasks.find(x => x.id === taskId);
@@ -1020,12 +1019,12 @@ const app = {
         } else if (mode !== 'focus') {
             $('focus-empty').classList.remove('hidden');
             $('focus-active').classList.add('hidden');
-            $('focus-empty').innerHTML = `<div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-2 shadow-inner"><i class="ph-fill ph-coffee text-2xl text-blue-500"></i></div><span class="opacity-70">Rest your mind</span>`;
+            $('focus-empty').textContent = "Rest your mind";
             document.title = `${m}:${sc.toString().padStart(2,'0')} - Break`;
         } else {
             $('focus-empty').classList.remove('hidden');
             $('focus-active').classList.add('hidden');
-            $('focus-empty').innerHTML = `<div class="w-12 h-12 rounded-full bg-dark-active flex items-center justify-center mb-2 shadow-inner"><i class="ph-fill ph-check-circle text-2xl text-text-muted/50"></i></div><span class="opacity-70">Select a task to start focusing</span>`;
+            $('focus-empty').textContent = "Select a task to focus";
             document.title = "TimeTrekker";
         }
     },
@@ -1035,15 +1034,7 @@ const app = {
         const audio = $('audio-player');
         if(audio) audio.src = sounds[t];
         ['none','rain','cafe','forest'].forEach(x => {
-            const btn = $(`btn-sound-${x}`);
-            if(btn) {
-                 if(x===t) {
-                     btn.className = 'w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-dark-active text-brand shadow-sm border border-brand/20';
-                     btn.querySelector('i').classList.remove('text-text-muted');
-                 } else {
-                     btn.className = 'w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-white transition-all hover:bg-white/5';
-                 }
-            }
+            if($(`btn-sound-${x}`)) $(`btn-sound-${x}`).className = x===t ? 'text-brand p-1' : 'text-text-muted hover:text-white transition-colors p-1';
         });
         if(state.timer.status === 'running' && t !== 'none') audio.play().catch(()=>{});
         else audio.pause();
