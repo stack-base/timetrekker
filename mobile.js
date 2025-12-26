@@ -437,24 +437,6 @@ const app = {
         const tasksDone = tasks.filter(t => t.status === 'done');
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
-
-        // 2. SET GREETING
-        const greetings = [
-            "Every minute of focus counts.",
-            "Consistency is the key to mastery.",
-            "Small steps lead to big destinations.",
-            "Stay present. Stay focused.",
-            "Your potential is limitless.",
-            "Calm mind, productive day.",
-            "One task at a time."
-        ];
-        const hour = new Date().getHours();
-        let timeGreet = "Good Morning.";
-        if(hour >= 12) timeGreet = "Good Afternoon.";
-        if(hour >= 17) timeGreet = "Good Evening.";
-        
-        const randomQuote = greetings[Math.floor(Math.random() * greetings.length)];
-        $('ana-greeting').innerHTML = `<span class="text-white">${timeGreet}</span> <span class="opacity-70">${randomQuote}</span>`;
         
         $('ana-time-total').textContent = fmtTime(totalMin);
         $('ana-task-total').textContent = tasksDone.length;
