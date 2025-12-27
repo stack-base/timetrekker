@@ -19,7 +19,7 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Robust Persistence Handling (Desktop Parity)
+// Robust Persistence Handling
 try { 
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') console.warn('Persistence disabled (Multiple tabs open).');
@@ -32,7 +32,7 @@ const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-// Haptic Engine (Desktop Parity)
+// Haptic Engine
 const haptic = (type = 'light') => { 
     if(!navigator.vibrate) return; 
     try { 
@@ -102,7 +102,6 @@ onAuthStateChanged(auth, u => {
         state.user = u;
         syncUserProfile(u);
         
-        // Listen to User Profile
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -121,10 +120,8 @@ onAuthStateChanged(auth, u => {
 
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Tasks Subscription
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
-            // Rebuild Project Set
             const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
             state.tasks.forEach(t => { if(t.project && t.project !== 'Inbox') p.add(t.project); });
             state.projects = p;
@@ -133,14 +130,12 @@ onAuthStateChanged(auth, u => {
             app.renderMiniStats();
             if(state.activeTab === 'analytics') app.renderAnalytics();
             
-            // Sync active task title in timer
             if (state.timer.taskId) {
                  const t = state.tasks.find(x => x.id === state.timer.taskId);
                  if (t) app.updateTimerUI();
             }
         });
         
-        // Timer Subscription
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -154,12 +149,8 @@ onAuthStateChanged(auth, u => {
                     taskId: d.taskId || null,
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
-                
-                // Sync settings from Firestore if they were saved there (optional, but good for sync)
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
-
                 app.updateTimerUI();
-                
                 if(state.timer.status === 'running') {
                     startTimerLoop();
                     if (state.sound !== 'none') {
@@ -176,13 +167,11 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // Logs Subscription
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
             state.logs = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
-        // Reminders Check (Desktop Parity)
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -223,7 +212,6 @@ const stopTimerLoop = () => {
     if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
 };
 
-// Lifecycle: Force refresh on app resume
 document.addEventListener("visibilitychange", () => {
    if (!document.hidden && state.timer.status === 'running') {
        app.updateTimerUI();
@@ -233,7 +221,6 @@ document.addEventListener("visibilitychange", () => {
 
 // --- APP CONTROLLER ---
 const app = {
-    // === PROMPT HANDLING ===
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     showPrompt: (t, v = '') => new Promise(r => {
         const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v;
@@ -244,7 +231,6 @@ const app = {
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null; }, 200);
     },
 
-    // === NAVIGATION ===
     switchTab: (tab, pushHistory = true) => {
         haptic('light');
         if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) {
@@ -301,7 +287,6 @@ const app = {
         app.renderTasks();
     },
     
-    // === PROJECT MANAGEMENT ===
     openProjectSheet: () => {
         haptic('light');
         history.pushState({ modal: 'project' }, '');
@@ -344,7 +329,7 @@ const app = {
              b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`;
         });
         $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand`;
-        history.back(); // close sheet via history
+        history.back();
         app.renderTasks();
     },
 
@@ -352,7 +337,6 @@ const app = {
         const p = await app.showPrompt("Enter new project name:");
         if (p && p.trim()) {
              state.projects.add(p.trim());
-             // Update select dropdown immediately if open
              const sel = $('inp-project');
              if(sel) {
                 const opt = document.createElement('option');
@@ -367,14 +351,12 @@ const app = {
         if (oldName === 'Inbox') return;
         const newName = await app.showPrompt(`Rename "${oldName}" to:`, oldName);
         if (!newName || newName === oldName) return;
-        
         try {
             const batch = writeBatch(db);
             const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", oldName));
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => { batch.update(doc.ref, { project: newName }); });
             await batch.commit();
-            
             state.projects.delete(oldName); state.projects.add(newName);
             app.openProjectSheet(); 
             app.showToast('Project renamed');
@@ -396,7 +378,6 @@ const app = {
         } catch(e) { app.showToast('Error deleting'); }
     },
 
-    // === TASK UI ===
     renderTasks: () => {
         const list = $('task-list');
         if(!list) return;
@@ -409,7 +390,6 @@ const app = {
         let filtered = state.tasks;
         let title = "Tasks";
         
-        // Exact filter parity with Desktop
         const todo = state.tasks.filter(t => t.status === 'todo');
 
         if(state.activeFilter === 'today') { filtered = todo.filter(t => t.dueDate === today); title = "Today"; }
@@ -471,7 +451,6 @@ const app = {
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
     },
 
-    // === ANALYTICS (Parity Calculation) ===
     setRange: (r) => {
         state.analytics.range = r; haptic('light');
         ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
@@ -499,7 +478,6 @@ const app = {
         const getDS = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         const todayStr = getDS(now);
 
-        // --- Calculate Time Ranges (Desktop Parity) ---
         const startOfWeek = new Date(now); 
         const day = startOfWeek.getDay() || 7; 
         if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); 
@@ -515,7 +493,6 @@ const app = {
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
-        // --- Render Stats Cards ---
         $('ana-time-total').textContent = fmtTime(totalMin);
         $('ana-time-week').textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0));
         $('ana-time-today').textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0));
@@ -535,7 +512,6 @@ const app = {
         let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
         $('ana-streak-days').textContent = streak + ' Days';
 
-        // --- Render Timeline Grid ---
         const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
         for (let i = 0; i < 7; i++) { 
             const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
@@ -550,7 +526,6 @@ const app = {
             row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
         }
 
-        // --- Prepare Chart Data ---
         const r = state.analytics.range; 
         let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
         if (r === 'year') { 
@@ -572,14 +547,12 @@ const app = {
             } 
         }
 
-        // --- Render Charts (Dynamic Types) ---
         const createChart = (ctxId, chartKey, data, color, label, instanceKey) => {
             const el = $(ctxId); if(!el) return;
             const ctx = el.getContext('2d');
             const type = state.chartTypes[chartKey];
             const isLine = type === 'line';
             
-            // Gradient Helper
             const getGradient = (c) => {
                 const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g;
             }
@@ -606,7 +579,7 @@ const app = {
                     responsive: true, maintainAspectRatio: false, 
                     plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + (instanceKey.includes('Focus') ? ' hrs' : '') } } }, 
                     scales: { 
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: false }, 
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: true, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 6 } }, 
                         x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } 
                     } 
                 }
@@ -616,14 +589,23 @@ const app = {
         createChart('focusBarChart', 'focus', dpFocus, '#ff5757', 'Hours', 'focusBar');
         createChart('taskBarChart', 'task', dpTask, '#3b82f6', 'Tasks', 'taskBar');
 
-        // --- Hourly & Weekday Charts ---
         const hours = Array(24).fill(0); logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
         const createHourly = () => {
              const type = state.chartTypes.hourly; const isLine = type === 'line'; const color = '#10b981';
              if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
              const ctx = $('hourlyChart').getContext('2d');
              const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
-             state.chartInstances.hourly = new Chart(ctx, { type: type, data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 2, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{display:false}, y:{display:false}} } });
+             state.chartInstances.hourly = new Chart(ctx, { 
+                type: type, 
+                data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 2, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
+                options: { 
+                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, 
+                    scales: {
+                        x: { display: true, grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 8 } },
+                        y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } }
+                    } 
+                } 
+             });
         };
         if($('hourlyChart')) createHourly();
 
@@ -633,15 +615,23 @@ const app = {
              if(state.chartInstances.weekday) state.chartInstances.weekday.destroy();
              const ctx = $('weekdayChart').getContext('2d');
              const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
-             state.chartInstances.weekday = new Chart(ctx, { type: type, data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{grid:{display:false}}, y:{display:false}} } });
+             state.chartInstances.weekday = new Chart(ctx, { 
+                type: type, 
+                data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
+                options: { 
+                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, 
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 } } },
+                        y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } }
+                    } 
+                } 
+            });
         };
         if($('weekdayChart')) createWeekday();
 
-        // --- Insight Text ---
         const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
         $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
 
-        // --- Project & Priority Charts ---
         const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
         if($('projectChart')) {
             if (state.chartInstances.project) state.chartInstances.project.destroy();
@@ -655,7 +645,6 @@ const app = {
             state.chartInstances.priority = new Chart($('priorityChart').getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
 
-        // --- Top Tags (New) ---
         const tc = {}; 
         tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
         const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -665,11 +654,9 @@ const app = {
              $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tag data available.</p>';
         }
 
-        // --- Recent Logs ---
         $('mobile-logs').innerHTML = logs.slice(0, 10).map(l => { const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); return `<div class="px-4 py-3 flex justify-between items-center text-sm"><div><div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div><div class="flex items-center gap-2 text-[10px] text-text-muted"><span>${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span></div></div><span class="text-brand font-mono">${Math.round(l.duration||25)}m</span></div>` }).join('');
     },
     
-    // === DETAILS & MODALS ===
     openTaskDetail: (t) => {
         haptic('light');
         history.pushState({ modal: 'detail' }, '');
@@ -748,7 +735,6 @@ const app = {
     startFocusFromDetail: () => {
         if(state.viewingTask) {
             app.startFocus(state.viewingTask.id);
-            // Must manually close since startFocus switches tab which handles state
             $('detail-sheet').classList.add('translate-y-full');
             $('modal-overlay').classList.add('opacity-0');
             setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
@@ -758,9 +744,7 @@ const app = {
     editCurrentTask: () => {
         if(state.viewingTask) {
             const t = state.viewingTask;
-            // Manually close detail sheet to transition to edit
             $('detail-sheet').classList.add('translate-y-full');
-            // Wait for transition then open modal
             setTimeout(() => app.openTaskModal(t), 300);
         }
     },
@@ -776,7 +760,6 @@ const app = {
         }
     },
 
-    // === TASK FORM ===
     openTaskModal: (task = null) => {
         haptic('light');
         history.pushState({ modal: 'form' }, '');
@@ -986,8 +969,6 @@ const app = {
     closeTaskModal: () => { history.back(); },
     
     closeAllSheets: () => {
-        // Simple logic: clicking overlay closes whatever is open by going back in history
-        // This assumes sheets were opened via pushState
         if(!$('modal-overlay').classList.contains('hidden')) history.back();
     },
 
@@ -1001,25 +982,21 @@ const app = {
         } catch(e) { app.showToast("Connection error"); }
     },
 
-    // === TIMER LOGIC (Full Parity) ===
     startFocus: async (id) => {
         const t = state.tasks.find(x => x.id === id);
         if(!t) return;
         haptic('medium');
         app.switchTab('timer');
         
-        // Check if already running this task
         if(state.timer.taskId === id && state.timer.status === 'running') return;
 
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
         
-        // Update timer state
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', mode: 'focus', taskId: t.id, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000)
         });
         
-        // Also update local settings to match task duration
         app.updateSetting('focus', durationMin);
     },
 
@@ -1057,7 +1034,6 @@ const app = {
         stopTimerLoop();
         haptic('timerDone');
         
-        // Robust Audio Fallback (AudioContext) for Mobile
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if(AudioContext) {
@@ -1080,7 +1056,6 @@ const app = {
                 }
             }
             
-            // Exact Logic from Desktop for Breaks
             if (state.timer.settings.disableBreak) {
                 await app.setTimerMode('focus'); 
                 if (state.timer.settings.autoStartPomo) app.toggleTimer();
@@ -1163,7 +1138,6 @@ const app = {
         if(k === 'longBreakInterval') $('set-long-interval-display').innerText = val + 'x';
         else if(!['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k)) $(`set-${k}-display`).innerText = val + 'm';
         
-        // Save to timer doc for persistence
         updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: val }).catch(()=>{});
     },
 
@@ -1184,10 +1158,8 @@ $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.cust
 $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value); });
 document.addEventListener('click', (e) => { if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur(); });
 
-// Native-like Navigation Handler
 if (!history.state) history.replaceState({ view: 'root' }, '');
 window.addEventListener('popstate', (e) => {
-    // 1. Close Modals if open
     if (!$('modal-sheet').classList.contains('translate-y-full')) { 
         $('modal-sheet').classList.add('translate-y-full');
         $('modal-overlay').classList.add('opacity-0');
@@ -1207,17 +1179,12 @@ window.addEventListener('popstate', (e) => {
         return; 
     }
     
-    // 2. Handle Tab Navigation via Browser Back Button
     if (e.state && e.state.view) {
         app.switchTab(e.state.view, false);
     } else {
-        // Default fall back
         app.switchTab('tasks', false);
     }
 });
 
-// Global Export
 window.app = app;
-
-// Init
 app.switchTab('tasks', false);
