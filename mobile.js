@@ -19,7 +19,6 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Robust Persistence Handling
 try { 
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') console.warn('Persistence disabled (Multiple tabs open).');
@@ -32,15 +31,10 @@ const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-// Haptic Engine
 const haptic = (type = 'light') => { 
     if(!navigator.vibrate) return; 
     try { 
-        const patterns = { 
-            light: 10, medium: 25, heavy: 40, 
-            success: [10, 30], 
-            timerDone: [200, 100, 200] 
-        };
+        const patterns = { light: 10, medium: 25, heavy: 40, success: [10, 30], timerDone: [200, 100, 200] };
         navigator.vibrate(patterns[type] || 10); 
     } catch(e){} 
 };
@@ -49,14 +43,11 @@ const haptic = (type = 'light') => {
 const state = {
     user: null, tasks: [], logs: [], 
     projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
-    activeTab: 'tasks', 
-    activeFilter: 'today',
-    filterProject: null,
+    activeTab: 'tasks', activeFilter: 'today', filterProject: null,
     viewingTask: null, editingId: null,
     timer: { 
         status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, taskId: null, mode: 'focus',
-        sessionId: null, // Track unique session ID
-        pomoCountCurrentSession: 0,
+        sessionId: null, pomoCountCurrentSession: 0,
         settings: { focus: 25, short: 5, long: 15, longBreakInterval: 4, strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false }
     },
     sound: 'none',
@@ -72,12 +63,6 @@ Chart.defaults.color = '#a1a1aa';
 Chart.defaults.borderColor = '#27272a';
 Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(9, 9, 11, 0.95)';
-Chart.defaults.plugins.tooltip.titleColor = '#fff';
-Chart.defaults.plugins.tooltip.bodyColor = '#a1a1aa';
-Chart.defaults.plugins.tooltip.borderColor = '#333';
-Chart.defaults.plugins.tooltip.borderWidth = 1;
-Chart.defaults.plugins.tooltip.padding = 10;
-Chart.defaults.plugins.tooltip.displayColors = false;
 
 // --- AUTH & DATA SYNC ---
 async function syncUserProfile(u) {
@@ -85,14 +70,7 @@ async function syncUserProfile(u) {
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
         const userSnap = await getDoc(userRef);
-        const profileData = { 
-            displayName: u.displayName || u.email.split('@')[0], 
-            email: u.email, 
-            photoURL: u.photoURL, 
-            providerId: u.providerData.length > 0 ? u.providerData[0].providerId : 'password',
-            lastLogin: serverTimestamp(), 
-            uid: u.uid 
-        };
+        const profileData = { displayName: u.displayName || u.email.split('@')[0], email: u.email, photoURL: u.photoURL, lastLogin: serverTimestamp(), uid: u.uid };
         if (!userSnap.exists()) await setDoc(userRef, { ...profileData, createdAt: serverTimestamp() });
         else await setDoc(userRef, profileData, { merge: true });
     } catch (e) { console.error("Profile Sync Error", e); }
@@ -112,10 +90,7 @@ onAuthStateChanged(auth, u => {
                 if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
                 if($('settings-name')) $('settings-name').textContent = name;
                 if($('settings-email')) $('settings-email').textContent = u.email;
-                if (pic) {
-                    if($('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
-                    if($('settings-avatar-img')) { $('settings-avatar-img').src = pic; $('settings-avatar-img').classList.remove('hidden'); }
-                }
+                if (pic && $('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
             }
         });
 
@@ -126,15 +101,10 @@ onAuthStateChanged(auth, u => {
             const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
             state.tasks.forEach(t => { if(t.project && t.project !== 'Inbox') p.add(t.project); });
             state.projects = p;
-            
             app.renderTasks();
             app.renderMiniStats();
             if(state.activeTab === 'analytics') app.renderAnalytics();
-            
-            if (state.timer.taskId) {
-                 const t = state.tasks.find(x => x.id === state.timer.taskId);
-                 if (t) app.updateTimerUI();
-            }
+            if (state.timer.taskId) { const t = state.tasks.find(x => x.id === state.timer.taskId); if (t) app.updateTimerUI(); }
         });
         
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
@@ -148,25 +118,19 @@ onAuthStateChanged(auth, u => {
                     remaining: d.remaining || (state.timer.settings[d.mode || 'focus'] * 60),
                     totalDuration: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId || null,
-                    sessionId: d.sessionId || null, // Sync the session ID
+                    sessionId: d.sessionId || null,
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
                 app.updateTimerUI();
                 if(state.timer.status === 'running') {
                     startTimerLoop();
-                    if (state.sound !== 'none') {
-                        const audio = $('audio-player');
-                        if (audio && audio.paused) audio.play().catch(()=>{});
-                    }
+                    if (state.sound !== 'none') { const audio = $('audio-player'); if (audio && audio.paused) audio.play().catch(()=>{}); }
                 } else {
                     stopTimerLoop();
-                    const audio = $('audio-player');
-                    if(audio) audio.pause();
+                    const audio = $('audio-player'); if(audio) audio.pause();
                 }
-            } else {
-                app.resetTimer(true);
-            }
+            } else { app.resetTimer(true); }
         });
 
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
@@ -183,10 +147,7 @@ onAuthStateChanged(auth, u => {
                     const todayStr = getDayStr(now);
                     state.tasks.forEach(t => {
                         if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
-                             try { 
-                                 haptic('medium'); 
-                                 new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: ASSETS.icon }); 
-                             } catch (e) {}
+                             try { haptic('medium'); new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: ASSETS.icon }); } catch (e) {}
                         }
                     });
                 }
@@ -233,21 +194,14 @@ const app = {
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null; }, 200);
     },
 
-    refreshApp: () => {
-        haptic('medium');
-        app.showToast('Refreshing application...');
-        setTimeout(() => window.location.reload(), 500);
-    },
+    refreshApp: () => { haptic('medium'); app.showToast('Refreshing...'); setTimeout(() => window.location.reload(), 500); },
 
     switchTab: (tab, pushHistory = true) => {
         haptic('light');
-        if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) {
-            history.pushState({ view: tab }, '', `#${tab}`);
-        }
+        if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) history.pushState({ view: tab }, '', `#${tab}`);
         state.activeTab = tab;
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-        const view = $(`view-${tab}`);
-        if(view) view.classList.remove('hidden');
+        const view = $(`view-${tab}`); if(view) view.classList.remove('hidden');
         
         document.querySelectorAll('.nav-item').forEach(el => {
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
@@ -283,23 +237,17 @@ const app = {
 
     setFilter: (f) => {
         haptic('light');
-        state.activeFilter = f;
-        state.filterProject = null;
+        state.activeFilter = f; state.filterProject = null;
         document.querySelectorAll('#task-filters button').forEach(b => {
-            if(b.id === 'filter-folders') {
-                 b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted border border-dark-border`;
-                 return;
-            }
+            if(b.id === 'filter-folders') { b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted border border-dark-border`; return; }
             b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${b.id === `filter-${f}` ? 'bg-brand text-white' : 'bg-dark-active text-text-muted'}`;
         });
         app.renderTasks();
     },
     
     openProjectSheet: () => {
-        haptic('light');
-        history.pushState({ modal: 'project' }, '');
-        const list = $('project-sheet-list');
-        list.innerHTML = '';
+        haptic('light'); history.pushState({ modal: 'project' }, '');
+        const list = $('project-sheet-list'); list.innerHTML = '';
         state.projects.forEach(p => {
              const count = state.tasks.filter(t => t.status === 'todo' && t.project === p).length;
              const isInbox = p === 'Inbox';
@@ -312,33 +260,21 @@ const app = {
                 </button>
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-medium text-text-muted bg-dark-bg px-2 py-1 rounded-md border border-dark-border mr-2">${count}</span>
-                    ${!isInbox ? `
-                    <button onclick="app.renameProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-white bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
-                    <button onclick="app.deleteProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-red-500 bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-trash text-sm"></i></button>
-                    ` : ''}
+                    ${!isInbox ? `<button onclick="app.renameProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-white bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-pencil-simple text-sm"></i></button><button onclick="app.deleteProject('${esc(p)}')" class="p-1.5 text-text-muted hover:text-red-500 bg-dark-bg rounded border border-dark-border active:scale-95"><i class="ph-bold ph-trash text-sm"></i></button>` : ''}
                 </div>
              `;
              list.appendChild(el);
         });
         $('modal-overlay').classList.remove('hidden');
-        setTimeout(() => {
-            $('modal-overlay').classList.remove('opacity-0');
-            $('project-sheet').classList.remove('translate-y-full');
-        }, 10);
+        setTimeout(() => { $('modal-overlay').classList.remove('opacity-0'); $('project-sheet').classList.remove('translate-y-full'); }, 10);
     },
     
     closeProjectSheet: () => { history.back(); },
-
     selectProject: (p) => {
-        haptic('light');
-        state.activeFilter = 'project';
-        state.filterProject = p;
-        document.querySelectorAll('#task-filters button').forEach(b => {
-             b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`;
-        });
+        haptic('light'); state.activeFilter = 'project'; state.filterProject = p;
+        document.querySelectorAll('#task-filters button').forEach(b => { b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`; });
         $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand`;
-        history.back();
-        app.renderTasks();
+        history.back(); app.renderTasks();
     },
 
     promptNewProject: async () => {
@@ -346,11 +282,7 @@ const app = {
         if (p && p.trim()) {
              state.projects.add(p.trim());
              const sel = $('inp-project');
-             if(sel) {
-                const opt = document.createElement('option');
-                opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true;
-                sel.appendChild(opt);
-             }
+             if(sel) { const opt = document.createElement('option'); opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true; sel.appendChild(opt); }
              if(!$('project-sheet').classList.contains('translate-y-full')) app.openProjectSheet();
         }
     },
@@ -365,9 +297,7 @@ const app = {
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => { batch.update(doc.ref, { project: newName }); });
             await batch.commit();
-            state.projects.delete(oldName); state.projects.add(newName);
-            app.openProjectSheet(); 
-            app.showToast('Project renamed');
+            state.projects.delete(oldName); state.projects.add(newName); app.openProjectSheet(); app.showToast('Project renamed');
         } catch(e) { app.showToast('Error renaming'); }
     },
 
@@ -380,24 +310,16 @@ const app = {
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => { batch.update(doc.ref, { project: 'Inbox' }); });
             await batch.commit();
-            state.projects.delete(pName);
-            app.openProjectSheet(); 
-            app.showToast('Project deleted');
+            state.projects.delete(pName); app.openProjectSheet(); app.showToast('Project deleted');
         } catch(e) { app.showToast('Error deleting'); }
     },
 
     renderTasks: () => {
-        const list = $('task-list');
-        if(!list) return;
+        const list = $('task-list'); if(!list) return;
         list.innerHTML = '';
-        
         const today = getDayStr(new Date());
-        const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
-        const tomorrowStr = getDayStr(tmrw);
-        
-        let filtered = state.tasks;
-        let title = "Tasks";
-        
+        const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1); const tomorrowStr = getDayStr(tmrw);
+        let filtered = state.tasks; let title = "Tasks";
         const todo = state.tasks.filter(t => t.status === 'todo');
 
         if(state.activeFilter === 'today') { filtered = todo.filter(t => t.dueDate === today); title = "Today"; }
@@ -416,8 +338,7 @@ const app = {
              return priMap[b.priority || 'none'] - priMap[a.priority || 'none'];
         });
 
-        if(filtered.length === 0) $('empty-state').classList.remove('hidden');
-        else $('empty-state').classList.add('hidden');
+        if(filtered.length === 0) $('empty-state').classList.remove('hidden'); else $('empty-state').classList.add('hidden');
 
         filtered.forEach(t => {
             const el = document.createElement('div');
@@ -428,8 +349,8 @@ const app = {
             el.onclick = (e) => { if(!e.target.closest('.check-area') && !e.target.closest('.play-btn')) app.openTaskDetail(t); };
             const isDone = t.status === 'done';
             
-            // Sync Fix: Calculate completed pomos from array length if available
-            const completedPomos = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
+            // CLEAN COUNT LOGIC
+            const completedPomos = t.completedSessionIds?.length || 0;
 
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
@@ -463,17 +384,11 @@ const app = {
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
     },
 
-    setRange: (r) => {
-        state.analytics.range = r; haptic('light');
-        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
-        app.renderAnalytics();
-    },
+    setRange: (r) => { state.analytics.range = r; haptic('light'); ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); app.renderAnalytics(); },
 
     toggleChartType: (key, type) => {
-        haptic('light');
-        state.chartTypes[key] = type;
-        const btnLine = $(`btn-${key}-line`);
-        const btnBar = $(`btn-${key}-bar`);
+        haptic('light'); state.chartTypes[key] = type;
+        const btnLine = $(`btn-${key}-line`); const btnBar = $(`btn-${key}-bar`);
         if(btnLine && btnBar) {
             const activeClass = "px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors";
             const inactiveClass = "px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors";
@@ -489,26 +404,19 @@ const app = {
         const now = new Date(); 
         const getDS = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         const todayStr = getDS(now);
-
-        const startOfWeek = new Date(now); 
-        const day = startOfWeek.getDay() || 7; 
-        if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); 
-        startOfWeek.setHours(0, 0, 0, 0);
+        const startOfWeek = new Date(now); const day = startOfWeek.getDay() || 7; if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); startOfWeek.setHours(0, 0, 0, 0);
 
         const logsToday = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === todayStr);
         const logsWeek = logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek);
-        
         const tasksDone = tasks.filter(t => t.status === 'done');
         const tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr));
         const tasksWeek = tasksDone.filter(t => { if (!t.completedAt) return false; return new Date(t.completedAt) >= startOfWeek });
-
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
         $('ana-time-total').textContent = fmtTime(totalMin);
         $('ana-time-week').textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0));
         $('ana-time-today').textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0));
-        
         $('ana-task-total').textContent = tasksDone.length;
         $('ana-task-week').textContent = tasksWeek.length;
         $('ana-task-today').textContent = tasksToday.length;
@@ -538,8 +446,7 @@ const app = {
             row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
         }
 
-        const r = state.analytics.range; 
-        let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
+        const r = state.analytics.range; let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
         if (r === 'year') { 
             for (let i = 11; i >= 0; i--) { 
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1); lbl.push(d.toLocaleString('default', { month: 'short' })); 
@@ -561,85 +468,41 @@ const app = {
 
         const createChart = (ctxId, chartKey, data, color, label, instanceKey) => {
             const el = $(ctxId); if(!el) return;
-            const ctx = el.getContext('2d');
-            const type = state.chartTypes[chartKey];
-            const isLine = type === 'line';
-            
-            const getGradient = (c) => {
-                const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g;
-            }
-
+            const ctx = el.getContext('2d'); const type = state.chartTypes[chartKey]; const isLine = type === 'line';
+            const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
             if(state.chartInstances[instanceKey]) state.chartInstances[instanceKey].destroy();
             state.chartInstances[instanceKey] = new Chart(ctx, {
                 type: type,
-                data: { 
-                    labels: lbl, 
-                    datasets: [{ 
-                        label: label, 
-                        data: data, 
-                        backgroundColor: isLine ? getGradient(color) : color, 
-                        borderColor: color, 
-                        borderRadius: 3, 
-                        tension: 0.4, 
-                        fill: isLine, 
-                        pointRadius: isLine ? 0 : 0,
-                        pointHoverRadius: 6,
-                        borderWidth: isLine ? 2 : 0
-                    }] 
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + (instanceKey.includes('Focus') ? ' hrs' : '') } } }, 
-                    scales: { 
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: true, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 6 } }, 
-                        x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } 
-                    } 
-                }
+                data: { labels: lbl, datasets: [{ label: label, data: data, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, tension: 0.4, fill: isLine, pointRadius: isLine ? 0 : 0, pointHoverRadius: 6, borderWidth: isLine ? 2 : 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + (instanceKey.includes('Focus') ? ' hrs' : '') } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: true, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 6 } }, x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } } }
             });
         };
-
         createChart('focusBarChart', 'focus', dpFocus, '#ff5757', 'Hours', 'focusBar');
         createChart('taskBarChart', 'task', dpTask, '#3b82f6', 'Tasks', 'taskBar');
 
         const hours = Array(24).fill(0); logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
-        const createHourly = () => {
+        if($('hourlyChart')) {
              const type = state.chartTypes.hourly; const isLine = type === 'line'; const color = '#10b981';
              if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
              const ctx = $('hourlyChart').getContext('2d');
              const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
              state.chartInstances.hourly = new Chart(ctx, { 
-                type: type, 
-                data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 2, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
-                options: { 
-                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, 
-                    scales: {
-                        x: { display: true, grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 8 } },
-                        y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } }
-                    } 
-                } 
+                type: type, data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 2, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: { x: { display: true, grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 8 } }, y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } } } } 
              });
-        };
-        if($('hourlyChart')) createHourly();
+        }
 
         const weekdays = Array(7).fill(0); logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
-        const createWeekday = () => {
+        if($('weekdayChart')) {
              const type = state.chartTypes.weekday; const isLine = type === 'line'; const color = '#f59e0b';
              if(state.chartInstances.weekday) state.chartInstances.weekday.destroy();
              const ctx = $('weekdayChart').getContext('2d');
              const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
              state.chartInstances.weekday = new Chart(ctx, { 
-                type: type, 
-                data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
-                options: { 
-                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, 
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 } } },
-                        y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } }
-                    } 
-                } 
+                type: type, data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: { x: { grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 } } }, y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } } } } 
             });
-        };
-        if($('weekdayChart')) createWeekday();
+        }
 
         const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
         $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
@@ -657,69 +520,36 @@ const app = {
             state.chartInstances.priority = new Chart($('priorityChart').getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
 
-        const tc = {}; 
-        tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
+        const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
         const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        if (st.length > 0) {
-            $('tag-rank-list').innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
-        } else {
-             $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tags data available.</p>';
-        }
+        $('tag-rank-list').innerHTML = st.length > 0 ? st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('') : '<p class="text-xs text-text-muted italic">No tags data available.</p>';
 
         $('mobile-logs').innerHTML = logs.slice(0, 20).map(l => { 
             const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); 
             const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-            return `<div class="px-4 py-3 flex justify-between items-center text-sm">
-                <div>
-                    <div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div>
-                    <div class="flex items-center gap-2 text-[10px] text-text-muted">
-                        <span>${dateStr}</span><span>•</span><span>${timeStr}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span>
-                    </div>
-                </div>
-                <span class="text-brand font-mono">${Math.round(l.duration||25)}m</span>
-            </div>` 
+            return `<div class="px-4 py-3 flex justify-between items-center text-sm"><div><div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div><div class="flex items-center gap-2 text-[10px] text-text-muted"><span>${dateStr}</span><span>•</span><span>${timeStr}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span></div></div><span class="text-brand font-mono">${Math.round(l.duration||25)}m</span></div>` 
         }).join('');
     },
     
     openTaskDetail: (t) => {
-        haptic('light');
-        history.pushState({ modal: 'detail' }, '');
-
+        haptic('light'); history.pushState({ modal: 'detail' }, '');
         state.viewingTask = t;
-        $('dt-title').textContent = t.title;
-        $('dt-project').textContent = t.project || 'Inbox';
-        
+        $('dt-title').textContent = t.title; $('dt-project').textContent = t.project || 'Inbox';
         const total = parseInt(t.estimatedPomos) || 1;
         
-        // Sync Fix: Read completed count from session array if available
-        const completed = t.completedSessionIds ? t.completedSessionIds.length : (parseInt(t.completedPomos) || 0);
+        // CLEAN COUNT LOGIC
+        const completed = t.completedSessionIds?.length || 0;
         
-        const left = Math.max(0, total - completed);
-        const dur = parseInt(t.pomoDuration) || 25;
-        
-        const timeTotal = total * dur;
-        const timeSpent = completed * dur;
-        const timeLeft = left * dur;
+        const left = Math.max(0, total - completed); const dur = parseInt(t.pomoDuration) || 25;
+        const timeTotal = total * dur; const timeSpent = completed * dur; const timeLeft = left * dur;
+        const fmtTime = m => { const h = Math.floor(m/60), rem = m%60; return h > 0 ? `${h}h ${rem}m` : `${rem}m`; };
 
-        const fmtTime = m => {
-             const h = Math.floor(m/60);
-             const rem = m%60;
-             return h > 0 ? `${h}h ${rem}m` : `${rem}m`;
-        };
-
-        $('dt-pomo-done').textContent = completed;
-        $('dt-pomo-total').textContent = total;
-        $('dt-pomo-left').textContent = left;
-        $('dt-time-spent').textContent = fmtTime(timeSpent);
-        $('dt-time-left').textContent = fmtTime(timeLeft);
-        $('dt-time-total').textContent = fmtTime(timeTotal);
+        $('dt-pomo-done').textContent = completed; $('dt-pomo-total').textContent = total; $('dt-pomo-left').textContent = left;
+        $('dt-time-spent').textContent = fmtTime(timeSpent); $('dt-time-left').textContent = fmtTime(timeLeft); $('dt-time-total').textContent = fmtTime(timeTotal);
         $('dt-date').textContent = t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'No Date';
 
-        const noteEl = $('dt-note');
-        if(t.note) { noteEl.textContent = t.note; noteEl.classList.remove('hidden'); }
-        else { noteEl.classList.add('hidden'); }
-
+        const noteEl = $('dt-note'); if(t.note) { noteEl.textContent = t.note; noteEl.classList.remove('hidden'); } else { noteEl.classList.add('hidden'); }
         const priEl = $('dt-priority');
         if(t.priority && t.priority !== 'none') {
             priEl.textContent = t.priority + ' Priority';
@@ -727,358 +557,129 @@ const app = {
             priEl.classList.remove('hidden');
         } else { priEl.classList.add('hidden'); }
 
-        const subCon = $('dt-subtasks-container');
-        const subList = $('dt-subtasks-list');
-        subList.innerHTML = '';
+        const subCon = $('dt-subtasks-container'); const subList = $('dt-subtasks-list'); subList.innerHTML = '';
         if(t.subtasks && t.subtasks.length > 0) {
             subCon.classList.remove('hidden');
-            t.subtasks.forEach(s => {
-                const row = document.createElement('div');
-                row.className = "flex items-center text-sm text-text-muted";
-                row.innerHTML = `<i class="ph-bold ph-caret-right text-xs mr-2 text-text-muted"></i><span>${esc(s)}</span>`;
-                subList.appendChild(row);
-            });
+            t.subtasks.forEach(s => { const row = document.createElement('div'); row.className = "flex items-center text-sm text-text-muted"; row.innerHTML = `<i class="ph-bold ph-caret-right text-xs mr-2 text-text-muted"></i><span>${esc(s)}</span>`; subList.appendChild(row); });
         } else { subCon.classList.add('hidden'); }
 
-        const tagCon = $('dt-tags-container');
-        tagCon.innerHTML = '';
+        const tagCon = $('dt-tags-container'); tagCon.innerHTML = '';
         if(t.tags && t.tags.length > 0) {
             tagCon.classList.remove('hidden');
-            t.tags.forEach(tag => {
-                const sp = document.createElement('span');
-                sp.className = "bg-dark-active border border-dark-border text-xs px-2 py-1 rounded text-text-muted";
-                sp.textContent = tag;
-                tagCon.appendChild(sp);
-            });
+            t.tags.forEach(tag => { const sp = document.createElement('span'); sp.className = "bg-dark-active border border-dark-border text-xs px-2 py-1 rounded text-text-muted"; sp.textContent = tag; tagCon.appendChild(sp); });
         } else { tagCon.classList.add('hidden'); }
 
         $('modal-overlay').classList.remove('hidden');
-        setTimeout(() => {
-            $('modal-overlay').classList.remove('opacity-0');
-            $('detail-sheet').classList.remove('translate-y-full');
-        }, 10);
+        setTimeout(() => { $('modal-overlay').classList.remove('opacity-0'); $('detail-sheet').classList.remove('translate-y-full'); }, 10);
     },
 
     closeDetailSheet: () => { history.back(); },
-    startFocusFromDetail: () => {
-        if(state.viewingTask) {
-            app.startFocus(state.viewingTask.id);
-            $('detail-sheet').classList.add('translate-y-full');
-            $('modal-overlay').classList.add('opacity-0');
-            setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
-        }
-    },
-
-    editCurrentTask: () => {
-        if(state.viewingTask) {
-            const t = state.viewingTask;
-            $('detail-sheet').classList.add('translate-y-full');
-            setTimeout(() => app.openTaskModal(t), 300);
-        }
-    },
-
-    deleteCurrentTask: async () => {
-        if(state.viewingTask && confirm('Delete this task?')) {
-            haptic('heavy');
-            try {
-                await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.viewingTask.id));
-                history.back(); // Close detail sheet
-                app.showToast('Task deleted');
-            } catch(e) { app.showToast('Error deleting'); }
-        }
-    },
+    startFocusFromDetail: () => { if(state.viewingTask) { app.startFocus(state.viewingTask.id); $('detail-sheet').classList.add('translate-y-full'); $('modal-overlay').classList.add('opacity-0'); setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300); } },
+    editCurrentTask: () => { if(state.viewingTask) { const t = state.viewingTask; $('detail-sheet').classList.add('translate-y-full'); setTimeout(() => app.openTaskModal(t), 300); } },
+    deleteCurrentTask: async () => { if(state.viewingTask && confirm('Delete this task?')) { haptic('heavy'); try { await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.viewingTask.id)); history.back(); app.showToast('Task deleted'); } catch(e) { app.showToast('Error deleting'); } } },
 
     openTaskModal: (task = null) => {
-        haptic('light');
-        history.pushState({ modal: 'form' }, '');
-
+        haptic('light'); history.pushState({ modal: 'form' }, '');
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
-
-        const sel = $('inp-project');
-        sel.innerHTML = '';
-        state.projects.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p; opt.textContent = p; opt.className = 'bg-dark-card text-white';
-            sel.appendChild(opt);
-        });
+        const sel = $('inp-project'); sel.innerHTML = '';
+        state.projects.forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.textContent = p; opt.className = 'bg-dark-card text-white'; sel.appendChild(opt); });
 
         $('subtask-list').innerHTML = '';
 
         if (task) {
-            state.editingId = task.id;
-            $('sheet-title').textContent = "Edit Task";
-            $('btn-save-task').textContent = "Save Changes";
-            
-            $('inp-title').value = task.title;
-            $('inp-est').value = task.estimatedPomos || 1;
-            $('disp-est').textContent = task.estimatedPomos || 1;
-            $('inp-duration').value = task.pomoDuration || 25;
-            app.updateDurationDisplay(task.pomoDuration || 25);
-
-            $('inp-date').value = task.dueDate || '';
-            $('inp-project').value = task.project || 'Inbox';
-            app.setPriority(task.priority || 'none');
-            app.highlightDateButton(task.dueDate);
-
-            $('inp-note').value = task.note || '';
-            $('inp-tags').value = task.tags ? task.tags.join(', ') : '';
-            $('inp-repeat').value = task.repeat || 'none';
-            $('inp-reminder').value = task.reminder || '';
-            
+            state.editingId = task.id; $('sheet-title').textContent = "Edit Task"; $('btn-save-task').textContent = "Save Changes";
+            $('inp-title').value = task.title; $('inp-est').value = task.estimatedPomos || 1; $('disp-est').textContent = task.estimatedPomos || 1; $('inp-duration').value = task.pomoDuration || 25; app.updateDurationDisplay(task.pomoDuration || 25);
+            $('inp-date').value = task.dueDate || ''; $('inp-project').value = task.project || 'Inbox'; app.setPriority(task.priority || 'none'); app.highlightDateButton(task.dueDate);
+            $('inp-note').value = task.note || ''; $('inp-tags').value = task.tags ? task.tags.join(', ') : ''; $('inp-repeat').value = task.repeat || 'none'; $('inp-reminder').value = task.reminder || '';
             if(task.subtasks) task.subtasks.forEach(s => app.addSubtaskInput(s));
         } else {
-            state.editingId = null;
-            $('sheet-title').textContent = "New Task";
-            $('btn-save-task').textContent = "Create Task";
-            
-            $('inp-title').value = '';
-            $('inp-est').value = 1;
-            $('disp-est').textContent = 1;
-            $('inp-duration').value = 25;
-            app.updateDurationDisplay(25);
-
-            $('inp-date').value = getDayStr(new Date());
-            app.highlightDateButton(getDayStr(new Date()));
-            
-            $('inp-project').value = 'Inbox';
-            app.setPriority('none');
-            $('inp-note').value = '';
-            $('inp-tags').value = '';
-            $('inp-repeat').value = 'none';
-            $('inp-reminder').value = '';
+            state.editingId = null; $('sheet-title').textContent = "New Task"; $('btn-save-task').textContent = "Create Task";
+            $('inp-title').value = ''; $('inp-est').value = 1; $('disp-est').textContent = 1; $('inp-duration').value = 25; app.updateDurationDisplay(25);
+            $('inp-date').value = getDayStr(new Date()); app.highlightDateButton(getDayStr(new Date()));
+            $('inp-project').value = 'Inbox'; app.setPriority('none'); $('inp-note').value = ''; $('inp-tags').value = ''; $('inp-repeat').value = 'none'; $('inp-reminder').value = '';
         }
 
         $('modal-overlay').classList.remove('hidden');
-        setTimeout(() => {
-            $('modal-overlay').classList.remove('opacity-0');
-            $('modal-sheet').classList.remove('translate-y-full');
-            if(!task) $('inp-title').focus();
-        }, 10);
+        setTimeout(() => { $('modal-overlay').classList.remove('opacity-0'); $('modal-sheet').classList.remove('translate-y-full'); if(!task) $('inp-title').focus(); }, 10);
     },
 
-    setQuickDate: (type) => {
-        haptic('light');
-        const d = new Date();
-        if(type === 'tomorrow') d.setDate(d.getDate() + 1);
-        const str = getDayStr(d);
-        $('inp-date').value = str;
-        app.highlightDateButton(str);
-    },
-
+    setQuickDate: (type) => { haptic('light'); const d = new Date(); if(type === 'tomorrow') d.setDate(d.getDate() + 1); const str = getDayStr(d); $('inp-date').value = str; app.highlightDateButton(str); },
     highlightDateButton: (dateStr) => {
-        const today = getDayStr(new Date());
-        const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
-        const tmrwStr = getDayStr(tmrw);
+        const today = getDayStr(new Date()); const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1); const tmrwStr = getDayStr(tmrw);
         const setBtn = (id, active) => { $(id).className = active ? "flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all" : "flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95"; };
-        setBtn('btn-date-today', dateStr === today);
-        setBtn('btn-date-tomorrow', dateStr === tmrwStr);
-        if(dateStr && dateStr !== today && dateStr !== tmrwStr) {
-            const d = new Date(dateStr);
-            $('lbl-date-pick').textContent = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
-            $('btn-date-pick').classList.add('text-brand', 'border-brand');
-        } else {
-            $('lbl-date-pick').textContent = 'Pick';
-            $('btn-date-pick').classList.remove('text-brand', 'border-brand');
-        }
+        setBtn('btn-date-today', dateStr === today); setBtn('btn-date-tomorrow', dateStr === tmrwStr);
+        if(dateStr && dateStr !== today && dateStr !== tmrwStr) { const d = new Date(dateStr); $('lbl-date-pick').textContent = d.toLocaleDateString('en-US', {month:'short', day:'numeric'}); $('btn-date-pick').classList.add('text-brand', 'border-brand'); } else { $('lbl-date-pick').textContent = 'Pick'; $('btn-date-pick').classList.remove('text-brand', 'border-brand'); }
     },
 
     setPriority: (level) => {
-        haptic('light');
-        $('inp-priority').value = level;
+        haptic('light'); $('inp-priority').value = level;
         ['none', 'low', 'med', 'high'].forEach(l => {
-            const btn = $(`btn-pri-${l}`);
-            const isActive = l === level;
+            const btn = $(`btn-pri-${l}`); const isActive = l === level;
             btn.className = "h-9 rounded-lg border text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-95 ";
-            if(isActive) {
-                btn.className += "border-transparent text-white shadow-md ";
-                if(l === 'high') btn.className += "bg-red-500";
-                else if(l === 'med') btn.className += "bg-yellow-500";
-                else if(l === 'low') btn.className += "bg-blue-500";
-                else btn.className += "bg-brand";
-            } else {
-                btn.className += "border-dark-border bg-dark-card ";
-                if(l === 'high') btn.className += "text-red-500";
-                else if(l === 'med') btn.className += "text-yellow-500";
-                else if(l === 'low') btn.className += "text-blue-500";
-                else btn.className += "text-text-muted";
-            }
+            if(isActive) { btn.className += "border-transparent text-white shadow-md "; if(l === 'high') btn.className += "bg-red-500"; else if(l === 'med') btn.className += "bg-yellow-500"; else if(l === 'low') btn.className += "bg-blue-500"; else btn.className += "bg-brand"; } else { btn.className += "border-dark-border bg-dark-card "; if(l === 'high') btn.className += "text-red-500"; else if(l === 'med') btn.className += "text-yellow-500"; else if(l === 'low') btn.className += "text-blue-500"; else btn.className += "text-text-muted"; }
         });
     },
 
-    adjustEst: (delta) => {
-        haptic('light');
-        let val = parseInt($('inp-est').value) || 1;
-        val += delta;
-        if(val < 1) val = 1; if(val > 50) val = 50; 
-        $('inp-est').value = val;
-        $('disp-est').textContent = val;
-        app.updateTotalCalc();
-    },
-
-    updateDurationDisplay: (val) => {
-        $('disp-duration').innerText = val + 'm';
-        app.updateTotalCalc();
-    },
-
-    updateTotalCalc: () => {
-        const est = parseInt($('inp-est').value) || 1;
-        const dur = parseInt($('inp-duration').value) || 25;
-        const total = est * dur;
-        const h = Math.floor(total/60);
-        const m = total % 60;
-        $('total-calc-display').textContent = h > 0 ? `${h}h ${m}m Total` : `${m}m Total`;
-    },
-
-    addSubtaskInput: (val = '') => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-3 animate-slide-up group pl-1';
-        div.innerHTML = `
-            <div class="w-1.5 h-1.5 rounded-full bg-dark-border group-focus-within:bg-brand transition-colors shrink-0"></div>
-            <input type="text" value="${esc(val)}" class="subtask-input w-full bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1.5 outline-none transition-colors" placeholder="Checklist item..." onkeydown="app.handleSubtaskKey(event, this)">
-            <button onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-500 px-2"><i class="ph-bold ph-x"></i></button>
-        `;
-        $('subtask-list').appendChild(div);
-    },
-
-    handleSubtaskKey: (e, input) => {
-        if(e.key === 'Enter') {
-            e.preventDefault();
-            app.addSubtaskInput();
-            const list = $('subtask-list');
-            const newInputs = list.querySelectorAll('input');
-            newInputs[newInputs.length - 1].focus();
-        }
-    },
+    adjustEst: (delta) => { haptic('light'); let val = parseInt($('inp-est').value) || 1; val += delta; if(val < 1) val = 1; if(val > 50) val = 50; $('inp-est').value = val; $('disp-est').textContent = val; app.updateTotalCalc(); },
+    updateDurationDisplay: (val) => { $('disp-duration').innerText = val + 'm'; app.updateTotalCalc(); },
+    updateTotalCalc: () => { const est = parseInt($('inp-est').value) || 1; const dur = parseInt($('inp-duration').value) || 25; const total = est * dur; const h = Math.floor(total/60); const m = total % 60; $('total-calc-display').textContent = h > 0 ? `${h}h ${m}m Total` : `${m}m Total`; },
+    
+    addSubtaskInput: (val = '') => { const div = document.createElement('div'); div.className = 'flex items-center gap-3 animate-slide-up group pl-1'; div.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-dark-border group-focus-within:bg-brand transition-colors shrink-0"></div><input type="text" value="${esc(val)}" class="subtask-input w-full bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1.5 outline-none transition-colors" placeholder="Checklist item..." onkeydown="app.handleSubtaskKey(event, this)"><button onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-500 px-2"><i class="ph-bold ph-x"></i></button>`; $('subtask-list').appendChild(div); },
+    handleSubtaskKey: (e, input) => { if(e.key === 'Enter') { e.preventDefault(); app.addSubtaskInput(); const list = $('subtask-list'); const newInputs = list.querySelectorAll('input'); newInputs[newInputs.length - 1].focus(); } },
     
     saveTask: async () => {
-        const title = $('inp-title').value;
-        if(!title) {
-            app.showToast("Title required");
-            $('inp-title').focus();
-            return;
-        }
-        
+        const title = $('inp-title').value; if(!title) { app.showToast("Title required"); $('inp-title').focus(); return; }
         const subtasks = Array.from(document.querySelectorAll('.subtask-input')).map(i => i.value.trim()).filter(x => x);
         const tags = $('inp-tags').value.split(',').map(t => t.trim()).filter(x => x);
+        const data = { title, estimatedPomos: parseInt($('inp-est').value) || 1, pomoDuration: parseInt($('inp-duration').value) || 25, dueDate: $('inp-date').value, priority: $('inp-priority').value, project: $('inp-project').value || 'Inbox', note: $('inp-note').value, repeat: $('inp-repeat').value, reminder: $('inp-reminder').value, tags, subtasks };
 
-        const data = {
-            title, 
-            estimatedPomos: parseInt($('inp-est').value) || 1,
-            pomoDuration: parseInt($('inp-duration').value) || 25,
-            dueDate: $('inp-date').value,
-            priority: $('inp-priority').value,
-            project: $('inp-project').value || 'Inbox',
-            note: $('inp-note').value,
-            repeat: $('inp-repeat').value,
-            reminder: $('inp-reminder').value,
-            tags, subtasks
-        };
-
-        history.back(); // Close modal
-        
+        history.back();
         try {
-            if(state.editingId) {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.editingId), data);
-                haptic('success');
-                app.showToast('Task updated');
-            } else {
-                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), {
-                    ...data,
-                    status: 'todo',
-                    createdAt: new Date().toISOString(),
-                    completedPomos: 0
-                });
-                haptic('success');
-                app.showToast('Task added');
+            if(state.editingId) { await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.editingId), data); haptic('success'); app.showToast('Task updated'); }
+            else { 
+                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), { 
+                    ...data, status: 'todo', createdAt: new Date().toISOString(), completedSessionIds: [] 
+                }); 
+                haptic('success'); app.showToast('Task added'); 
             }
         } catch(e) { app.showToast('Error saving'); }
     },
     
     closeTaskModal: () => { history.back(); },
-    
-    closeAllSheets: () => {
-        if(!$('modal-overlay').classList.contains('hidden')) history.back();
-    },
-
-    toggleStatus: async (id, s) => {
-        haptic('light');
-        try {
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
-                status: s === 'todo' ? 'done' : 'todo',
-                completedAt: s === 'todo' ? new Date().toISOString() : null
-            });
-        } catch(e) { app.showToast("Connection error"); }
-    },
+    closeAllSheets: () => { if(!$('modal-overlay').classList.contains('hidden')) history.back(); },
+    toggleStatus: async (id, s) => { haptic('light'); try { await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null }); } catch(e) { app.showToast("Connection error"); } },
 
     startFocus: async (id) => {
-        const t = state.tasks.find(x => x.id === id);
-        if(!t) return;
-        haptic('medium');
-        app.switchTab('timer');
-        
+        const t = state.tasks.find(x => x.id === id); if(!t) return;
+        haptic('medium'); app.switchTab('timer');
         if(state.timer.taskId === id && state.timer.status === 'running') return;
-
-        const durationMin = t.pomoDuration || state.timer.settings.focus;
-        const d = durationMin * 60;
-
-        // Sync Fix: Generate Unique Session ID at Start
+        const durationMin = t.pomoDuration || state.timer.settings.focus; const d = durationMin * 60;
         const sessionId = `${t.id}_${Date.now()}`;
-        
-        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
-            status: 'running', 
-            mode: 'focus', 
-            taskId: t.id, 
-            sessionId: sessionId, // Store ID for sync
-            remaining: d, 
-            totalDuration: d, 
-            endTime: new Date(Date.now() + d*1000)
-        });
-        
+        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'running', mode: 'focus', taskId: t.id, sessionId: sessionId, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000) });
         app.updateSetting('focus', durationMin);
     },
 
     toggleTimer: async () => {
-        haptic('medium');
-        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
-        
+        haptic('medium'); try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
         if(state.timer.status === 'running') {
             if(state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
-                status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000))
-            });
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000)) });
         } else {
             if(!state.timer.taskId && state.timer.mode === 'focus') { app.showToast('Select a task'); app.switchTab('tasks'); return; }
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
-                status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000)
-            });
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000) });
         }
     },
 
     resetTimer: async (r = false) => {
-        if (!r) {
-            haptic('medium');
-            const d = state.timer.settings[state.timer.mode] * 60;
-            await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
-                status: 'idle', remaining: d, totalDuration: d, endTime: null, mode: state.timer.mode, taskId: state.timer.taskId || null
-            });
-        }
+        if (!r) { haptic('medium'); const d = state.timer.settings[state.timer.mode] * 60; await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'idle', remaining: d, totalDuration: d, endTime: null, mode: state.timer.mode, taskId: state.timer.taskId || null }); }
     },
 
     skipTimer: () => app.completeTimer(),
 
     completeTimer: async () => {
         if(state.timer.status === 'idle') return;
-        stopTimerLoop();
-        haptic('timerDone');
-        
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if(AudioContext) {
-                const c = new AudioContext(); const o = c.createOscillator();
-                o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .3);
-            }
-        } catch(e) {}
-        
+        stopTimerLoop(); haptic('timerDone');
+        try { const AudioContext = window.AudioContext || window.webkitAudioContext; if(AudioContext) { const c = new AudioContext(); const o = c.createOscillator(); o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .3); } } catch(e) {}
         try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete", { icon: ASSETS.icon }); } catch (e) {}
 
         if(state.timer.mode === 'focus') {
@@ -1086,49 +687,21 @@ const app = {
                 const t = state.tasks.find(x => x.id === state.timer.taskId);
                 if(t) {
                     try {
-                        // Sync Fix: Use generated Session ID or Fallback
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
-
-                        // 1. Idempotent Counter Update (Array Union)
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
-                            completedSessionIds: arrayUnion(sessionId)
-                        });
-
-                        // 2. Idempotent Log Write (SetDoc with SessionID)
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedSessionIds: arrayUnion(sessionId) });
                         const durMin = state.timer.totalDuration / 60;
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
-                            taskTitle: t.title, 
-                            taskId: t.id, 
-                            project: t.project || 'Inbox', 
-                            duration: durMin, 
-                            completedAt: serverTimestamp() 
-                        });
-
+                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { taskTitle: t.title, taskId: t.id, project: t.project || 'Inbox', duration: durMin, completedAt: serverTimestamp() });
                     } catch(e) { console.error("Sync Error", e); }
                 }
             }
-            
-            if (state.timer.settings.disableBreak) {
-                await app.setTimerMode('focus'); 
-                if (state.timer.settings.autoStartPomo) app.toggleTimer();
-            } else {
-                const newCount = (state.timer.pomoCountCurrentSession || 0) + 1; 
-                let nextMode = 'short';
-                if (newCount >= state.timer.settings.longBreakInterval) nextMode = 'long';
-                
-                await app.setTimerMode(nextMode, nextMode === 'long' ? 0 : newCount);
-                if (state.timer.settings.autoStartBreak) app.toggleTimer();
-            }
-        } else {
-            await app.setTimerMode('focus', state.timer.pomoCountCurrentSession);
-            if (state.timer.settings.autoStartPomo) app.toggleTimer();
-        }
+            if (state.timer.settings.disableBreak) { await app.setTimerMode('focus'); if (state.timer.settings.autoStartPomo) app.toggleTimer(); } 
+            else { const newCount = (state.timer.pomoCountCurrentSession || 0) + 1; let nextMode = 'short'; if (newCount >= state.timer.settings.longBreakInterval) nextMode = 'long'; await app.setTimerMode(nextMode, nextMode === 'long' ? 0 : newCount); if (state.timer.settings.autoStartBreak) app.toggleTimer(); }
+        } else { await app.setTimerMode('focus', state.timer.pomoCountCurrentSession); if (state.timer.settings.autoStartPomo) app.toggleTimer(); }
         app.showToast('Timer Complete');
     },
 
     setTimerMode: async (m, sessionCount = null) => {
-        const v = state.timer.settings[m]; 
-        const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.taskId || null, sessionId: null };
+        const v = state.timer.settings[m]; const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.taskId || null, sessionId: null };
         if (sessionCount !== null) updates.sessionCount = sessionCount;
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), updates);
     },
@@ -1137,11 +710,9 @@ const app = {
         const { status, endTime, remaining, totalDuration, taskId, mode } = state.timer;
         const s = status === 'running' && endTime ? Math.max(0, Math.ceil((endTime - Date.now()) / 1000)) : remaining;
         const m = Math.floor(s/60), sc = s%60;
-        
         $('timer-display').textContent = `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
         $('timer-mode').textContent = mode === 'focus' ? 'FOCUS' : mode === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
         $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'}`;
-        
         const offset = 283 * (1 - (s / (totalDuration || 1)));
         $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
         $('timer-progress').style.stroke = mode === 'focus' ? '#ff5757' : '#3b82f6';
@@ -1149,91 +720,48 @@ const app = {
         if(taskId && mode === 'focus') {
             const t = state.tasks.find(x => x.id === taskId);
             if(t) {
-                $('focus-empty').classList.add('hidden');
-                $('focus-active').classList.remove('hidden');
-                $('timer-task-title').textContent = t.title;
-                $('timer-badge').textContent = t.project || 'Inbox';
-                // Sync Fix: Display count from array length
-                $('timer-completed').textContent = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
+                $('focus-empty').classList.add('hidden'); $('focus-active').classList.remove('hidden');
+                $('timer-task-title').textContent = t.title; $('timer-badge').textContent = t.project || 'Inbox';
+                
+                // CLEAN COUNT LOGIC
+                $('timer-completed').textContent = t.completedSessionIds?.length || 0;
+                
                 $('timer-total').textContent = t.estimatedPomos || 1;
                 document.title = `${m}:${sc.toString().padStart(2,'0')} - ${t.title}`;
-            } else {
-                $('timer-task-title').textContent = "Unknown Task";
-            }
-        } else if (mode !== 'focus') {
-            $('focus-empty').classList.remove('hidden');
-            $('focus-active').classList.add('hidden');
-            $('focus-empty').textContent = "Rest your mind";
-            document.title = `${m}:${sc.toString().padStart(2,'0')} - Break`;
-        } else {
-            $('focus-empty').classList.remove('hidden');
-            $('focus-active').classList.add('hidden');
-            $('focus-empty').textContent = "Select a task to focus";
-            document.title = "TimeTrekker";
-        }
+            } else { $('timer-task-title').textContent = "Unknown Task"; }
+        } else if (mode !== 'focus') { $('focus-empty').classList.remove('hidden'); $('focus-active').classList.add('hidden'); $('focus-empty').textContent = "Rest your mind"; document.title = `${m}:${sc.toString().padStart(2,'0')} - Break`; } 
+        else { $('focus-empty').classList.remove('hidden'); $('focus-active').classList.add('hidden'); $('focus-empty').textContent = "Select a task to focus"; document.title = "TimeTrekker"; }
     },
 
     setSound: (t) => {
-        state.sound = t;
-        const audio = $('audio-player');
-        if(audio) audio.src = ASSETS.sounds[t];
-        ['none','rain','cafe','forest'].forEach(x => {
-            if($(`btn-sound-${x}`)) $(`btn-sound-${x}`).className = x===t ? 'text-brand p-1' : 'text-text-muted hover:text-white transition-colors p-1';
-        });
-        if(state.timer.status === 'running' && t !== 'none') audio.play().catch(()=>{});
-        else audio.pause();
+        state.sound = t; const audio = $('audio-player'); if(audio) audio.src = ASSETS.sounds[t];
+        ['none','rain','cafe','forest'].forEach(x => { if($(`btn-sound-${x}`)) $(`btn-sound-${x}`).className = x===t ? 'text-brand p-1' : 'text-text-muted hover:text-white transition-colors p-1'; });
+        if(state.timer.status === 'running' && t !== 'none') audio.play().catch(()=>{}); else audio.pause();
     },
 
     updateSetting: (k, v) => {
         const val = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
-        state.timer.settings[k] = val;
-        
-        updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: val }).catch(()=>{});
+        state.timer.settings[k] = val; updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: val }).catch(()=>{});
     },
 
     showToast: (msg) => {
-        const t = document.createElement('div');
-        t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl text-center animate-slide-up backdrop-blur";
-        t.textContent = msg;
-        $('toast-container').appendChild(t);
-        setTimeout(() => t.remove(), 3000);
+        const t = document.createElement('div'); t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl text-center animate-slide-up backdrop-blur";
+        t.textContent = msg; $('toast-container').appendChild(t); setTimeout(() => t.remove(), 3000);
     },
 
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
-// --- GLOBAL EVENT LISTENERS ---
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null));
 $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value));
 $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value); });
 document.addEventListener('click', (e) => { if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur(); });
-
 if (!history.state) history.replaceState({ view: 'root' }, '');
 window.addEventListener('popstate', (e) => {
-    if (!$('modal-sheet').classList.contains('translate-y-full')) { 
-        $('modal-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); state.editingId = null; }, 300);
-        return; 
-    }
-    if (!$('detail-sheet').classList.contains('translate-y-full')) { 
-        $('detail-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); state.viewingTask = null; }, 300);
-        return; 
-    }
-    if (!$('project-sheet').classList.contains('translate-y-full')) { 
-        $('project-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
-        return; 
-    }
-    
-    if (e.state && e.state.view) {
-        app.switchTab(e.state.view, false);
-    } else {
-        app.switchTab('tasks', false);
-    }
+    if (!$('modal-sheet').classList.contains('translate-y-full')) { $('modal-sheet').classList.add('translate-y-full'); $('modal-overlay').classList.add('opacity-0'); setTimeout(() => { $('modal-overlay').classList.add('hidden'); state.editingId = null; }, 300); return; }
+    if (!$('detail-sheet').classList.contains('translate-y-full')) { $('detail-sheet').classList.add('translate-y-full'); $('modal-overlay').classList.add('opacity-0'); setTimeout(() => { $('modal-overlay').classList.add('hidden'); state.viewingTask = null; }, 300); return; }
+    if (!$('project-sheet').classList.contains('translate-y-full')) { $('project-sheet').classList.add('translate-y-full'); $('modal-overlay').classList.add('opacity-0'); setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300); return; }
+    if (e.state && e.state.view) { app.switchTab(e.state.view, false); } else { app.switchTab('tasks', false); }
 });
 
 window.app = app;
