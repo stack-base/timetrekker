@@ -181,18 +181,36 @@
                         <div class="text-[10px] uppercase text-text-muted font-bold">Total Focus</div>
                         <div class="text-xl font-bold text-brand mt-1" id="ana-time-total">0h</div>
                     </div>
-                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks Done</div>
-                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-total">0</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Focus (Week)</div>
+                        <div class="text-xl font-bold text-brand mt-1" id="ana-time-week">0m</div>
                     </div>
                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Completion %</div>
-                        <div class="text-xl font-bold text-green-500 mt-1" id="ana-completion-rate">0%</div>
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Focus (Today)</div>
+                        <div class="text-xl font-bold text-brand mt-1" id="ana-time-today">0m</div>
                     </div>
                      <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                         <div class="text-[10px] uppercase text-text-muted font-bold">Avg Session</div>
                         <div class="text-xl font-bold text-white mt-1" id="ana-avg-session">0m</div>
                     </div>
+
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks Done</div>
+                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-total">0</div>
+                    </div>
+                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks (Week)</div>
+                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-week">0</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks (Today)</div>
+                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-today">0</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Completion %</div>
+                        <div class="text-xl font-bold text-green-500 mt-1" id="ana-completion-rate">0%</div>
+                    </div>
+
                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                         <div class="text-[10px] uppercase text-text-muted font-bold">Morning Focus</div>
                         <div class="text-xl font-bold text-yellow-500 mt-1" id="ana-early-bird">0h</div>
@@ -221,22 +239,46 @@
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <h3 class="text-sm font-bold mb-4">Focus Trend</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold">Focus Trend</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
+                            <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-48 relative w-full"><canvas id="focusBarChart"></canvas></div>
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <h3 class="text-sm font-bold mb-4">Task Completion</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold">Task Completion</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
+                            <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-48 relative w-full"><canvas id="taskBarChart"></canvas></div>
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <h3 class="text-sm font-bold mb-4">Hourly Productivity</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold">Hourly Productivity</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
+                            <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('hourly', 'bar')" id="btn-hourly-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-48 relative w-full"><canvas id="hourlyChart"></canvas></div>
                 </div>
                 
                  <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <h3 class="text-sm font-bold mb-4">Weekly Performance</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold">Weekly Performance</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
+                            <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('weekday', 'bar')" id="btn-weekday-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                        </div>
+                    </div>
                     <div class="h-48 relative w-full"><canvas id="weekdayChart"></canvas></div>
                 </div>
 
@@ -259,6 +301,13 @@
                              <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-[#525252]"></div><span class="text-text-muted">None</span></div>
                         </div>
                      </div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Top Tags</h3>
+                    <div id="tag-rank-list" class="space-y-3">
+                        <p class="text-xs text-text-muted italic">No tag data available.</p>
+                    </div>
                 </div>
 
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
@@ -354,7 +403,7 @@
                         <div class="grid grid-cols-2 divide-x divide-dark-border border-b border-dark-border bg-dark-card">
                             <div class="p-4 flex flex-col items-center justify-center text-center hover:bg-dark-active/30 transition-colors">
                                 <span class="text-[10px] text-text-muted uppercase font-bold mb-1">Version</span>
-                                <span class="text-lg font-bold text-white">1.0.0</span>
+                                <span class="text-lg font-bold text-white">1.2.2</span>
                             </div>
                              <div class="p-4 flex flex-col items-center justify-center text-center hover:bg-dark-active/30 transition-colors">
                                 <span class="text-[10px] text-text-muted uppercase font-bold mb-1">Build</span>

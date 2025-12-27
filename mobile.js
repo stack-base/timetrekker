@@ -59,6 +59,7 @@ const state = {
         settings: { focus: 25, short: 5, long: 15, longBreakInterval: 4, strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false }
     },
     sound: 'none',
+    chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
     chartInstances: { focusBar: null, taskBar: null, hourly: null, weekday: null, project: null, priority: null },
     analytics: { range: 'week' },
     lastCheckTime: null
@@ -477,29 +478,64 @@ const app = {
         app.renderAnalytics();
     },
 
+    toggleChartType: (key, type) => {
+        haptic('light');
+        state.chartTypes[key] = type;
+        const btnLine = $(`btn-${key}-line`);
+        const btnBar = $(`btn-${key}-bar`);
+        if(btnLine && btnBar) {
+            const activeClass = "px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors";
+            const inactiveClass = "px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors";
+            btnLine.className = type === 'line' ? activeClass : inactiveClass;
+            btnBar.className = type === 'bar' ? activeClass : inactiveClass;
+        }
+        app.renderAnalytics();
+    },
+
     renderAnalytics: () => {
         if(state.activeTab !== 'analytics') return;
         const logs = state.logs; const tasks = state.tasks;
-        const now = new Date(); const getDS = d => getDayStr(d); 
+        const now = new Date(); 
+        const getDS = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const todayStr = getDS(now);
+
+        // --- Calculate Time Ranges (Desktop Parity) ---
+        const startOfWeek = new Date(now); 
+        const day = startOfWeek.getDay() || 7; 
+        if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); 
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const logsToday = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === todayStr);
+        const logsWeek = logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek);
         
         const tasksDone = tasks.filter(t => t.status === 'done');
+        const tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr));
+        const tasksWeek = tasksDone.filter(t => { if (!t.completedAt) return false; return new Date(t.completedAt) >= startOfWeek });
+
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
+        // --- Render Stats Cards ---
         $('ana-time-total').textContent = fmtTime(totalMin);
-        $('ana-task-total').textContent = tasksDone.length;
-        $('ana-project-count').textContent = state.projects.size;
+        $('ana-time-week').textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0));
+        $('ana-time-today').textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0));
         
+        $('ana-task-total').textContent = tasksDone.length;
+        $('ana-task-week').textContent = tasksWeek.length;
+        $('ana-task-today').textContent = tasksToday.length;
+
         const activeCount = tasks.filter(t => t.status === 'todo').length + tasksDone.length; 
         $('ana-completion-rate').textContent = activeCount > 0 ? Math.round((tasksDone.length / activeCount) * 100) + '%' : '0%';
         $('ana-avg-session').textContent = (logs.length > 0 ? Math.round(totalMin / logs.length) : 0) + 'm';
 
         let morning = 0, night = 0; logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); 
         $('ana-early-bird').textContent = fmtTime(morning); $('ana-night-owl').textContent = fmtTime(night);
+        $('ana-project-count').textContent = state.projects.size;
         
         let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
         $('ana-streak-days').textContent = streak + ' Days';
 
+        // --- Render Timeline Grid ---
         const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
         for (let i = 0; i < 7; i++) { 
             const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
@@ -514,6 +550,7 @@ const app = {
             row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
         }
 
+        // --- Prepare Chart Data ---
         const r = state.analytics.range; 
         let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
         if (r === 'year') { 
@@ -535,38 +572,76 @@ const app = {
             } 
         }
 
-        const createChart = (ctxId, type, data, color, label, instanceKey) => {
+        // --- Render Charts (Dynamic Types) ---
+        const createChart = (ctxId, chartKey, data, color, label, instanceKey) => {
             const el = $(ctxId); if(!el) return;
             const ctx = el.getContext('2d');
+            const type = state.chartTypes[chartKey];
+            const isLine = type === 'line';
+            
+            // Gradient Helper
+            const getGradient = (c) => {
+                const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g;
+            }
+
             if(state.chartInstances[instanceKey]) state.chartInstances[instanceKey].destroy();
             state.chartInstances[instanceKey] = new Chart(ctx, {
                 type: type,
-                data: { labels: lbl, datasets: [{ label: label, data: data, backgroundColor: color, borderColor: color, borderRadius: 3, tension: 0.4, fill: type === 'line', pointRadius: 0 }] },
+                data: { 
+                    labels: lbl, 
+                    datasets: [{ 
+                        label: label, 
+                        data: data, 
+                        backgroundColor: isLine ? getGradient(color) : color, 
+                        borderColor: color, 
+                        borderRadius: 3, 
+                        tension: 0.4, 
+                        fill: isLine, 
+                        pointRadius: isLine ? 0 : 0,
+                        pointHoverRadius: 6,
+                        borderWidth: isLine ? 2 : 0
+                    }] 
+                },
                 options: { 
-                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + (instanceKey.includes('Focus') ? ' hrs' : '') } } }, 
-                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: false }, x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } } 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + (instanceKey.includes('Focus') ? ' hrs' : '') } } }, 
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: false }, 
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } 
+                    } 
                 }
             });
         };
 
-        createChart('focusBarChart', 'bar', dpFocus, '#ff5757', 'Hours', 'focusBar');
-        createChart('taskBarChart', 'bar', dpTask, '#3b82f6', 'Tasks', 'taskBar');
+        createChart('focusBarChart', 'focus', dpFocus, '#ff5757', 'Hours', 'focusBar');
+        createChart('taskBarChart', 'task', dpTask, '#3b82f6', 'Tasks', 'taskBar');
 
+        // --- Hourly & Weekday Charts ---
         const hours = Array(24).fill(0); logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
-        if($('hourlyChart')) {
-            if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
-            state.chartInstances.hourly = new Chart($('hourlyChart').getContext('2d'), { type: 'bar', data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: '#10b981', borderRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{display:false}, y:{display:false}} } });
-        }
+        const createHourly = () => {
+             const type = state.chartTypes.hourly; const isLine = type === 'line'; const color = '#10b981';
+             if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
+             const ctx = $('hourlyChart').getContext('2d');
+             const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
+             state.chartInstances.hourly = new Chart(ctx, { type: type, data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 2, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{display:false}, y:{display:false}} } });
+        };
+        if($('hourlyChart')) createHourly();
 
         const weekdays = Array(7).fill(0); logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
-        if($('weekdayChart')) {
-            if(state.chartInstances.weekday) state.chartInstances.weekday.destroy();
-            state.chartInstances.weekday = new Chart($('weekdayChart').getContext('2d'), { type: 'bar', data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: '#f59e0b', borderRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{grid:{display:false}}, y:{display:false}} } });
-        }
+        const createWeekday = () => {
+             const type = state.chartTypes.weekday; const isLine = type === 'line'; const color = '#f59e0b';
+             if(state.chartInstances.weekday) state.chartInstances.weekday.destroy();
+             const ctx = $('weekdayChart').getContext('2d');
+             const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
+             state.chartInstances.weekday = new Chart(ctx, { type: type, data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: {x:{grid:{display:false}}, y:{display:false}} } });
+        };
+        if($('weekdayChart')) createWeekday();
 
+        // --- Insight Text ---
         const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
         $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
 
+        // --- Project & Priority Charts ---
         const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
         if($('projectChart')) {
             if (state.chartInstances.project) state.chartInstances.project.destroy();
@@ -580,6 +655,17 @@ const app = {
             state.chartInstances.priority = new Chart($('priorityChart').getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
 
+        // --- Top Tags (New) ---
+        const tc = {}; 
+        tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
+        const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        if (st.length > 0) {
+            $('tag-rank-list').innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+        } else {
+             $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tag data available.</p>';
+        }
+
+        // --- Recent Logs ---
         $('mobile-logs').innerHTML = logs.slice(0, 10).map(l => { const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); return `<div class="px-4 py-3 flex justify-between items-center text-sm"><div><div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div><div class="flex items-center gap-2 text-[10px] text-text-muted"><span>${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span></div></div><span class="text-brand font-mono">${Math.round(l.duration||25)}m</span></div>` }).join('');
     },
     
