@@ -11,6 +11,7 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
+// Attempt persistence but catch errors (e.g. multiple tabs)
 try { 
     enableIndexedDbPersistence(db).catch((err) => { 
         if (err.code === 'failed-precondition') console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.'); 
@@ -20,28 +21,66 @@ try {
 
 // --- DOM HELPERS ---
 const D = document;
-const $ = (id) => { const el = D.getElementById(id); if (!el) console.warn(`Element with ID "${id}" not found.`); return el; };
-const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
+const $ = (id) => {
+    const el = D.getElementById(id);
+    if (!el) console.warn(`Element with ID "${id}" not found.`);
+    return el;
+};
+const esc = (str) => { 
+    if (!str) return ''; 
+    const div = document.createElement('div'); 
+    div.textContent = str; 
+    return div.innerHTML; 
+};
 
-// --- HAPTIC FEEDBACK ---
+// --- HAPTIC FEEDBACK ENGINE ---
 const haptic = (type = 'light') => {
     if (!navigator.vibrate) return;
-    try { const patterns = { light: 10, medium: 25, heavy: 40, success: [10, 30], timerDone: [200, 100, 200] }; navigator.vibrate(patterns[type] || 10); } catch (e) { }
+    try {
+        const patterns = {
+            light: 10,       // Button taps, checkboxes
+            medium: 25,      // Timer toggle
+            heavy: 40,       // Deletions, warnings
+            success: [10, 30], // Task save
+            timerDone: [200, 100, 200] // Timer completion
+        };
+        navigator.vibrate(patterns[type] || 10);
+    } catch (e) { /* ignore */ }
 };
 
 // --- STATE MANAGEMENT ---
 const state = {
-    user: null, tasks: [], logs: [], 
+    user: null, 
+    tasks: [], 
+    logs: [], 
     projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
-    view: 'today', filterProject: null, selectedTaskId: null, editingTaskId: null,
-    timer: { mode: 'focus', status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, activeTaskId: null, interval: null, sessionId: null, pomoCountCurrentSession: 0, settings: { focus: 25, short: 5, long: 15, strictMode: false, longBreakInterval: 4, autoStartPomo: false, autoStartBreak: false, disableBreak: false } },
-    newEst: 1, sound: 'none',
+    view: 'today', 
+    filterProject: null, 
+    selectedTaskId: null, 
+    editingTaskId: null,
+    timer: {
+        mode: 'focus', status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, activeTaskId: null, interval: null,
+        sessionId: null, // Track unique session ID
+        pomoCountCurrentSession: 0, 
+        settings: {
+            focus: 25, short: 5, long: 15, strictMode: false,
+            longBreakInterval: 4, autoStartPomo: false, autoStartBreak: false, disableBreak: false
+        }
+    },
+    newEst: 1, 
+    sound: 'none',
     charts: { focusBar: null, taskBar: null, project: null, hourly: null, weekday: null, priority: null },
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
-    analytics: { range: 'week', metric: 'time' }, lastCheckTime: null
+    analytics: { range: 'week', metric: 'time' },
+    lastCheckTime: null
 };
 
-const sounds = { none: '', rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', cafe: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' };
+const sounds = { 
+    none: '', 
+    rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', 
+    cafe: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', 
+    forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' 
+};
 
 // --- CACHED ELEMENTS ---
 const getEls = () => ({
@@ -53,7 +92,16 @@ const getEls = () => ({
     focusCompleted: $('focus-completed'), focusTotal: $('focus-total'), timerPanel: $('timer-panel'), 
     navCounts: { all: $('count-all'), today: $('count-today'), tomorrow: $('count-tomorrow'), upcoming: $('count-upcoming'), past: $('count-past') },
     stats: { pomosToday: $('stat-pomos-today'), tasksToday: $('stat-tasks-today'), estRemain: $('stat-est-remaining'), focusTime: $('stat-focus-time'), tasksRemain: $('stat-tasks-remaining'), estTime: $('stat-est-time') },
-    analytics: { timeTotal: $('ana-time-total'), timeWeek: $('ana-time-week'), timeToday: $('ana-time-today'), taskTotal: $('ana-task-total'), taskWeek: $('ana-task-week'), taskToday: $('ana-task-today'), completionRate: $('ana-completion-rate'), avgSession: $('ana-avg-session'), earlyBird: $('ana-early-bird'), nightOwl: $('ana-night-owl'), streakDays: $('ana-streak-days'), projectCount: $('ana-project-count'), insightText: $('insight-text'), timelineGrid: $('pomo-timeline-grid'), focusBarChart: $('focusBarChart'), taskBarChart: $('taskBarChart'), projectChart: $('projectChart'), hourlyChart: $('hourlyChart'), weekdayChart: $('weekdayChart'), priorityChart: $('priorityChart'), projList: $('project-rank-list'), tagList: $('tag-rank-list'), sessionLogBody: $('session-log-body') },
+    analytics: {
+        timeTotal: $('ana-time-total'), timeWeek: $('ana-time-week'), timeToday: $('ana-time-today'),
+        taskTotal: $('ana-task-total'), taskWeek: $('ana-task-week'), taskToday: $('ana-task-today'),
+        completionRate: $('ana-completion-rate'), avgSession: $('ana-avg-session'),
+        earlyBird: $('ana-early-bird'), nightOwl: $('ana-night-owl'), streakDays: $('ana-streak-days'),
+        projectCount: $('ana-project-count'), insightText: $('insight-text'),
+        timelineGrid: $('pomo-timeline-grid'), focusBarChart: $('focusBarChart'), taskBarChart: $('taskBarChart'),
+        projectChart: $('projectChart'), hourlyChart: $('hourlyChart'), weekdayChart: $('weekdayChart'), priorityChart: $('priorityChart'),
+        projList: $('project-rank-list'), tagList: $('tag-rank-list'), sessionLogBody: $('session-log-body')
+    },
     projectList: $('project-list'), subtasksContainer: $('subtasks-container'), audio: $('audio-player'), 
     currentDate: $('current-date-display'), sidebarOverlay: $('sidebar-overlay'), sidebar: $('sidebar'), headerActions: $('header-actions'),
     settingsModal: $('global-settings-modal'), settingsPanel: $('settings-panel'), settingsTitle: $('settings-view-title'), 
@@ -61,88 +109,302 @@ const getEls = () => ({
     taskPomoDisplay: $('task-pomo-display'), totalTimeCalc: $('total-time-calc'), taskRepeat: $('task-repeat'), taskReminder: $('task-reminder')
 });
 
-Chart.defaults.font.family = 'Inter'; Chart.defaults.color = '#a3a3a3'; Chart.defaults.borderColor = '#333333'; Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)'; Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+Chart.defaults.font.family = 'Inter';
+Chart.defaults.color = '#a3a3a3';
+Chart.defaults.borderColor = '#333333';
+Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+Chart.defaults.plugins.tooltip.titleColor = '#fff';
+Chart.defaults.plugins.tooltip.bodyColor = '#a3a3a3';
+Chart.defaults.plugins.tooltip.borderColor = '#333';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
 
 // --- USER PROFILE SYNC ---
 async function syncUserProfile(u) {
     if (!u) return;
     try {
-        const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid); const userSnap = await getDoc(userRef);
-        const profileData = { displayName: u.displayName || u.email.split('@')[0], email: u.email, photoURL: u.photoURL, lastLogin: serverTimestamp(), uid: u.uid };
-        if (!userSnap.exists()) { await setDoc(userRef, { ...profileData, createdAt: serverTimestamp() }); } else { await setDoc(userRef, profileData, { merge: true }); }
+        const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
+        const userSnap = await getDoc(userRef);
+        const profileData = {
+            displayName: u.displayName || u.email.split('@')[0],
+            email: u.email,
+            photoURL: u.photoURL,
+            providerId: u.providerData.length > 0 ? u.providerData[0].providerId : 'password',
+            lastLogin: serverTimestamp(),
+            uid: u.uid
+        };
+        if (!userSnap.exists()) {
+            await setDoc(userRef, { ...profileData, createdAt: serverTimestamp() });
+        } else {
+            await setDoc(userRef, profileData, { merge: true });
+        }
     } catch (e) { console.error("Error syncing user profile:", e); }
 }
 
+// --- AUTH LISTENER ---
 onAuthStateChanged(auth, u => {
     if (u) {
-        state.user = u; syncUserProfile(u); const els = getEls();
-        const p = $('user-profile-display'); if (p) { p.classList.remove('hidden'); p.classList.add('flex'); $('user-name-text').textContent = u.displayName || u.email.split('@')[0]; $('user-email-text').textContent = u.email; $('user-avatar-initials').textContent = (u.displayName || u.email).charAt(0).toUpperCase(); els.settingsName.textContent = u.displayName || u.email.split('@')[0]; els.settingsEmail.textContent = u.email; els.settingsAvatar.textContent = (u.displayName || u.email).charAt(0).toUpperCase(); }
-        subTasks(u.uid); subLogs(u.uid); subTimer(u.uid);
+        state.user = u;
+        syncUserProfile(u);
+        const els = getEls();
+
+        const p = $('user-profile-display');
+        if (p) {
+            p.classList.remove('hidden'); p.classList.add('flex');
+            $('user-name-text').textContent = u.displayName || u.email.split('@')[0];
+            $('user-email-text').textContent = u.email;
+            $('user-avatar-initials').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
+            els.settingsName.textContent = u.displayName || u.email.split('@')[0];
+            els.settingsEmail.textContent = u.email;
+            els.settingsAvatar.textContent = (u.displayName || u.email).charAt(0).toUpperCase();
+        }
+        
+        subTasks(u.uid);
+        subLogs(u.uid);
+        subTimer(u.uid);
+        
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+        // Reminder Check
         setInterval(() => {
-            const now = new Date(); const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            if (state.lastCheckTime !== currentTime) { state.lastCheckTime = currentTime; if ('Notification' in window && Notification.permission === 'granted') { const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0'); state.tasks.forEach(t => { if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) { try { haptic('light'); new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png' }); } catch (e) { } } }); } }
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            if (state.lastCheckTime !== currentTime) {
+                state.lastCheckTime = currentTime;
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                    state.tasks.forEach(t => {
+                        if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
+                            try { 
+                                haptic('light');
+                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png' }); 
+                            } catch (e) { }
+                        }
+                    });
+                }
+            }
         }, 10000);
-    } else { window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href); }
+
+    } else {
+        window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href);
+    }
 });
 
+// --- SUBSCRIPTIONS ---
 const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', uid, 'tasks'), s => {
-    const t = [], p = new Set(['Inbox', 'Work', 'Personal', 'Study']); s.forEach(d => { const x = d.data(); t.push({ id: d.id, ...x }); if (x.project && x.project !== 'Inbox') p.add(x.project); });
-    state.tasks = t; state.projects = p; updateProjectsUI(); updateCounts(); renderTasks();
-    if (state.timer.activeTaskId) { const activeTask = t.find(x => x.id === state.timer.activeTaskId); updateTimerUI(activeTask); }
+    const t = [], p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
+    s.forEach(d => { const x = d.data(); t.push({ id: d.id, ...x }); if (x.project && x.project !== 'Inbox') p.add(x.project); });
+    state.tasks = t; state.projects = p; 
+    updateProjectsUI(); 
+    updateCounts(); 
+    renderTasks();
+    if (state.timer.activeTaskId) {
+        const activeTask = t.find(x => x.id === state.timer.activeTaskId);
+        if(!activeTask && state.timer.status === 'running') {
+             // Optional: Stop timer or keep running as "Unknown Task"
+        }
+        updateTimerUI(activeTask);
+    }
     if (state.view === 'analytics') updateAnalytics();
 });
 
 const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 'timer', 'active'), s => {
     if (s.exists()) {
         const d = s.data();
-        state.timer = { ...state.timer, status: d.status || 'idle', mode: d.mode || 'focus', endTime: d.endTime ? d.endTime.toMillis() : null, remaining: d.remaining || state.timer.settings[d.mode || 'focus'] * 60, totalDuration: d.totalDuration || state.timer.settings[d.mode || 'focus'] * 60, activeTaskId: d.taskId || null, sessionId: d.sessionId || null, pomoCountCurrentSession: d.sessionCount || 0 };
-        const els = getEls(); app.setTimerModeUI(state.timer.mode);
-        let activeTask = null; if (state.timer.activeTaskId) { state.selectedTaskId = state.timer.activeTaskId; activeTask = state.tasks.find(x => x.id === state.timer.activeTaskId); }
+        state.timer = {
+            ...state.timer,
+            status: d.status || 'idle',
+            mode: d.mode || 'focus',
+            endTime: d.endTime ? d.endTime.toMillis() : null,
+            remaining: d.remaining || state.timer.settings[d.mode || 'focus'] * 60,
+            totalDuration: d.totalDuration || state.timer.settings[d.mode || 'focus'] * 60,
+            activeTaskId: d.taskId || null,
+            sessionId: d.sessionId || null, // Sync the unique session ID
+            pomoCountCurrentSession: d.sessionCount || 0
+        };
+        const els = getEls();
+        app.setTimerModeUI(state.timer.mode);
+        
+        let activeTask = null;
+        if (state.timer.activeTaskId) {
+             state.selectedTaskId = state.timer.activeTaskId;
+             activeTask = state.tasks.find(x => x.id === state.timer.activeTaskId);
+        }
         updateTimerUI(activeTask);
-        if (state.timer.status === 'running') { startLocalInterval(); updateTimerVisuals(); if (state.sound !== 'none' && els.audio && els.audio.paused) { els.audio.play().catch(e => { console.log('Audio play blocked', e); }); } } else { stopLocalInterval(); updateTimerVisuals(); if (els.audio && !els.audio.paused) els.audio.pause(); }
-    } else { app.resetTimer(true); }
+
+        if (state.timer.status === 'running') {
+            startLocalInterval();
+            updateTimerVisuals();
+            if (state.sound !== 'none' && els.audio && els.audio.paused) {
+                els.audio.play().catch(e => { console.log('Audio play blocked', e); });
+            }
+        } else {
+            stopLocalInterval();
+            updateTimerVisuals();
+            if (els.audio && !els.audio.paused) els.audio.pause();
+        }
+    } else {
+        app.resetTimer(true);
+    }
 });
 
 const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', uid, 'focus_sessions')), s => {
-    const l = []; s.forEach(d => l.push({ id: d.id, ...d.data() })); l.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)); state.logs = l;
+    const l = []; 
+    s.forEach(d => l.push({ id: d.id, ...d.data() })); 
+    l.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)); 
+    state.logs = l;
     if (state.view === 'analytics') updateAnalytics();
 });
 
-const startLocalInterval = () => { const els = getEls(); if (state.timer.interval) clearInterval(state.timer.interval); state.timer.interval = setInterval(() => { updateTimerVisuals(); if (state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer(); }, 100); if(els.playIcon) els.playIcon.className = "ph-fill ph-pause text-3xl ml-1"; };
-const stopLocalInterval = () => { const els = getEls(); if (state.timer.interval) clearInterval(state.timer.interval); state.timer.interval = null; if(els.playIcon) els.playIcon.className = "ph-fill ph-play text-3xl ml-1"; };
-const updateTimerVisuals = () => { const els = getEls(); if(!els.timerDisplay) return; const { status, endTime, remaining, totalDuration } = state.timer; const s = status === 'running' && endTime ? Math.max(0, Math.ceil((endTime - Date.now()) / 1000)) : remaining; const m = Math.floor(s / 60), sc = s % 60; els.timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${sc.toString().padStart(2, '0')}`; if(els.timerProgress) els.timerProgress.style.strokeDashoffset = 289 * (1 - (s / (totalDuration || 1))); if(state.timer.status === 'running') D.title = `${m}:${sc.toString().padStart(2, '0')} - TimeTrekker`; };
+// --- TIMER LOGIC ---
+const startLocalInterval = () => {
+    const els = getEls();
+    if (state.timer.interval) clearInterval(state.timer.interval);
+    state.timer.interval = setInterval(() => {
+        updateTimerVisuals();
+        if (state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
+    }, 100);
+    if(els.playIcon) els.playIcon.className = "ph-fill ph-pause text-3xl ml-1";
+};
 
+const stopLocalInterval = () => {
+    const els = getEls();
+    if (state.timer.interval) clearInterval(state.timer.interval);
+    state.timer.interval = null;
+    if(els.playIcon) els.playIcon.className = "ph-fill ph-play text-3xl ml-1";
+};
+
+const updateTimerVisuals = () => {
+    const els = getEls();
+    if(!els.timerDisplay) return;
+
+    const { status, endTime, remaining, totalDuration } = state.timer;
+    const s = status === 'running' && endTime ? Math.max(0, Math.ceil((endTime - Date.now()) / 1000)) : remaining;
+    const m = Math.floor(s / 60), sc = s % 60;
+    
+    els.timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${sc.toString().padStart(2, '0')}`;
+    if(els.timerProgress) els.timerProgress.style.strokeDashoffset = 289 * (1 - (s / (totalDuration || 1)));
+    
+    if(state.timer.status === 'running') D.title = `${m}:${sc.toString().padStart(2, '0')} - TimeTrekker`;
+};
+
+// --- APP CONTROLLER ---
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
-    showPrompt: (t, v = '') => new Promise(r => { const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v; p.el.classList.remove('hidden'); setTimeout(() => p.el.classList.remove('opacity-0'), 10); p.input.focus() }),
-    closePrompt: v => { const p = app.customPrompt; p.el.classList.add('opacity-0'); setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null }, 200) },
-    setView: v => { const els = getEls(); state.view = v; state.filterProject = null; els.pageTitle.textContent = (v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)); updateNavStyles(v); app.toggleSidebar(false); if (v === 'analytics') { els.taskViewContainer.classList.add('hidden'); els.analyticsViewContainer.classList.remove('hidden'); els.headerActions.classList.add('invisible'); updateAnalytics() } else { els.taskViewContainer.classList.remove('hidden'); els.analyticsViewContainer.classList.add('hidden'); els.headerActions.classList.remove('invisible'); renderTasks(); updateCounts() } },
-    setProjectView: p => { const els = getEls(); state.view = 'project'; state.filterProject = p; els.pageTitle.textContent = p; updateNavStyles('project', p); app.toggleSidebar(false); els.taskViewContainer.classList.remove('hidden'); els.analyticsViewContainer.classList.add('hidden'); els.headerActions.classList.remove('invisible'); renderTasks(); updateCounts() },
-    setRange: r => { state.analytics.range = r; haptic('light'); ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); updateAnalytics() },
-    toggleChartType: (k, t) => { haptic('light'); state.chartTypes[k] = t; ['bar', 'line'].forEach(x => { $(`btn-${k}-${x}`).classList.toggle('active', x === t) }); updateAnalytics() },
-    toggleFocusPanel: f => { const els = getEls(); const p = els.timerPanel, i = !p.classList.contains('translate-x-full'); (f !== null ? f : !i) ? p.classList.remove('translate-x-full') : p.classList.add('translate-x-full') },
-    toggleSidebar: f => { const els = getEls(); const s = els.sidebar, o = els.sidebarOverlay, h = s.classList.contains('-translate-x-full'), show = (typeof f === 'boolean') ? f : h; if (show) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); requestAnimationFrame(() => o.classList.remove('opacity-0')) } else { s.classList.add('-translate-x-full'); o.classList.add('opacity-0'); setTimeout(() => o.classList.add('hidden'), 300) } },
-    promptNewProject: async () => { const n = await app.showPrompt("Enter project name:"); if (n) { state.projects.add(n); updateProjectsUI() } },
-    renameProject: async (o, e) => { e.stopPropagation(); const n = await app.showPrompt(`Rename "${o}" to:`, o); if (!n || n === o) return; const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", o)))).forEach(d => b.update(d.ref, { project: n })); await b.commit(); state.projects.delete(o); state.projects.add(n); state.filterProject === o ? app.setProjectView(n) : updateProjectsUI() },
-    deleteProject: async (p, e) => { e.stopPropagation(); if (!confirm(`Delete "${p}"?`)) return; haptic('heavy'); const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", p)))).forEach(d => b.update(d.ref, { project: 'Inbox' })); await b.commit(); state.projects.delete(p); state.filterProject === p ? app.setView('today') : updateProjectsUI() },
+    showPrompt: (t, v = '') => new Promise(r => {
+        const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v; 
+        p.el.classList.remove('hidden'); setTimeout(() => p.el.classList.remove('opacity-0'), 10); p.input.focus()
+    }),
+    closePrompt: v => {
+        const p = app.customPrompt; p.el.classList.add('opacity-0'); 
+        setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null }, 200)
+    },
     
-    addSubtaskUI: (v = '') => { const els = getEls(); const d = D.createElement('div'); d.className = 'flex items-center space-x-2 animate-fade-in'; d.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${esc(v)}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`; els.subtasksContainer.appendChild(d) },
-    toggleDropdown: t => { haptic('light'); const d = $(`${t}-options`); D.querySelectorAll('[id$="-options"]').forEach(x => { if (x.id !== `${t}-options`) x.classList.add('hidden') }); d.classList.toggle('hidden'); if (!d.classList.contains('hidden')) d.classList.add('animate-fade-in') },
+    setView: v => {
+        const els = getEls();
+        state.view = v; state.filterProject = null; 
+        els.pageTitle.textContent = (v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)); 
+        updateNavStyles(v); app.toggleSidebar(false);
+        if (v === 'analytics') {
+            els.taskViewContainer.classList.add('hidden'); els.analyticsViewContainer.classList.remove('hidden'); els.headerActions.classList.add('invisible'); updateAnalytics()
+        } else {
+            els.taskViewContainer.classList.remove('hidden'); els.analyticsViewContainer.classList.add('hidden'); els.headerActions.classList.remove('invisible'); renderTasks(); updateCounts()
+        }
+    },
+    setProjectView: p => {
+        const els = getEls();
+        state.view = 'project'; state.filterProject = p; 
+        els.pageTitle.textContent = p; 
+        updateNavStyles('project', p); app.toggleSidebar(false); 
+        els.taskViewContainer.classList.remove('hidden'); els.analyticsViewContainer.classList.add('hidden'); els.headerActions.classList.remove('invisible'); renderTasks(); updateCounts()
+    },
+    setRange: r => {
+        state.analytics.range = r; haptic('light');
+        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
+        updateAnalytics()
+    },
+    toggleChartType: (k, t) => { haptic('light'); state.chartTypes[k] = t; ['bar', 'line'].forEach(x => { $(`btn-${k}-${x}`).classList.toggle('active', x === t) }); updateAnalytics() },
+    toggleFocusPanel: f => {
+        const els = getEls();
+        const p = els.timerPanel, i = !p.classList.contains('translate-x-full'); 
+        (f !== null ? f : !i) ? p.classList.remove('translate-x-full') : p.classList.add('translate-x-full')
+    },
+    toggleSidebar: f => {
+        const els = getEls();
+        const s = els.sidebar, o = els.sidebarOverlay, h = s.classList.contains('-translate-x-full'), show = (typeof f === 'boolean') ? f : h; 
+        if (show) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); requestAnimationFrame(() => o.classList.remove('opacity-0')) } 
+        else { s.classList.add('-translate-x-full'); o.classList.add('opacity-0'); setTimeout(() => o.classList.add('hidden'), 300) }
+    },
+    promptNewProject: async () => { const n = await app.showPrompt("Enter project name:"); if (n) { state.projects.add(n); updateProjectsUI() } },
+    renameProject: async (o, e) => {
+        e.stopPropagation(); const n = await app.showPrompt(`Rename "${o}" to:`, o); if (!n || n === o) return; 
+        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", o)))).forEach(d => b.update(d.ref, { project: n })); 
+        await b.commit(); state.projects.delete(o); state.projects.add(n); 
+        state.filterProject === o ? app.setProjectView(n) : updateProjectsUI()
+    },
+    deleteProject: async (p, e) => {
+        e.stopPropagation(); if (!confirm(`Delete "${p}"?`)) return; haptic('heavy');
+        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", p)))).forEach(d => b.update(d.ref, { project: 'Inbox' })); 
+        await b.commit(); state.projects.delete(p); 
+        state.filterProject === p ? app.setView('today') : updateProjectsUI()
+    },
+    
+    // Task Helpers
+    addSubtaskUI: (v = '') => {
+        const els = getEls();
+        const d = D.createElement('div'); d.className = 'flex items-center space-x-2 animate-fade-in'; 
+        d.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${esc(v)}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`; 
+        els.subtasksContainer.appendChild(d)
+    },
+    toggleDropdown: t => {
+        haptic('light');
+        const d = $(`${t}-options`); 
+        D.querySelectorAll('[id$="-options"]').forEach(x => { if (x.id !== `${t}-options`) x.classList.add('hidden') }); 
+        d.classList.toggle('hidden'); if (!d.classList.contains('hidden')) d.classList.add('animate-fade-in')
+    },
     selectOption: (t, v, d) => { haptic('light'); $(`selected-${t}`).innerText = d; $(`task-${t}`).value = v; $(`${t}-options`).classList.add('hidden') },
 
     toggleAddTaskModal: (t = null) => {
-        const els = getEls(); try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { }); } catch (e) { }
+        const els = getEls();
+        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { }); } catch (e) { }
+        
         if (els.modal.classList.contains('hidden')) {
-            haptic('light'); els.subtasksContainer.innerHTML = ''; const po = $('project-options'); po.innerHTML = ''; state.projects.forEach(p => { const b = D.createElement('button'); b.type = 'button'; b.onclick = () => app.selectOption('project', p, p); b.className = "w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center"; b.innerHTML = `<i class="ph-bold ph-folder mr-2"></i> ${esc(p)}`; po.appendChild(b) });
+            haptic('light');
+            els.subtasksContainer.innerHTML = ''; const po = $('project-options'); po.innerHTML = ''; 
+            state.projects.forEach(p => {
+                const b = D.createElement('button'); b.type = 'button'; b.onclick = () => app.selectOption('project', p, p); 
+                b.className = "w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center"; 
+                b.innerHTML = `<i class="ph-bold ph-folder mr-2"></i> ${esc(p)}`; po.appendChild(b)
+            });
             if (t) {
-                state.editingTaskId = t.id; els.modalTitle.innerText = "Edit Task"; els.saveTaskBtn.innerText = "Save Changes"; $('task-title').value = t.title; $('task-note').value = t.note || ''; $('task-tags').value = t.tags ? t.tags.join(', ') : ''; state.newEst = t.estimatedPomos || 1; els.estDisplay.innerText = state.newEst; els.taskPomoDisplay.innerText = t.pomoDuration || 25; els.dateInput.value = t.dueDate || ''; app.selectOption('priority', t.priority || 'none', { high: 'High Priority (! Urgent)', med: 'Medium Priority', low: 'Low Priority', none: 'None' }[t.priority || 'none']); app.selectOption('project', t.project || 'Inbox', t.project || 'Inbox'); app.selectOption('repeat', t.repeat || 'none', t.repeat ? t.repeat.charAt(0).toUpperCase() + t.repeat.slice(1) : 'None'); els.taskReminder.value = t.reminder || ''; if (t.subtasks) t.subtasks.forEach(s => app.addSubtaskUI(s))
+                state.editingTaskId = t.id; els.modalTitle.innerText = "Edit Task"; els.saveTaskBtn.innerText = "Save Changes"; 
+                $('task-title').value = t.title; $('task-note').value = t.note || ''; $('task-tags').value = t.tags ? t.tags.join(', ') : ''; 
+                state.newEst = t.estimatedPomos || 1; els.estDisplay.innerText = state.newEst; els.taskPomoDisplay.innerText = t.pomoDuration || 25; 
+                els.dateInput.value = t.dueDate || ''; app.selectOption('priority', t.priority || 'none', { high: 'High Priority (! Urgent)', med: 'Medium Priority', low: 'Low Priority', none: 'None' }[t.priority || 'none']); 
+                app.selectOption('project', t.project || 'Inbox', t.project || 'Inbox'); app.selectOption('repeat', t.repeat || 'none', t.repeat ? t.repeat.charAt(0).toUpperCase() + t.repeat.slice(1) : 'None'); 
+                els.taskReminder.value = t.reminder || ''; if (t.subtasks) t.subtasks.forEach(s => app.addSubtaskUI(s))
             } else {
-                state.editingTaskId = null; els.modalTitle.innerText = "New Task"; els.saveTaskBtn.innerText = "Save Task"; state.newEst = 1; els.estDisplay.innerText = "1"; els.taskPomoDisplay.innerText = 25; els.dateInput.value = new Date().toISOString().split('T')[0]; $('task-title').value = ''; $('task-note').value = ''; $('task-tags').value = ''; app.selectOption('priority', 'none', 'None'); app.selectOption('project', 'Inbox', 'Inbox'); app.selectOption('repeat', 'none', 'None'); els.taskReminder.value = ''
+                state.editingTaskId = null; els.modalTitle.innerText = "New Task"; els.saveTaskBtn.innerText = "Save Task"; 
+                state.newEst = 1; els.estDisplay.innerText = "1"; els.taskPomoDisplay.innerText = 25; els.dateInput.value = new Date().toISOString().split('T')[0]; 
+                $('task-title').value = ''; $('task-note').value = ''; $('task-tags').value = ''; app.selectOption('priority', 'none', 'None'); 
+                app.selectOption('project', 'Inbox', 'Inbox'); app.selectOption('repeat', 'none', 'None'); els.taskReminder.value = ''
             }
-            app.updateTotalEst(); els.modal.classList.remove('hidden'); setTimeout(() => els.modal.classList.remove('opacity-0'), 10); setTimeout(() => { els.modalPanel.classList.remove('translate-y-full', 'md:scale-95'); els.modalPanel.classList.add('translate-y-0', 'md:scale-100'); }, 10); $('task-title').focus()
+            app.updateTotalEst(); 
+            els.modal.classList.remove('hidden'); 
+            setTimeout(() => els.modal.classList.remove('opacity-0'), 10); 
+            // Handle bottom sheet (remove hide-translate, add show-translate) and desktop scale
+            setTimeout(() => {
+                els.modalPanel.classList.remove('translate-y-full', 'md:scale-95');
+                els.modalPanel.classList.add('translate-y-0', 'md:scale-100');
+            }, 10);
+            $('task-title').focus()
         } else {
-            haptic('light'); els.modal.classList.add('opacity-0'); els.modalPanel.classList.add('translate-y-full', 'md:scale-95'); els.modalPanel.classList.remove('translate-y-0', 'md:scale-100'); setTimeout(() => els.modal.classList.add('hidden'), 300)
+            haptic('light');
+            els.modal.classList.add('opacity-0'); 
+            // Revert transition
+            els.modalPanel.classList.add('translate-y-full', 'md:scale-95');
+            els.modalPanel.classList.remove('translate-y-0', 'md:scale-100');
+            setTimeout(() => els.modal.classList.add('hidden'), 300)
         }
     },
 
@@ -150,35 +412,75 @@ const app = {
     adjustPomoDuration: d => { let c = parseInt($('task-pomo-display').innerText), v = c + d; if (v < 5) v = 5; if (v > 60) v = 60; $('task-pomo-display').innerText = v; app.updateTotalEst() },
     updateTotalEst: () => { const d = parseInt($('task-pomo-display').innerText), n = state.newEst, t = d * n, h = Math.floor(t / 60), m = t % 60; $('total-time-calc').innerText = h > 0 ? `${h}h ${m}m` : `${m}m` },
     
+    // CRUD Operations
     editTask: (id, e) => { e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (t) app.toggleAddTaskModal(t) },
     handleSaveTask: async e => {
-        e.preventDefault(); const els = getEls(); const title = $('task-title').value; if (!title) return;
+        e.preventDefault(); 
+        const els = getEls();
+        const title = $('task-title').value; if (!title) return; 
         const subtasks = Array.from(D.querySelectorAll('.subtask-input')).map(i => i.value.trim()).filter(v => v);
         const tags = $('task-tags').value.split(',').map(t => t.trim()).filter(t => t);
-        const data = { title, dueDate: els.dateInput.value, estimatedPomos: state.newEst, pomoDuration: parseInt(els.taskPomoDisplay.innerText), priority: $('task-priority').value, project: $('task-project').value, note: $('task-note').value, repeat: els.taskRepeat.value, reminder: els.taskReminder.value, subtasks, tags };
-        const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks');
+        const data = { 
+            title, dueDate: els.dateInput.value, estimatedPomos: state.newEst, pomoDuration: parseInt(els.taskPomoDisplay.innerText), 
+            priority: $('task-priority').value, project: $('task-project').value, note: $('task-note').value, 
+            repeat: els.taskRepeat.value, reminder: els.taskReminder.value, subtasks, tags 
+        };
+        const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'); 
         try { 
-            if(state.editingTaskId) await updateDoc(doc(ref, state.editingTaskId), data);
-            else await addDoc(ref, { ...data, status: 'todo', createdAt: new Date().toISOString(), completedSessionIds: [] });
-            haptic('success'); app.toggleAddTaskModal() 
+            state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedPomos: 0, status: 'todo', createdAt: new Date().toISOString() }); 
+            haptic('success');
+            app.toggleAddTaskModal() 
         } catch (err) { app.showToast("Error saving") }
     },
-    toggleTaskStatus: async (id, s) => { try { haptic('light'); await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null }) } catch (e) { app.showToast("Connection error") } },
+    toggleTaskStatus: async (id, s) => { 
+        try { 
+            haptic('light');
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null }) 
+        } catch (e) { app.showToast("Connection error") } 
+    },
     deleteTask: async (id, e) => { e.stopPropagation(); if (confirm('Delete task?')) try { haptic('heavy'); await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id)) } catch (e) { app.showToast("Error deleting") } },
     
     startTask: async (id, e) => {
-        e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (!t) return; haptic('medium');
-        state.selectedTaskId = id; renderTasks(); updateTimerUI(t); if (window.innerWidth < 1280) app.toggleFocusPanel(true);
+        e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (!t) return; 
+        haptic('medium');
+        state.selectedTaskId = id; renderTasks(); updateTimerUI(t); 
+        if (window.innerWidth < 1280) app.toggleFocusPanel(true); 
         if (state.timer.status !== 'running') {
-            const d = t.pomoDuration || 25; const sessionId = `${id}_${Date.now()}`;
-            try { await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'running', mode: 'focus', taskId: id, sessionId: sessionId, remaining: d * 60, totalDuration: d * 60, endTime: new Date(Date.now() + d * 60000) }); app.updateSettings('focus', d) } catch (e) { app.showToast("Failed to start") }
+            const d = t.pomoDuration || 25; 
+            
+            // Sync Fix: Generate Session ID
+            const sessionId = `${id}_${Date.now()}`;
+
+            try { 
+                await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { 
+                    status: 'running', 
+                    mode: 'focus', 
+                    taskId: id, 
+                    sessionId: sessionId, // Store for sync
+                    remaining: d * 60, 
+                    totalDuration: d * 60, 
+                    endTime: new Date(Date.now() + d * 60000) 
+                }); 
+                app.updateSettings('focus', d) 
+            } catch (e) { app.showToast("Failed to start") }
         }
     },
-    selectTask: id => { state.selectedTaskId = id; renderTasks(); const t = state.tasks.find(x => x.id === id); updateTimerUI(t); if (state.timer.status !== 'running') updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { taskId: id }).catch(() => { }); if (window.innerWidth < 1280) app.toggleFocusPanel(true) },
-    showToast: (m, t = 'error') => { const c = $('toast-container'), e = D.createElement('div'); e.className = `px-4 py-2 rounded shadow text-white text-sm font-medium animate-fade-in ${t === 'error' ? 'bg-red-500' : 'bg-green-600'}`; e.innerText = m; c.appendChild(e); setTimeout(() => { e.style.opacity = '0'; setTimeout(() => e.remove(), 300) }, 3000) },
+    selectTask: id => {
+        state.selectedTaskId = id; renderTasks(); const t = state.tasks.find(x => x.id === id); updateTimerUI(t); 
+        if (state.timer.status !== 'running') updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { taskId: id }).catch(() => { }); 
+        if (window.innerWidth < 1280) app.toggleFocusPanel(true)
+    },
+    
+    showToast: (m, t = 'error') => {
+        const c = $('toast-container'), e = D.createElement('div'); 
+        e.className = `px-4 py-2 rounded shadow text-white text-sm font-medium animate-fade-in ${t === 'error' ? 'bg-red-500' : 'bg-green-600'}`; 
+        e.innerText = m; c.appendChild(e); 
+        setTimeout(() => { e.style.opacity = '0'; setTimeout(() => e.remove(), 300) }, 3000)
+    },
 
     toggleTimer: async () => {
-        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { }); } catch (e) { } haptic('medium');
+        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { }); } catch (e) { }
+        haptic('medium');
         if (state.timer.status === 'running') {
             if (state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000)) }).catch(() => { })
@@ -188,50 +490,134 @@ const app = {
         }
     },
 
-    resetTimer: async (r = false) => { if (!r) { haptic('light'); const d = state.timer.settings[state.timer.mode]; await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'idle', endTime: null, remaining: d * 60, totalDuration: d * 60, mode: state.timer.mode, taskId: state.timer.activeTaskId || null }).catch(() => { }) } },
+    resetTimer: async (r = false) => {
+        if (!r) {
+            haptic('light');
+            const d = state.timer.settings[state.timer.mode]; 
+            await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'idle', endTime: null, remaining: d * 60, totalDuration: d * 60, mode: state.timer.mode, taskId: state.timer.activeTaskId || null }).catch(() => { })
+        }
+    },
     skipTimer: () => app.completeTimer(),
     completeTimer: async () => {
-        if (state.timer.status === 'idle') return; stopLocalInterval(); haptic('timerDone');
-        try { const AudioContext = window.AudioContext || window.webkitAudioContext; if(AudioContext) { const c = new AudioContext(), o = c.createOscillator(); o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .2); } } catch(e) { }
+        if (state.timer.status === 'idle') return;
+        stopLocalInterval();
+        haptic('timerDone');
+
+        // Robust Sound
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if(AudioContext) {
+                const c = new AudioContext(), o = c.createOscillator();
+                o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .2);
+            }
+        } catch(e) { console.warn("Audio Context Error", e); }
+        
         try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete"); } catch (e) { }
+
         if (state.timer.mode === 'focus') {
             if (state.timer.activeTaskId) {
                 const t = state.tasks.find(x => x.id === state.timer.activeTaskId);
                 if (t) {
                     try {
+                        // Sync Fix: Use generated Session ID or Fallback
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedSessionIds: arrayUnion(sessionId) });
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { taskId: t.id, taskTitle: t.title, project: t.project || 'Inbox', duration: state.timer.totalDuration / 60, completedAt: serverTimestamp() });
+
+                        // 1. Idempotent Counter Update (Array Union)
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
+                            completedSessionIds: arrayUnion(sessionId) 
+                        });
+                        
+                        // 2. Idempotent Log Write (SetDoc with SessionID)
+                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
+                            taskId: t.id, 
+                            taskTitle: t.title, 
+                            project: t.project || 'Inbox', 
+                            duration: state.timer.totalDuration / 60, 
+                            completedAt: serverTimestamp() 
+                        });
                     } catch (e) { console.error("Sync Error", e); }
                 }
             }
-            if (state.timer.settings.disableBreak) { await app.setTimerMode('focus'); if (state.timer.settings.autoStartPomo) app.toggleTimer(); } 
-            else { const newCount = (state.timer.pomoCountCurrentSession || 0) + 1; let nextMode = 'short'; if (newCount >= state.timer.settings.longBreakInterval) nextMode = 'long'; await app.setTimerMode(nextMode, nextMode === 'long' ? 0 : newCount); if (state.timer.settings.autoStartBreak) app.toggleTimer(); }
-        } else { await app.setTimerMode('focus', state.timer.pomoCountCurrentSession); if (state.timer.settings.autoStartPomo) app.toggleTimer(); }
+            if (state.timer.settings.disableBreak) {
+                await app.setTimerMode('focus'); if (state.timer.settings.autoStartPomo) app.toggleTimer();
+            } else {
+                const newCount = (state.timer.pomoCountCurrentSession || 0) + 1; let nextMode = 'short';
+                if (newCount >= state.timer.settings.longBreakInterval) nextMode = 'long';
+                await app.setTimerMode(nextMode, nextMode === 'long' ? 0 : newCount); if (state.timer.settings.autoStartBreak) app.toggleTimer();
+            }
+        } else {
+            await app.setTimerMode('focus', state.timer.pomoCountCurrentSession); if (state.timer.settings.autoStartPomo) app.toggleTimer();
+        }
     },
     setTimerMode: async (m, sessionCount = null) => {
         const v = state.timer.settings[m]; const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.activeTaskId || null, sessionId: null };
         if (sessionCount !== null) updates.sessionCount = sessionCount;
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), updates).catch(() => { });
     },
-    setTimerModeUI: m => { const els = getEls(); if(els.timerMode) { els.timerMode.innerText = m === 'focus' ? 'FOCUS' : m === 'short' ? 'SHORT BREAK' : 'LONG BREAK'; els.timerMode.className = `text-xs font-bold tracking-widest uppercase mt-4 ${m === 'focus' ? 'text-brand' : 'text-blue-400'}` } },
-    setSound: t => { const els = getEls(); state.sound = t; if(els.audio) els.audio.src = sounds[t]; D.querySelectorAll('.sound-option').forEach(b => b.className = b.className.replace('text-brand', 'text-text-muted')); const a = $(`sound-${t}`); if (a) a.className = a.className.replace('text-text-muted', 'text-brand'); D.querySelectorAll('[id^="check-sound-"]').forEach(i => i.classList.add('hidden')); const check = $(`check-sound-${t}`); if (check) check.classList.remove('hidden'); if(els.audio) t === 'none' ? els.audio.pause() : (state.timer.status === 'running' && els.audio.play().catch(() => { })); },
+    setTimerModeUI: m => {
+        const els = getEls();
+        if(els.timerMode) {
+            els.timerMode.innerText = m === 'focus' ? 'FOCUS' : m === 'short' ? 'SHORT BREAK' : 'LONG BREAK'; 
+            els.timerMode.className = `text-xs font-bold tracking-widest uppercase mt-4 ${m === 'focus' ? 'text-brand' : 'text-blue-400'}`
+        }
+    },
+    setSound: t => {
+        const els = getEls();
+        state.sound = t; 
+        if(els.audio) els.audio.src = sounds[t];
+        D.querySelectorAll('.sound-option').forEach(b => b.className = b.className.replace('text-brand', 'text-text-muted')); 
+        const a = $(`sound-${t}`); if (a) a.className = a.className.replace('text-text-muted', 'text-brand'); 
+        D.querySelectorAll('[id^="check-sound-"]').forEach(i => i.classList.add('hidden')); 
+        const check = $(`check-sound-${t}`); if (check) check.classList.remove('hidden'); 
+        if(els.audio) t === 'none' ? els.audio.pause() : (state.timer.status === 'running' && els.audio.play().catch(() => { }));
+    },
     toggleGlobalSettings: () => {
         const els = getEls();
         if (els.settingsModal.classList.contains('hidden')) {
-            haptic('light'); els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); setTimeout(() => { els.settingsPanel.classList.remove('translate-y-full', 'md:scale-95'); els.settingsPanel.classList.add('translate-y-0', 'md:scale-100'); }, 10);
-            app.switchSettingsTab('timer'); $('strict-mode-toggle').checked = state.timer.settings.strictMode; $('auto-pomo-toggle').checked = state.timer.settings.autoStartPomo; $('auto-break-toggle').checked = state.timer.settings.autoStartBreak; $('disable-break-toggle').checked = state.timer.settings.disableBreak; $('set-longBreakInterval-val-g').innerText = state.timer.settings.longBreakInterval; app.setSound(state.sound);
-        } else { haptic('light'); els.settingsModal.classList.add('opacity-0'); els.settingsPanel.classList.add('translate-y-full', 'md:scale-95'); els.settingsPanel.classList.remove('translate-y-0', 'md:scale-100'); setTimeout(() => els.settingsModal.classList.add('hidden'), 300); }
+            haptic('light');
+            els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); 
+            // Bottom Sheet Transition Logic
+            setTimeout(() => {
+                els.settingsPanel.classList.remove('translate-y-full', 'md:scale-95');
+                els.settingsPanel.classList.add('translate-y-0', 'md:scale-100');
+            }, 10);
+            
+            app.switchSettingsTab('timer'); 
+            $('strict-mode-toggle').checked = state.timer.settings.strictMode; 
+            $('auto-pomo-toggle').checked = state.timer.settings.autoStartPomo; 
+            $('auto-break-toggle').checked = state.timer.settings.autoStartBreak; 
+            $('disable-break-toggle').checked = state.timer.settings.disableBreak; 
+            $('set-longBreakInterval-val-g').innerText = state.timer.settings.longBreakInterval; 
+            app.setSound(state.sound);
+        } else {
+            haptic('light');
+            els.settingsModal.classList.add('opacity-0'); 
+            els.settingsPanel.classList.add('translate-y-full', 'md:scale-95');
+            els.settingsPanel.classList.remove('translate-y-0', 'md:scale-100');
+            setTimeout(() => els.settingsModal.classList.add('hidden'), 300);
+        }
     },
-    switchSettingsTab: t => { const els = getEls(); D.querySelectorAll('.settings-tab-btn').forEach(b => { const active = b.id === `tab-btn-${t}`; b.className = active ? 'settings-tab-btn flex-shrink-0 w-auto md:w-full flex items-center px-4 md:px-3 py-2 text-sm font-medium rounded whitespace-nowrap text-brand bg-brand/10 hover:bg-brand/20 transition-colors' : 'settings-tab-btn flex-shrink-0 w-auto md:w-full flex items-center px-4 md:px-3 py-2 text-sm font-medium rounded whitespace-nowrap text-text-muted hover:text-white hover:bg-dark-hover transition-colors'; }); D.querySelectorAll('.settings-content').forEach(c => c.classList.add('hidden')); $(`settings-tab-${t}`).classList.remove('hidden'); els.settingsTitle.textContent = t.charAt(0).toUpperCase() + t.slice(1); },
-    updateSettings: (k, v) => { if (['strictMode', 'autoStartPomo', 'autoStartBreak', 'disableBreak'].includes(k)) { state.timer.settings[k] = v } else { state.timer.settings[k] = parseInt(v); const d = $(`set-${k}-val`); if (d) d.innerText = v; const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v } },
+    switchSettingsTab: t => {
+        const els = getEls();
+        D.querySelectorAll('.settings-tab-btn').forEach(b => {
+            const active = b.id === `tab-btn-${t}`; b.className = active ? 'settings-tab-btn flex-shrink-0 w-auto md:w-full flex items-center px-4 md:px-3 py-2 text-sm font-medium rounded whitespace-nowrap text-brand bg-brand/10 hover:bg-brand/20 transition-colors' : 'settings-tab-btn flex-shrink-0 w-auto md:w-full flex items-center px-4 md:px-3 py-2 text-sm font-medium rounded whitespace-nowrap text-text-muted hover:text-white hover:bg-dark-hover transition-colors';
+        }); D.querySelectorAll('.settings-content').forEach(c => c.classList.add('hidden')); $(`settings-tab-${t}`).classList.remove('hidden'); els.settingsTitle.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    },
+    updateSettings: (k, v) => {
+        if (['strictMode', 'autoStartPomo', 'autoStartBreak', 'disableBreak'].includes(k)) { state.timer.settings[k] = v } 
+        else { state.timer.settings[k] = parseInt(v); const d = $(`set-${k}-val`); if (d) d.innerText = v; const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v }
+    },
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
+// --- GLOBAL EXPORT ---
 window.app = app;
+
+// --- UTILS ---
 function createGradient(ctx, color) { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, color + '90'); g.addColorStop(1, color + '05'); return g }
 function updateAnalytics() {
-    const els = getEls(); if ((!state.logs.length && !state.tasks.length) && state.view === 'analytics') return;
+    const els = getEls();
+    if ((!state.logs.length && !state.tasks.length) && state.view === 'analytics') return;
     const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), now = new Date(), todayStr = getDayStr(now), startOfWeek = new Date(now); const day = startOfWeek.getDay() || 7; if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); startOfWeek.setHours(0, 0, 0, 0);
     const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === todayStr), logsWeek = state.logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek), tasksDone = state.tasks.filter(t => t.status === 'done'), tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr)), tasksWeek = tasksDone.filter(t => { if (!t.completedAt) return false; return new Date(t.completedAt) >= startOfWeek });
     const fmtTime = m => { const h = Math.floor(m / 60), rem = Math.round(m % 60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
@@ -256,6 +642,7 @@ function updateAnalytics() {
     const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) }); const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5); if (st.length > 0) els.analytics.tagList.innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
     els.analytics.sessionLogBody.innerHTML = state.logs.slice(0, 20).map(l => { const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration || 25}m</td></tr>` }).join('');
 }
+
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null)); $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value)); $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value) }); D.addEventListener('click', e => { if (!e.target.closest('#project-dropdown') && !e.target.closest('#priority-dropdown') && !e.target.closest('#repeat-dropdown')) { D.getElementById('project-options').classList.add('hidden'); D.getElementById('priority-options').classList.add('hidden'); D.getElementById('repeat-options').classList.add('hidden') } });
 function updateNavStyles(v, p) { D.querySelectorAll('.nav-btn').forEach(b => { const i = b.id === `nav-${v}`; b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-brand', i); b.classList.toggle('text-text-muted', !i); if (i) b.classList.remove('hover:text-white'); else b.classList.add('hover:text-white') }); D.querySelectorAll('.project-btn').forEach(b => { const i = v === 'project' && b.dataset.proj === p; b.classList.toggle('text-brand', i); b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-text-muted', !i) }) }
 function updateProjectsUI() { const els = getEls(); els.projectList.innerHTML = ''; state.projects.forEach(p => { const d = D.createElement('div'); d.innerHTML = `<div class="group relative flex items-center"><button onclick="app.setProjectView('${esc(p)}')" data-proj="${esc(p)}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${esc(p)}</span></div></button><div class="absolute right-2 flex opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${esc(p)}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${esc(p)}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`; els.projectList.appendChild(d) }) }
@@ -265,11 +652,12 @@ function updateCounts() {
     const t = getDayStr(new Date()), tm = getDayStr(new Date(Date.now() + 864e5));
     els.navCounts.all.textContent = state.tasks.length;
     const tasksTodo = state.tasks.filter(x => x.status === 'todo');
-    let tasksViewTodo; if (state.view === 'all') tasksViewTodo = state.tasks; else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
+    let tasksViewTodo;
+    if (state.view === 'all') tasksViewTodo = state.tasks; else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
     els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
     
-    // CLEAN COUNT LOGIC
-    const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds?.length || 0), 0);
+    // Sync Fix: Calculate completed pomos from array if available
+    const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : (b.completedPomos || 0)), 0); 
     
     els.stats.pomosToday.textContent = tp; els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
     els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0); const fm = tp * state.timer.settings.focus; els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`; els.stats.tasksRemain.textContent = tasksViewTodo.length;
@@ -285,8 +673,8 @@ function renderTasks() {
     els.taskList.innerHTML = '';
     if (l.length === 0) els.emptyState.classList.remove('hidden'); else els.emptyState.classList.add('hidden');
     l.forEach(x => {
-        // CLEAN COUNT LOGIC
-        const cP = x.completedSessionIds?.length || 0;
+        // Sync Fix: Calculate completed from array length
+        const cP = x.completedSessionIds ? x.completedSessionIds.length : (x.completedPomos || 0);
 
         const isSel = x.id === state.selectedTaskId, pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100), sty = isSel ? { high: 'bg-dark-card border-red-500 shadow-sm z-10', med: 'bg-dark-card border-yellow-500 shadow-sm z-10', low: 'bg-dark-card border-blue-500 shadow-sm z-10', none: 'bg-dark-card border-brand shadow-sm z-10' }[x.priority || 'none'] : 'bg-dark-card border-dark-border hover:border-text-faint';
         const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
@@ -296,18 +684,34 @@ function renderTasks() {
         els.taskList.appendChild(el)
     })
 }
+
 function updateTimerUI(t) {
     const els = getEls();
     if (t) {
         state.timer.activeTaskId = t.id;
-        els.focusEmpty.classList.add('hidden'); els.focusActive.classList.remove('hidden');
-        els.focusTitle.textContent = t.title; els.focusProject.textContent = t.project || 'Inbox'; els.focusProject.className = "truncate max-w-[150px] text-brand"; 
-        
-        // CLEAN COUNT LOGIC
-        els.focusCompleted.textContent = t.completedSessionIds?.length || 0;
-        
+        els.focusEmpty.classList.add('hidden');
+        els.focusActive.classList.remove('hidden');
+        els.focusTitle.textContent = t.title;
+        els.focusProject.textContent = t.project || 'Inbox';
+        els.focusProject.className = "truncate max-w-[150px] text-brand"; 
+        // Sync Fix: Display count from array length
+        els.focusCompleted.textContent = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
         els.focusTotal.textContent = t.estimatedPomos || 1;
-        if(state.timer.status === 'running') { const m = Math.floor(state.timer.remaining/60); const s = state.timer.remaining%60; D.title = `${m}:${s.toString().padStart(2,'0')} - ${t.title}`; } else { D.title = `${t.title} - TimeTrekker`; }
-    } else { state.timer.activeTaskId = null; els.focusEmpty.classList.remove('hidden'); els.focusActive.classList.add('hidden'); D.title = 'TimeTrekker'; }
+        
+        if(state.timer.status === 'running') {
+            const m = Math.floor(state.timer.remaining/60);
+            const s = state.timer.remaining%60;
+            D.title = `${m}:${s.toString().padStart(2,'0')} - ${t.title}`;
+        } else {
+             D.title = `${t.title} - TimeTrekker`;
+        }
+    } else {
+        state.timer.activeTaskId = null;
+        els.focusEmpty.classList.remove('hidden');
+        els.focusActive.classList.add('hidden');
+        D.title = 'TimeTrekker';
+    }
 }
+
+// Initial view set
 app.setView('today');
