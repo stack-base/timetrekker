@@ -1001,53 +1001,10 @@ const app = {
         } catch(e) { app.showToast("Connection error"); }
     },
 
-    // --- NEW HELPER FOR SMART LOGGING ---
-    logPartialSession: async () => {
-        // If we are resetting or switching tasks while timer was active (running or paused)
-        if (state.timer.status === 'idle' || state.timer.mode !== 'focus') return;
-        
-        const { totalDuration, remaining, endTime, taskId, status } = state.timer;
-        
-        // Calculate actual remaining time. 
-        // If running, calculate live. If paused, 'remaining' is already the frozen value.
-        let actualRemaining = remaining;
-        if (status === 'running' && endTime) {
-            actualRemaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-        }
-        
-        const elapsedSeconds = totalDuration - actualRemaining;
-        
-        // Threshold: Only log if > 1 minute was spent
-        if (elapsedSeconds > 60) {
-            const t = state.tasks.find(x => x.id === taskId);
-            const durationMin = Math.round(elapsedSeconds / 60);
-            
-            if (durationMin > 0) {
-                 try {
-                    await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), {
-                        taskTitle: (t ? t.title : 'Focus Session') + ' (Interrupted)',
-                        taskId: taskId || null,
-                        project: (t ? t.project : 'Inbox'),
-                        duration: durationMin,
-                        completedAt: serverTimestamp(),
-                        isPartial: true
-                    });
-                    app.showToast(`Saved ${durationMin}m partial session`);
-                } catch(e) { console.error("Error logging partial session", e); }
-            }
-        }
-    },
-
     startFocus: async (id) => {
         const t = state.tasks.find(x => x.id === id);
         if(!t) return;
         haptic('medium');
-        
-        // SMART: If switching to a NEW task while another is running, save the old one first.
-        if (state.timer.status !== 'idle' && state.timer.taskId !== id) {
-            await app.logPartialSession();
-        }
-
         app.switchTab('timer');
         
         if(state.timer.taskId === id && state.timer.status === 'running') return;
@@ -1080,9 +1037,6 @@ const app = {
     },
 
     resetTimer: async (r = false) => {
-        // SMART: Log session before resetting if user abandons it
-        await app.logPartialSession();
-
         if (!r) {
             haptic('medium');
             const d = state.timer.settings[state.timer.mode] * 60;
