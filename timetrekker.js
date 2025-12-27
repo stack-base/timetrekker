@@ -250,6 +250,7 @@ const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'use
     s.forEach(d => l.push({ id: d.id, ...d.data() })); 
     l.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)); 
     state.logs = l;
+    updateCounts(); // Force update dashboard stats when logs change
     if (state.view === 'analytics') updateAnalytics();
 });
 
@@ -644,23 +645,38 @@ function updateAnalytics() {
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null)); $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value)); $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value) }); D.addEventListener('click', e => { if (!e.target.closest('#project-dropdown') && !e.target.closest('#priority-dropdown') && !e.target.closest('#repeat-dropdown')) { D.getElementById('project-options').classList.add('hidden'); D.getElementById('priority-options').classList.add('hidden'); D.getElementById('repeat-options').classList.add('hidden') } });
 function updateNavStyles(v, p) { D.querySelectorAll('.nav-btn').forEach(b => { const i = b.id === `nav-${v}`; b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-brand', i); b.classList.toggle('text-text-muted', !i); if (i) b.classList.remove('hover:text-white'); else b.classList.add('hover:text-white') }); D.querySelectorAll('.project-btn').forEach(b => { const i = v === 'project' && b.dataset.proj === p; b.classList.toggle('text-brand', i); b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-text-muted', !i) }) }
 function updateProjectsUI() { const els = getEls(); els.projectList.innerHTML = ''; state.projects.forEach(p => { const d = D.createElement('div'); d.innerHTML = `<div class="group relative flex items-center"><button onclick="app.setProjectView('${esc(p)}')" data-proj="${esc(p)}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${esc(p)}</span></div></button><div class="absolute right-2 flex opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${esc(p)}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${esc(p)}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`; els.projectList.appendChild(d) }) }
+
 function updateCounts() {
     const els = getEls();
     const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     const t = getDayStr(new Date()), tm = getDayStr(new Date(Date.now() + 864e5));
+    
     els.navCounts.all.textContent = state.tasks.length;
+    
     const tasksTodo = state.tasks.filter(x => x.status === 'todo');
     let tasksViewTodo;
     if (state.view === 'all') tasksViewTodo = state.tasks; else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
+    
     els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
     
     // Sync Update: Strict count of sessions
     const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : 0), 0); 
     
-    els.stats.pomosToday.textContent = tp; els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
-    els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0); const fm = tp * state.timer.settings.focus; els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`; els.stats.tasksRemain.textContent = tasksViewTodo.length;
-    const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0); els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
+    els.stats.pomosToday.textContent = tp; 
+    els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
+    els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0); 
+
+    // FIX: Sum actual duration from today's logs instead of multiplying by global setting
+    const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === t);
+    const fm = logsToday.reduce((acc, log) => acc + (log.duration || 25), 0);
+    
+    els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`; 
+    els.stats.tasksRemain.textContent = tasksViewTodo.length;
+    
+    const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0); 
+    els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
 }
+
 function renderTasks() {
     const els = getEls();
     const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), t = getDayStr(new Date()), tm = getDayStr(new Date(Date.now() + 864e5));
