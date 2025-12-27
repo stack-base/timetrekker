@@ -200,9 +200,6 @@ const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', 
     renderTasks();
     if (state.timer.activeTaskId) {
         const activeTask = t.find(x => x.id === state.timer.activeTaskId);
-        if(!activeTask && state.timer.status === 'running') {
-             // Optional: Stop timer or keep running as "Unknown Task"
-        }
         updateTimerUI(activeTask);
     }
     if (state.view === 'analytics') updateAnalytics();
@@ -427,7 +424,8 @@ const app = {
         };
         const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'); 
         try { 
-            state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedPomos: 0, status: 'todo', createdAt: new Date().toISOString() }); 
+            // CHANGE: Initialized completedSessionIds: [] instead of completedPomos: 0
+            state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedSessionIds: [], status: 'todo', createdAt: new Date().toISOString() }); 
             haptic('success');
             app.toggleAddTaskModal() 
         } catch (err) { app.showToast("Error saving") }
@@ -448,7 +446,7 @@ const app = {
         if (state.timer.status !== 'running') {
             const d = t.pomoDuration || 25; 
             
-            // Sync Fix: Generate Session ID
+            // Sync Update: Generate Session ID
             const sessionId = `${id}_${Date.now()}`;
 
             try { 
@@ -519,7 +517,7 @@ const app = {
                 const t = state.tasks.find(x => x.id === state.timer.activeTaskId);
                 if (t) {
                     try {
-                        // Sync Fix: Use generated Session ID or Fallback
+                        // Sync Update: Use generated Session ID or Fallback
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
 
                         // 1. Idempotent Counter Update (Array Union)
@@ -656,8 +654,8 @@ function updateCounts() {
     if (state.view === 'all') tasksViewTodo = state.tasks; else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
     els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
     
-    // Sync Fix: Calculate completed pomos from array if available
-    const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : (b.completedPomos || 0)), 0); 
+    // Sync Update: Strict count of sessions
+    const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : 0), 0); 
     
     els.stats.pomosToday.textContent = tp; els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
     els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0); const fm = tp * state.timer.settings.focus; els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`; els.stats.tasksRemain.textContent = tasksViewTodo.length;
@@ -673,8 +671,8 @@ function renderTasks() {
     els.taskList.innerHTML = '';
     if (l.length === 0) els.emptyState.classList.remove('hidden'); else els.emptyState.classList.add('hidden');
     l.forEach(x => {
-        // Sync Fix: Calculate completed from array length
-        const cP = x.completedSessionIds ? x.completedSessionIds.length : (x.completedPomos || 0);
+        // Sync Update: Strict count of sessions
+        const cP = x.completedSessionIds ? x.completedSessionIds.length : 0;
 
         const isSel = x.id === state.selectedTaskId, pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100), sty = isSel ? { high: 'bg-dark-card border-red-500 shadow-sm z-10', med: 'bg-dark-card border-yellow-500 shadow-sm z-10', low: 'bg-dark-card border-blue-500 shadow-sm z-10', none: 'bg-dark-card border-brand shadow-sm z-10' }[x.priority || 'none'] : 'bg-dark-card border-dark-border hover:border-text-faint';
         const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
@@ -694,8 +692,8 @@ function updateTimerUI(t) {
         els.focusTitle.textContent = t.title;
         els.focusProject.textContent = t.project || 'Inbox';
         els.focusProject.className = "truncate max-w-[150px] text-brand"; 
-        // Sync Fix: Display count from array length
-        els.focusCompleted.textContent = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
+        // Sync Update: Strict count of sessions
+        els.focusCompleted.textContent = t.completedSessionIds ? t.completedSessionIds.length : 0;
         els.focusTotal.textContent = t.estimatedPomos || 1;
         
         if(state.timer.status === 'running') {

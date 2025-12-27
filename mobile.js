@@ -428,8 +428,8 @@ const app = {
             el.onclick = (e) => { if(!e.target.closest('.check-area') && !e.target.closest('.play-btn')) app.openTaskDetail(t); };
             const isDone = t.status === 'done';
             
-            // Sync Fix: Calculate completed pomos from array length if available
-            const completedPomos = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
+            // Sync Update: Strict count of sessions
+            const completedPomos = t.completedSessionIds ? t.completedSessionIds.length : 0;
 
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
@@ -692,8 +692,8 @@ const app = {
         
         const total = parseInt(t.estimatedPomos) || 1;
         
-        // Sync Fix: Read completed count from session array if available
-        const completed = t.completedSessionIds ? t.completedSessionIds.length : (parseInt(t.completedPomos) || 0);
+        // Sync Update: Strict count of sessions
+        const completed = t.completedSessionIds ? t.completedSessionIds.length : 0;
         
         const left = Math.max(0, total - completed);
         const dur = parseInt(t.pomoDuration) || 25;
@@ -982,11 +982,12 @@ const app = {
                 haptic('success');
                 app.showToast('Task updated');
             } else {
+                // CHANGE: Initialized completedSessionIds: [] instead of completedPomos: 0
                 await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), {
                     ...data,
                     status: 'todo',
                     createdAt: new Date().toISOString(),
-                    completedPomos: 0
+                    completedSessionIds: []
                 });
                 haptic('success');
                 app.showToast('Task added');
@@ -1021,7 +1022,7 @@ const app = {
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
 
-        // Sync Fix: Generate Unique Session ID at Start
+        // Sync Update: Generate Unique Session ID at Start
         const sessionId = `${t.id}_${Date.now()}`;
         
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
@@ -1086,7 +1087,7 @@ const app = {
                 const t = state.tasks.find(x => x.id === state.timer.taskId);
                 if(t) {
                     try {
-                        // Sync Fix: Use generated Session ID or Fallback
+                        // Sync Update: Use generated Session ID
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
 
                         // 1. Idempotent Counter Update (Array Union)
@@ -1153,8 +1154,8 @@ const app = {
                 $('focus-active').classList.remove('hidden');
                 $('timer-task-title').textContent = t.title;
                 $('timer-badge').textContent = t.project || 'Inbox';
-                // Sync Fix: Display count from array length
-                $('timer-completed').textContent = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
+                // Sync Update: Strict count of sessions
+                $('timer-completed').textContent = t.completedSessionIds ? t.completedSessionIds.length : 0;
                 $('timer-total').textContent = t.estimatedPomos || 1;
                 document.title = `${m}:${sc.toString().padStart(2,'0')} - ${t.title}`;
             } else {
