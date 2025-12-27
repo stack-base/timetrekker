@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, orderBy, serverTimestamp, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, orderBy, serverTimestamp, enableIndexedDbPersistence, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // --- CONFIGURATION ---
 const FIREBASE_CONFIG = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
@@ -60,6 +60,7 @@ const state = {
     editingTaskId: null,
     timer: {
         mode: 'focus', status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, activeTaskId: null, interval: null,
+        sessionId: null, // Track unique session ID
         pomoCountCurrentSession: 0, 
         settings: {
             focus: 25, short: 5, long: 15, strictMode: false,
@@ -218,6 +219,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             remaining: d.remaining || state.timer.settings[d.mode || 'focus'] * 60,
             totalDuration: d.totalDuration || state.timer.settings[d.mode || 'focus'] * 60,
             activeTaskId: d.taskId || null,
+            sessionId: d.sessionId || null, // Sync the unique session ID
             pomoCountCurrentSession: d.sessionCount || 0
         };
         const els = getEls();
@@ -445,8 +447,20 @@ const app = {
         if (window.innerWidth < 1280) app.toggleFocusPanel(true); 
         if (state.timer.status !== 'running') {
             const d = t.pomoDuration || 25; 
+            
+            // Sync Fix: Generate Session ID
+            const sessionId = `${id}_${Date.now()}`;
+
             try { 
-                await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'running', mode: 'focus', taskId: id, remaining: d * 60, totalDuration: d * 60, endTime: new Date(Date.now() + d * 60000) }); 
+                await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { 
+                    status: 'running', 
+                    mode: 'focus', 
+                    taskId: id, 
+                    sessionId: sessionId, // Store for sync
+                    remaining: d * 60, 
+                    totalDuration: d * 60, 
+                    endTime: new Date(Date.now() + d * 60000) 
+                }); 
                 app.updateSettings('focus', d) 
             } catch (e) { app.showToast("Failed to start") }
         }
@@ -505,9 +519,23 @@ const app = {
                 const t = state.tasks.find(x => x.id === state.timer.activeTaskId);
                 if (t) {
                     try {
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedPomos: (t.completedPomos || 0) + 1 });
-                        await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskId: t.id, taskTitle: t.title, project: t.project || 'Inbox', duration: state.timer.totalDuration / 60, completedAt: serverTimestamp() })
-                    } catch (e) { }
+                        // Sync Fix: Use generated Session ID or Fallback
+                        const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
+
+                        // 1. Idempotent Counter Update (Array Union)
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
+                            completedSessionIds: arrayUnion(sessionId) 
+                        });
+                        
+                        // 2. Idempotent Log Write (SetDoc with SessionID)
+                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
+                            taskId: t.id, 
+                            taskTitle: t.title, 
+                            project: t.project || 'Inbox', 
+                            duration: state.timer.totalDuration / 60, 
+                            completedAt: serverTimestamp() 
+                        });
+                    } catch (e) { console.error("Sync Error", e); }
                 }
             }
             if (state.timer.settings.disableBreak) {
@@ -522,7 +550,7 @@ const app = {
         }
     },
     setTimerMode: async (m, sessionCount = null) => {
-        const v = state.timer.settings[m]; const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.activeTaskId || null };
+        const v = state.timer.settings[m]; const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.activeTaskId || null, sessionId: null };
         if (sessionCount !== null) updates.sessionCount = sessionCount;
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), updates).catch(() => { });
     },
@@ -627,7 +655,11 @@ function updateCounts() {
     let tasksViewTodo;
     if (state.view === 'all') tasksViewTodo = state.tasks; else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
     els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
-    const tp = state.tasks.reduce((a, b) => a + (b.completedPomos || 0), 0); els.stats.pomosToday.textContent = tp; els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
+    
+    // Sync Fix: Calculate completed pomos from array if available
+    const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : (b.completedPomos || 0)), 0); 
+    
+    els.stats.pomosToday.textContent = tp; els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
     els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0); const fm = tp * state.timer.settings.focus; els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`; els.stats.tasksRemain.textContent = tasksViewTodo.length;
     const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0); els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
 }
@@ -641,8 +673,11 @@ function renderTasks() {
     els.taskList.innerHTML = '';
     if (l.length === 0) els.emptyState.classList.remove('hidden'); else els.emptyState.classList.add('hidden');
     l.forEach(x => {
-        const isSel = x.id === state.selectedTaskId, pc = Math.min(100, ((x.completedPomos || 0) / (x.estimatedPomos || 1)) * 100), sty = isSel ? { high: 'bg-dark-card border-red-500 shadow-sm z-10', med: 'bg-dark-card border-yellow-500 shadow-sm z-10', low: 'bg-dark-card border-blue-500 shadow-sm z-10', none: 'bg-dark-card border-brand shadow-sm z-10' }[x.priority || 'none'] : 'bg-dark-card border-dark-border hover:border-text-faint';
-        const dur = x.pomoDuration || 25, cP = x.completedPomos || 0, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
+        // Sync Fix: Calculate completed from array length
+        const cP = x.completedSessionIds ? x.completedSessionIds.length : (x.completedPomos || 0);
+
+        const isSel = x.id === state.selectedTaskId, pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100), sty = isSel ? { high: 'bg-dark-card border-red-500 shadow-sm z-10', med: 'bg-dark-card border-yellow-500 shadow-sm z-10', low: 'bg-dark-card border-blue-500 shadow-sm z-10', none: 'bg-dark-card border-brand shadow-sm z-10' }[x.priority || 'none'] : 'bg-dark-card border-dark-border hover:border-text-faint';
+        const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
         const fmt = m => { const h = Math.floor(m / 60), rm = m % 60; return h > 0 ? `${h}h ${rm}m` : `${rm}m` };
         const el = D.createElement('div'); el.className = `group flex items-start p-4 rounded-lg border transition-all duration-200 ease-out cursor-pointer relative ${sty}`; el.onclick = () => app.selectTask(x.id);
         el.innerHTML = `<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority === 'high' ? 'bg-red-500' : x.priority === 'med' ? 'bg-yellow-500' : 'bg-transparent'}"></div><label class="custom-checkbox flex-shrink-0 mt-0.5 w-5 h-5 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()"><input type="checkbox" class="hidden" ${x.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')"><div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg"><svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div></label><div class="flex-1 min-w-0 pr-20"><div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3></div>${x.note ? `<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${esc(x.note)}</p>` : ''}${x.subtasks && x.subtasks.length > 0 ? `<div class="mt-3 space-y-1 border-t border-dashed border-dark-border pt-2">${x.subtasks.map(s => `<div class="flex items-start text-xs text-text-muted"><i class="ph-bold ph-caret-right text-[10px] mt-0.5 mr-1.5 text-text-faint"></i><span>${esc(s)}</span></div>`).join('')}</div>` : ''}<div class="flex flex-wrap items-center mt-2 gap-y-2 gap-x-4"><div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${esc(x.project)}</span></div><div class="flex items-center text-xs text-text-muted" title="Pomos: Completed / Remaining"><i class="ph-fill ph-check-circle text-brand mr-1.5 text-[10px]"></i><span>${cP} / ${rP} rem</span></div><div class="flex items-center text-xs text-text-muted" title="Time: Completed / Remaining"><i class="ph-fill ph-clock text-brand mr-1.5 text-[10px]"></i><span class="${pc >= 100 ? 'text-brand' : ''}">${fmt(cMin)} / ${fmt(rMin)} left</span></div>${x.repeat && x.repeat !== 'none' ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-arrows-clockwise mr-1.5 text-text-faint"></i><span>${x.repeat.charAt(0).toUpperCase() + x.repeat.slice(1)}</span></div>` : ''}${x.reminder ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-bell mr-1.5 text-text-faint"></i><span>${x.reminder}</span></div>` : ''}${x.tags && x.tags.length ? `<div class="flex gap-1 ml-auto">${x.tags.map(t => `<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/10 text-brand border border-brand/20">${esc(t)}</span>`).join('')}</div>` : ''}</div></div><div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20"><button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors rounded"><i class="ph-fill ph-play"></i></button><button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-trash"></i></button></div>`;
@@ -650,7 +685,6 @@ function renderTasks() {
     })
 }
 
-// --- MISSING FUNCTION RESTORED ---
 function updateTimerUI(t) {
     const els = getEls();
     if (t) {
@@ -660,7 +694,8 @@ function updateTimerUI(t) {
         els.focusTitle.textContent = t.title;
         els.focusProject.textContent = t.project || 'Inbox';
         els.focusProject.className = "truncate max-w-[150px] text-brand"; 
-        els.focusCompleted.textContent = t.completedPomos || 0;
+        // Sync Fix: Display count from array length
+        els.focusCompleted.textContent = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
         els.focusTotal.textContent = t.estimatedPomos || 1;
         
         if(state.timer.status === 'running') {
