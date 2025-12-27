@@ -67,7 +67,8 @@ const state = {
 };
 
 // --- CHART CONFIG ---
-Chart.defaults.font.family = 'Inter';
+// UPDATED: Changed default font to Roboto
+Chart.defaults.font.family = 'Roboto';
 Chart.defaults.color = '#a1a1aa';
 Chart.defaults.borderColor = '#27272a';
 Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)';
@@ -287,10 +288,10 @@ const app = {
         state.filterProject = null;
         document.querySelectorAll('#task-filters button').forEach(b => {
             if(b.id === 'filter-folders') {
-                 b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted border border-dark-border`;
+                 b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted border border-dark-border font-heading`;
                  return;
             }
-            b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${b.id === `filter-${f}` ? 'bg-brand text-white' : 'bg-dark-active text-text-muted'}`;
+            b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors font-heading ${b.id === `filter-${f}` ? 'bg-brand text-white' : 'bg-dark-active text-text-muted'}`;
         });
         app.renderTasks();
     },
@@ -308,7 +309,7 @@ const app = {
              el.innerHTML = `
                 <button onclick="app.selectProject('${esc(p)}')" class="flex items-center gap-3 flex-1 text-left">
                     <i class="ph-bold ph-folder text-xl ${isInbox ? 'text-brand' : 'text-text-muted'}"></i>
-                    <span class="text-sm font-bold text-white">${esc(p)}</span>
+                    <span class="text-sm font-bold text-white font-heading">${esc(p)}</span>
                 </button>
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-medium text-text-muted bg-dark-bg px-2 py-1 rounded-md border border-dark-border mr-2">${count}</span>
@@ -334,9 +335,9 @@ const app = {
         state.activeFilter = 'project';
         state.filterProject = p;
         document.querySelectorAll('#task-filters button').forEach(b => {
-             b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`;
+             b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted font-heading`;
         });
-        $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand`;
+        $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand font-heading`;
         history.back();
         app.renderTasks();
     },
@@ -438,11 +439,11 @@ const app = {
                     </div>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <h3 class="text-white font-medium truncate ${isDone ? 'line-through text-text-muted':''}">${esc(t.title)}</h3>
+                    <h3 class="text-white font-medium truncate ${isDone ? 'line-through text-text-muted':''} font-heading">${esc(t.title)}</h3>
                     ${t.note ? `<p class="text-text-muted text-xs truncate mt-0.5">${esc(t.note)}</p>` : ''}
                     <div class="flex flex-wrap items-center gap-2 mt-2">
-                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand font-medium border border-brand/20">${esc(t.project || 'Inbox')}</span>
-                        ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold">! Urgent</span>' : ''}
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand font-medium border border-brand/20 font-heading">${esc(t.project || 'Inbox')}</span>
+                        ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold font-heading">! Urgent</span>' : ''}
                         <span class="text-[10px] text-text-muted flex items-center"><i class="ph-fill ph-check-circle mr-1"></i>${completedPomos}/${t.estimatedPomos||1}</span>
                     </div>
                 </div>
@@ -465,7 +466,7 @@ const app = {
 
     setRange: (r) => {
         state.analytics.range = r; haptic('light');
-        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
+        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all font-heading" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all font-heading" }); 
         app.renderAnalytics();
     },
 
@@ -475,8 +476,8 @@ const app = {
         const btnLine = $(`btn-${key}-line`);
         const btnBar = $(`btn-${key}-bar`);
         if(btnLine && btnBar) {
-            const activeClass = "px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors";
-            const inactiveClass = "px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors";
+            const activeClass = "px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors font-heading";
+            const inactiveClass = "px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors font-heading";
             btnLine.className = type === 'line' ? activeClass : inactiveClass;
             btnBar.className = type === 'bar' ? activeClass : inactiveClass;
         }
@@ -649,7 +650,7 @@ const app = {
             if (state.chartInstances.project) state.chartInstances.project.destroy();
             state.chartInstances.project = new Chart($('projectChart').getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
-        $('project-legend').innerHTML = sp.map((p,i) => `<div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i%5]}"></div><span class="text-text-muted truncate max-w-[80px]">${p[0]}</span></div><span class="text-white font-mono">${Math.round(p[1])}m</span></div>`).join('');
+        $('project-legend').innerHTML = sp.map((p,i) => `<div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i%5]}"></div><span class="text-text-muted truncate max-w-[80px] font-heading">${p[0]}</span></div><span class="text-white font-mono">${Math.round(p[1])}m</span></div>`).join('');
 
         const pri = { high: 0, med: 0, low: 0, none: 0 }; tasksDone.forEach(t => pri[t.priority || 'none']++);
         if($('priorityChart')) {
@@ -661,7 +662,7 @@ const app = {
         tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
         const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
         if (st.length > 0) {
-            $('tag-rank-list').innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+            $('tag-rank-list').innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2 font-mono">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border font-heading">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
         } else {
              $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tags data available.</p>';
         }
@@ -672,9 +673,9 @@ const app = {
             const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
             return `<div class="px-4 py-3 flex justify-between items-center text-sm">
                 <div>
-                    <div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div>
+                    <div class="text-white truncate max-w-[150px] font-medium font-heading">${esc(l.taskTitle || 'Focus Session')}</div>
                     <div class="flex items-center gap-2 text-[10px] text-text-muted">
-                        <span>${dateStr}</span><span>•</span><span>${timeStr}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span>
+                        <span>${dateStr}</span><span>•</span><span>${timeStr}</span><span>•</span><span class="font-heading">${esc(l.project || 'Inbox')}</span>
                     </div>
                 </div>
                 <span class="text-brand font-mono">${Math.round(l.duration||25)}m</span>
@@ -723,7 +724,7 @@ const app = {
         const priEl = $('dt-priority');
         if(t.priority && t.priority !== 'none') {
             priEl.textContent = t.priority + ' Priority';
-            priEl.className = `bg-dark-active px-2 py-0.5 rounded text-[10px] font-bold border border-dark-border uppercase tracking-wide ${t.priority==='high'?'text-red-500':t.priority==='med'?'text-yellow-500':'text-blue-500'}`;
+            priEl.className = `bg-dark-active px-2 py-0.5 rounded text-[10px] font-bold border border-dark-border uppercase tracking-wide font-heading ${t.priority==='high'?'text-red-500':t.priority==='med'?'text-yellow-500':'text-blue-500'}`;
             priEl.classList.remove('hidden');
         } else { priEl.classList.add('hidden'); }
 
@@ -746,7 +747,7 @@ const app = {
             tagCon.classList.remove('hidden');
             t.tags.forEach(tag => {
                 const sp = document.createElement('span');
-                sp.className = "bg-dark-active border border-dark-border text-xs px-2 py-1 rounded text-text-muted";
+                sp.className = "bg-dark-active border border-dark-border text-xs px-2 py-1 rounded text-text-muted font-heading";
                 sp.textContent = tag;
                 tagCon.appendChild(sp);
             });
@@ -869,7 +870,7 @@ const app = {
         const today = getDayStr(new Date());
         const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
         const tmrwStr = getDayStr(tmrw);
-        const setBtn = (id, active) => { $(id).className = active ? "flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all" : "flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95"; };
+        const setBtn = (id, active) => { $(id).className = active ? "flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all font-heading" : "flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95 font-heading"; };
         setBtn('btn-date-today', dateStr === today);
         setBtn('btn-date-tomorrow', dateStr === tmrwStr);
         if(dateStr && dateStr !== today && dateStr !== tmrwStr) {
@@ -888,7 +889,7 @@ const app = {
         ['none', 'low', 'med', 'high'].forEach(l => {
             const btn = $(`btn-pri-${l}`);
             const isActive = l === level;
-            btn.className = "h-9 rounded-lg border text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-95 ";
+            btn.className = "h-9 rounded-lg border text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-95 font-heading ";
             if(isActive) {
                 btn.className += "border-transparent text-white shadow-md ";
                 if(l === 'high') btn.className += "bg-red-500";
@@ -1141,7 +1142,7 @@ const app = {
         
         $('timer-display').textContent = `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
         $('timer-mode').textContent = mode === 'focus' ? 'FOCUS' : mode === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
-        $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'}`;
+        $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'} font-heading`;
         
         const offset = 283 * (1 - (s / (totalDuration || 1)));
         $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
