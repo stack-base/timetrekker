@@ -2,7 +2,6 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, enableIndexedDbPersistence, writeBatch, getDocs, orderBy, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-// --- CONFIGURATION ---
 const FIREBASE_CONFIG = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
 const APP_ID = 'timetrekker-v1';
 const ASSETS = {
@@ -15,25 +14,18 @@ const ASSETS = {
     icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png'
 };
 
-// --- INIT ---
 const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Robust Persistence Handling
 try { 
-    enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code === 'failed-precondition') console.warn('Persistence disabled (Multiple tabs open).');
-        else if (err.code === 'unimplemented') console.warn('Browser does not support persistence');
-    });
-} catch (e) { console.log('Persistence setup skipped'); }
+    enableIndexedDbPersistence(db).catch(() => {});
+} catch (e) {}
 
-// --- UTILS ---
 const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-// Haptic Engine
 const haptic = (type = 'light') => { 
     if(!navigator.vibrate) return; 
     try { 
@@ -46,14 +38,13 @@ const haptic = (type = 'light') => {
     } catch(e){} 
 };
 
-// Wake Lock Manager (Mobile Specific)
 const wakeLock = {
     sentinel: null,
     request: async () => {
         if ('wakeLock' in navigator) {
             try {
                 wakeLock.sentinel = await navigator.wakeLock.request('screen');
-            } catch (err) { console.warn('Wake Lock error:', err); }
+            } catch (err) {}
         }
     },
     release: async () => {
@@ -63,7 +54,6 @@ const wakeLock = {
     }
 };
 
-// --- STATE ---
 const state = {
     user: null, tasks: [], logs: [], 
     projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
@@ -73,7 +63,7 @@ const state = {
     viewingTask: null, editingId: null,
     timer: { 
         status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, taskId: null, mode: 'focus',
-        sessionId: null, // Track unique session ID
+        sessionId: null, 
         pomoCountCurrentSession: 0,
         settings: { focus: 25, short: 5, long: 15, longBreakInterval: 4, strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false }
     },
@@ -86,7 +76,6 @@ const state = {
     audioUnlocked: false
 };
 
-// --- CHART CONFIG ---
 Chart.defaults.font.family = 'Inter';
 Chart.defaults.color = '#a1a1aa';
 Chart.defaults.borderColor = '#27272a';
@@ -99,7 +88,6 @@ Chart.defaults.plugins.tooltip.borderWidth = 1;
 Chart.defaults.plugins.tooltip.padding = 10;
 Chart.defaults.plugins.tooltip.displayColors = false;
 
-// --- AUTH & DATA SYNC ---
 async function syncUserProfile(u) {
     if (!u) return;
     try {
@@ -115,7 +103,7 @@ async function syncUserProfile(u) {
         };
         if (!userSnap.exists()) await setDoc(userRef, { ...profileData, createdAt: serverTimestamp() });
         else await setDoc(userRef, profileData, { merge: true });
-    } catch (e) { console.error("Profile Sync Error", e); }
+    } catch (e) { console.error(e); }
 }
 
 onAuthStateChanged(auth, u => {
@@ -123,7 +111,6 @@ onAuthStateChanged(auth, u => {
         state.user = u;
         syncUserProfile(u);
         
-        // Listen for user settings/profile
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -142,7 +129,6 @@ onAuthStateChanged(auth, u => {
 
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Listen for Tasks
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
             const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
@@ -152,7 +138,6 @@ onAuthStateChanged(auth, u => {
             app.renderTasks();
             app.renderMiniStats();
             
-            // Reactive Project List Update
             if(!$('project-sheet').classList.contains('translate-y-full')) app.renderProjectSheet();
             
             if(state.activeTab === 'analytics') app.renderAnalytics();
@@ -163,7 +148,6 @@ onAuthStateChanged(auth, u => {
             }
         });
         
-        // Listen for Active Timer
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -204,13 +188,11 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // Listen for Logs
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
             state.logs = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
-        // Reminder Interval
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -235,13 +217,11 @@ onAuthStateChanged(auth, u => {
     }
 });
 
-// --- TIMER ENGINE ---
 let timerInterval;
 const startTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         app.updateTimerUI();
-        // Check for completion inside the loop
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
     if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
@@ -252,7 +232,6 @@ const stopTimerLoop = () => {
     if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
 };
 
-// Handle background/foreground transitions robustly
 document.addEventListener("visibilitychange", () => {
    if (!document.hidden && state.timer.status === 'running') {
        app.updateTimerUI();
@@ -260,7 +239,6 @@ document.addEventListener("visibilitychange", () => {
    }
 });
 
-// One-time silent interaction to unlock AudioContext on iOS
 document.addEventListener('touchstart', function() {
     if (!state.audioUnlocked) {
         app.unlockAudio();
@@ -268,11 +246,9 @@ document.addEventListener('touchstart', function() {
     }
 }, { once: true });
 
-// --- APP CONTROLLER ---
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     
-    // Audio Context Unlocker
     unlockAudio: () => {
         if (!state.audioContext) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -283,7 +259,6 @@ const app = {
         if (state.audioContext && state.audioContext.state === 'suspended') {
             state.audioContext.resume();
         }
-        // Also ensure HTML5 audio is primed
         const audio = $('audio-player');
         if(audio) {
             audio.play().then(() => { if(state.sound === 'none' || state.timer.status !== 'running') audio.pause(); }).catch(()=>{});
@@ -505,7 +480,6 @@ const app = {
             el.onclick = (e) => { if(!e.target.closest('.check-area') && !e.target.closest('.play-btn')) app.openTaskDetail(t); };
             const isDone = t.status === 'done';
             
-            // PRODUCTION: Use strict array length for accuracy
             const completedPomos = t.completedSessionIds ? t.completedSessionIds.length : 0;
 
             el.innerHTML = `
@@ -1046,7 +1020,7 @@ const app = {
             tags, subtasks
         };
 
-        history.back(); // Close modal
+        history.back();
         
         try {
             if(state.editingId) {
@@ -1058,7 +1032,7 @@ const app = {
                     ...data,
                     status: 'todo',
                     createdAt: new Date().toISOString(),
-                    completedSessionIds: [] // PRODUCTION: Ensure array is init
+                    completedSessionIds: []
                 });
                 haptic('success');
                 app.showToast('Task added');
@@ -1088,7 +1062,6 @@ const app = {
         haptic('medium');
         app.switchTab('timer');
         
-        // Mobile: Request Notification Permission if needed
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
 
         if(state.timer.taskId === id && state.timer.status === 'running') return;
@@ -1096,7 +1069,6 @@ const app = {
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
 
-        // PRODUCTION: Unique Session ID logic
         const sessionId = `${t.id}_${Date.now()}`;
         
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
@@ -1148,7 +1120,6 @@ const app = {
         stopTimerLoop();
         haptic('timerDone');
         
-        // Mobile-friendly audio unlock/play
         try {
             if(state.audioContext) {
                  const o = state.audioContext.createOscillator();
@@ -1168,7 +1139,6 @@ const app = {
                     try {
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
 
-                        // PRODUCTION: Idempotent Updates (Exact match to Desktop)
                         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
                             completedSessionIds: arrayUnion(sessionId)
                         });
@@ -1182,7 +1152,7 @@ const app = {
                             completedAt: serverTimestamp() 
                         });
 
-                    } catch(e) { console.error("Sync Error", e); }
+                    } catch(e) { console.error(e); }
                 }
             }
             
@@ -1282,7 +1252,6 @@ const app = {
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
-// --- GLOBAL EVENT LISTENERS ---
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null));
 $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value));
 $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value); });
@@ -1290,7 +1259,6 @@ document.addEventListener('click', (e) => { if (document.activeElement && docume
 
 if (!history.state) history.replaceState({ view: 'root' }, '');
 window.addEventListener('popstate', (e) => {
-    // Handle Sheet Closures gracefully on Back Button
     if (!$('modal-sheet').classList.contains('translate-y-full')) { 
         $('modal-sheet').classList.add('translate-y-full');
         $('modal-overlay').classList.add('opacity-0');
