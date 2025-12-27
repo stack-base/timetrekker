@@ -11,7 +11,8 @@ const ASSETS = {
         rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', 
         cafe: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', 
         forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' 
-    }
+    },
+    icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png'
 };
 
 // --- INIT ---
@@ -63,7 +64,8 @@ const state = {
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
     chartInstances: { focusBar: null, taskBar: null, hourly: null, weekday: null, project: null, priority: null },
     analytics: { range: 'week' },
-    lastCheckTime: null
+    lastCheckTime: null,
+    audioContext: null
 };
 
 // --- CHART CONFIG ---
@@ -129,6 +131,10 @@ onAuthStateChanged(auth, u => {
             
             app.renderTasks();
             app.renderMiniStats();
+            
+            // Reactive Project List Update
+            if(!$('project-sheet').classList.contains('translate-y-full')) app.renderProjectSheet();
+            
             if(state.activeTab === 'analytics') app.renderAnalytics();
             
             if (state.timer.taskId) {
@@ -148,7 +154,7 @@ onAuthStateChanged(auth, u => {
                     remaining: d.remaining || (state.timer.settings[d.mode || 'focus'] * 60),
                     totalDuration: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId || null,
-                    sessionId: d.sessionId || null, // Sync the session ID
+                    sessionId: d.sessionId || null, 
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
@@ -204,6 +210,7 @@ const startTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         app.updateTimerUI();
+        // Check for completion inside the loop
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
     if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
@@ -214,9 +221,11 @@ const stopTimerLoop = () => {
     if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
 };
 
+// Handle background/foreground transitions robustly
 document.addEventListener("visibilitychange", () => {
    if (!document.hidden && state.timer.status === 'running') {
        app.updateTimerUI();
+       // Catch-up logic: If timer ended while in background
        if(state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
    }
 });
@@ -224,6 +233,26 @@ document.addEventListener("visibilitychange", () => {
 // --- APP CONTROLLER ---
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
+    
+    // Mobile Audio Unlocker (Crucial for iOS/Android)
+    unlockAudio: () => {
+        if (!state.audioContext) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                state.audioContext = new AudioContext();
+                // Resume context if suspended (common in browsers policy)
+                if (state.audioContext.state === 'suspended') {
+                    state.audioContext.resume();
+                }
+            }
+        }
+        // Also play/pause empty audio to unlock HTML5 audio tag
+        const audio = $('audio-player');
+        if(audio) {
+            audio.play().then(() => { if(state.sound === 'none' || state.timer.status !== 'running') audio.pause(); }).catch(()=>{});
+        }
+    },
+
     showPrompt: (t, v = '') => new Promise(r => {
         const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v;
         p.el.classList.remove('hidden'); setTimeout(() => p.el.classList.remove('opacity-0'), 10); p.input.focus();
@@ -298,9 +327,20 @@ const app = {
     openProjectSheet: () => {
         haptic('light');
         history.pushState({ modal: 'project' }, '');
+        app.renderProjectSheet();
+        $('modal-overlay').classList.remove('hidden');
+        setTimeout(() => {
+            $('modal-overlay').classList.remove('opacity-0');
+            $('project-sheet').classList.remove('translate-y-full');
+        }, 10);
+    },
+
+    renderProjectSheet: () => {
         const list = $('project-sheet-list');
+        if(!list) return;
         list.innerHTML = '';
-        state.projects.forEach(p => {
+        const pList = Array.from(state.projects).sort(); // Alphabetical sort
+        pList.forEach(p => {
              const count = state.tasks.filter(t => t.status === 'todo' && t.project === p).length;
              const isInbox = p === 'Inbox';
              const el = document.createElement('div');
@@ -320,11 +360,6 @@ const app = {
              `;
              list.appendChild(el);
         });
-        $('modal-overlay').classList.remove('hidden');
-        setTimeout(() => {
-            $('modal-overlay').classList.remove('opacity-0');
-            $('project-sheet').classList.remove('translate-y-full');
-        }, 10);
     },
     
     closeProjectSheet: () => { history.back(); },
@@ -351,7 +386,7 @@ const app = {
                 opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true;
                 sel.appendChild(opt);
              }
-             if(!$('project-sheet').classList.contains('translate-y-full')) app.openProjectSheet();
+             if(!$('project-sheet').classList.contains('translate-y-full')) app.renderProjectSheet();
         }
     },
     
@@ -366,7 +401,8 @@ const app = {
             snapshot.forEach(doc => { batch.update(doc.ref, { project: newName }); });
             await batch.commit();
             state.projects.delete(oldName); state.projects.add(newName);
-            app.openProjectSheet(); 
+            if(state.filterProject === oldName) { state.filterProject = newName; $('page-title').textContent = newName; }
+            app.renderProjectSheet();
             app.showToast('Project renamed');
         } catch(e) { app.showToast('Error renaming'); }
     },
@@ -381,7 +417,8 @@ const app = {
             snapshot.forEach(doc => { batch.update(doc.ref, { project: 'Inbox' }); });
             await batch.commit();
             state.projects.delete(pName);
-            app.openProjectSheet(); 
+            if(state.filterProject === pName) app.setFilter('today');
+            app.renderProjectSheet();
             app.showToast('Project deleted');
         } catch(e) { app.showToast('Error deleting'); }
     },
@@ -938,15 +975,13 @@ const app = {
             <button onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-500 px-2"><i class="ph-bold ph-x"></i></button>
         `;
         $('subtask-list').appendChild(div);
+        if(!val) div.querySelector('input').focus();
     },
 
     handleSubtaskKey: (e, input) => {
         if(e.key === 'Enter') {
             e.preventDefault();
             app.addSubtaskInput();
-            const list = $('subtask-list');
-            const newInputs = list.querySelectorAll('input');
-            newInputs[newInputs.length - 1].focus();
         }
     },
     
@@ -1036,10 +1071,12 @@ const app = {
         });
         
         app.updateSetting('focus', durationMin);
+        app.unlockAudio(); // Unlock audio on user interaction
     },
 
     toggleTimer: async () => {
         haptic('medium');
+        app.unlockAudio(); // Unlock audio
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
         
         if(state.timer.status === 'running') {
@@ -1072,11 +1109,21 @@ const app = {
         stopTimerLoop();
         haptic('timerDone');
         
+        // Mobile-friendly audio
         try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if(AudioContext) {
-                const c = new AudioContext(); const o = c.createOscillator();
-                o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .3);
+            if(state.audioContext) {
+                 const o = state.audioContext.createOscillator();
+                 const g = state.audioContext.createGain();
+                 o.connect(g); g.connect(state.audioContext.destination);
+                 o.frequency.value = 523.25; 
+                 o.start(); o.stop(state.audioContext.currentTime + 0.5);
+            } else {
+                 // Fallback
+                 const AudioContext = window.AudioContext || window.webkitAudioContext;
+                 if(AudioContext) {
+                    const c = new AudioContext(); const o = c.createOscillator();
+                    o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .3);
+                 }
             }
         } catch(e) {}
         
@@ -1181,7 +1228,10 @@ const app = {
         ['none','rain','cafe','forest'].forEach(x => {
             if($(`btn-sound-${x}`)) $(`btn-sound-${x}`).className = x===t ? 'text-brand p-1' : 'text-text-muted hover:text-white transition-colors p-1';
         });
-        if(state.timer.status === 'running' && t !== 'none') audio.play().catch(()=>{});
+        if(state.timer.status === 'running' && t !== 'none') {
+            app.unlockAudio(); // Ensure audio context is ready
+            audio.play().catch(()=>{});
+        }
         else audio.pause();
     },
 
