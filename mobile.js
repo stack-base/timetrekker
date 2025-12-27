@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, enableIndexedDbPersistence, writeBatch, getDocs, orderBy } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, enableIndexedDbPersistence, writeBatch, getDocs, orderBy, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // --- CONFIGURATION ---
 const FIREBASE_CONFIG = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
@@ -55,6 +55,7 @@ const state = {
     viewingTask: null, editingId: null,
     timer: { 
         status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, taskId: null, mode: 'focus',
+        sessionId: null, // Track unique session ID
         pomoCountCurrentSession: 0,
         settings: { focus: 25, short: 5, long: 15, longBreakInterval: 4, strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false }
     },
@@ -147,6 +148,7 @@ onAuthStateChanged(auth, u => {
                     remaining: d.remaining || (state.timer.settings[d.mode || 'focus'] * 60),
                     totalDuration: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId || null,
+                    sessionId: d.sessionId || null, // Sync the session ID
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
@@ -425,6 +427,10 @@ const app = {
             el.className = `bg-dark-card border ${priColor} ${activeClass} p-4 rounded-xl flex items-start gap-3 active:scale-[0.98] transition-all select-none relative shadow-sm`;
             el.onclick = (e) => { if(!e.target.closest('.check-area') && !e.target.closest('.play-btn')) app.openTaskDetail(t); };
             const isDone = t.status === 'done';
+            
+            // Sync Fix: Calculate completed pomos from array length if available
+            const completedPomos = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
+
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
                     <div class="w-6 h-6 rounded-full border-2 ${isDone ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center transition-colors">
@@ -437,7 +443,7 @@ const app = {
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                         <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand font-medium border border-brand/20">${esc(t.project || 'Inbox')}</span>
                         ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold">! Urgent</span>' : ''}
-                        <span class="text-[10px] text-text-muted flex items-center"><i class="ph-fill ph-check-circle mr-1"></i>${t.completedPomos||0}/${t.estimatedPomos||1}</span>
+                        <span class="text-[10px] text-text-muted flex items-center"><i class="ph-fill ph-check-circle mr-1"></i>${completedPomos}/${t.estimatedPomos||1}</span>
                     </div>
                 </div>
                 <button class="play-btn w-10 h-10 rounded-full ${isActive ? 'bg-brand text-white' : 'bg-dark-active text-brand'} flex items-center justify-center active:scale-90 transition-all ml-1 border border-dark-border" onclick="event.stopPropagation(); app.startFocus('${t.id}')">
@@ -657,7 +663,7 @@ const app = {
         if (st.length > 0) {
             $('tag-rank-list').innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
         } else {
-             $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tag data available.</p>';
+             $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tags data available.</p>';
         }
 
         $('mobile-logs').innerHTML = logs.slice(0, 20).map(l => { 
@@ -685,7 +691,10 @@ const app = {
         $('dt-project').textContent = t.project || 'Inbox';
         
         const total = parseInt(t.estimatedPomos) || 1;
-        const completed = parseInt(t.completedPomos) || 0;
+        
+        // Sync Fix: Read completed count from session array if available
+        const completed = t.completedSessionIds ? t.completedSessionIds.length : (parseInt(t.completedPomos) || 0);
+        
         const left = Math.max(0, total - completed);
         const dur = parseInt(t.pomoDuration) || 25;
         
@@ -1011,9 +1020,18 @@ const app = {
 
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
+
+        // Sync Fix: Generate Unique Session ID at Start
+        const sessionId = `${t.id}_${Date.now()}`;
         
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
-            status: 'running', mode: 'focus', taskId: t.id, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000)
+            status: 'running', 
+            mode: 'focus', 
+            taskId: t.id, 
+            sessionId: sessionId, // Store ID for sync
+            remaining: d, 
+            totalDuration: d, 
+            endTime: new Date(Date.now() + d*1000)
         });
         
         app.updateSetting('focus', durationMin);
@@ -1068,10 +1086,25 @@ const app = {
                 const t = state.tasks.find(x => x.id === state.timer.taskId);
                 if(t) {
                     try {
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedPomos: (t.completedPomos||0) + 1 });
+                        // Sync Fix: Use generated Session ID or Fallback
+                        const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
+
+                        // 1. Idempotent Counter Update (Array Union)
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
+                            completedSessionIds: arrayUnion(sessionId)
+                        });
+
+                        // 2. Idempotent Log Write (SetDoc with SessionID)
                         const durMin = state.timer.totalDuration / 60;
-                        await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, project: t.project || 'Inbox', duration: durMin, completedAt: serverTimestamp() });
-                    } catch(e) {}
+                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
+                            taskTitle: t.title, 
+                            taskId: t.id, 
+                            project: t.project || 'Inbox', 
+                            duration: durMin, 
+                            completedAt: serverTimestamp() 
+                        });
+
+                    } catch(e) { console.error("Sync Error", e); }
                 }
             }
             
@@ -1095,7 +1128,7 @@ const app = {
 
     setTimerMode: async (m, sessionCount = null) => {
         const v = state.timer.settings[m]; 
-        const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.taskId || null };
+        const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.taskId || null, sessionId: null };
         if (sessionCount !== null) updates.sessionCount = sessionCount;
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), updates);
     },
@@ -1120,7 +1153,8 @@ const app = {
                 $('focus-active').classList.remove('hidden');
                 $('timer-task-title').textContent = t.title;
                 $('timer-badge').textContent = t.project || 'Inbox';
-                $('timer-completed').textContent = t.completedPomos || 0;
+                // Sync Fix: Display count from array length
+                $('timer-completed').textContent = t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos || 0);
                 $('timer-total').textContent = t.estimatedPomos || 1;
                 document.title = `${m}:${sc.toString().padStart(2,'0')} - ${t.title}`;
             } else {
