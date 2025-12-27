@@ -46,6 +46,23 @@ const haptic = (type = 'light') => {
     } catch(e){} 
 };
 
+// Wake Lock Manager (Mobile Specific)
+const wakeLock = {
+    sentinel: null,
+    request: async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock.sentinel = await navigator.wakeLock.request('screen');
+            } catch (err) { console.warn('Wake Lock error:', err); }
+        }
+    },
+    release: async () => {
+        if (wakeLock.sentinel) {
+            try { await wakeLock.sentinel.release(); wakeLock.sentinel = null; } catch(e){}
+        }
+    }
+};
+
 // --- STATE ---
 const state = {
     user: null, tasks: [], logs: [], 
@@ -65,7 +82,8 @@ const state = {
     chartInstances: { focusBar: null, taskBar: null, hourly: null, weekday: null, project: null, priority: null },
     analytics: { range: 'week' },
     lastCheckTime: null,
-    audioContext: null
+    audioContext: null,
+    audioUnlocked: false
 };
 
 // --- CHART CONFIG ---
@@ -105,6 +123,7 @@ onAuthStateChanged(auth, u => {
         state.user = u;
         syncUserProfile(u);
         
+        // Listen for user settings/profile
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -123,6 +142,7 @@ onAuthStateChanged(auth, u => {
 
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+        // Listen for Tasks
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
             const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
@@ -143,6 +163,7 @@ onAuthStateChanged(auth, u => {
             }
         });
         
+        // Listen for Active Timer
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -158,15 +179,23 @@ onAuthStateChanged(auth, u => {
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
                 if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
+                if(d.autoStartPomo !== undefined) state.timer.settings.autoStartPomo = d.autoStartPomo;
+                if(d.autoStartBreak !== undefined) state.timer.settings.autoStartBreak = d.autoStartBreak;
+                if(d.disableBreak !== undefined) state.timer.settings.disableBreak = d.disableBreak;
+                if(d.focus !== undefined) state.timer.settings.focus = d.focus;
+
                 app.updateTimerUI();
+                
                 if(state.timer.status === 'running') {
                     startTimerLoop();
+                    wakeLock.request();
                     if (state.sound !== 'none') {
                         const audio = $('audio-player');
                         if (audio && audio.paused) audio.play().catch(()=>{});
                     }
                 } else {
                     stopTimerLoop();
+                    wakeLock.release();
                     const audio = $('audio-player');
                     if(audio) audio.pause();
                 }
@@ -175,11 +204,13 @@ onAuthStateChanged(auth, u => {
             }
         });
 
+        // Listen for Logs
         onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions')), s => {
             state.logs = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
+        // Reminder Interval
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -225,28 +256,34 @@ const stopTimerLoop = () => {
 document.addEventListener("visibilitychange", () => {
    if (!document.hidden && state.timer.status === 'running') {
        app.updateTimerUI();
-       // Catch-up logic: If timer ended while in background
        if(state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
    }
 });
+
+// One-time silent interaction to unlock AudioContext on iOS
+document.addEventListener('touchstart', function() {
+    if (!state.audioUnlocked) {
+        app.unlockAudio();
+        state.audioUnlocked = true;
+    }
+}, { once: true });
 
 // --- APP CONTROLLER ---
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     
-    // Mobile Audio Unlocker (Crucial for iOS/Android)
+    // Audio Context Unlocker
     unlockAudio: () => {
         if (!state.audioContext) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (AudioContext) {
                 state.audioContext = new AudioContext();
-                // Resume context if suspended (common in browsers policy)
-                if (state.audioContext.state === 'suspended') {
-                    state.audioContext.resume();
-                }
             }
         }
-        // Also play/pause empty audio to unlock HTML5 audio tag
+        if (state.audioContext && state.audioContext.state === 'suspended') {
+            state.audioContext.resume();
+        }
+        // Also ensure HTML5 audio is primed
         const audio = $('audio-player');
         if(audio) {
             audio.play().then(() => { if(state.sound === 'none' || state.timer.status !== 'running') audio.pause(); }).catch(()=>{});
@@ -276,7 +313,10 @@ const app = {
         state.activeTab = tab;
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const view = $(`view-${tab}`);
-        if(view) view.classList.remove('hidden');
+        if(view) {
+            view.classList.remove('hidden');
+            if(tab === 'analytics') view.classList.add('animate-slide-up');
+        }
         
         document.querySelectorAll('.nav-item').forEach(el => {
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
@@ -302,11 +342,11 @@ const app = {
             if($('toggle-auto-pomo')) $('toggle-auto-pomo').checked = s.autoStartPomo;
             if($('toggle-auto-break')) $('toggle-auto-break').checked = s.autoStartBreak;
             if($('toggle-disable-break')) $('toggle-disable-break').checked = s.disableBreak;
-            $('set-focus-display').innerText = s.focus + 'm';
-            $('set-short-display').innerText = s.short + 'm';
-            $('set-long-display').innerText = s.long + 'm';
-            $('set-long-interval-display').innerText = s.longBreakInterval + 'x';
-            $('inp-long-interval').value = s.longBreakInterval;
+            if($('set-focus-display')) $('set-focus-display').innerText = s.focus + 'm';
+            if($('set-short-display')) $('set-short-display').innerText = s.short + 'm';
+            if($('set-long-display')) $('set-long-display').innerText = s.long + 'm';
+            if($('set-long-interval-display')) $('set-long-interval-display').innerText = s.longBreakInterval + 'x';
+            if($('inp-long-interval')) $('inp-long-interval').value = s.longBreakInterval;
         }
     },
 
@@ -339,7 +379,7 @@ const app = {
         const list = $('project-sheet-list');
         if(!list) return;
         list.innerHTML = '';
-        const pList = Array.from(state.projects).sort(); // Alphabetical sort
+        const pList = Array.from(state.projects).sort(); 
         pList.forEach(p => {
              const count = state.tasks.filter(t => t.status === 'todo' && t.project === p).length;
              const isInbox = p === 'Inbox';
@@ -465,7 +505,7 @@ const app = {
             el.onclick = (e) => { if(!e.target.closest('.check-area') && !e.target.closest('.play-btn')) app.openTaskDetail(t); };
             const isDone = t.status === 'done';
             
-            // Sync Update: Strict count of sessions
+            // PRODUCTION: Use strict array length for accuracy
             const completedPomos = t.completedSessionIds ? t.completedSessionIds.length : 0;
 
             el.innerHTML = `
@@ -728,10 +768,7 @@ const app = {
         $('dt-project').textContent = t.project || 'Inbox';
         
         const total = parseInt(t.estimatedPomos) || 1;
-        
-        // Sync Update: Strict count of sessions
         const completed = t.completedSessionIds ? t.completedSessionIds.length : 0;
-        
         const left = Math.max(0, total - completed);
         const dur = parseInt(t.pomoDuration) || 25;
         
@@ -819,7 +856,7 @@ const app = {
             haptic('heavy');
             try {
                 await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.viewingTask.id));
-                history.back(); // Close detail sheet
+                history.back(); 
                 app.showToast('Task deleted');
             } catch(e) { app.showToast('Error deleting'); }
         }
@@ -1017,12 +1054,11 @@ const app = {
                 haptic('success');
                 app.showToast('Task updated');
             } else {
-                // CHANGE: Initialized completedSessionIds: [] instead of completedPomos: 0
                 await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), {
                     ...data,
                     status: 'todo',
                     createdAt: new Date().toISOString(),
-                    completedSessionIds: []
+                    completedSessionIds: [] // PRODUCTION: Ensure array is init
                 });
                 haptic('success');
                 app.showToast('Task added');
@@ -1052,31 +1088,34 @@ const app = {
         haptic('medium');
         app.switchTab('timer');
         
+        // Mobile: Request Notification Permission if needed
+        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
+
         if(state.timer.taskId === id && state.timer.status === 'running') return;
 
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
 
-        // Sync Update: Generate Unique Session ID at Start
+        // PRODUCTION: Unique Session ID logic
         const sessionId = `${t.id}_${Date.now()}`;
         
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', 
             mode: 'focus', 
             taskId: t.id, 
-            sessionId: sessionId, // Store ID for sync
+            sessionId: sessionId,
             remaining: d, 
             totalDuration: d, 
             endTime: new Date(Date.now() + d*1000)
         });
         
         app.updateSetting('focus', durationMin);
-        app.unlockAudio(); // Unlock audio on user interaction
+        app.unlockAudio(); 
     },
 
     toggleTimer: async () => {
         haptic('medium');
-        app.unlockAudio(); // Unlock audio
+        app.unlockAudio(); 
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
         
         if(state.timer.status === 'running') {
@@ -1109,7 +1148,7 @@ const app = {
         stopTimerLoop();
         haptic('timerDone');
         
-        // Mobile-friendly audio
+        // Mobile-friendly audio unlock/play
         try {
             if(state.audioContext) {
                  const o = state.audioContext.createOscillator();
@@ -1117,13 +1156,6 @@ const app = {
                  o.connect(g); g.connect(state.audioContext.destination);
                  o.frequency.value = 523.25; 
                  o.start(); o.stop(state.audioContext.currentTime + 0.5);
-            } else {
-                 // Fallback
-                 const AudioContext = window.AudioContext || window.webkitAudioContext;
-                 if(AudioContext) {
-                    const c = new AudioContext(); const o = c.createOscillator();
-                    o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .3);
-                 }
             }
         } catch(e) {}
         
@@ -1134,15 +1166,13 @@ const app = {
                 const t = state.tasks.find(x => x.id === state.timer.taskId);
                 if(t) {
                     try {
-                        // Sync Update: Use generated Session ID
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
 
-                        // 1. Idempotent Counter Update (Array Union)
+                        // PRODUCTION: Idempotent Updates (Exact match to Desktop)
                         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
                             completedSessionIds: arrayUnion(sessionId)
                         });
 
-                        // 2. Idempotent Log Write (SetDoc with SessionID)
                         const durMin = state.timer.totalDuration / 60;
                         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
                             taskTitle: t.title, 
@@ -1186,38 +1216,37 @@ const app = {
         const s = status === 'running' && endTime ? Math.max(0, Math.ceil((endTime - Date.now()) / 1000)) : remaining;
         const m = Math.floor(s/60), sc = s%60;
         
-        $('timer-display').textContent = `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
-        $('timer-mode').textContent = mode === 'focus' ? 'FOCUS' : mode === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
-        $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'}`;
+        if($('timer-display')) $('timer-display').textContent = `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
+        if($('timer-mode')) {
+            $('timer-mode').textContent = mode === 'focus' ? 'FOCUS' : mode === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
+            $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'}`;
+        }
         
         const offset = 283 * (1 - (s / (totalDuration || 1)));
-        $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
-        $('timer-progress').style.stroke = mode === 'focus' ? '#ff5757' : '#3b82f6';
+        if($('timer-progress')) {
+            $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
+            $('timer-progress').style.stroke = mode === 'focus' ? '#ff5757' : '#3b82f6';
+        }
 
         if(taskId && mode === 'focus') {
             const t = state.tasks.find(x => x.id === taskId);
             if(t) {
-                $('focus-empty').classList.add('hidden');
-                $('focus-active').classList.remove('hidden');
-                $('timer-task-title').textContent = t.title;
-                $('timer-badge').textContent = t.project || 'Inbox';
-                // Sync Update: Strict count of sessions
-                $('timer-completed').textContent = t.completedSessionIds ? t.completedSessionIds.length : 0;
-                $('timer-total').textContent = t.estimatedPomos || 1;
+                if($('focus-empty')) $('focus-empty').classList.add('hidden');
+                if($('focus-active')) $('focus-active').classList.remove('hidden');
+                if($('timer-task-title')) $('timer-task-title').textContent = t.title;
+                if($('timer-badge')) $('timer-badge').textContent = t.project || 'Inbox';
+                if($('timer-completed')) $('timer-completed').textContent = t.completedSessionIds ? t.completedSessionIds.length : 0;
+                if($('timer-total')) $('timer-total').textContent = t.estimatedPomos || 1;
                 document.title = `${m}:${sc.toString().padStart(2,'0')} - ${t.title}`;
-            } else {
-                $('timer-task-title').textContent = "Unknown Task";
             }
         } else if (mode !== 'focus') {
-            $('focus-empty').classList.remove('hidden');
-            $('focus-active').classList.add('hidden');
-            $('focus-empty').textContent = "Rest your mind";
+            if($('focus-empty')) { $('focus-empty').classList.remove('hidden'); $('focus-empty').textContent = "Rest your mind"; }
+            if($('focus-active')) $('focus-active').classList.add('hidden');
             document.title = `${m}:${sc.toString().padStart(2,'0')} - Break`;
         } else {
-            $('focus-empty').classList.remove('hidden');
-            $('focus-active').classList.add('hidden');
-            $('focus-empty').textContent = "Select a task to focus";
-            document.title = "TimeTrekker";
+             if($('focus-empty')) { $('focus-empty').classList.remove('hidden'); $('focus-empty').textContent = "Select a task to focus"; }
+             if($('focus-active')) $('focus-active').classList.add('hidden');
+             document.title = "TimeTrekker";
         }
     },
 
@@ -1229,7 +1258,7 @@ const app = {
             if($(`btn-sound-${x}`)) $(`btn-sound-${x}`).className = x===t ? 'text-brand p-1' : 'text-text-muted hover:text-white transition-colors p-1';
         });
         if(state.timer.status === 'running' && t !== 'none') {
-            app.unlockAudio(); // Ensure audio context is ready
+            app.unlockAudio(); 
             audio.play().catch(()=>{});
         }
         else audio.pause();
@@ -1261,6 +1290,7 @@ document.addEventListener('click', (e) => { if (document.activeElement && docume
 
 if (!history.state) history.replaceState({ view: 'root' }, '');
 window.addEventListener('popstate', (e) => {
+    // Handle Sheet Closures gracefully on Back Button
     if (!$('modal-sheet').classList.contains('translate-y-full')) { 
         $('modal-sheet').classList.add('translate-y-full');
         $('modal-overlay').classList.add('opacity-0');
