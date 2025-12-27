@@ -1,12 +1,11 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, enableIndexedDbPersistence, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, serverTimestamp, enableIndexedDbPersistence, writeBatch, getDocs, orderBy } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // --- CONFIGURATION ---
 const FIREBASE_CONFIG = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
 const APP_ID = 'timetrekker-v1';
 const ASSETS = {
-    icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png',
     sounds: { 
         none: '', 
         rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', 
@@ -20,22 +19,28 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
+// Robust Persistence Handling (Desktop Parity)
 try { 
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') console.warn('Persistence disabled (Multiple tabs open).');
         else if (err.code === 'unimplemented') console.warn('Browser does not support persistence');
     });
-} catch (e) { console.log('Persistence skipped'); }
+} catch (e) { console.log('Persistence setup skipped'); }
 
 // --- UTILS ---
 const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
+// Haptic Engine (Desktop Parity)
 const haptic = (type = 'light') => { 
     if(!navigator.vibrate) return; 
     try { 
-        const patterns = { light: 10, medium: 25, heavy: 40, success: [10, 30], timerDone: [200, 100, 200] };
+        const patterns = { 
+            light: 10, medium: 25, heavy: 40, 
+            success: [10, 30], 
+            timerDone: [200, 100, 200] 
+        };
         navigator.vibrate(patterns[type] || 10); 
     } catch(e){} 
 };
@@ -49,7 +54,7 @@ const state = {
     filterProject: null,
     viewingTask: null, editingId: null,
     timer: { 
-        status: 'idle', endTime: null, remaining: 1500, total: 1500, taskId: null, mode: 'focus',
+        status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, taskId: null, mode: 'focus',
         pomoCountCurrentSession: 0,
         settings: { focus: 25, short: 5, long: 15, longBreakInterval: 4, strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false }
     },
@@ -96,7 +101,7 @@ onAuthStateChanged(auth, u => {
         state.user = u;
         syncUserProfile(u);
         
-        // Listen to User Profile for Updates
+        // Listen to User Profile
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -119,14 +124,15 @@ onAuthStateChanged(auth, u => {
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
             // Rebuild Project Set
-            state.projects = new Set(['Inbox', 'Work', 'Personal', 'Study']);
-            state.tasks.forEach(t => { if(t.project) state.projects.add(t.project); });
+            const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
+            state.tasks.forEach(t => { if(t.project && t.project !== 'Inbox') p.add(t.project); });
+            state.projects = p;
             
             app.renderTasks();
             app.renderMiniStats();
             if(state.activeTab === 'analytics') app.renderAnalytics();
             
-            // Sync active task title in timer if running
+            // Sync active task title in timer
             if (state.timer.taskId) {
                  const t = state.tasks.find(x => x.id === state.timer.taskId);
                  if (t) app.updateTimerUI();
@@ -143,12 +149,14 @@ onAuthStateChanged(auth, u => {
                     mode: d.mode || 'focus',
                     endTime: d.endTime ? d.endTime.toMillis() : null,
                     remaining: d.remaining || (state.timer.settings[d.mode || 'focus'] * 60),
-                    total: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
-                    taskId: d.taskId,
+                    totalDuration: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
+                    taskId: d.taskId || null,
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
-                if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
                 
+                // Sync settings from Firestore if they were saved there (optional, but good for sync)
+                if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
+
                 app.updateTimerUI();
                 
                 if(state.timer.status === 'running') {
@@ -173,7 +181,7 @@ onAuthStateChanged(auth, u => {
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
-        // Reminders Check
+        // Reminders Check (Desktop Parity)
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -214,51 +222,13 @@ const stopTimerLoop = () => {
     if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
 };
 
-// Lifecycle: Force refresh on app resume (Crucial for Mobile)
+// Lifecycle: Force refresh on app resume
 document.addEventListener("visibilitychange", () => {
    if (!document.hidden && state.timer.status === 'running') {
        app.updateTimerUI();
        if(state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
    }
 });
-
-// --- UI HELPERS ---
-const _ui = {
-    closeProjectSheet: () => {
-        $('project-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
-    },
-    closeDetailSheet: () => {
-        $('detail-sheet').classList.add('translate-y-full');
-        if(!state.editingId) {
-             $('modal-overlay').classList.add('opacity-0');
-             setTimeout(() => { 
-                 $('modal-overlay').classList.add('hidden'); 
-                 state.viewingTask = null;
-             }, 300);
-        } else { state.viewingTask = null; }
-    },
-    closeTaskModal: () => {
-        $('modal-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => {
-            $('modal-overlay').classList.add('hidden');
-            state.editingId = null;
-        }, 300);
-    }
-};
-
-// Native Navigation Handler
-if (!history.state) history.replaceState({ view: 'root' }, '');
-window.addEventListener('popstate', (e) => {
-    if (document.activeElement) document.activeElement.blur();
-    if (!$('modal-sheet').classList.contains('translate-y-full')) { _ui.closeTaskModal(); return; }
-    if (!$('detail-sheet').classList.contains('translate-y-full')) { _ui.closeDetailSheet(); return; }
-    if (!$('project-sheet').classList.contains('translate-y-full')) { _ui.closeProjectSheet(); return; }
-    if (state.activeTab !== 'tasks') { app.switchTab('tasks', false); return; }
-});
-
 
 // --- APP CONTROLLER ---
 const app = {
@@ -284,7 +254,6 @@ const app = {
         const view = $(`view-${tab}`);
         if(view) view.classList.remove('hidden');
         
-        // Tab Bar UI
         document.querySelectorAll('.nav-item').forEach(el => {
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
             el.querySelector('i').classList.remove('ph-fill');
@@ -297,7 +266,6 @@ const app = {
             activeBtn.querySelector('i').classList.add('ph-fill');
         }
 
-        // Header Visibility
         const isTask = tab === 'tasks';
         if($('view-header')) $('view-header').classList.toggle('hidden', !isTask);
         if($('task-filters')) $('task-filters').classList.toggle('hidden', !isTask);
@@ -306,10 +274,10 @@ const app = {
         if(tab === 'analytics') app.renderAnalytics();
         if(tab === 'settings') {
             const s = state.timer.settings;
-            $('toggle-strict').checked = s.strictMode;
-            $('toggle-auto-pomo').checked = s.autoStartPomo;
-            $('toggle-auto-break').checked = s.autoStartBreak;
-            $('toggle-disable-break').checked = s.disableBreak;
+            if($('toggle-strict')) $('toggle-strict').checked = s.strictMode;
+            if($('toggle-auto-pomo')) $('toggle-auto-pomo').checked = s.autoStartPomo;
+            if($('toggle-auto-break')) $('toggle-auto-break').checked = s.autoStartBreak;
+            if($('toggle-disable-break')) $('toggle-disable-break').checked = s.disableBreak;
             $('set-focus-display').innerText = s.focus + 'm';
             $('set-short-display').innerText = s.short + 'm';
             $('set-long-display').innerText = s.long + 'm';
@@ -336,7 +304,6 @@ const app = {
     openProjectSheet: () => {
         haptic('light');
         history.pushState({ modal: 'project' }, '');
-
         const list = $('project-sheet-list');
         list.innerHTML = '';
         state.projects.forEach(p => {
@@ -359,7 +326,6 @@ const app = {
              `;
              list.appendChild(el);
         });
-        
         $('modal-overlay').classList.remove('hidden');
         setTimeout(() => {
             $('modal-overlay').classList.remove('opacity-0');
@@ -377,7 +343,7 @@ const app = {
              b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted`;
         });
         $('filter-folders').className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-brand text-white border border-brand`;
-        app.closeProjectSheet(); 
+        history.back(); // close sheet via history
         app.renderTasks();
     },
 
@@ -385,11 +351,13 @@ const app = {
         const p = await app.showPrompt("Enter new project name:");
         if (p && p.trim()) {
              state.projects.add(p.trim());
+             // Update select dropdown immediately if open
              const sel = $('inp-project');
-             const opt = document.createElement('option');
-             opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true;
-             sel.appendChild(opt);
-             // If triggered from sheet, update list
+             if(sel) {
+                const opt = document.createElement('option');
+                opt.value = p.trim(); opt.textContent = p.trim(); opt.className = 'bg-dark-card'; opt.selected = true;
+                sel.appendChild(opt);
+             }
              if(!$('project-sheet').classList.contains('translate-y-full')) app.openProjectSheet();
         }
     },
@@ -403,13 +371,10 @@ const app = {
             const batch = writeBatch(db);
             const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", oldName));
             const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                batch.update(doc.ref, { project: newName });
-            });
+            snapshot.forEach(doc => { batch.update(doc.ref, { project: newName }); });
             await batch.commit();
             
-            state.projects.delete(oldName);
-            state.projects.add(newName);
+            state.projects.delete(oldName); state.projects.add(newName);
             app.openProjectSheet(); 
             app.showToast('Project renamed');
         } catch(e) { app.showToast('Error renaming'); }
@@ -422,9 +387,7 @@ const app = {
             const batch = writeBatch(db);
             const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", pName));
             const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                batch.update(doc.ref, { project: 'Inbox' });
-            });
+            snapshot.forEach(doc => { batch.update(doc.ref, { project: 'Inbox' }); });
             await batch.commit();
             state.projects.delete(pName);
             app.openProjectSheet(); 
@@ -445,11 +408,14 @@ const app = {
         let filtered = state.tasks;
         let title = "Tasks";
         
-        if(state.activeFilter === 'today') { filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate === today); title = "Today"; }
-        else if(state.activeFilter === 'tomorrow') { filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate === tomorrowStr); title = "Tomorrow"; }
-        else if(state.activeFilter === 'upcoming') { filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate > today); title = "Upcoming"; }
-        else if(state.activeFilter === 'past') { filtered = state.tasks.filter(t => t.status === 'todo' && t.dueDate < today && t.dueDate); title = "Past Tasks"; }
-        else if(state.activeFilter === 'project') { filtered = state.tasks.filter(t => t.status === 'todo' && t.project === state.filterProject); title = state.filterProject || "Project"; }
+        // Exact filter parity with Desktop
+        const todo = state.tasks.filter(t => t.status === 'todo');
+
+        if(state.activeFilter === 'today') { filtered = todo.filter(t => t.dueDate === today); title = "Today"; }
+        else if(state.activeFilter === 'tomorrow') { filtered = todo.filter(t => t.dueDate === tomorrowStr); title = "Tomorrow"; }
+        else if(state.activeFilter === 'upcoming') { filtered = todo.filter(t => t.dueDate > tomorrowStr); title = "Upcoming"; }
+        else if(state.activeFilter === 'past') { filtered = todo.filter(t => t.dueDate < today && t.dueDate); title = "Past Tasks"; }
+        else if(state.activeFilter === 'project') { filtered = todo.filter(t => t.project === state.filterProject); title = state.filterProject || "Project"; }
         else if(state.activeFilter === 'completed') { filtered = state.tasks.filter(t => t.status === 'done'); title = "Completed"; }
         else if(state.activeFilter === 'all') { filtered = state.tasks; title = "All Tasks"; }
 
@@ -504,7 +470,7 @@ const app = {
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
     },
 
-    // === ANALYTICS ===
+    // === ANALYTICS (Parity Calculation) ===
     setRange: (r) => {
         state.analytics.range = r; haptic('light');
         ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
@@ -520,7 +486,6 @@ const app = {
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
-        // Stats Cards
         $('ana-time-total').textContent = fmtTime(totalMin);
         $('ana-task-total').textContent = tasksDone.length;
         $('ana-project-count').textContent = state.projects.size;
@@ -535,7 +500,6 @@ const app = {
         let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
         $('ana-streak-days').textContent = streak + ' Days';
 
-        // Pomo Grid
         const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
         for (let i = 0; i < 7; i++) { 
             const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
@@ -550,7 +514,6 @@ const app = {
             row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
         }
 
-        // Charts Data Prep
         const r = state.analytics.range; 
         let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); 
         if (r === 'year') { 
@@ -572,7 +535,6 @@ const app = {
             } 
         }
 
-        // Render Charts
         const createChart = (ctxId, type, data, color, label, instanceKey) => {
             const el = $(ctxId); if(!el) return;
             const ctx = el.getContext('2d');
@@ -700,26 +662,31 @@ const app = {
     startFocusFromDetail: () => {
         if(state.viewingTask) {
             app.startFocus(state.viewingTask.id);
-            app.closeDetailSheet();
+            // Must manually close since startFocus switches tab which handles state
+            $('detail-sheet').classList.add('translate-y-full');
+            $('modal-overlay').classList.add('opacity-0');
+            setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
         }
     },
 
     editCurrentTask: () => {
         if(state.viewingTask) {
             const t = state.viewingTask;
-            _ui.closeDetailSheet();
-            history.back(); 
-            state.viewingTask = null;
-            setTimeout(() => app.openTaskModal(t), 200);
+            // Manually close detail sheet to transition to edit
+            $('detail-sheet').classList.add('translate-y-full');
+            // Wait for transition then open modal
+            setTimeout(() => app.openTaskModal(t), 300);
         }
     },
 
     deleteCurrentTask: async () => {
         if(state.viewingTask && confirm('Delete this task?')) {
             haptic('heavy');
-            await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.viewingTask.id));
-            app.closeDetailSheet();
-            app.showToast('Task deleted');
+            try {
+                await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.viewingTask.id));
+                history.back(); // Close detail sheet
+                app.showToast('Task deleted');
+            } catch(e) { app.showToast('Error deleting'); }
         }
     },
 
@@ -910,7 +877,7 @@ const app = {
             tags, subtasks
         };
 
-        app.closeTaskModal();
+        history.back(); // Close modal
         
         try {
             if(state.editingId) {
@@ -933,30 +900,41 @@ const app = {
     closeTaskModal: () => { history.back(); },
     
     closeAllSheets: () => {
-        app.closeDetailSheet();
-        app.closeTaskModal();
-        app.closeProjectSheet();
+        // Simple logic: clicking overlay closes whatever is open by going back in history
+        // This assumes sheets were opened via pushState
+        if(!$('modal-overlay').classList.contains('hidden')) history.back();
     },
 
     toggleStatus: async (id, s) => {
         haptic('light');
-        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
-            status: s === 'todo' ? 'done' : 'todo',
-            completedAt: s === 'todo' ? new Date().toISOString() : null
-        });
+        try {
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
+                status: s === 'todo' ? 'done' : 'todo',
+                completedAt: s === 'todo' ? new Date().toISOString() : null
+            });
+        } catch(e) { app.showToast("Connection error"); }
     },
 
-    // === TIMER LOGIC ===
+    // === TIMER LOGIC (Full Parity) ===
     startFocus: async (id) => {
         const t = state.tasks.find(x => x.id === id);
         if(!t) return;
         haptic('medium');
         app.switchTab('timer');
+        
+        // Check if already running this task
+        if(state.timer.taskId === id && state.timer.status === 'running') return;
+
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
+        
+        // Update timer state
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
             status: 'running', mode: 'focus', taskId: t.id, remaining: d, totalDuration: d, endTime: new Date(Date.now() + d*1000)
         });
+        
+        // Also update local settings to match task duration
+        app.updateSetting('focus', durationMin);
     },
 
     toggleTimer: async () => {
@@ -989,10 +967,11 @@ const app = {
     skipTimer: () => app.completeTimer(),
 
     completeTimer: async () => {
+        if(state.timer.status === 'idle') return;
         stopTimerLoop();
         haptic('timerDone');
         
-        // Robust Audio Fallback (AudioContext)
+        // Robust Audio Fallback (AudioContext) for Mobile
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if(AudioContext) {
@@ -1003,19 +982,27 @@ const app = {
         
         try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete", { icon: ASSETS.icon }); } catch (e) {}
 
-        if(state.timer.mode === 'focus' && state.timer.taskId) {
-            const t = state.tasks.find(x => x.id === state.timer.taskId);
-            if(t) {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedPomos: (t.completedPomos||0) + 1 });
-                const durMin = state.timer.total / 60;
-                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, project: t.project, duration: durMin, completedAt: serverTimestamp() });
+        if(state.timer.mode === 'focus') {
+            if(state.timer.taskId) {
+                const t = state.tasks.find(x => x.id === state.timer.taskId);
+                if(t) {
+                    try {
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { completedPomos: (t.completedPomos||0) + 1 });
+                        const durMin = state.timer.totalDuration / 60;
+                        await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions'), { taskTitle: t.title, taskId: t.id, project: t.project || 'Inbox', duration: durMin, completedAt: serverTimestamp() });
+                    } catch(e) {}
+                }
             }
+            
+            // Exact Logic from Desktop for Breaks
             if (state.timer.settings.disableBreak) {
-                await app.setTimerMode('focus'); if (state.timer.settings.autoStartPomo) app.toggleTimer();
+                await app.setTimerMode('focus'); 
+                if (state.timer.settings.autoStartPomo) app.toggleTimer();
             } else {
                 const newCount = (state.timer.pomoCountCurrentSession || 0) + 1; 
                 let nextMode = 'short';
                 if (newCount >= state.timer.settings.longBreakInterval) nextMode = 'long';
+                
                 await app.setTimerMode(nextMode, nextMode === 'long' ? 0 : newCount);
                 if (state.timer.settings.autoStartBreak) app.toggleTimer();
             }
@@ -1034,7 +1021,7 @@ const app = {
     },
 
     updateTimerUI: () => {
-        const { status, endTime, remaining, total, taskId, mode } = state.timer;
+        const { status, endTime, remaining, totalDuration, taskId, mode } = state.timer;
         const s = status === 'running' && endTime ? Math.max(0, Math.ceil((endTime - Date.now()) / 1000)) : remaining;
         const m = Math.floor(s/60), sc = s%60;
         
@@ -1042,7 +1029,7 @@ const app = {
         $('timer-mode').textContent = mode === 'focus' ? 'FOCUS' : mode === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
         $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'}`;
         
-        const offset = 283 * (1 - (s / (total || 1)));
+        const offset = 283 * (1 - (s / (totalDuration || 1)));
         $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
         $('timer-progress').style.stroke = mode === 'focus' ? '#ff5757' : '#3b82f6';
 
@@ -1084,9 +1071,14 @@ const app = {
     },
 
     updateSetting: (k, v) => {
-        state.timer.settings[k] = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
-        if(k === 'longBreakInterval') $('set-long-interval-display').innerText = v + 'x';
-        else if(!['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k)) $(`set-${k}-display`).innerText = v + 'm';
+        const val = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
+        state.timer.settings[k] = val;
+        
+        if(k === 'longBreakInterval') $('set-long-interval-display').innerText = val + 'x';
+        else if(!['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k)) $(`set-${k}-display`).innerText = val + 'm';
+        
+        // Save to timer doc for persistence
+        updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: val }).catch(()=>{});
     },
 
     showToast: (msg) => {
@@ -1106,8 +1098,40 @@ $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.cust
 $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value); });
 document.addEventListener('click', (e) => { if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur(); });
 
+// Native-like Navigation Handler
+if (!history.state) history.replaceState({ view: 'root' }, '');
+window.addEventListener('popstate', (e) => {
+    // 1. Close Modals if open
+    if (!$('modal-sheet').classList.contains('translate-y-full')) { 
+        $('modal-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); state.editingId = null; }, 300);
+        return; 
+    }
+    if (!$('detail-sheet').classList.contains('translate-y-full')) { 
+        $('detail-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); state.viewingTask = null; }, 300);
+        return; 
+    }
+    if (!$('project-sheet').classList.contains('translate-y-full')) { 
+        $('project-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+        return; 
+    }
+    
+    // 2. Handle Tab Navigation via Browser Back Button
+    if (e.state && e.state.view) {
+        app.switchTab(e.state.view, false);
+    } else {
+        // Default fall back
+        app.switchTab('tasks', false);
+    }
+});
+
 // Global Export
 window.app = app;
 
 // Init
-app.switchTab('tasks');
+app.switchTab('tasks', false);
