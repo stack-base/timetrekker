@@ -3,566 +3,641 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="TimeTrekker Mobile">
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>TimeTrekker Mobile</title>
-<link rel="icon" href="https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png" type="image/x-icon">
-
+<title>TimeTrekker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://unpkg.com/@phosphor-icons/web" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-    tailwind.config = {
-        darkMode: 'class',
-        theme: {
-            extend: {
-                fontFamily: { sans: ['Inter', 'sans-serif'] },
-                colors: {
-                    brand: { DEFAULT: '#ff5757', hover: '#e04848', dim: '#4a1a1a' },
-                    dark: { bg: '#000000', sidebar: '#000000', card: '#121212', active: '#1e1e1e', border: '#2a2a2a' },
-                    text: { main: '#ffffff', muted: '#a1a1aa', faint: '#525252' }
-                },
-                screens: { 'xs': '375px' }
-            }
-        }
-    };
+    tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:{brand:{DEFAULT:'#ff5757',hover:'#e04848'},dark:{bg:'#000000',card:'#09090b',border:'#27272a',active:'#27272a'},text:{main:'#ffffff',muted:'#a1a1aa'}},spacing:{'safe-b':'env(safe-area-inset-bottom)','safe-t':'env(safe-area-inset-top)'}}}};
 </script>
-
-<style>
-    /* Mobile Performance & Reset */
-    body { background-color: #000000; color: #ffffff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
-    ::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .safe-pb { padding-bottom: env(safe-area-inset-bottom, 20px); }
-    .safe-pt { padding-top: env(safe-area-inset-top, 20px); }
-    
-    /* Animations */
-    .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    
-    /* Sheet Handle */
-    .sheet-handle { width: 36px; height: 4px; background: #333333; border-radius: 99px; margin: 8px auto 16px; }
-    
-    /* Range Slider */
-    input[type=range] { -webkit-appearance: none; background: transparent; }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #ff5757; margin-top: -8px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333333; border-radius: 2px; }
-
-    /* Glass Effect for Bottom Nav */
-    .glass-nav { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid #2a2a2a; }
-</style>
-
 <script type="module" src="mobile.js" defer></script>
+<style>
+    body{background-color:#000;color:#fff;-webkit-tap-highlight-color:transparent;overflow:hidden;user-select:none}.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}.custom-scrollbar::-webkit-scrollbar{height:4px;width:4px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#333;border-radius:2px}@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}.animate-slide-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1) forwards}.sheet-handle{width:36px;height:5px;background:#3f3f46;border-radius:99px;margin:8px auto 16px auto}.toggle-checkbox:checked{right:0;border-color:#ff5757}.toggle-checkbox:checked+.toggle-label{background-color:#ff5757}input[type=range]{-webkit-appearance:none;background:0 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#27272a;border-radius:2px}#content-scroll-area{-webkit-overflow-scrolling:touch}
+</style>
 </head>
-<body class="h-[100dvh] w-full overflow-hidden flex flex-col relative">
+<body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
 
-    <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-sm pointer-events-none flex flex-col gap-2"></div>
+    <div id="toast-container" class="fixed top-safe-t pt-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs flex flex-col gap-2 pointer-events-none px-4"></div>
 
-    <div id="custom-prompt-modal" class="fixed inset-0 z-[110] bg-black/80 hidden opacity-0 transition-opacity flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-dark-card border border-dark-border w-full max-w-sm rounded-xl p-6 shadow-2xl transform scale-100">
+    <div id="custom-prompt-modal" class="fixed inset-0 bg-black/80 z-[110] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200 backdrop-blur-sm">
+        <div class="bg-dark-card border border-dark-border w-full max-w-sm rounded-2xl shadow-xl p-6 transform scale-95 transition-transform duration-200">
             <h3 id="prompt-title" class="text-lg font-bold text-white mb-4">Enter Value</h3>
-            <input type="text" id="prompt-input" class="w-full bg-dark-bg border border-dark-border text-white rounded-lg px-4 py-3 outline-none focus:border-brand transition-colors text-base mb-6" autocomplete="off">
-            <div class="flex justify-end space-x-3">
+            <input type="text" id="prompt-input" class="w-full bg-dark-bg border border-dark-border text-white rounded-xl px-4 py-3 outline-none focus:border-brand transition-colors text-base mb-6" autocomplete="off">
+            <div class="flex justify-end gap-3">
                 <button id="prompt-cancel-btn" class="text-text-muted hover:text-white text-sm font-medium px-4 py-2">Cancel</button>
-                <button id="prompt-confirm-btn" class="bg-brand text-white px-5 py-2 rounded-lg text-sm font-bold shadow-md active:scale-95 transition-transform">Save</button>
+                <button id="prompt-confirm-btn" class="bg-brand text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-brand/20 active:scale-95 transition-transform">Save</button>
             </div>
         </div>
     </div>
 
-    <main class="flex-1 relative overflow-hidden bg-dark-bg">
-
-        <div id="view-tasks" class="view-section absolute inset-0 flex flex-col">
-            <header class="safe-pt px-5 py-4 flex items-center justify-between bg-dark-bg z-10">
-                <div class="flex flex-col">
-                    <span id="current-date" class="text-xs font-bold text-brand uppercase tracking-wider mb-0.5">Today</span>
-                    <h1 id="page-title" class="text-2xl font-bold text-white tracking-tight">Today</h1>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button onclick="app.refreshApp()" class="w-8 h-8 rounded-full bg-dark-active flex items-center justify-center text-text-muted active:text-white transition-colors"><i class="ph-bold ph-arrows-clockwise"></i></button>
-                    <div id="header-avatar" class="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-xs font-bold text-white ring-2 ring-dark-bg relative overflow-hidden">
-                        U <img id="header-avatar-img" class="absolute inset-0 w-full h-full object-cover hidden">
-                    </div>
-                </div>
-            </header>
-
-            <div class="px-5 pb-2">
-                <div class="bg-dark-card border border-dark-border rounded-xl p-3 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand"><i class="ph-fill ph-clock"></i></div>
-                        <div>
-                            <div id="mini-est-time" class="text-sm font-bold text-white">0m</div>
-                            <div class="text-[10px] text-text-muted uppercase">Est. Time</div>
-                        </div>
-                    </div>
-                    <div class="h-6 w-px bg-dark-border"></div>
-                    <div class="flex items-center gap-3">
-                        <div>
-                            <div id="mini-tasks-left" class="text-sm font-bold text-white text-right">0</div>
-                            <div class="text-[10px] text-text-muted uppercase text-right">Tasks Left</div>
-                        </div>
-                        <div class="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500"><i class="ph-fill ph-check-circle"></i></div>
-                    </div>
-                </div>
+    <main id="main-container" class="flex-1 relative overflow-hidden flex flex-col pt-safe-t">
+        
+        <header id="view-header" class="px-5 py-4 flex items-center justify-between shrink-0 bg-dark-bg/95 backdrop-blur z-20 border-b border-dark-border/50 transition-all duration-200">
+            <div>
+                <h1 id="page-title" class="text-2xl font-bold tracking-tight">Today</h1>
+                <p id="current-date" class="text-xs text-text-muted font-medium mt-0.5">Loading...</p>
             </div>
-
-            <div class="w-full overflow-x-auto no-scrollbar py-2 px-5 flex gap-2" id="task-filters">
-                <button onclick="app.openProjectSheet()" id="filter-folders" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted border border-dark-border flex items-center gap-2 active:bg-dark-border transition-colors">
-                    <i class="ph-bold ph-folders"></i> Projects
-                </button>
-                <button onclick="app.setFilter('today')" id="filter-today" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-brand text-white transition-colors">Today</button>
-                <button onclick="app.setFilter('tomorrow')" id="filter-tomorrow" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Tomorrow</button>
-                <button onclick="app.setFilter('upcoming')" id="filter-upcoming" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Upcoming</button>
-                <button onclick="app.setFilter('all')" id="filter-all" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">All Tasks</button>
-                <button onclick="app.setFilter('completed')" id="filter-completed" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Completed</button>
+            <div class="relative">
+                <div id="header-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-xs font-bold border border-white/10 shadow-lg shadow-brand/20">U</div>
+                <img id="header-avatar-img" src="" alt="Profile" class="absolute inset-0 w-9 h-9 rounded-full object-cover hidden border border-white/10">
             </div>
+        </header>
 
-            <div class="flex-1 overflow-y-auto overflow-x-hidden px-5 py-2 pb-24 space-y-3 relative" id="task-list">
-                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-text-faint pb-20 pointer-events-none">
-                    <i class="ph-duotone ph-check-square-offset text-6xl mb-4 opacity-50"></i>
-                    <p class="text-sm font-medium text-text-muted">No tasks found</p>
-                    <p class="text-xs mt-1">Add a task to get started.</p>
-                </div>
-            </div>
+        <div id="task-filters" class="px-5 py-3 flex gap-2 overflow-x-auto no-scrollbar shrink-0 border-b border-dark-border/50 bg-dark-bg transition-all duration-200">
+            <button onclick="app.setFilter('all')" id="filter-all" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">All</button>
+            <button onclick="app.setFilter('past')" id="filter-past" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Past</button>
+            <button onclick="app.setFilter('today')" id="filter-today" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-brand text-white transition-colors">Today</button>
+            <button onclick="app.setFilter('tomorrow')" id="filter-tomorrow" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Tomorrow</button>
+            <button onclick="app.setFilter('upcoming')" id="filter-upcoming" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Upcoming</button>
+            <button onclick="app.openProjectSheet()" id="filter-folders" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors border border-dark-border"><i class="ph-bold ph-folder mr-1"></i> Folders</button>
+            <button onclick="app.setFilter('completed')" id="filter-completed" class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium bg-dark-active text-text-muted transition-colors">Completed</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-24 px-5 relative" id="content-scroll-area">
             
-            <button id="fab-add" onclick="app.openTaskModal()" class="absolute bottom-6 right-5 w-14 h-14 bg-brand text-white rounded-full shadow-lg shadow-brand/30 flex items-center justify-center active:scale-90 transition-transform z-20">
-                <i class="ph-bold ph-plus text-2xl"></i>
-            </button>
-        </div>
-
-        <div id="view-timer" class="view-section hidden absolute inset-0 flex flex-col bg-dark-bg z-20">
-             <div class="flex-1 flex flex-col items-center justify-center p-8 relative">
-                
-                <div class="mb-12 w-full text-center min-h-[100px] flex flex-col items-center justify-center">
-                    <div id="focus-empty" class="text-text-muted animate-pulse flex flex-col items-center gap-2">
-                         <i class="ph-duotone ph-coffee text-4xl mb-2"></i>
-                         <p class="text-sm font-medium">Select a task to focus</p>
+            <div id="view-tasks" class="view-section min-h-full pt-4">
+                <div class="grid grid-cols-2 gap-3 mb-6" id="mini-stats">
+                    <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col shadow-sm">
+                        <span class="text-[10px] text-text-muted uppercase font-bold">Est. Duration</span>
+                        <span class="text-lg font-bold text-white mt-1" id="mini-est-time">0m</span>
                     </div>
-                    <div id="focus-active" class="hidden w-full flex flex-col items-center animate-slide-up">
-                        <div class="inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-dark-active text-brand border border-brand/20 mb-4">
-                            <span id="timer-badge">Project</span>
-                        </div>
-                        <h2 id="timer-task-title" class="text-2xl font-bold text-white leading-tight mb-2 text-center line-clamp-2 px-4">Task Title</h2>
-                        <div class="flex items-center gap-2 text-xs text-text-muted">
-                            <span class="text-brand font-bold" id="timer-completed">0</span>
-                            <span>/</span>
-                            <span id="timer-total">4</span>
-                            <span>Pomos</span>
+                    <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col shadow-sm">
+                        <span class="text-[10px] text-text-muted uppercase font-bold">Tasks Left</span>
+                        <span class="text-lg font-bold text-brand mt-1" id="mini-tasks-left">0</span>
+                    </div>
+                </div>
+
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
+                    <i class="ph ph-check-circle text-4xl mb-3 text-brand/50"></i>
+                    <p class="text-sm font-medium">No tasks found</p>
+                </div>
+                <div id="task-list" class="space-y-3 pb-8"></div>
+            </div>
+
+            <div id="view-timer" class="view-section hidden flex flex-col items-center justify-center min-h-[70vh]">
+                <div id="focus-meta" class="text-center mb-8 w-full px-4 min-h-[100px] flex items-end justify-center">
+                    <div id="focus-empty" class="text-text-muted text-sm animate-pulse mb-6">Select a task to focus</div>
+                    <div id="focus-active" class="hidden animate-slide-up w-full">
+                        <span id="timer-badge" class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-dark-active text-text-muted mb-3 inline-block truncate max-w-[200px]">Inbox</span>
+                        <h2 id="timer-task-title" class="text-xl font-bold leading-tight line-clamp-2 mb-2">Task Title</h2>
+                        <div class="text-xs text-text-muted flex justify-center gap-1">
+                            <span class="text-brand font-bold" id="timer-completed">0</span>/<span id="timer-total">4</span> Pomos
                         </div>
                     </div>
                 </div>
 
-                <div class="relative mb-16">
-                    <div class="relative w-72 h-72 flex items-center justify-center">
-                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="46" fill="none" stroke="#1a1a1a" stroke-width="2"/>
-                            <circle id="timer-progress" cx="50" cy="50" r="46" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer select-none" onclick="app.toggleTimer()">
-                            <div id="timer-display" class="text-7xl font-light text-white tracking-tighter tabular-nums">25:00</div>
-                            <div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-4 text-brand">FOCUS</div>
-                        </div>
+                <div class="relative w-72 h-72 flex items-center justify-center mb-10">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#27272a" stroke-width="2"/>
+                        <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center active:scale-95 transition-transform" onclick="app.toggleTimer()" role="button" tabindex="0">
+                        <div id="timer-display" class="text-6xl font-light tracking-tighter tabular-nums text-white">25:00</div>
+                        <div id="timer-mode" class="text-xs font-bold tracking-widest uppercase mt-3 text-brand">FOCUS</div>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-center gap-8">
-                     <button onclick="app.resetTimer()" class="p-4 rounded-full text-text-muted hover:text-white bg-dark-active active:bg-dark-border transition-colors"><i class="ph-bold ph-arrow-counter-clockwise text-2xl"></i></button>
-                     <button onclick="app.toggleTimer()" class="w-20 h-20 rounded-full bg-brand text-white flex items-center justify-center active:scale-95 transition-transform shadow-xl shadow-brand/20">
-                        <i id="play-icon" class="ph-fill ph-play text-4xl ml-1"></i>
-                     </button>
-                     <button onclick="app.skipTimer()" class="p-4 rounded-full text-text-muted hover:text-white bg-dark-active active:bg-dark-border transition-colors"><i class="ph-bold ph-skip-forward text-2xl"></i></button>
+                <div class="flex items-center gap-4 mb-10 bg-dark-card px-4 py-2 rounded-full border border-dark-border shadow-sm">
+                    <button onclick="app.setSound('none')" class="text-brand hover:text-white transition-colors p-1" id="btn-sound-none" aria-label="Mute Sound"><i class="ph-fill ph-speaker-slash text-xl"></i></button>
+                    <button onclick="app.setSound('rain')" class="text-text-muted hover:text-white transition-colors p-1" id="btn-sound-rain" aria-label="Rain Sound"><i class="ph-fill ph-cloud-rain text-xl"></i></button>
+                    <button onclick="app.setSound('cafe')" class="text-text-muted hover:text-white transition-colors p-1" id="btn-sound-cafe" aria-label="Cafe Sound"><i class="ph-fill ph-coffee text-xl"></i></button>
+                    <button onclick="app.setSound('forest')" class="text-text-muted hover:text-white transition-colors p-1" id="btn-sound-forest" aria-label="Forest Sound"><i class="ph-fill ph-tree text-xl"></i></button>
+                </div>
+
+                <div class="flex items-center gap-8">
+                    <button onclick="app.resetTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border active:scale-90 transition-transform" aria-label="Reset Timer"><i class="ph-bold ph-arrow-counter-clockwise text-xl"></i></button>
+                    <button onclick="app.toggleTimer()" class="w-20 h-20 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-90 transition-transform" aria-label="Play or Pause Timer"><i id="play-icon" class="ph-fill ph-play text-3xl ml-1"></i></button>
+                    <button onclick="app.skipTimer()" class="p-4 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border active:scale-90 transition-transform" aria-label="Skip Timer"><i class="ph-bold ph-skip-forward text-xl"></i></button>
                 </div>
             </div>
 
-            <div class="px-6 py-8 safe-pb flex justify-center gap-4">
-                 <button onclick="app.setSound('none')" id="btn-sound-none" class="text-brand p-1"><i class="ph-fill ph-speaker-slash text-xl"></i></button>
-                 <button onclick="app.setSound('rain')" id="btn-sound-rain" class="text-text-muted p-1"><i class="ph-fill ph-cloud-rain text-xl"></i></button>
-                 <button onclick="app.setSound('cafe')" id="btn-sound-cafe" class="text-text-muted p-1"><i class="ph-fill ph-coffee text-xl"></i></button>
-                 <button onclick="app.setSound('forest')" id="btn-sound-forest" class="text-text-muted p-1"><i class="ph-fill ph-tree text-xl"></i></button>
-            </div>
-            <audio id="audio-player" loop></audio>
-        </div>
+            <div id="view-analytics" class="view-section hidden pb-10 pt-4 space-y-4">
 
-        <div id="view-analytics" class="view-section hidden absolute inset-0 flex flex-col overflow-y-auto custom-scrollbar bg-dark-bg pb-24">
-             <header class="safe-pt px-6 py-6 bg-dark-bg z-10">
-                <h1 class="text-2xl font-bold text-white mb-1">Analytics</h1>
-                <p class="text-sm text-text-muted">Your productivity insights</p>
-                <div class="flex bg-dark-card border border-dark-border rounded-lg p-1 mt-6">
+                <div class="text-center py-6 animate-slide-up">
+                    <div class="inline-flex items-center gap-2 mb-2 opacity-80">
+                        <i class="ph-fill ph-mountains text-brand text-xl"></i>
+                        <span class="text-xs font-bold tracking-[0.2em] text-text-muted">TimeTrekker</span>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">Analytics</h2>
+                </div>
+
+                <div class="bg-brand/5 border border-brand/20 rounded-xl p-4 flex items-start gap-3">
+                    <i class="ph-fill ph-lightbulb text-brand text-xl mt-0.5"></i>
+                    <div class="text-sm text-text-muted">
+                        <span class="block text-white font-semibold mb-1">Smart Insights</span>
+                        <span id="insight-text">Gathering data to generate insights...</span>
+                    </div>
+                </div>
+
+                <div class="flex bg-dark-card rounded-lg p-1 border border-dark-border justify-between shadow-sm">
                     <button onclick="app.setRange('week')" id="btn-range-week" class="flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all">Week</button>
-                    <button onclick="app.setRange('month')" id="btn-range-month" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted transition-all">Month</button>
-                    <button onclick="app.setRange('year')" id="btn-range-year" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted transition-all">Year</button>
-                </div>
-            </header>
-
-            <div class="px-6 space-y-4 pb-10">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                        <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Total Focus</div>
-                        <div class="text-2xl font-bold text-brand" id="ana-time-total">0h</div>
-                    </div>
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                        <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Completion</div>
-                        <div class="text-2xl font-bold text-green-500" id="ana-completion-rate">0%</div>
-                    </div>
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                        <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Tasks Done</div>
-                        <div class="text-xl font-bold text-blue-500" id="ana-task-total">0</div>
-                    </div>
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                        <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Streak</div>
-                        <div class="text-xl font-bold text-purple-500" id="ana-streak-days">0 Days</div>
-                    </div>
+                    <button onclick="app.setRange('month')" id="btn-range-month" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Month</button>
+                    <button onclick="app.setRange('year')" id="btn-range-year" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Year</button>
                 </div>
 
-                <div class="bg-dark-card border border-dark-border rounded-xl p-5">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Total Focus</div>
+                        <div class="text-xl font-bold text-brand mt-1" id="ana-time-total">0h</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Focus (Week)</div>
+                        <div class="text-xl font-bold text-brand mt-1" id="ana-time-week">0m</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Focus (Today)</div>
+                        <div class="text-xl font-bold text-brand mt-1" id="ana-time-today">0m</div>
+                    </div>
+                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Avg Session</div>
+                        <div class="text-xl font-bold text-white mt-1" id="ana-avg-session">0m</div>
+                    </div>
+
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks Done</div>
+                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-total">0</div>
+                    </div>
+                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks (Week)</div>
+                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-week">0</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks (Today)</div>
+                        <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-today">0</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Completion %</div>
+                        <div class="text-xl font-bold text-green-500 mt-1" id="ana-completion-rate">0%</div>
+                    </div>
+
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Morning Focus</div>
+                        <div class="text-xl font-bold text-yellow-500 mt-1" id="ana-early-bird">0h</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Night Focus</div>
+                        <div class="text-xl font-bold text-indigo-400 mt-1" id="ana-night-owl">0h</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Best Streak</div>
+                        <div class="text-xl font-bold text-purple-500 mt-1" id="ana-streak-days">0 Days</div>
+                    </div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                        <div class="text-[10px] uppercase text-text-muted font-bold">Active Projects</div>
+                        <div class="text-xl font-bold text-white mt-1" id="ana-project-count">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card rounded-xl border border-dark-border p-4 shadow-sm overflow-hidden">
+                    <h3 class="text-sm font-bold mb-3 text-white">Pomodoro Records</h3>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <div class="min-w-[500px]">
+                             <div id="pomo-timeline-grid" class="space-y-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold text-white">Focus Trend</h3>
-                         <div class="flex bg-dark-bg rounded-md p-0.5 border border-dark-border">
+                        <h3 class="text-sm font-bold">Focus Trend</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
                             <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
                             <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
                         </div>
                     </div>
-                    <div class="h-[200px] w-full"><canvas id="focusBarChart"></canvas></div>
+                    <div class="h-48 relative w-full"><canvas id="focusBarChart"></canvas></div>
                 </div>
 
-                 <div class="bg-dark-card border border-dark-border rounded-xl p-5">
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold text-white">Hourly Activity</h3>
+                        <h3 class="text-sm font-bold">Task Completion</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
+                            <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                        </div>
                     </div>
-                    <div class="h-[200px] w-full"><canvas id="hourlyChart"></canvas></div>
+                    <div class="h-48 relative w-full"><canvas id="taskBarChart"></canvas></div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                         <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">This Week</div>
-                         <div class="text-lg font-bold text-white" id="ana-time-week">0m</div>
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold">Hourly Productivity</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
+                            <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('hourly', 'bar')" id="btn-hourly-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                        </div>
                     </div>
-                     <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                         <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Today</div>
-                         <div class="text-lg font-bold text-white" id="ana-time-today">0m</div>
-                    </div>
-                     <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                         <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Week Tasks</div>
-                         <div class="text-lg font-bold text-white" id="ana-task-week">0</div>
-                    </div>
-                     <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-                         <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Today Tasks</div>
-                         <div class="text-lg font-bold text-white" id="ana-task-today">0</div>
-                    </div>
+                    <div class="h-48 relative w-full"><canvas id="hourlyChart"></canvas></div>
                 </div>
                 
-                <div class="bg-brand/5 border border-brand/20 rounded-xl p-4 flex gap-3">
-                    <i class="ph-fill ph-lightbulb text-brand text-xl shrink-0"></i>
-                    <div>
-                        <h4 class="text-sm font-bold text-white mb-1">Smart Insight</h4>
-                        <p id="insight-text" class="text-xs text-text-muted leading-relaxed">Not enough data yet.</p>
+                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold">Weekly Performance</h3>
+                        <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
+                            <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('weekday', 'bar')" id="btn-weekday-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                        </div>
+                    </div>
+                    <div class="h-48 relative w-full"><canvas id="weekdayChart"></canvas></div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Project Distribution</h3>
+                    <div class="flex items-center gap-4">
+                            <div class="h-32 w-32 relative shrink-0"><canvas id="projectChart"></canvas></div>
+                            <div id="project-legend" class="flex-1 space-y-2 text-xs overflow-y-auto max-h-32 pr-2 custom-scrollbar"></div>
                     </div>
                 </div>
 
-                 <div class="bg-dark-card border border-dark-border rounded-xl p-5">
-                    <h3 class="text-sm font-bold text-white mb-4">Project Distribution</h3>
-                    <div class="h-[180px] w-full mb-4 flex justify-center"><canvas id="projectChart"></canvas></div>
-                    <div id="project-legend" class="space-y-2 text-xs"></div>
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Task Priorities</h3>
+                     <div class="flex items-center gap-4">
+                        <div class="h-32 w-32 relative shrink-0"><canvas id="priorityChart"></canvas></div>
+                        <div class="flex-1 flex flex-col justify-center text-xs space-y-2">
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-text-muted">High Priority</span></div>
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-yellow-500"></div><span class="text-text-muted">Medium Priority</span></div>
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span class="text-text-muted">Low Priority</span></div>
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-[#525252]"></div><span class="text-text-muted">None</span></div>
+                        </div>
+                     </div>
                 </div>
 
-                 <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
-                     <div class="p-4 border-b border-dark-border bg-dark-active/30"><h3 class="text-sm font-bold text-white">Recent Sessions</h3></div>
-                     <div id="mobile-logs" class="divide-y divide-dark-border"></div>
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Top Tags</h3>
+                    <div id="tag-rank-list" class="space-y-3">
+                        <p class="text-xs text-text-muted italic">No tag data available.</p>
+                    </div>
                 </div>
 
+                <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
+                    <div class="px-4 py-3 border-b border-dark-border text-xs font-bold uppercase text-text-muted bg-dark-card">Recent Sessions Log</div>
+                    <div id="mobile-logs" class="divide-y divide-dark-border"></div>
+                </div>
             </div>
-        </div>
 
-        <div id="view-settings" class="view-section hidden absolute inset-0 flex flex-col bg-dark-bg">
-             <header class="safe-pt px-6 py-6 border-b border-dark-border z-10">
-                <h1 class="text-2xl font-bold text-white">Settings</h1>
-            </header>
-            <div class="flex-1 overflow-y-auto p-6 space-y-8 pb-24">
+            <div id="view-settings" class="view-section hidden space-y-6 pt-4">
                 
-                <div class="flex items-center gap-4">
-                    <div id="settings-avatar" class="w-16 h-16 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg overflow-hidden relative">
-                         U <img id="settings-avatar-img" class="absolute inset-0 w-full h-full object-cover hidden">
-                    </div>
-                    <div>
-                        <h2 id="settings-name" class="text-lg font-bold text-white">User</h2>
-                        <p id="settings-email" class="text-sm text-text-muted">email@example.com</p>
+                <div class="p-4 bg-dark-card rounded-xl border border-dark-border flex items-center gap-4 shadow-sm">
+                     <div class="relative">
+                        <div id="settings-avatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center font-bold text-white text-lg shadow-lg">U</div>
+                        <img id="settings-avatar-img" src="" alt="Profile" class="absolute inset-0 w-12 h-12 rounded-full object-cover hidden border border-white/10">
+                     </div>
+                     <div class="overflow-hidden">
+                         <div id="settings-name" class="font-bold text-white text-lg truncate">User Account</div>
+                         <div id="settings-email" class="text-xs text-text-muted truncate">Loading...</div>
+                     </div>
+                </div>
+                <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
+                    <div class="px-4 py-3 bg-dark-active/30 border-b border-dark-border text-xs font-bold uppercase text-text-muted">Timer Configuration</div>
+                    <div class="p-4 space-y-6">
+                        <div>
+                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Focus Duration</span><span class="font-bold text-white" id="set-focus-display">25m</span></div>
+                            <input type="range" min="5" max="60" step="5" value="25" class="w-full" oninput="app.updateSetting('focus', this.value)">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Short Break</span><span class="font-bold text-white" id="set-short-display">5m</span></div>
+                            <input type="range" min="1" max="15" step="1" value="5" class="w-full" oninput="app.updateSetting('short', this.value)">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Long Break</span><span class="font-bold text-white" id="set-long-display">15m</span></div>
+                            <input type="range" min="5" max="45" step="5" value="15" class="w-full" oninput="app.updateSetting('long', this.value)">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Long Break After</span><span class="font-bold text-white" id="set-long-interval-display">4x</span></div>
+                            <input type="range" id="inp-long-interval" min="2" max="10" step="1" value="4" class="w-full" oninput="app.updateSetting('longBreakInterval', this.value)">
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Timer Configuration</h3>
-                    <div class="bg-dark-card border border-dark-border rounded-xl divide-y divide-dark-border">
-                        
-                        <div class="p-4">
-                            <div class="flex justify-between mb-2">
-                                <span class="text-sm text-white font-medium">Focus Duration</span>
-                                <span class="text-sm text-brand font-bold" id="set-focus-display">25m</span>
-                            </div>
-                            <input type="range" min="5" max="60" step="5" value="25" class="w-full" oninput="app.updateSetting('focus', this.value); document.getElementById('set-focus-display').innerText = this.value+'m'">
-                        </div>
-
-                        <div class="p-4">
-                            <div class="flex justify-between mb-2">
-                                <span class="text-sm text-white font-medium">Short Break</span>
-                                <span class="text-sm text-blue-400 font-bold" id="set-short-display">5m</span>
-                            </div>
-                            <input type="range" min="1" max="15" step="1" value="5" class="w-full" oninput="app.updateSetting('short', this.value); document.getElementById('set-short-display').innerText = this.value+'m'">
-                        </div>
-
-                         <div class="p-4">
-                            <div class="flex justify-between mb-2">
-                                <span class="text-sm text-white font-medium">Long Break</span>
-                                <span class="text-sm text-blue-400 font-bold" id="set-long-display">15m</span>
-                            </div>
-                            <input type="range" min="10" max="45" step="5" value="15" class="w-full" oninput="app.updateSetting('long', this.value); document.getElementById('set-long-display').innerText = this.value+'m'">
-                        </div>
-
+                <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
+                    <div class="divide-y divide-dark-border">
                         <div class="p-4 flex items-center justify-between">
-                            <div>
-                                <span class="text-sm text-white font-medium block">Long Break Interval</span>
-                                <span class="text-xs text-text-muted">Sessions before long break</span>
+                            <div><div class="text-sm font-bold text-white">Auto-Start Focus</div><div class="text-[10px] text-text-muted">Start focus automatically after break</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" id="toggle-auto-pomo" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartPomo', this.checked)"/>
+                                <label for="toggle-auto-pomo" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm text-white font-bold" id="set-long-interval-display">4x</span>
-                                <input id="inp-long-interval" type="range" min="2" max="10" step="1" value="4" class="w-24" oninput="app.updateSetting('longBreakInterval', this.value); document.getElementById('set-long-interval-display').innerText = this.value+'x'">
+                        </div>
+                        <div class="p-4 flex items-center justify-between">
+                            <div><div class="text-sm font-bold text-white">Auto-Start Break</div><div class="text-[10px] text-text-muted">Start break automatically after focus</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" id="toggle-auto-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartBreak', this.checked)"/>
+                                <label for="toggle-auto-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
+                            </div>
+                        </div>
+                        <div class="p-4 flex items-center justify-between">
+                            <div><div class="text-sm font-bold text-white">Disable Break</div><div class="text-[10px] text-text-muted">Skip breaks entirely</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" id="toggle-disable-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('disableBreak', this.checked)"/>
+                                <label for="toggle-disable-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
+                            </div>
+                        </div>
+                        <div class="p-4 flex items-center justify-between">
+                            <div><div class="text-sm font-bold text-white">Strict Mode</div><div class="text-[10px] text-text-muted">Prevents pausing the timer</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" id="toggle-strict" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('strictMode', this.checked)"/>
+                                <label for="toggle-strict" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="app.signOut()" class="w-full flex items-center justify-center p-4 bg-dark-card rounded-xl text-red-500 font-medium border border-dark-border active:bg-red-500/10 transition-colors shadow-sm">
+                    <i class="ph-bold ph-sign-out text-xl mr-3"></i> Sign Out
+                </button>
+
+                <div class="mt-6 mb-safe-b">
+                    <div class="bg-dark-card rounded-2xl border border-dark-border overflow-hidden shadow-sm mx-0">
+                        <div class="relative pt-8 pb-6 flex flex-col items-center justify-center bg-gradient-to-b from-brand/10 via-dark-card to-dark-card border-b border-dark-border/50">
+                            <div class="w-20 h-20 rounded-2xl bg-dark-bg border border-dark-border shadow-2xl flex items-center justify-center mb-4 relative overflow-hidden">
+                                <div class="absolute inset-0 bg-brand/20 blur-xl"></div>
+                                <i class="ph-fill ph-mountains text-brand text-4xl relative z-10"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-white tracking-tight">TimeTrekker</h2>
+                            <div class="flex items-center gap-2 mt-2">
+                                 <span class="text-xs text-text-muted font-medium">From StackBase</span>
                             </div>
                         </div>
 
+                        <div class="grid grid-cols-2 divide-x divide-dark-border border-b border-dark-border bg-dark-card">
+                            <div class="p-4 flex flex-col items-center justify-center text-center hover:bg-dark-active/30 transition-colors">
+                                <span class="text-[10px] text-text-muted uppercase font-bold mb-1">Version</span>
+                                <span class="text-lg font-bold text-white">1.0.0</span>
+                            </div>
+                             <div class="p-4 flex flex-col items-center justify-center text-center hover:bg-dark-active/30 transition-colors">
+                                <span class="text-[10px] text-text-muted uppercase font-bold mb-1">Build</span>
+                                <span class="text-lg font-bold text-white font-mono">Stable</span>
+                            </div>
+                        </div>
+
+                        <div class="divide-y divide-dark-border bg-dark-card">
+                            <button onclick="app.refreshApp()" class="w-full p-4 flex items-center justify-between hover:bg-dark-active transition-colors active:bg-dark-active/80">
+                                 <div class="flex flex-col items-start">
+                                    <span class="text-sm font-medium text-white">Refresh</span>
+                                    <span class="text-[10px] text-text-muted">Refresh application for changes</span>
+                                 </div>
+                                 <div class="flex items-center gap-2">
+                                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                     <i class="ph-bold ph-caret-right text-text-muted text-sm"></i>
+                                 </div>
+                            </button>
+                             <button onclick="app.showToast('No changelogs available')" class="w-full p-4 flex items-center justify-between hover:bg-dark-active transition-colors active:bg-dark-active/80">
+                                 <span class="text-sm font-medium text-white">What's New</span>
+                                 <i class="ph-bold ph-caret-right text-text-muted text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-6 pb-8">
+                        <p class="text-[10px] text-text-muted tracking-[0.2em] opacity-80">Powered by StackBase</p>
                     </div>
                 </div>
 
-                <div class="bg-dark-card border border-dark-border rounded-xl divide-y divide-dark-border">
-                    <div class="p-4 flex items-center justify-between">
-                         <span class="text-sm text-white font-medium">Auto-start Pomodoro</span>
-                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="toggle-auto-pomo" class="sr-only peer" onchange="app.updateSetting('autoStartPomo', this.checked)">
-                            <div class="w-11 h-6 bg-dark-active peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-                        </label>
-                    </div>
-                    <div class="p-4 flex items-center justify-between">
-                         <span class="text-sm text-white font-medium">Auto-start Break</span>
-                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="toggle-auto-break" class="sr-only peer" onchange="app.updateSetting('autoStartBreak', this.checked)">
-                            <div class="w-11 h-6 bg-dark-active peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-                        </label>
-                    </div>
-                     <div class="p-4 flex items-center justify-between">
-                         <span class="text-sm text-white font-medium">Strict Mode</span>
-                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="toggle-strict" class="sr-only peer" onchange="app.updateSetting('strictMode', this.checked)">
-                            <div class="w-11 h-6 bg-dark-active peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-                        </label>
-                    </div>
-                </div>
-
-                <button onclick="app.signOut()" class="w-full py-4 rounded-xl border border-red-500/20 text-red-500 font-bold bg-red-500/5 hover:bg-red-500/10 transition-colors">Sign Out</button>
-
-                <div class="text-center text-xs text-text-faint pb-8">
-                    <p>TimeTrekker Mobile v1.0.0</p>
-                    <p>&copy; 2025 StackBase</p>
-                </div>
             </div>
+
         </div>
+
+        <button onclick="app.openTaskModal()" id="fab-add" aria-label="Add New Task" class="fixed right-5 bottom-24 z-30 w-14 h-14 bg-brand text-white rounded-full shadow-2xl shadow-brand/40 flex items-center justify-center active:scale-90 transition-transform">
+            <i class="ph-bold ph-plus text-2xl"></i>
+        </button>
 
     </main>
 
-    <nav class="glass-nav h-[80px] safe-pb flex justify-around items-center px-2 z-50 shrink-0">
-        <button onclick="app.switchTab('tasks')" id="tab-tasks" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors">
-            <i class="ph-fill ph-check-square text-2xl mb-1"></i>
-            <span class="text-[10px] font-medium">Tasks</span>
-        </button>
-        <button onclick="app.switchTab('timer')" id="tab-timer" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors">
-            <i class="ph-bold ph-timer text-2xl mb-1"></i>
-            <span class="text-[10px] font-medium">Timer</span>
-        </button>
-        <button onclick="app.switchTab('analytics')" id="tab-analytics" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors">
-            <i class="ph-bold ph-chart-bar text-2xl mb-1"></i>
-            <span class="text-[10px] font-medium">Stats</span>
-        </button>
-        <button onclick="app.switchTab('settings')" id="tab-settings" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors">
-            <i class="ph-bold ph-gear text-2xl mb-1"></i>
-            <span class="text-[10px] font-medium">Settings</span>
-        </button>
-    </nav>
-
-    <div id="modal-overlay" onclick="app.closeAllSheets()" class="fixed inset-0 bg-black/80 z-[60] hidden opacity-0 transition-opacity backdrop-blur-sm"></div>
-
-    <div id="project-sheet" class="fixed inset-x-0 bottom-0 z-[70] bg-dark-card rounded-t-2xl transform translate-y-full transition-transform duration-300 max-h-[80vh] flex flex-col border-t border-dark-border">
-        <span class="sheet-handle"></span>
-        <div class="px-5 pb-4 border-b border-dark-border flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">Select Project</h3>
-            <button onclick="app.promptNewProject()" class="text-brand font-bold text-sm"><i class="ph-bold ph-plus mr-1"></i>New</button>
-        </div>
-        <div class="overflow-y-auto flex-1 p-0" id="project-sheet-list"></div>
-        <div class="safe-pb bg-dark-card"></div>
-    </div>
-
-    <div id="modal-sheet" class="fixed inset-x-0 bottom-0 z-[80] bg-dark-card rounded-t-2xl transform translate-y-full transition-transform duration-300 h-[92vh] flex flex-col border-t border-dark-border shadow-2xl">
-        
-        <div class="px-5 py-4 border-b border-dark-border flex justify-between items-center bg-dark-card z-10 rounded-t-2xl">
-            <button onclick="app.closeTaskModal()" class="text-text-muted hover:text-white">Cancel</button>
-            <h3 id="sheet-title" class="text-base font-bold text-white">New Task</h3>
-            <button onclick="app.saveTask()" id="btn-save-task" class="text-brand font-bold">Save</button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-5 space-y-6">
-            
-            <div>
-                <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-xl font-medium text-white placeholder-text-muted border-none outline-none mb-3" autocomplete="off">
-                <textarea id="inp-note" rows="2" placeholder="Add notes..." class="w-full bg-transparent text-sm text-text-muted border-none outline-none resize-none"></textarea>
-            </div>
-
-            <div>
-                 <label class="text-xs font-bold text-text-muted uppercase mb-2 block">Due Date</label>
-                 <div class="flex gap-2 mb-2">
-                     <button id="btn-date-today" onclick="app.setQuickDate('today')" class="flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all">Today</button>
-                     <button id="btn-date-tomorrow" onclick="app.setQuickDate('tomorrow')" class="flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95">Tomorrow</button>
-                     <div class="relative flex-1">
-                         <input type="date" id="inp-date" onchange="app.highlightDateButton(this.value)" class="absolute inset-0 opacity-0 z-10 w-full h-full">
-                         <button id="btn-date-pick" class="w-full h-full rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted flex items-center justify-center transition-all active:scale-95">
-                             <i class="ph-bold ph-calendar mr-1"></i> <span id="lbl-date-pick">Pick</span>
-                         </button>
-                     </div>
-                 </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                 <div class="bg-dark-active/50 p-3 rounded-xl border border-dark-border">
-                    <label class="text-[10px] font-bold text-text-muted uppercase mb-2 block">Est. Pomodoros</label>
-                    <div class="flex items-center justify-between">
-                        <button onclick="app.adjustEst(-1)" class="w-8 h-8 rounded-full bg-dark-card border border-dark-border text-text-muted active:text-white"><i class="ph-bold ph-minus"></i></button>
-                        <span id="disp-est" class="text-xl font-bold text-white">1</span>
-                        <button onclick="app.adjustEst(1)" class="w-8 h-8 rounded-full bg-dark-card border border-dark-border text-text-muted active:text-white"><i class="ph-bold ph-plus"></i></button>
-                    </div>
-                </div>
-                 <div class="bg-dark-active/50 p-3 rounded-xl border border-dark-border">
-                    <label class="text-[10px] font-bold text-text-muted uppercase mb-2 block">Duration</label>
-                    <select id="inp-duration" onchange="app.updateDurationDisplay(this.value)" class="w-full bg-dark-card text-white text-sm border border-dark-border rounded-lg p-1.5 outline-none">
-                        <option value="15">15 min</option>
-                        <option value="25" selected>25 min</option>
-                        <option value="30">30 min</option>
-                        <option value="45">45 min</option>
-                        <option value="60">60 min</option>
-                    </select>
-                    <div class="text-right text-[10px] text-text-muted mt-1" id="disp-duration">25m</div>
-                </div>
-            </div>
-            <div class="text-center text-xs text-brand font-bold bg-brand/5 py-1.5 rounded border border-brand/10" id="total-calc-display">25m Total</div>
-
-            <div>
-                <label class="text-xs font-bold text-text-muted uppercase mb-2 block">Priority</label>
-                <div class="grid grid-cols-4 gap-2">
-                    <button id="btn-pri-none" onclick="app.setPriority('none')" class="h-9 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted">None</button>
-                    <button id="btn-pri-low" onclick="app.setPriority('low')" class="h-9 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-blue-500">Low</button>
-                    <button id="btn-pri-med" onclick="app.setPriority('med')" class="h-9 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-yellow-500">Med</button>
-                    <button id="btn-pri-high" onclick="app.setPriority('high')" class="h-9 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-red-500">High</button>
-                </div>
-                <input type="hidden" id="inp-priority" value="none">
-            </div>
-
-            <div class="space-y-4">
-                 <div>
-                    <label class="text-xs font-bold text-text-muted uppercase mb-2 block">Project</label>
-                    <div class="relative">
-                        <select id="inp-project" class="w-full h-10 bg-dark-bg border border-dark-border text-white text-sm rounded-lg px-3 outline-none appearance-none"></select>
-                        <i class="ph-bold ph-caret-down absolute right-3 top-3 text-text-muted pointer-events-none"></i>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-text-muted uppercase mb-2 block">Tags</label>
-                    <input type="text" id="inp-tags" placeholder="e.g. Work, Design (comma separated)" class="w-full h-10 bg-dark-bg border border-dark-border text-white text-sm rounded-lg px-3 outline-none">
-                </div>
-            </div>
-
-            <div class="bg-dark-active/30 border border-dark-border rounded-xl p-4 space-y-4">
-                 <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-xs font-bold text-text-muted uppercase">Subtasks</label>
-                        <button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold"><i class="ph-bold ph-plus"></i> Add</button>
-                    </div>
-                    <div id="subtask-list" class="space-y-2"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-dark-border/50">
-                    <div>
-                        <label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Repeat</label>
-                        <select id="inp-repeat" class="w-full bg-dark-bg text-white text-xs border border-dark-border rounded px-2 py-1.5 outline-none">
-                            <option value="none">None</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="weekdays">Weekdays</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-text-muted uppercase mb-1 block">Reminder</label>
-                        <input type="time" id="inp-reminder" class="w-full bg-dark-bg text-white text-xs border border-dark-border rounded px-2 py-1.5 outline-none">
-                    </div>
-                </div>
-            </div>
-
-            <div class="safe-pb h-10"></div>
-        </div>
-    </div>
-
-    <div id="detail-sheet" class="fixed inset-x-0 bottom-0 z-[90] bg-dark-card rounded-t-2xl transform translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col border-t border-dark-border shadow-2xl">
-        <span class="sheet-handle"></span>
-        <div class="flex-1 overflow-y-auto px-6 pb-6 pt-2">
-            
-            <div class="flex justify-between items-start mb-1">
-                <span id="dt-project" class="text-xs font-bold text-brand bg-brand/10 px-2 py-1 rounded border border-brand/20">Project</span>
-                <span id="dt-priority" class="hidden text-[10px] font-bold uppercase">Priority</span>
-            </div>
-
-            <h2 id="dt-title" class="text-2xl font-bold text-white mt-3 mb-2 leading-tight">Task Title</h2>
-            <p id="dt-note" class="text-text-muted text-sm leading-relaxed mb-6 hidden">Description...</p>
-
-            <div class="grid grid-cols-3 gap-3 mb-6">
-                <div class="bg-dark-active p-3 rounded-lg text-center border border-dark-border">
-                    <div class="text-[10px] text-text-muted uppercase font-bold">Done</div>
-                    <div id="dt-pomo-done" class="text-xl font-bold text-white mt-1">0</div>
-                    <div class="text-[10px] text-text-faint mt-1" id="dt-time-spent">0m</div>
-                </div>
-                <div class="bg-dark-active p-3 rounded-lg text-center border border-dark-border relative overflow-hidden">
-                    <div class="absolute inset-0 bg-brand/5"></div>
-                    <div class="text-[10px] text-brand uppercase font-bold relative z-10">Left</div>
-                    <div id="dt-pomo-left" class="text-xl font-bold text-brand mt-1 relative z-10">4</div>
-                    <div class="text-[10px] text-brand/70 mt-1 relative z-10" id="dt-time-left">100m</div>
-                </div>
-                <div class="bg-dark-active p-3 rounded-lg text-center border border-dark-border">
-                    <div class="text-[10px] text-text-muted uppercase font-bold">Total</div>
-                    <div id="dt-pomo-total" class="text-xl font-bold text-white mt-1">4</div>
-                    <div class="text-[10px] text-text-faint mt-1" id="dt-time-total">100m</div>
-                </div>
-            </div>
-
-            <div class="space-y-4">
-                <div id="dt-subtasks-container" class="hidden">
-                    <h4 class="text-xs font-bold text-text-muted uppercase mb-2">Subtasks</h4>
-                    <div id="dt-subtasks-list" class="space-y-2 bg-dark-active/30 p-3 rounded-xl border border-dark-border"></div>
-                </div>
-
-                <div class="flex items-center gap-2 text-xs text-text-muted">
-                    <i class="ph-bold ph-calendar"></i> <span id="dt-date">Date</span>
-                </div>
-
-                <div id="dt-tags-container" class="flex flex-wrap gap-2 hidden"></div>
-            </div>
-
-        </div>
-
-        <div class="p-4 border-t border-dark-border bg-dark-card safe-pb grid grid-cols-4 gap-3">
-             <button onclick="app.startFocusFromDetail()" class="col-span-2 bg-brand text-white rounded-xl py-3 font-bold shadow-lg shadow-brand/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
-                <i class="ph-fill ph-play"></i> Focus Now
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-bg/95 backdrop-blur border-t border-dark-border pb-safe-b z-40">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="app.switchTab('tasks')" id="tab-tasks" aria-label="Tasks Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-transform">
+                <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Tasks</span>
             </button>
-            <button onclick="app.editCurrentTask()" class="col-span-1 bg-dark-active text-white rounded-xl py-3 font-bold border border-dark-border active:scale-95 transition-transform">Edit</button>
-            <button onclick="app.deleteCurrentTask()" class="col-span-1 bg-dark-active text-red-500 rounded-xl py-3 font-bold border border-dark-border active:scale-95 transition-transform"><i class="ph-bold ph-trash text-lg"></i></button>
+            <button onclick="app.switchTab('timer')" id="tab-timer" aria-label="Timer Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
+                <i class="ph-bold ph-timer text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Focus</span>
+            </button>
+            <button onclick="app.switchTab('analytics')" id="tab-analytics" aria-label="Analytics Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
+                <i class="ph-bold ph-chart-bar text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Analytics</span>
+            </button>
+            <button onclick="app.switchTab('settings')" id="tab-settings" aria-label="Settings Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
+                <i class="ph-bold ph-gear text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Settings</span>
+            </button>
+        </div>
+    </nav>
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden opacity-0 transition-opacity backdrop-blur-sm" onclick="app.closeAllSheets()"></div>
+
+    <div id="project-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[80vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
+        <span class="sheet-handle flex-shrink-0" onclick="app.closeProjectSheet()"></span>
+        <div class="px-5 pb-4 border-b border-dark-border flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-bold text-white">Select Folder</h2>
+                <p class="text-xs text-text-muted">Browse or manage projects</p>
+            </div>
+             <button onclick="app.promptNewProject()" class="text-brand hover:text-white px-2 py-1 text-sm font-bold">New</button>
+        </div>
+        <div id="project-sheet-list" class="flex-1 overflow-y-auto">
+            </div>
+    </div>
+
+    <div id="detail-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
+        <span class="sheet-handle flex-shrink-0" onclick="app.closeDetailSheet()"></span>
+        <div class="px-5 pb-5 flex-1 overflow-y-auto">
+            
+            <div class="flex justify-end items-center mb-2 gap-4">
+                <button onclick="app.editCurrentTask()" class="text-text-muted hover:text-white p-2 active:scale-90 transition-transform"><i class="ph-bold ph-pencil-simple text-xl"></i></button>
+                <button onclick="app.deleteCurrentTask()" class="text-text-muted hover:text-red-500 p-2 active:scale-90 transition-transform"><i class="ph-bold ph-trash text-xl"></i></button>
+                <button onclick="app.closeDetailSheet()" class="text-text-muted hover:text-white p-2 active:scale-90 transition-transform"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="dt-project" class="bg-brand/10 text-brand px-2 py-0.5 rounded text-[10px] font-bold border border-brand/20 uppercase tracking-wide">Project</span>
+                    <span id="dt-priority" class="hidden bg-dark-active text-text-muted px-2 py-0.5 rounded text-[10px] font-bold border border-dark-border uppercase tracking-wide">Priority</span>
+                </div>
+                
+                <h2 id="dt-title" class="text-2xl font-bold text-white leading-tight">Task Title</h2>
+                
+                <p id="dt-note" class="text-sm text-text-muted leading-relaxed hidden">No notes added.</p>
+                
+                <div class="grid grid-cols-2 gap-3 py-2">
+                    <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Pomos (Done/Est)</div>
+                         <div class="text-sm font-medium text-white">
+                            <span class="text-brand" id="dt-pomo-done">0</span> / <span id="dt-pomo-total">1</span>
+                         </div>
+                    </div>
+                    <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Pomos Left</div>
+                         <div class="text-sm font-medium text-white" id="dt-pomo-left">1</div>
+                    </div>
+
+                    <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Time Spent</div>
+                         <div class="text-sm font-medium text-white" id="dt-time-spent">0m</div>
+                    </div>
+                    <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Time Left</div>
+                         <div class="text-sm font-medium text-white" id="dt-time-left">25m</div>
+                    </div>
+
+                    <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Total Time</div>
+                         <div class="text-sm font-medium text-white" id="dt-time-total">25m</div>
+                    </div>
+                    <div class="bg-dark-active rounded p-3 border border-dark-border">
+                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Due Date</div>
+                         <div class="text-sm font-medium text-white" id="dt-date">None</div>
+                    </div>
+                </div>
+
+                <div id="dt-subtasks-container" class="hidden">
+                    <h3 class="text-xs font-bold text-text-muted uppercase mb-2">Subtasks</h3>
+                    <div id="dt-subtasks-list" class="space-y-2"></div>
+                </div>
+                
+                <div id="dt-tags-container" class="hidden flex flex-wrap gap-2 pt-2"></div>
+            </div>
+
+            <button onclick="app.startFocusFromDetail()" class="w-full mt-8 py-3.5 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm flex items-center justify-center">
+                <i class="ph-fill ph-play-circle text-xl mr-2"></i> Start Focus Session
+            </button>
         </div>
     </div>
+
+    <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-bg rounded-t-3xl z-50 transform translate-y-full transition-transform duration-300 max-h-[92vh] flex flex-col border-t border-dark-border shadow-2xl pb-safe-b">
+        <div class="w-full flex justify-center pt-3 pb-1" onclick="app.closeTaskModal()">
+             <span class="w-12 h-1.5 bg-dark-border rounded-full opacity-50"></span>
+        </div>
+
+        <div class="px-5 pb-4 flex-1 overflow-y-auto custom-scrollbar">
+            
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-white" id="sheet-title">New Task</h3>
+                <button onclick="app.closeTaskModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-dark-active text-text-muted hover:text-white transition-colors active:scale-90">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <div class="mb-5">
+                <input type="text" id="inp-title" placeholder="What needs to be done?" class="w-full bg-transparent text-2xl font-bold text-white placeholder-text-muted/40 border-b border-dark-border/50 outline-none pb-2 leading-tight rounded-none" autocomplete="off">
+            </div>
+
+            <div class="mb-6">
+                 <textarea id="inp-note" placeholder="Add a description or note..." class="w-full h-24 bg-dark-active/30 text-sm text-white placeholder-text-muted/60 resize-none border border-dark-border/50 rounded-xl p-4 outline-none focus:border-brand/50 transition-colors"></textarea>
+            </div>
+            
+            <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-calendar mr-1"></i>Schedule</span>
+                </div>
+                
+                <div class="flex gap-2 mb-3">
+                    <button type="button" onclick="app.setQuickDate('today')" id="btn-date-today" class="flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95">Today</button>
+                    <button type="button" onclick="app.setQuickDate('tomorrow')" id="btn-date-tomorrow" class="flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95">Tomorrow</button>
+                    <div class="relative flex-1">
+                        <input type="date" id="inp-date" class="absolute inset-0 opacity-0 z-10 w-full h-full">
+                        <button type="button" id="btn-date-pick" class="w-full h-full py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted flex items-center justify-center gap-1 active:scale-95">
+                            <i class="ph-bold ph-calendar-blank"></i> <span id="lbl-date-pick">Pick</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border flex items-center justify-between">
+                         <div class="flex items-center gap-2 overflow-hidden w-full">
+                             <i class="ph-bold ph-bell text-text-muted shrink-0"></i>
+                             <input type="time" id="inp-reminder" class="bg-transparent text-xs text-white outline-none w-full font-medium placeholder-text-muted">
+                         </div>
+                    </div>
+                    <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border relative flex flex-col justify-center">
+                        <div class="text-[9px] uppercase font-bold text-text-muted mb-0.5 ml-1">Repeat</div>
+                        <div class="flex items-center relative w-full">
+                            <select id="inp-repeat" class="bg-transparent text-xs text-white outline-none w-full appearance-none font-medium z-10 relative pl-1">
+                                <option value="none">None</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="weekdays">Mon-Fri</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                            <i class="ph-fill ph-caret-down text-text-muted absolute right-0 text-[10px]"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
+                 <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-tag mr-1"></i>Context</span>
+                </div>
+                
+                <div class="flex gap-3 mb-4">
+                     <div class="flex-1 relative">
+                        <div class="bg-dark-card border border-dark-border rounded-lg flex items-center relative h-10 w-full">
+                            <div class="pl-3 pr-2 text-text-muted"><i class="ph-fill ph-folder"></i></div>
+                            <select id="inp-project" class="bg-transparent text-xs font-medium text-white w-full h-full outline-none appearance-none pr-8">
+                                <option value="Inbox">Inbox</option>
+                            </select>
+                            <div class="absolute right-2 top-0 bottom-0 flex items-center pointer-events-none text-text-muted"><i class="ph-bold ph-caret-down text-xs"></i></div>
+                        </div>
+                     </div>
+                     <button onclick="app.promptNewProject()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-card border border-dark-border text-brand hover:bg-dark-active transition-colors active:scale-90"><i class="ph-bold ph-plus"></i></button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2">
+                    <button type="button" onclick="app.setPriority('none')" id="btn-pri-none" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-text-muted transition-all flex items-center justify-center gap-1 active:scale-95">None</button>
+                    <button type="button" onclick="app.setPriority('low')" id="btn-pri-low" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-blue-500 transition-all flex items-center justify-center gap-1 active:scale-95"><i class="ph-fill ph-flag"></i> Low</button>
+                    <button type="button" onclick="app.setPriority('med')" id="btn-pri-med" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-yellow-500 transition-all flex items-center justify-center gap-1 active:scale-95"><i class="ph-fill ph-flag"></i> Med</button>
+                    <button type="button" onclick="app.setPriority('high')" id="btn-pri-high" class="h-9 rounded-lg border border-dark-border bg-dark-card text-xs font-medium text-red-500 transition-all flex items-center justify-center gap-1 active:scale-95"><i class="ph-fill ph-flag"></i> High</button>
+                    <input type="hidden" id="inp-priority" value="none">
+                </div>
+            </div>
+
+            <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
+                 <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-timer mr-1"></i>Effort</span>
+                    <span class="text-[10px] font-bold text-white" id="total-calc-display">25m Total</span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center bg-dark-card rounded-lg border border-dark-border p-1">
+                        <button type="button" onclick="app.adjustEst(-1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors active:scale-90"><i class="ph-bold ph-minus"></i></button>
+                        <div class="w-8 text-center font-bold text-white text-sm" id="disp-est">1</div>
+                        <button type="button" onclick="app.adjustEst(1)" class="w-8 h-8 flex items-center justify-center text-text-muted active:text-white rounded hover:bg-dark-active transition-colors active:scale-90"><i class="ph-bold ph-plus"></i></button>
+                        <input type="hidden" id="inp-est" value="1">
+                    </div>
+                    
+                    <div class="flex-1 bg-dark-card rounded-lg border border-dark-border px-3 py-2 flex flex-col justify-center">
+                        <div class="flex justify-between text-[10px] font-bold mb-1.5"><span class="text-text-muted">Per Pomo</span><span class="text-white" id="disp-duration">25m</span></div>
+                        <input type="range" id="inp-duration" min="5" max="60" step="5" value="25" class="w-full h-1 bg-dark-bg rounded-lg appearance-none cursor-pointer" oninput="app.updateDurationDisplay(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                             <div class="bg-brand/10 text-brand p-1 rounded-md"><i class="ph-bold ph-check-square"></i></div>
+                             <span class="text-xs font-bold text-white uppercase tracking-wide">Checklist & Subtasks</span>
+                        </div>
+                        <button onclick="app.addSubtaskInput()" class="text-xs text-brand font-bold flex items-center py-1 px-2 hover:bg-brand/10 rounded transition-colors"><i class="ph-bold ph-plus mr-1"></i> Add Item</button>
+                    </div>
+                    <div id="subtask-list" class="space-y-2 pl-1"></div>
+                </div>
+
+                <div class="relative pt-2">
+                    <i class="ph-bold ph-hash absolute left-3 top-1/2 -translate-y-1/2 text-text-muted mt-1"></i>
+                    <input type="text" id="inp-tags" placeholder="Tags (comma separated)..." class="w-full bg-dark-active/30 border border-dark-border rounded-xl pl-9 pr-3 py-3 text-sm text-white focus:border-brand/50 outline-none transition-colors" autocomplete="off">
+                </div>
+            </div>
+
+            <button onclick="app.saveTask()" id="btn-save-task" class="w-full py-4 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm mb-safe-b">Save Task</button>
+        </div>
+    </div>
+    
+    <audio id="audio-player" playsinline loop></audio>
 
 </body>
 </html>
