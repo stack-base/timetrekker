@@ -231,6 +231,12 @@ const app = {
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null; }, 200);
     },
 
+    refreshApp: () => {
+        haptic('medium');
+        app.showToast('Refreshing application...');
+        setTimeout(() => window.location.reload(), 500);
+    },
+
     switchTab: (tab, pushHistory = true) => {
         haptic('light');
         if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) {
@@ -654,7 +660,20 @@ const app = {
              $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tag data available.</p>';
         }
 
-        $('mobile-logs').innerHTML = logs.slice(0, 10).map(l => { const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); return `<div class="px-4 py-3 flex justify-between items-center text-sm"><div><div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div><div class="flex items-center gap-2 text-[10px] text-text-muted"><span>${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span></div></div><span class="text-brand font-mono">${Math.round(l.duration||25)}m</span></div>` }).join('');
+        $('mobile-logs').innerHTML = logs.slice(0, 20).map(l => { 
+            const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); 
+            const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            return `<div class="px-4 py-3 flex justify-between items-center text-sm">
+                <div>
+                    <div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div>
+                    <div class="flex items-center gap-2 text-[10px] text-text-muted">
+                        <span>${dateStr}</span><span>•</span><span>${timeStr}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span>
+                    </div>
+                </div>
+                <span class="text-brand font-mono">${Math.round(l.duration||25)}m</span>
+            </div>` 
+        }).join('');
     },
     
     openTaskDetail: (t) => {
@@ -1134,9 +1153,6 @@ const app = {
     updateSetting: (k, v) => {
         const val = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
         state.timer.settings[k] = val;
-        
-        if(k === 'longBreakInterval') $('set-long-interval-display').innerText = val + 'x';
-        else if(!['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k)) $(`set-${k}-display`).innerText = val + 'm';
         
         updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: val }).catch(()=>{});
     },
