@@ -1,25 +1,29 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, orderBy, serverTimestamp, enableIndexedDbPersistence, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, serverTimestamp, enableIndexedDbPersistence, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-// --- CONFIGURATION ---
-const FIREBASE_CONFIG = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
+const FIREBASE_CONFIG = { 
+    apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", 
+    authDomain: "timetrekker-app.firebaseapp.com", 
+    projectId: "timetrekker-app", 
+    storageBucket: "timetrekker-app.firebasestorage.app", 
+    messagingSenderId: "83185163190", 
+    appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", 
+    measurementId: "G-FLZ02E1Y5L" 
+};
 const APP_ID = 'timetrekker-v1';
 
-// --- FIREBASE INIT ---
 const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Attempt persistence but catch errors (e.g. multiple tabs)
 try { 
     enableIndexedDbPersistence(db).catch((err) => { 
-        if (err.code === 'failed-precondition') console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.'); 
-        else if (err.code === 'unimplemented') console.warn('Browser does not support persistence'); 
+        if (err.code === 'failed-precondition') console.warn('Persistence failed: Multiple tabs open.'); 
+        else if (err.code === 'unimplemented') console.warn('Persistence not supported.'); 
     }); 
-} catch (e) { console.log('Persistence setup skipped'); }
+} catch (e) {}
 
-// --- DOM HELPERS ---
 const D = document;
 const $ = (id) => {
     const el = D.getElementById(id);
@@ -33,22 +37,20 @@ const esc = (str) => {
     return div.innerHTML; 
 };
 
-// --- HAPTIC FEEDBACK ENGINE ---
 const haptic = (type = 'light') => {
     if (!navigator.vibrate) return;
     try {
         const patterns = {
-            light: 10,       // Button taps, checkboxes
-            medium: 25,      // Timer toggle
-            heavy: 40,       // Deletions, warnings
-            success: [10, 30], // Task save
-            timerDone: [200, 100, 200] // Timer completion
+            light: 10,
+            medium: 25,
+            heavy: 40,
+            success: [10, 30],
+            timerDone: [200, 100, 200]
         };
         navigator.vibrate(patterns[type] || 10);
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
 };
 
-// --- STATE MANAGEMENT ---
 const state = {
     user: null, 
     tasks: [], 
@@ -60,7 +62,7 @@ const state = {
     editingTaskId: null,
     timer: {
         mode: 'focus', status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, activeTaskId: null, interval: null,
-        sessionId: null, // Track unique session ID
+        sessionId: null,
         pomoCountCurrentSession: 0, 
         settings: {
             focus: 25, short: 5, long: 15, strictMode: false,
@@ -82,7 +84,6 @@ const sounds = {
     forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' 
 };
 
-// --- CACHED ELEMENTS ---
 const getEls = () => ({
     taskList: $('task-list'), taskViewContainer: $('task-view-container'), analyticsViewContainer: $('analytics-view-container'), 
     pageTitle: $('page-title'), emptyState: $('empty-state'), modal: $('add-task-modal'), modalPanel: $('add-task-panel'), 
@@ -119,7 +120,6 @@ Chart.defaults.plugins.tooltip.bodyColor = '#a3a3a3';
 Chart.defaults.plugins.tooltip.borderColor = '#333';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
 
-// --- USER PROFILE SYNC ---
 async function syncUserProfile(u) {
     if (!u) return;
     try {
@@ -141,7 +141,6 @@ async function syncUserProfile(u) {
     } catch (e) { console.error("Error syncing user profile:", e); }
 }
 
-// --- AUTH LISTENER ---
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
@@ -165,7 +164,6 @@ onAuthStateChanged(auth, u => {
         
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Reminder Check
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -190,7 +188,6 @@ onAuthStateChanged(auth, u => {
     }
 });
 
-// --- SUBSCRIPTIONS ---
 const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', uid, 'tasks'), s => {
     const t = [], p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
     s.forEach(d => { const x = d.data(); t.push({ id: d.id, ...x }); if (x.project && x.project !== 'Inbox') p.add(x.project); });
@@ -216,7 +213,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             remaining: d.remaining || state.timer.settings[d.mode || 'focus'] * 60,
             totalDuration: d.totalDuration || state.timer.settings[d.mode || 'focus'] * 60,
             activeTaskId: d.taskId || null,
-            sessionId: d.sessionId || null, // Sync the unique session ID
+            sessionId: d.sessionId || null,
             pomoCountCurrentSession: d.sessionCount || 0
         };
         const els = getEls();
@@ -233,7 +230,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             startLocalInterval();
             updateTimerVisuals();
             if (state.sound !== 'none' && els.audio && els.audio.paused) {
-                els.audio.play().catch(e => { console.log('Audio play blocked', e); });
+                els.audio.play().catch(e => { console.warn('Audio play blocked', e); });
             }
         } else {
             stopLocalInterval();
@@ -250,11 +247,10 @@ const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'use
     s.forEach(d => l.push({ id: d.id, ...d.data() })); 
     l.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)); 
     state.logs = l;
-    updateCounts(); // Force update dashboard stats when logs change
+    updateCounts();
     if (state.view === 'analytics') updateAnalytics();
 });
 
-// --- TIMER LOGIC ---
 const startLocalInterval = () => {
     const els = getEls();
     if (state.timer.interval) clearInterval(state.timer.interval);
@@ -286,7 +282,6 @@ const updateTimerVisuals = () => {
     if(state.timer.status === 'running') D.title = `${m}:${sc.toString().padStart(2, '0')} - TimeTrekker`;
 };
 
-// --- APP CONTROLLER ---
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     showPrompt: (t, v = '') => new Promise(r => {
@@ -347,7 +342,6 @@ const app = {
         state.filterProject === p ? app.setView('today') : updateProjectsUI()
     },
     
-    // Task Helpers
     addSubtaskUI: (v = '') => {
         const els = getEls();
         const d = D.createElement('div'); d.className = 'flex items-center space-x-2 animate-fade-in'; 
@@ -390,7 +384,6 @@ const app = {
             app.updateTotalEst(); 
             els.modal.classList.remove('hidden'); 
             setTimeout(() => els.modal.classList.remove('opacity-0'), 10); 
-            // Handle bottom sheet (remove hide-translate, add show-translate) and desktop scale
             setTimeout(() => {
                 els.modalPanel.classList.remove('translate-y-full', 'md:scale-95');
                 els.modalPanel.classList.add('translate-y-0', 'md:scale-100');
@@ -399,7 +392,6 @@ const app = {
         } else {
             haptic('light');
             els.modal.classList.add('opacity-0'); 
-            // Revert transition
             els.modalPanel.classList.add('translate-y-full', 'md:scale-95');
             els.modalPanel.classList.remove('translate-y-0', 'md:scale-100');
             setTimeout(() => els.modal.classList.add('hidden'), 300)
@@ -410,7 +402,6 @@ const app = {
     adjustPomoDuration: d => { let c = parseInt($('task-pomo-display').innerText), v = c + d; if (v < 5) v = 5; if (v > 60) v = 60; $('task-pomo-display').innerText = v; app.updateTotalEst() },
     updateTotalEst: () => { const d = parseInt($('task-pomo-display').innerText), n = state.newEst, t = d * n, h = Math.floor(t / 60), m = t % 60; $('total-time-calc').innerText = h > 0 ? `${h}h ${m}m` : `${m}m` },
     
-    // CRUD Operations
     editTask: (id, e) => { e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (t) app.toggleAddTaskModal(t) },
     handleSaveTask: async e => {
         e.preventDefault(); 
@@ -425,7 +416,6 @@ const app = {
         };
         const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'); 
         try { 
-            // CHANGE: Initialized completedSessionIds: [] instead of completedPomos: 0
             state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedSessionIds: [], status: 'todo', createdAt: new Date().toISOString() }); 
             haptic('success');
             app.toggleAddTaskModal() 
@@ -446,8 +436,6 @@ const app = {
         if (window.innerWidth < 1280) app.toggleFocusPanel(true); 
         if (state.timer.status !== 'running') {
             const d = t.pomoDuration || 25; 
-            
-            // Sync Update: Generate Session ID
             const sessionId = `${id}_${Date.now()}`;
 
             try { 
@@ -455,7 +443,7 @@ const app = {
                     status: 'running', 
                     mode: 'focus', 
                     taskId: id, 
-                    sessionId: sessionId, // Store for sync
+                    sessionId: sessionId,
                     remaining: d * 60, 
                     totalDuration: d * 60, 
                     endTime: new Date(Date.now() + d * 60000) 
@@ -502,7 +490,6 @@ const app = {
         stopLocalInterval();
         haptic('timerDone');
 
-        // Robust Sound
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if(AudioContext) {
@@ -518,15 +505,10 @@ const app = {
                 const t = state.tasks.find(x => x.id === state.timer.activeTaskId);
                 if (t) {
                     try {
-                        // Sync Update: Use generated Session ID or Fallback
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
-
-                        // 1. Idempotent Counter Update (Array Union)
                         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
                             completedSessionIds: arrayUnion(sessionId) 
                         });
-                        
-                        // 2. Idempotent Log Write (SetDoc with SessionID)
                         await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
                             taskId: t.id, 
                             taskTitle: t.title, 
@@ -575,7 +557,6 @@ const app = {
         if (els.settingsModal.classList.contains('hidden')) {
             haptic('light');
             els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); 
-            // Bottom Sheet Transition Logic
             setTimeout(() => {
                 els.settingsPanel.classList.remove('translate-y-full', 'md:scale-95');
                 els.settingsPanel.classList.add('translate-y-0', 'md:scale-100');
@@ -609,10 +590,8 @@ const app = {
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
-// --- GLOBAL EXPORT ---
 window.app = app;
 
-// --- UTILS ---
 function createGradient(ctx, color) { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, color + '90'); g.addColorStop(1, color + '05'); return g }
 function updateAnalytics() {
     const els = getEls();
@@ -659,14 +638,12 @@ function updateCounts() {
     
     els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
     
-    // Sync Update: Strict count of sessions
     const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : 0), 0); 
     
     els.stats.pomosToday.textContent = tp; 
     els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
     els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0); 
 
-    // FIX: Sum actual duration from today's logs instead of multiplying by global setting
     const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === t);
     const fm = logsToday.reduce((acc, log) => acc + (log.duration || 25), 0);
     
@@ -687,9 +664,7 @@ function renderTasks() {
     els.taskList.innerHTML = '';
     if (l.length === 0) els.emptyState.classList.remove('hidden'); else els.emptyState.classList.add('hidden');
     l.forEach(x => {
-        // Sync Update: Strict count of sessions
         const cP = x.completedSessionIds ? x.completedSessionIds.length : 0;
-
         const isSel = x.id === state.selectedTaskId, pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100), sty = isSel ? { high: 'bg-dark-card border-red-500 shadow-sm z-10', med: 'bg-dark-card border-yellow-500 shadow-sm z-10', low: 'bg-dark-card border-blue-500 shadow-sm z-10', none: 'bg-dark-card border-brand shadow-sm z-10' }[x.priority || 'none'] : 'bg-dark-card border-dark-border hover:border-text-faint';
         const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
         const fmt = m => { const h = Math.floor(m / 60), rm = m % 60; return h > 0 ? `${h}h ${rm}m` : `${rm}m` };
@@ -708,7 +683,6 @@ function updateTimerUI(t) {
         els.focusTitle.textContent = t.title;
         els.focusProject.textContent = t.project || 'Inbox';
         els.focusProject.className = "truncate max-w-[150px] text-brand"; 
-        // Sync Update: Strict count of sessions
         els.focusCompleted.textContent = t.completedSessionIds ? t.completedSessionIds.length : 0;
         els.focusTotal.textContent = t.estimatedPomos || 1;
         
@@ -727,5 +701,4 @@ function updateTimerUI(t) {
     }
 }
 
-// Initial view set
 app.setView('today');
