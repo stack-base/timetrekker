@@ -23,6 +23,15 @@ try {
     enableIndexedDbPersistence(db).catch(() => {});
 } catch (e) {}
 
+// OPTIMIZATION: Register Service Worker for Asset Caching
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW Registered'))
+            .catch(err => console.log('SW Failed', err));
+    });
+}
+
 const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -64,26 +73,48 @@ const wakeLock = {
     }
 };
 
+// OPTIMIZATION: Load Local Storage state synchronously before app init
+const localSettings = JSON.parse(localStorage.getItem(APP_ID + '_settings')) || {
+    focus: 25, short: 5, long: 15, longBreakInterval: 4, 
+    strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false
+};
+const localUI = JSON.parse(localStorage.getItem(APP_ID + '_ui')) || {
+    activeTab: 'tasks', activeFilter: 'today', sound: 'none'
+};
+
 const state = {
     user: null, tasks: [], logs: [], 
     projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
-    activeTab: 'tasks', 
-    activeFilter: 'today',
+    activeTab: localUI.activeTab, 
+    activeFilter: localUI.activeFilter,
     filterProject: null,
     viewingTask: null, editingId: null,
     timer: { 
-        status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, taskId: null, mode: 'focus',
+        status: 'idle', endTime: null, 
+        remaining: localSettings.focus * 60, 
+        totalDuration: localSettings.focus * 60, 
+        taskId: null, mode: 'focus',
         sessionId: null, 
         pomoCountCurrentSession: 0,
-        settings: { focus: 25, short: 5, long: 15, longBreakInterval: 4, strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false }
+        settings: localSettings
     },
-    sound: 'none',
+    sound: localUI.sound,
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
     chartInstances: { focusBar: null, taskBar: null, hourly: null, weekday: null, project: null, priority: null },
     analytics: { range: 'week' },
     lastCheckTime: null,
     audioContext: null,
     audioUnlocked: false
+};
+
+// OPTIMIZATION: Helper to save UI state immediately
+const saveLocalState = () => {
+    localStorage.setItem(APP_ID + '_settings', JSON.stringify(state.timer.settings));
+    localStorage.setItem(APP_ID + '_ui', JSON.stringify({
+        activeTab: state.activeTab,
+        activeFilter: state.activeFilter,
+        sound: state.sound
+    }));
 };
 
 Chart.defaults.font.family = 'Inter';
@@ -139,10 +170,6 @@ onAuthStateChanged(auth, u => {
 
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Tasks listener
-        // Note: For extreme efficiency with thousands of done tasks, you should filter status != 'done'
-        // But to keep the 'Completed' tab working simply, we will listen to all. 
-        // IndexedDB persistence handles the cost of re-reads.
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
             const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
@@ -174,15 +201,19 @@ onAuthStateChanged(auth, u => {
                     sessionId: d.sessionId || null, 
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
-                // Sync settings from DB
-                if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
-                if(d.autoStartPomo !== undefined) state.timer.settings.autoStartPomo = d.autoStartPomo;
-                if(d.autoStartBreak !== undefined) state.timer.settings.autoStartBreak = d.autoStartBreak;
-                if(d.disableBreak !== undefined) state.timer.settings.disableBreak = d.disableBreak;
-                if(d.focus !== undefined) state.timer.settings.focus = d.focus;
-                if(d.short !== undefined) state.timer.settings.short = d.short;
-                if(d.long !== undefined) state.timer.settings.long = d.long;
-                if(d.longBreakInterval !== undefined) state.timer.settings.longBreakInterval = d.longBreakInterval;
+                
+                // Sync settings from DB (Cloud overwrites local if newer/exists)
+                let settingsChanged = false;
+                if(d.strictMode !== undefined) { state.timer.settings.strictMode = d.strictMode; settingsChanged = true; }
+                if(d.autoStartPomo !== undefined) { state.timer.settings.autoStartPomo = d.autoStartPomo; settingsChanged = true; }
+                if(d.autoStartBreak !== undefined) { state.timer.settings.autoStartBreak = d.autoStartBreak; settingsChanged = true; }
+                if(d.disableBreak !== undefined) { state.timer.settings.disableBreak = d.disableBreak; settingsChanged = true; }
+                if(d.focus !== undefined) { state.timer.settings.focus = d.focus; settingsChanged = true; }
+                if(d.short !== undefined) { state.timer.settings.short = d.short; settingsChanged = true; }
+                if(d.long !== undefined) { state.timer.settings.long = d.long; settingsChanged = true; }
+                if(d.longBreakInterval !== undefined) { state.timer.settings.longBreakInterval = d.longBreakInterval; settingsChanged = true; }
+                
+                if(settingsChanged) saveLocalState();
 
                 app.updateTimerUI();
                 
@@ -204,7 +235,6 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // OPTIMIZATION: Limit focus sessions to the last 500 to prevent unbounded reads as history grows
         const sessionQuery = query(
             collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions'),
             orderBy('completedAt', 'desc'),
@@ -213,8 +243,6 @@ onAuthStateChanged(auth, u => {
 
         onSnapshot(sessionQuery, s => {
             state.logs = s.docs.map(d => ({id: d.id, ...d.data()})); 
-            // Since we sort descending in query, we might want to sort them for analytics logic if needed, 
-            // but the existing analytics code does its own filtering.
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
@@ -311,6 +339,8 @@ const app = {
             history.pushState({ view: tab }, '', `#${tab}`);
         }
         state.activeTab = tab;
+        saveLocalState(); // OPTIMIZATION: Save tab state
+
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const view = $(`view-${tab}`);
         if(view) {
@@ -354,6 +384,8 @@ const app = {
         haptic('light');
         state.activeFilter = f;
         state.filterProject = null;
+        saveLocalState(); // OPTIMIZATION: Save filter state
+
         document.querySelectorAll('#task-filters button').forEach(b => {
             if(b.id === 'filter-folders') {
                  b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted border border-dark-border`;
@@ -1247,6 +1279,7 @@ const app = {
 
     setSound: (t) => {
         state.sound = t;
+        saveLocalState(); // OPTIMIZATION: Save sound preference
         const audio = $('audio-player');
         if(audio) audio.src = ASSETS.sounds[t];
         ['none','rain','cafe','forest'].forEach(x => {
@@ -1268,6 +1301,7 @@ const app = {
         const val = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
         // Immediate local update for UI responsiveness
         state.timer.settings[k] = val;
+        saveLocalState(); // OPTIMIZATION: Save settings
         
         // Update display immediately
         if($('set-focus-display')) $('set-focus-display').innerText = state.timer.settings.focus + 'm';
@@ -1324,4 +1358,4 @@ window.addEventListener('popstate', (e) => {
 });
 
 window.app = app;
-app.switchTab('tasks', false);
+app.switchTab(localUI.activeTab, false);
