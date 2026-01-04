@@ -21,7 +21,7 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Enable Offline Persistence (Firebase Internal)
+// Enable Offline Persistence
 try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
 
 const $ = id => document.getElementById(id);
@@ -39,11 +39,11 @@ const wakeLock = {
     release: async () => { if (wakeLock.sentinel) { try { await wakeLock.sentinel.release(); wakeLock.sentinel = null; } catch(e){} } }
 };
 
-// --- INITIALIZE STATE FROM STORAGE (CACHE FIRST) ---
+// --- STATE INITIALIZATION ---
 const state = {
     user: null, 
-    tasks: storage.load('tasks') || [], // Load cached tasks immediately
-    logs: storage.load('logs') || [],   // Load cached logs immediately
+    tasks: storage.load('tasks') || [], 
+    logs: storage.load('logs') || [],   
     projects: new Set(storage.load('projects') || ['Inbox', 'Work', 'Personal', 'Study']),
     activeTab: 'tasks', 
     activeFilter: 'today',
@@ -66,54 +66,63 @@ const state = {
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
-        app.renderTasks(); // Render immediately with cached data
+        
+        // --- FIX 1: Set Date Immediately ---
+        if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+        // --- FIX 2: Set Profile Picture Immediately from Auth ---
+        if (u.photoURL) {
+            if($('header-avatar-img')) { $('header-avatar-img').src = u.photoURL; $('header-avatar-img').classList.remove('hidden'); }
+            if($('settings-avatar-img')) { $('settings-avatar-img').src = u.photoURL; $('settings-avatar-img').classList.remove('hidden'); }
+        }
+
+        // --- FIX 3: Display Name Immediately ---
+        const displayName = u.displayName || u.email.split('@')[0];
+        if($('header-avatar')) $('header-avatar').textContent = displayName.charAt(0).toUpperCase();
+        if($('settings-name')) $('settings-name').textContent = displayName;
+        if($('settings-email')) $('settings-email').textContent = u.email;
+
+        app.renderTasks(); 
         app.renderMiniStats();
         
         // 1. Sync User Profile (Low frequency)
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
-                const name = d.displayName || u.email.split('@')[0];
-                if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
-                if($('settings-name')) $('settings-name').textContent = name;
-                if($('settings-email')) $('settings-email').textContent = u.email;
+                // Update profile pic if database has a newer/different one
+                if (d.photoURL && d.photoURL !== u.photoURL) {
+                    if($('header-avatar-img')) { $('header-avatar-img').src = d.photoURL; $('header-avatar-img').classList.remove('hidden'); }
+                    if($('settings-avatar-img')) { $('settings-avatar-img').src = d.photoURL; $('settings-avatar-img').classList.remove('hidden'); }
+                }
             }
         });
 
-        // 2. Efficient Task Listener (Only Active Tasks)
-        // We do NOT listen to "done" tasks to save reads.
-        const tasksQuery = query(
-            collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'),
-            where("status", "==", "todo") 
-        );
-        
+        // 2. Efficient Task Listener
+        const tasksQuery = query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), where("status", "==", "todo"));
         onSnapshot(tasksQuery, s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
-            storage.save('tasks', state.tasks); // Update cache
+            storage.save('tasks', state.tasks);
             
-            // Update projects list
             const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
             state.tasks.forEach(t => { if(t.project && t.project !== 'Inbox') p.add(t.project); });
             state.projects = p;
             storage.save('projects', Array.from(p));
 
-            if(state.activeFilter !== 'completed') app.renderTasks(); // Don't re-render if user is looking at history
+            if(state.activeFilter !== 'completed') app.renderTasks();
             app.renderMiniStats();
             if(state.timer.taskId) app.updateTimerUI();
+            if(!$('project-sheet').classList.contains('translate-y-full')) app.renderProjectSheet();
         });
         
-        // 3. Timer Active Listener (Real-time required)
+        // 3. Timer Listener
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
                 state.timer = { ...state.timer, ...d };
-                
-                // Sync settings from cloud if changed elsewhere
                 ['strictMode','autoStartPomo','autoStartBreak','disableBreak','focus','short','long','longBreakInterval'].forEach(k => {
                     if (d[k] !== undefined) state.timer.settings[k] = d[k];
                 });
                 storage.save('timer_settings', state.timer.settings);
-
                 app.updateTimerUI();
                 if(state.timer.status === 'running') { startTimerLoop(); wakeLock.request(); } 
                 else { stopTimerLoop(); wakeLock.release(); }
@@ -122,11 +131,11 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // 4. Delta-Sync Logs (Only fetch logs newer than our cache)
+        // 4. Delta-Sync Logs
         const lastLogTime = state.logs.length > 0 ? (state.logs[0].completedAt?.seconds || 0) : 0;
         const logsQuery = query(
             collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions'),
-            where('completedAt', '>', new Date(lastLogTime * 1000)), // Only get new stuff
+            where('completedAt', '>', new Date(lastLogTime * 1000)),
             orderBy('completedAt', 'desc'),
             limit(50)
         );
@@ -134,17 +143,15 @@ onAuthStateChanged(auth, u => {
         onSnapshot(logsQuery, s => {
             const newLogs = s.docs.map(d => ({id: d.id, ...d.data()}));
             if(newLogs.length > 0) {
-                // Merge new logs with cached logs, keep top 500
                 const combined = [...newLogs, ...state.logs].sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
                 state.logs = combined.slice(0, 500); 
                 storage.save('logs', state.logs);
                 if(state.activeTab === 'analytics') app.renderAnalytics();
             } else if (state.activeTab === 'analytics') {
-                app.renderAnalytics(); // Render existing cache
+                app.renderAnalytics();
             }
         });
 
-        // Local Notification Interval
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -179,7 +186,7 @@ document.addEventListener('touchstart', function() { if (!state.audioUnlocked) {
 
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
-    settingsTimeout: null, // For debouncing writes
+    settingsTimeout: null,
 
     unlockAudio: () => {
         if (!state.audioContext && (window.AudioContext || window.webkitAudioContext)) state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -235,19 +242,15 @@ const app = {
         haptic('light');
         state.activeFilter = f;
         state.filterProject = null;
-        
-        // Update Buttons
         document.querySelectorAll('#task-filters button').forEach(b => {
              const isF = b.id === `filter-${f}`;
              b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${isF ? 'bg-brand text-white' : 'bg-dark-active text-text-muted'}`;
              if(b.id === 'filter-folders') b.className = `whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-colors bg-dark-active text-text-muted border border-dark-border`;
         });
 
-        // On-Demand Fetch for Completed Tasks (Don't cache these in main state)
         if (f === 'completed') {
             const list = $('task-list');
             if(list) list.innerHTML = '<div class="py-10 text-center text-text-muted text-sm animate-pulse">Loading history from cloud...</div>';
-            
             try {
                 const q = query(
                     collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'),
@@ -260,11 +263,10 @@ const app = {
                 app.renderTasks(doneTasks);
             } catch(e) { app.showToast("Error loading history"); }
         } else {
-            app.renderTasks(); // Render active tasks from cache/state
+            app.renderTasks();
         }
     },
     
-    // ... Project management methods mostly same, ensuring we use state.projects ...
     openProjectSheet: () => {
         haptic('light'); history.pushState({ modal: 'project' }, ''); app.renderProjectSheet();
         $('modal-overlay').classList.remove('hidden'); setTimeout(() => { $('modal-overlay').classList.remove('opacity-0'); $('project-sheet').classList.remove('translate-y-full'); }, 10);
@@ -274,7 +276,7 @@ const app = {
         const list = $('project-sheet-list'); if(!list) return; list.innerHTML = '';
         const pList = Array.from(state.projects).sort(); 
         pList.forEach(p => {
-             const count = state.tasks.filter(t => t.project === p).length; // Only counts active tasks
+             const count = state.tasks.filter(t => t.project === p).length; 
              const isInbox = p === 'Inbox';
              const el = document.createElement('div');
              el.className = "w-full flex items-center justify-between p-4 bg-dark-active/50 border-b border-dark-border first:rounded-t-xl last:border-0 hover:bg-dark-active transition-colors group";
@@ -337,7 +339,6 @@ const app = {
         const today = getDayStr(new Date());
         const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1); const tomorrowStr = getDayStr(tmrw);
         
-        // Use provided data (e.g., from 'completed' fetch) or default active cache
         let filtered = dataSource || state.tasks; 
         let title = "Tasks";
         
@@ -346,12 +347,11 @@ const app = {
         else if(state.activeFilter === 'upcoming') { filtered = filtered.filter(t => t.dueDate > tomorrowStr); title = "Upcoming"; }
         else if(state.activeFilter === 'past') { filtered = filtered.filter(t => t.dueDate < today && t.dueDate); title = "Past Tasks"; }
         else if(state.activeFilter === 'project') { filtered = filtered.filter(t => t.project === state.filterProject); title = state.filterProject || "Project"; }
-        else if(state.activeFilter === 'completed') { title = "Completed (Recent)"; } // Filter already applied in setFilter
+        else if(state.activeFilter === 'completed') { title = "Completed (Recent)"; }
 
         if($('page-title')) $('page-title').textContent = title;
         if(filtered.length === 0) $('empty-state').classList.remove('hidden'); else $('empty-state').classList.add('hidden');
 
-        // Sorting
         const priMap = { high: 3, med: 2, low: 1, none: 0 };
         filtered.sort((a,b) => priMap[b.priority || 'none'] - priMap[a.priority || 'none']);
 
@@ -423,7 +423,6 @@ const app = {
         $('ana-avg-session').textContent = (logs.length > 0 ? Math.round(totalMin / logs.length) : 0) + 'm';
         $('ana-project-count').textContent = state.projects.size;
         
-        // Task stats are now ESTIMATES based on cached active count + logs for simplicity in cache mode
         $('ana-task-total').textContent = "-"; 
 
         let morning = 0, night = 0; logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); 
@@ -476,7 +475,6 @@ const app = {
 
         createChart('focusBarChart', 'focus', dpFocus, '#ff5757', 'Hours', 'focusBar');
         
-        // Hide Task Chart in Lite Mode as we don't sync 'completed' tasks history automatically
         if($('taskBarChart')) $('taskBarChart').parentElement.parentElement.classList.add('hidden');
 
         const hours = Array(24).fill(0); logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
@@ -594,14 +592,13 @@ const app = {
     toggleStatus: async (id, s) => {
         haptic('light');
         try {
-            // Optimistically remove from UI if it's a todo item
             if (s === 'todo') {
                 const el = document.querySelector(`div[onclick*="${id}"]`);
                 if(el) el.style.opacity = '0.5';
             }
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
                 status: s === 'todo' ? 'done' : 'todo',
-                completedAt: s === 'todo' ? serverTimestamp() : null // Server timestamp is safer
+                completedAt: s === 'todo' ? serverTimestamp() : null 
             });
         } catch(e) { app.showToast("Connection error"); }
     },
@@ -674,7 +671,6 @@ const app = {
                 if($('timer-completed')) $('timer-completed').textContent = t.completedSessionIds ? t.completedSessionIds.length : 0; if($('timer-total')) $('timer-total').textContent = t.estimatedPomos || 1;
                 document.title = `${m}:${sc.toString().padStart(2,'0')} - ${t.title}`;
             } else if (!t && taskId) {
-                 // Task might be deleted or completed and not in active cache
                  if($('timer-task-title')) $('timer-task-title').textContent = "Task Loading/Archived";
             }
         } else if (mode !== 'focus') {
@@ -693,10 +689,8 @@ const app = {
     updateSetting: (k, v) => {
         const val = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
         state.timer.settings[k] = val;
-        // Immediate Local Save
         storage.save('timer_settings', state.timer.settings);
         
-        // Debounced Cloud Save
         if (app.settingsTimeout) clearTimeout(app.settingsTimeout);
         app.settingsTimeout = setTimeout(() => {
             updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: val }).catch(()=>{});
