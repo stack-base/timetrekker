@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, serverTimestamp, enableIndexedDbPersistence, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, serverTimestamp, enableIndexedDbPersistence, arrayUnion, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const FIREBASE_CONFIG = { 
     apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", 
@@ -17,6 +17,7 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
+// OPTIMIZATION: Persistence caches data locally so we don't re-download everything on reload
 try { 
     enableIndexedDbPersistence(db).catch((err) => { 
         if (err.code === 'failed-precondition') console.warn('Persistence failed: Multiple tabs open.'); 
@@ -37,6 +38,15 @@ const esc = (str) => {
     return div.innerHTML; 
 };
 
+// OPTIMIZATION: Debounce function to prevent write-bombs on sliders
+const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+};
+
 const haptic = (type = 'light') => {
     if (!navigator.vibrate) return;
     try {
@@ -49,6 +59,23 @@ const haptic = (type = 'light') => {
         };
         navigator.vibrate(patterns[type] || 10);
     } catch (e) {}
+};
+
+// OPTIMIZATION: Wake Lock API to keep screen on during focus
+const wakeLock = {
+    sentinel: null,
+    request: async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock.sentinel = await navigator.wakeLock.request('screen');
+            } catch (err) { console.warn("Wake Lock error:", err); }
+        }
+    },
+    release: async () => {
+        if (wakeLock.sentinel) {
+            try { await wakeLock.sentinel.release(); wakeLock.sentinel = null; } catch(e){}
+        }
+    }
 };
 
 const state = {
@@ -175,7 +202,7 @@ onAuthStateChanged(auth, u => {
                         if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
                             try { 
                                 haptic('light');
-                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png' }); 
+                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png' }); 
                             } catch (e) { }
                         }
                     });
@@ -216,6 +243,16 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             sessionId: d.sessionId || null,
             pomoCountCurrentSession: d.sessionCount || 0
         };
+        // Sync settings from DB in case mobile changed them
+        if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
+        if(d.autoStartPomo !== undefined) state.timer.settings.autoStartPomo = d.autoStartPomo;
+        if(d.autoStartBreak !== undefined) state.timer.settings.autoStartBreak = d.autoStartBreak;
+        if(d.disableBreak !== undefined) state.timer.settings.disableBreak = d.disableBreak;
+        if(d.focus !== undefined) state.timer.settings.focus = d.focus;
+        if(d.short !== undefined) state.timer.settings.short = d.short;
+        if(d.long !== undefined) state.timer.settings.long = d.long;
+        if(d.longBreakInterval !== undefined) state.timer.settings.longBreakInterval = d.longBreakInterval;
+
         const els = getEls();
         app.setTimerModeUI(state.timer.mode);
         
@@ -228,12 +265,14 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
 
         if (state.timer.status === 'running') {
             startLocalInterval();
+            wakeLock.request(); // OPTIMIZATION: Keep screen on
             updateTimerVisuals();
             if (state.sound !== 'none' && els.audio && els.audio.paused) {
                 els.audio.play().catch(e => { console.warn('Audio play blocked', e); });
             }
         } else {
             stopLocalInterval();
+            wakeLock.release(); // OPTIMIZATION: Release screen
             updateTimerVisuals();
             if (els.audio && !els.audio.paused) els.audio.pause();
         }
@@ -242,10 +281,11 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
     }
 });
 
-const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', uid, 'focus_sessions')), s => {
+// OPTIMIZATION: Limit focus sessions to last 500 to prevent slow load
+const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', uid, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500)), s => {
     const l = []; 
     s.forEach(d => l.push({ id: d.id, ...d.data() })); 
-    l.sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0)); 
+    // Data is already sorted by query, but array is rebuilt
     state.logs = l;
     updateCounts();
     if (state.view === 'analytics') updateAnalytics();
@@ -281,6 +321,21 @@ const updateTimerVisuals = () => {
     
     if(state.timer.status === 'running') D.title = `${m}:${sc.toString().padStart(2, '0')} - TimeTrekker`;
 };
+
+// OPTIMIZATION: Sync timer when tab becomes visible again to prevent drift
+D.addEventListener("visibilitychange", () => {
+   if (!D.hidden && state.timer.status === 'running') {
+       updateTimerVisuals();
+       if(state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
+   }
+});
+
+// OPTIMIZATION: Debounced setting saver
+const _saveSetting = debounce((k, v) => {
+    if(state.user) {
+        updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: v }).catch(() => {});
+    }
+}, 500);
 
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
@@ -584,8 +639,17 @@ const app = {
         }); D.querySelectorAll('.settings-content').forEach(c => c.classList.add('hidden')); $(`settings-tab-${t}`).classList.remove('hidden'); els.settingsTitle.textContent = t.charAt(0).toUpperCase() + t.slice(1);
     },
     updateSettings: (k, v) => {
-        if (['strictMode', 'autoStartPomo', 'autoStartBreak', 'disableBreak'].includes(k)) { state.timer.settings[k] = v } 
-        else { state.timer.settings[k] = parseInt(v); const d = $(`set-${k}-val`); if (d) d.innerText = v; const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v }
+        // OPTIMIZATION: Immediate UI update
+        if (['strictMode', 'autoStartPomo', 'autoStartBreak', 'disableBreak'].includes(k)) { 
+            state.timer.settings[k] = v;
+        } else { 
+            state.timer.settings[k] = parseInt(v); 
+            const d = $(`set-${k}-val`); if (d) d.innerText = v; 
+            const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v; 
+        }
+        
+        // OPTIMIZATION: Debounced DB write
+        _saveSetting(k, v);
     },
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
 };
