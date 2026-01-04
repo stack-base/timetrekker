@@ -10,19 +10,20 @@ const ASSETS = {
     icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png'
 };
 
-// --- CACHE & STORAGE HELPERS ---
+// --- HELPERS ---
 const storage = {
     save: (key, data) => { try { localStorage.setItem(`${APP_ID}_${key}`, JSON.stringify(data)); } catch(e){} },
     load: (key) => { try { const d = localStorage.getItem(`${APP_ID}_${key}`); return d ? JSON.parse(d) : null; } catch(e){ return null; } },
     clear: () => { Object.keys(localStorage).forEach(k => { if(k.startsWith(APP_ID)) localStorage.removeItem(k); }); }
 };
 
-const fb = initializeApp(FIREBASE_CONFIG);
-const auth = getAuth(fb);
-const db = getFirestore(fb);
-
-// Enable Offline Persistence
-try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
+const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    // Fix "Off-by-one" error: Parse YYYY-MM-DD manually to avoid UTC conversion
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d); 
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 
 const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
@@ -39,7 +40,13 @@ const wakeLock = {
     release: async () => { if (wakeLock.sentinel) { try { await wakeLock.sentinel.release(); wakeLock.sentinel = null; } catch(e){} } }
 };
 
-// --- STATE INITIALIZATION ---
+// --- FIREBASE INIT ---
+const fb = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(fb);
+const db = getFirestore(fb);
+try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
+
+// --- STATE (CACHE FIRST) ---
 const state = {
     user: null, 
     tasks: storage.load('tasks') || [], 
@@ -67,29 +74,26 @@ onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
         
-        // --- FIX 1: Set Date Immediately ---
+        // 1. Immediate UI Updates (No DB wait)
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-
-        // --- FIX 2: Set Profile Picture Immediately from Auth ---
+        
+        const displayName = u.displayName || u.email.split('@')[0];
+        if($('header-avatar')) $('header-avatar').textContent = displayName.charAt(0).toUpperCase();
+        if($('settings-name')) $('settings-name').textContent = displayName;
+        if($('settings-email')) $('settings-email').textContent = u.email;
+        
         if (u.photoURL) {
             if($('header-avatar-img')) { $('header-avatar-img').src = u.photoURL; $('header-avatar-img').classList.remove('hidden'); }
             if($('settings-avatar-img')) { $('settings-avatar-img').src = u.photoURL; $('settings-avatar-img').classList.remove('hidden'); }
         }
 
-        // --- FIX 3: Display Name Immediately ---
-        const displayName = u.displayName || u.email.split('@')[0];
-        if($('header-avatar')) $('header-avatar').textContent = displayName.charAt(0).toUpperCase();
-        if($('settings-name')) $('settings-name').textContent = displayName;
-        if($('settings-email')) $('settings-email').textContent = u.email;
-
         app.renderTasks(); 
         app.renderMiniStats();
         
-        // 1. Sync User Profile (Low frequency)
+        // 2. Profile Sync (Background)
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
             if(s.exists()) {
                 const d = s.data();
-                // Update profile pic if database has a newer/different one
                 if (d.photoURL && d.photoURL !== u.photoURL) {
                     if($('header-avatar-img')) { $('header-avatar-img').src = d.photoURL; $('header-avatar-img').classList.remove('hidden'); }
                     if($('settings-avatar-img')) { $('settings-avatar-img').src = d.photoURL; $('settings-avatar-img').classList.remove('hidden'); }
@@ -97,7 +101,7 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // 2. Efficient Task Listener
+        // 3. Active Tasks Listener (Filtered)
         const tasksQuery = query(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), where("status", "==", "todo"));
         onSnapshot(tasksQuery, s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
@@ -114,7 +118,7 @@ onAuthStateChanged(auth, u => {
             if(!$('project-sheet').classList.contains('translate-y-full')) app.renderProjectSheet();
         });
         
-        // 3. Timer Listener
+        // 4. Timer State Listener
         onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
@@ -131,7 +135,7 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // 4. Delta-Sync Logs
+        // 5. Delta-Sync Logs (Only new ones)
         const lastLogTime = state.logs.length > 0 ? (state.logs[0].completedAt?.seconds || 0) : 0;
         const logsQuery = query(
             collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions'),
@@ -152,6 +156,7 @@ onAuthStateChanged(auth, u => {
             }
         });
 
+        // 6. Local Notifications
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -267,11 +272,11 @@ const app = {
         }
     },
     
+    // ... PROJECTS ...
     openProjectSheet: () => {
         haptic('light'); history.pushState({ modal: 'project' }, ''); app.renderProjectSheet();
         $('modal-overlay').classList.remove('hidden'); setTimeout(() => { $('modal-overlay').classList.remove('opacity-0'); $('project-sheet').classList.remove('translate-y-full'); }, 10);
     },
-
     renderProjectSheet: () => {
         const list = $('project-sheet-list'); if(!list) return; list.innerHTML = '';
         const pList = Array.from(state.projects).sort(); 
@@ -332,6 +337,7 @@ const app = {
         } catch(e) { app.showToast('Error deleting'); }
     },
 
+    // ... TASK RENDER ...
     renderTasks: (dataSource = null) => {
         const list = $('task-list'); if(!list) return;
         list.innerHTML = '';
@@ -373,7 +379,8 @@ const app = {
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                         <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand font-medium border border-brand/20">${esc(t.project || 'Inbox')}</span>
                         ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold">! Urgent</span>' : ''}
-                        <span class="text-[10px] text-text-muted flex items-center"><i class="ph-fill ph-check-circle mr-1"></i>${t.completedSessionIds?.length || 0}/${t.estimatedPomos||1}</span>
+                        ${t.dueDate ? `<span class="text-[10px] text-text-muted flex items-center"><i class="ph-fill ph-calendar-blank mr-1"></i>${formatDate(t.dueDate)}</span>` : ''}
+                        <span class="text-[10px] text-text-muted flex items-center ml-1"><i class="ph-fill ph-check-circle mr-1"></i>${t.completedSessionIds?.length || 0}/${t.estimatedPomos||1}</span>
                     </div>
                 </div>
                 ${!isDone ? `<button class="play-btn w-10 h-10 rounded-full ${isActive ? 'bg-brand text-white' : 'bg-dark-active text-brand'} flex items-center justify-center active:scale-90 transition-all ml-1 border border-dark-border" onclick="event.stopPropagation(); app.startFocus('${t.id}')"><i class="ph-fill ${isActive ? 'ph-pause' : 'ph-play'} text-lg"></i></button>` : ''}
@@ -505,7 +512,7 @@ const app = {
         }).join('');
     },
     
-    // ... Detail and Task modal logic ...
+    // ... DETAIL & FORM ...
     openTaskDetail: (t) => {
         haptic('light'); history.pushState({ modal: 'detail' }, ''); state.viewingTask = t;
         $('dt-title').textContent = t.title; $('dt-project').textContent = t.project || 'Inbox';
@@ -515,7 +522,7 @@ const app = {
 
         $('dt-pomo-done').textContent = completed; $('dt-pomo-total').textContent = total; $('dt-pomo-left').textContent = left;
         $('dt-time-spent').textContent = fmtTime(completed * dur); $('dt-time-left').textContent = fmtTime(left * dur); $('dt-time-total').textContent = fmtTime(total * dur);
-        $('dt-date').textContent = t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'No Date';
+        $('dt-date').textContent = formatDate(t.dueDate);
 
         const noteEl = $('dt-note'); if(t.note) { noteEl.textContent = t.note; noteEl.classList.remove('hidden'); } else { noteEl.classList.add('hidden'); }
         const priEl = $('dt-priority'); if(t.priority && t.priority !== 'none') { priEl.textContent = t.priority + ' Priority'; priEl.className = `bg-dark-active px-2 py-0.5 rounded text-[10px] font-bold border border-dark-border uppercase tracking-wide ${t.priority==='high'?'text-red-500':t.priority==='med'?'text-yellow-500':'text-blue-500'}`; priEl.classList.remove('hidden'); } else { priEl.classList.add('hidden'); }
@@ -592,18 +599,12 @@ const app = {
     toggleStatus: async (id, s) => {
         haptic('light');
         try {
-            if (s === 'todo') {
-                const el = document.querySelector(`div[onclick*="${id}"]`);
-                if(el) el.style.opacity = '0.5';
-            }
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
-                status: s === 'todo' ? 'done' : 'todo',
-                completedAt: s === 'todo' ? serverTimestamp() : null 
-            });
+            if (s === 'todo') { const el = document.querySelector(`div[onclick*="${id}"]`); if(el) el.style.opacity = '0.5'; }
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? serverTimestamp() : null });
         } catch(e) { app.showToast("Connection error"); }
     },
 
-    // --- TIMER & SETTINGS ---
+    // --- TIMER ---
     startFocus: async (id) => {
         const t = state.tasks.find(x => x.id === id); if(!t) return;
         haptic('medium'); app.switchTab('timer'); try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
@@ -613,7 +614,16 @@ const app = {
         app.updateSetting('focus', durationMin); app.unlockAudio(); 
     },
     toggleTimer: async () => {
-        haptic('medium'); app.unlockAudio(); try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
+        haptic('medium'); app.unlockAudio(); 
+        
+        // Mobile Wake Hack: Play silent sound to keep app alive
+        if(state.audioContext) {
+            const o = state.audioContext.createOscillator(); const g = state.audioContext.createGain();
+            g.gain.value = 0.001; o.connect(g); g.connect(state.audioContext.destination);
+            o.start(); o.stop(state.audioContext.currentTime + 0.1);
+        }
+
+        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){}
         if(state.timer.status === 'running') {
             if(state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000)) });
@@ -685,7 +695,7 @@ const app = {
         if(state.timer.status === 'running' && t !== 'none') { app.unlockAudio(); audio.play().catch(()=>{}); } else audio.pause();
     },
     
-    // Optimized Debounced Setting Update
+    // Debounced Setting Update
     updateSetting: (k, v) => {
         const val = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
         state.timer.settings[k] = val;
@@ -698,7 +708,12 @@ const app = {
     },
 
     showToast: (msg) => { const t = document.createElement('div'); t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl text-center animate-slide-up backdrop-blur"; t.textContent = msg; $('toast-container').appendChild(t); setTimeout(() => t.remove(), 3000); },
-    signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
+    
+    // SECURE SIGN OUT
+    signOut: () => {
+        storage.clear(); // Clear all local data so next user doesn't see it
+        signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href));
+    }
 };
 
 // --- EVENTS ---
