@@ -2,35 +2,32 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, serverTimestamp, enableIndexedDbPersistence, arrayUnion, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-const FIREBASE_CONFIG = { 
-    apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", 
-    authDomain: "timetrekker-app.firebaseapp.com", 
-    projectId: "timetrekker-app", 
-    storageBucket: "timetrekker-app.firebasestorage.app", 
-    messagingSenderId: "83185163190", 
-    appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", 
-    measurementId: "G-FLZ02E1Y5L" 
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",
+    authDomain: "timetrekker-app.firebaseapp.com",
+    projectId: "timetrekker-app",
+    storageBucket: "timetrekker-app.firebasestorage.app",
+    messagingSenderId: "83185163190",
+    appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17",
+    measurementId: "G-FLZ02E1Y5L"
 };
+
 const APP_ID = 'timetrekker-v1';
 
 const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// OPTIMIZATION: Persistence caches data locally so we don't re-download everything on reload
-try { 
-    enableIndexedDbPersistence(db).catch((err) => { 
-        if (err.code === 'failed-precondition') console.warn('Persistence failed: Multiple tabs open.'); 
-        else if (err.code === 'unimplemented') console.warn('Persistence not supported.'); 
-    }); 
+try {
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code === 'failed-precondition') console.warn('Persistence failed: Multiple tabs open.');
+        else if (err.code === 'unimplemented') console.warn('Persistence not supported.');
+    });
 } catch (e) {}
 
-// OPTIMIZATION: Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw_desktop.js')
-            .then(reg => console.log('SW Registered'))
-            .catch(err => console.log('SW Failed', err));
+        navigator.serviceWorker.register('./sw_desktop.js').catch(err => console.error('SW Failed', err));
     });
 }
 
@@ -40,14 +37,14 @@ const $ = (id) => {
     if (!el) console.warn(`Element with ID "${id}" not found.`);
     return el;
 };
-const esc = (str) => { 
-    if (!str) return ''; 
-    const div = document.createElement('div'); 
-    div.textContent = str; 
-    return div.innerHTML; 
+
+const esc = (str) => {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
 };
 
-// OPTIMIZATION: Debounce function to prevent write-bombs on sliders
 const debounce = (func, wait) => {
     let timeout;
     return (...args) => {
@@ -64,53 +61,60 @@ const haptic = (type = 'light') => {
     } catch (e) {}
 };
 
-// OPTIMIZATION: Wake Lock API to keep screen on during focus
 const wakeLock = {
     sentinel: null,
     request: async () => {
         if ('wakeLock' in navigator) {
-            try { wakeLock.sentinel = await navigator.wakeLock.request('screen'); } catch (err) { console.warn("Wake Lock error:", err); }
+            try {
+                wakeLock.sentinel = await navigator.wakeLock.request('screen');
+            } catch (err) {
+                console.warn("Wake Lock error:", err);
+            }
         }
     },
     release: async () => {
-        if (wakeLock.sentinel) { try { await wakeLock.sentinel.release(); wakeLock.sentinel = null; } catch(e){} }
+        if (wakeLock.sentinel) {
+            try {
+                await wakeLock.sentinel.release();
+                wakeLock.sentinel = null;
+            } catch (e) {}
+        }
     }
 };
 
-// OPTIMIZATION: Load Local Storage state synchronously
 const localSettings = JSON.parse(localStorage.getItem(APP_ID + '_settings')) || {
     focus: 25, short: 5, long: 15, strictMode: false,
     longBreakInterval: 4, autoStartPomo: false, autoStartBreak: false, disableBreak: false
 };
+
 const localUI = JSON.parse(localStorage.getItem(APP_ID + '_ui')) || { view: 'today', sound: 'none' };
 
 const state = {
-    user: null, 
-    tasks: [], 
-    logs: [], 
+    user: null,
+    tasks: [],
+    logs: [],
     projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
-    view: localUI.view, // Load cached view
-    filterProject: null, 
-    selectedTaskId: null, 
+    view: localUI.view,
+    filterProject: null,
+    selectedTaskId: null,
     editingTaskId: null,
     timer: {
-        mode: 'focus', status: 'idle', endTime: null, 
-        remaining: localSettings.focus * 60, // Use cached setting
-        totalDuration: localSettings.focus * 60, 
+        mode: 'focus', status: 'idle', endTime: null,
+        remaining: localSettings.focus * 60,
+        totalDuration: localSettings.focus * 60,
         activeTaskId: null, interval: null,
         sessionId: null,
-        pomoCountCurrentSession: 0, 
-        settings: localSettings // Use cached settings
+        pomoCountCurrentSession: 0,
+        settings: localSettings
     },
-    newEst: 1, 
-    sound: localUI.sound, // Load cached sound
+    newEst: 1,
+    sound: localUI.sound,
     charts: { focusBar: null, taskBar: null, project: null, hourly: null, weekday: null, priority: null },
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
     analytics: { range: 'week', metric: 'time' },
     lastCheckTime: null
 };
 
-// OPTIMIZATION: Helper to save UI state immediately
 const saveLocalState = () => {
     localStorage.setItem(APP_ID + '_settings', JSON.stringify(state.timer.settings));
     localStorage.setItem(APP_ID + '_ui', JSON.stringify({
@@ -119,20 +123,20 @@ const saveLocalState = () => {
     }));
 };
 
-const sounds = { 
-    none: '', 
-    rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', 
-    cafe: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', 
-    forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg' 
+const sounds = {
+    none: '',
+    rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',
+    cafe: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',
+    forest: 'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg'
 };
 
 const getEls = () => ({
-    taskList: $('task-list'), taskViewContainer: $('task-view-container'), analyticsViewContainer: $('analytics-view-container'), 
-    pageTitle: $('page-title'), emptyState: $('empty-state'), modal: $('add-task-modal'), modalPanel: $('add-task-panel'), 
-    modalTitle: $('modal-title'), saveTaskBtn: $('save-task-btn'), estDisplay: $('est-display'), dateInput: $('task-date'), 
-    timerDisplay: $('timer-display'), timerProgress: $('timer-progress'), timerMode: $('timer-mode'), playIcon: $('play-icon'), 
-    focusActive: $('focus-active'), focusEmpty: $('focus-empty'), focusTitle: $('focus-task-title'), focusProject: $('focus-project-badge'), 
-    focusCompleted: $('focus-completed'), focusTotal: $('focus-total'), timerPanel: $('timer-panel'), 
+    taskList: $('task-list'), taskViewContainer: $('task-view-container'), analyticsViewContainer: $('analytics-view-container'),
+    pageTitle: $('page-title'), emptyState: $('empty-state'), modal: $('add-task-modal'), modalPanel: $('add-task-panel'),
+    modalTitle: $('modal-title'), saveTaskBtn: $('save-task-btn'), estDisplay: $('est-display'), dateInput: $('task-date'),
+    timerDisplay: $('timer-display'), timerProgress: $('timer-progress'), timerMode: $('timer-mode'), playIcon: $('play-icon'),
+    focusActive: $('focus-active'), focusEmpty: $('focus-empty'), focusTitle: $('focus-task-title'), focusProject: $('focus-project-badge'),
+    focusCompleted: $('focus-completed'), focusTotal: $('focus-total'), timerPanel: $('timer-panel'),
     navCounts: { all: $('count-all'), today: $('count-today'), tomorrow: $('count-tomorrow'), upcoming: $('count-upcoming'), past: $('count-past') },
     stats: { pomosToday: $('stat-pomos-today'), tasksToday: $('stat-tasks-today'), estRemain: $('stat-est-remaining'), focusTime: $('stat-focus-time'), tasksRemain: $('stat-tasks-remaining'), estTime: $('stat-est-time') },
     analytics: {
@@ -145,9 +149,9 @@ const getEls = () => ({
         projectChart: $('projectChart'), hourlyChart: $('hourlyChart'), weekdayChart: $('weekdayChart'), priorityChart: $('priorityChart'),
         projList: $('project-rank-list'), tagList: $('tag-rank-list'), sessionLogBody: $('session-log-body')
     },
-    projectList: $('project-list'), subtasksContainer: $('subtasks-container'), audio: $('audio-player'), 
+    projectList: $('project-list'), subtasksContainer: $('subtasks-container'), audio: $('audio-player'),
     currentDate: $('current-date-display'), sidebarOverlay: $('sidebar-overlay'), sidebar: $('sidebar'), headerActions: $('header-actions'),
-    settingsModal: $('global-settings-modal'), settingsPanel: $('settings-panel'), settingsTitle: $('settings-view-title'), 
+    settingsModal: $('global-settings-modal'), settingsPanel: $('settings-panel'), settingsTitle: $('settings-view-title'),
     strictToggle: $('strict-mode-toggle'), settingsAvatar: $('settings-avatar'), settingsName: $('settings-name'), settingsEmail: $('settings-email'),
     taskPomoDisplay: $('task-pomo-display'), totalTimeCalc: $('total-time-calc'), taskRepeat: $('task-repeat'), taskReminder: $('task-reminder')
 });
@@ -199,14 +203,13 @@ onAuthStateChanged(auth, u => {
             els.settingsEmail.textContent = u.email;
             els.settingsAvatar.textContent = (u.displayName || u.email).charAt(0).toUpperCase();
         }
-        
+
         subTasks(u.uid);
         subLogs(u.uid);
         subTimer(u.uid);
-        
+
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        // Restore sound state immediately
         app.setSound(state.sound);
 
         setInterval(() => {
@@ -218,9 +221,9 @@ onAuthStateChanged(auth, u => {
                     const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
                     state.tasks.forEach(t => {
                         if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
-                            try { 
+                            try {
                                 haptic('light');
-                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png' }); 
+                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png' });
                             } catch (e) { }
                         }
                     });
@@ -236,9 +239,9 @@ onAuthStateChanged(auth, u => {
 const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', uid, 'tasks'), s => {
     const t = [], p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
     s.forEach(d => { const x = d.data(); t.push({ id: d.id, ...x }); if (x.project && x.project !== 'Inbox') p.add(x.project); });
-    state.tasks = t; state.projects = p; 
-    updateProjectsUI(); 
-    updateCounts(); 
+    state.tasks = t; state.projects = p;
+    updateProjectsUI();
+    updateCounts();
     renderTasks();
     if (state.timer.activeTaskId) {
         const activeTask = t.find(x => x.id === state.timer.activeTaskId);
@@ -261,8 +264,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             sessionId: d.sessionId || null,
             pomoCountCurrentSession: d.sessionCount || 0
         };
-        
-        // Sync settings from DB (Cloud overrides local if changed on another device)
+
         let settingsChanged = false;
         if(d.strictMode !== undefined) { state.timer.settings.strictMode = d.strictMode; settingsChanged = true; }
         if(d.autoStartPomo !== undefined) { state.timer.settings.autoStartPomo = d.autoStartPomo; settingsChanged = true; }
@@ -277,7 +279,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
 
         const els = getEls();
         app.setTimerModeUI(state.timer.mode);
-        
+
         let activeTask = null;
         if (state.timer.activeTaskId) {
              state.selectedTaskId = state.timer.activeTaskId;
@@ -287,14 +289,14 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
 
         if (state.timer.status === 'running') {
             startLocalInterval();
-            wakeLock.request(); // OPTIMIZATION: Keep screen on
+            wakeLock.request();
             updateTimerVisuals();
             if (state.sound !== 'none' && els.audio && els.audio.paused) {
                 els.audio.play().catch(e => { console.warn('Audio play blocked', e); });
             }
         } else {
             stopLocalInterval();
-            wakeLock.release(); // OPTIMIZATION: Release screen
+            wakeLock.release();
             updateTimerVisuals();
             if (els.audio && !els.audio.paused) els.audio.pause();
         }
@@ -303,10 +305,9 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
     }
 });
 
-// OPTIMIZATION: Limit focus sessions to last 500 to prevent slow load
 const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', uid, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500)), s => {
-    const l = []; 
-    s.forEach(d => l.push({ id: d.id, ...d.data() })); 
+    const l = [];
+    s.forEach(d => l.push({ id: d.id, ...d.data() }));
     state.logs = l;
     updateCounts();
     if (state.view === 'analytics') updateAnalytics();
@@ -336,14 +337,13 @@ const updateTimerVisuals = () => {
     const { status, endTime, remaining, totalDuration } = state.timer;
     const s = status === 'running' && endTime ? Math.max(0, Math.ceil((endTime - Date.now()) / 1000)) : remaining;
     const m = Math.floor(s / 60), sc = s % 60;
-    
+
     els.timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${sc.toString().padStart(2, '0')}`;
     if(els.timerProgress) els.timerProgress.style.strokeDashoffset = 289 * (1 - (s / (totalDuration || 1)));
-    
+
     if(state.timer.status === 'running') D.title = `${m}:${sc.toString().padStart(2, '0')} - TimeTrekker`;
 };
 
-// OPTIMIZATION: Sync timer when tab becomes visible again to prevent drift
 D.addEventListener("visibilitychange", () => {
    if (!D.hidden && state.timer.status === 'running') {
        updateTimerVisuals();
@@ -351,7 +351,6 @@ D.addEventListener("visibilitychange", () => {
    }
 });
 
-// OPTIMIZATION: Debounced setting saver (Cloud)
 const _saveSetting = debounce((k, v) => {
     if(state.user) {
         updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: v }).catch(() => {});
@@ -361,19 +360,19 @@ const _saveSetting = debounce((k, v) => {
 const app = {
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     showPrompt: (t, v = '') => new Promise(r => {
-        const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v; 
+        const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v;
         p.el.classList.remove('hidden'); setTimeout(() => p.el.classList.remove('opacity-0'), 10); p.input.focus()
     }),
     closePrompt: v => {
-        const p = app.customPrompt; p.el.classList.add('opacity-0'); 
+        const p = app.customPrompt; p.el.classList.add('opacity-0');
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null }, 200)
     },
-    
+
     setView: v => {
         const els = getEls();
-        state.view = v; state.filterProject = null; 
-        saveLocalState(); // Save view state
-        els.pageTitle.textContent = (v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)); 
+        state.view = v; state.filterProject = null;
+        saveLocalState();
+        els.pageTitle.textContent = (v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1));
         updateNavStyles(v); app.toggleSidebar(false);
         if (v === 'analytics') {
             els.taskViewContainer.classList.add('hidden'); els.analyticsViewContainer.classList.remove('hidden'); els.headerActions.classList.add('invisible'); updateAnalytics()
@@ -383,53 +382,52 @@ const app = {
     },
     setProjectView: p => {
         const els = getEls();
-        state.view = 'project'; state.filterProject = p; 
-        // We don't save specific project filters to local state to avoid 404s if project is deleted
-        els.pageTitle.textContent = p; 
-        updateNavStyles('project', p); app.toggleSidebar(false); 
+        state.view = 'project'; state.filterProject = p;
+        els.pageTitle.textContent = p;
+        updateNavStyles('project', p); app.toggleSidebar(false);
         els.taskViewContainer.classList.remove('hidden'); els.analyticsViewContainer.classList.add('hidden'); els.headerActions.classList.remove('invisible'); renderTasks(); updateCounts()
     },
     setRange: r => {
         state.analytics.range = r; haptic('light');
-        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" }); 
+        ['week', 'month', 'year'].forEach(k => { $(`btn-range-${k}`).className = k === r ? "px-4 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all" : "px-4 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all" });
         updateAnalytics()
     },
     toggleChartType: (k, t) => { haptic('light'); state.chartTypes[k] = t; ['bar', 'line'].forEach(x => { $(`btn-${k}-${x}`).classList.toggle('active', x === t) }); updateAnalytics() },
     toggleFocusPanel: f => {
         const els = getEls();
-        const p = els.timerPanel, i = !p.classList.contains('translate-x-full'); 
+        const p = els.timerPanel, i = !p.classList.contains('translate-x-full');
         (f !== null ? f : !i) ? p.classList.remove('translate-x-full') : p.classList.add('translate-x-full')
     },
     toggleSidebar: f => {
         const els = getEls();
-        const s = els.sidebar, o = els.sidebarOverlay, h = s.classList.contains('-translate-x-full'), show = (typeof f === 'boolean') ? f : h; 
-        if (show) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); requestAnimationFrame(() => o.classList.remove('opacity-0')) } 
+        const s = els.sidebar, o = els.sidebarOverlay, h = s.classList.contains('-translate-x-full'), show = (typeof f === 'boolean') ? f : h;
+        if (show) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); requestAnimationFrame(() => o.classList.remove('opacity-0')) }
         else { s.classList.add('-translate-x-full'); o.classList.add('opacity-0'); setTimeout(() => o.classList.add('hidden'), 300) }
     },
     promptNewProject: async () => { const n = await app.showPrompt("Enter project name:"); if (n) { state.projects.add(n); updateProjectsUI() } },
     renameProject: async (o, e) => {
-        e.stopPropagation(); const n = await app.showPrompt(`Rename "${o}" to:`, o); if (!n || n === o) return; 
-        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", o)))).forEach(d => b.update(d.ref, { project: n })); 
-        await b.commit(); state.projects.delete(o); state.projects.add(n); 
+        e.stopPropagation(); const n = await app.showPrompt(`Rename "${o}" to:`, o); if (!n || n === o) return;
+        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", o)))).forEach(d => b.update(d.ref, { project: n }));
+        await b.commit(); state.projects.delete(o); state.projects.add(n);
         state.filterProject === o ? app.setProjectView(n) : updateProjectsUI()
     },
     deleteProject: async (p, e) => {
         e.stopPropagation(); if (!confirm(`Delete "${p}"?`)) return; haptic('heavy');
-        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", p)))).forEach(d => b.update(d.ref, { project: 'Inbox' })); 
-        await b.commit(); state.projects.delete(p); 
+        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", p)))).forEach(d => b.update(d.ref, { project: 'Inbox' }));
+        await b.commit(); state.projects.delete(p);
         state.filterProject === p ? app.setView('today') : updateProjectsUI()
     },
-    
+
     addSubtaskUI: (v = '') => {
         const els = getEls();
-        const d = D.createElement('div'); d.className = 'flex items-center space-x-2 animate-fade-in'; 
-        d.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${esc(v)}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`; 
+        const d = D.createElement('div'); d.className = 'flex items-center space-x-2 animate-fade-in';
+        d.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-brand shrink-0"></div><input type="text" class="subtask-input flex-1 bg-transparent border-b border-dark-border focus:border-brand text-sm text-white py-1 outline-none transition-colors" placeholder="Subtask..." value="${esc(v)}"><button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400"><i class="ph-bold ph-x"></i></button>`;
         els.subtasksContainer.appendChild(d)
     },
     toggleDropdown: t => {
         haptic('light');
-        const d = $(`${t}-options`); 
-        D.querySelectorAll('[id$="-options"]').forEach(x => { if (x.id !== `${t}-options`) x.classList.add('hidden') }); 
+        const d = $(`${t}-options`);
+        D.querySelectorAll('[id$="-options"]').forEach(x => { if (x.id !== `${t}-options`) x.classList.add('hidden') });
         d.classList.toggle('hidden'); if (!d.classList.contains('hidden')) d.classList.add('animate-fade-in')
     },
     selectOption: (t, v, d) => { haptic('light'); $(`selected-${t}`).innerText = d; $(`task-${t}`).value = v; $(`${t}-options`).classList.add('hidden') },
@@ -437,31 +435,31 @@ const app = {
     toggleAddTaskModal: (t = null) => {
         const els = getEls();
         try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { }); } catch (e) { }
-        
+
         if (els.modal.classList.contains('hidden')) {
             haptic('light');
-            els.subtasksContainer.innerHTML = ''; const po = $('project-options'); po.innerHTML = ''; 
+            els.subtasksContainer.innerHTML = ''; const po = $('project-options'); po.innerHTML = '';
             state.projects.forEach(p => {
-                const b = D.createElement('button'); b.type = 'button'; b.onclick = () => app.selectOption('project', p, p); 
-                b.className = "w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center"; 
+                const b = D.createElement('button'); b.type = 'button'; b.onclick = () => app.selectOption('project', p, p);
+                b.className = "w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-dark-hover hover:text-white transition-colors flex items-center";
                 b.innerHTML = `<i class="ph-bold ph-folder mr-2"></i> ${esc(p)}`; po.appendChild(b)
             });
             if (t) {
-                state.editingTaskId = t.id; els.modalTitle.innerText = "Edit Task"; els.saveTaskBtn.innerText = "Save Changes"; 
-                $('task-title').value = t.title; $('task-note').value = t.note || ''; $('task-tags').value = t.tags ? t.tags.join(', ') : ''; 
-                state.newEst = t.estimatedPomos || 1; els.estDisplay.innerText = state.newEst; els.taskPomoDisplay.innerText = t.pomoDuration || 25; 
-                els.dateInput.value = t.dueDate || ''; app.selectOption('priority', t.priority || 'none', { high: 'High Priority (! Urgent)', med: 'Medium Priority', low: 'Low Priority', none: 'None' }[t.priority || 'none']); 
-                app.selectOption('project', t.project || 'Inbox', t.project || 'Inbox'); app.selectOption('repeat', t.repeat || 'none', t.repeat ? t.repeat.charAt(0).toUpperCase() + t.repeat.slice(1) : 'None'); 
+                state.editingTaskId = t.id; els.modalTitle.innerText = "Edit Task"; els.saveTaskBtn.innerText = "Save Changes";
+                $('task-title').value = t.title; $('task-note').value = t.note || ''; $('task-tags').value = t.tags ? t.tags.join(', ') : '';
+                state.newEst = t.estimatedPomos || 1; els.estDisplay.innerText = state.newEst; els.taskPomoDisplay.innerText = t.pomoDuration || 25;
+                els.dateInput.value = t.dueDate || ''; app.selectOption('priority', t.priority || 'none', { high: 'High Priority (! Urgent)', med: 'Medium Priority', low: 'Low Priority', none: 'None' }[t.priority || 'none']);
+                app.selectOption('project', t.project || 'Inbox', t.project || 'Inbox'); app.selectOption('repeat', t.repeat || 'none', t.repeat ? t.repeat.charAt(0).toUpperCase() + t.repeat.slice(1) : 'None');
                 els.taskReminder.value = t.reminder || ''; if (t.subtasks) t.subtasks.forEach(s => app.addSubtaskUI(s))
             } else {
-                state.editingTaskId = null; els.modalTitle.innerText = "New Task"; els.saveTaskBtn.innerText = "Save Task"; 
-                state.newEst = 1; els.estDisplay.innerText = "1"; els.taskPomoDisplay.innerText = 25; els.dateInput.value = new Date().toISOString().split('T')[0]; 
-                $('task-title').value = ''; $('task-note').value = ''; $('task-tags').value = ''; app.selectOption('priority', 'none', 'None'); 
+                state.editingTaskId = null; els.modalTitle.innerText = "New Task"; els.saveTaskBtn.innerText = "Save Task";
+                state.newEst = 1; els.estDisplay.innerText = "1"; els.taskPomoDisplay.innerText = 25; els.dateInput.value = new Date().toISOString().split('T')[0];
+                $('task-title').value = ''; $('task-note').value = ''; $('task-tags').value = ''; app.selectOption('priority', 'none', 'None');
                 app.selectOption('project', 'Inbox', 'Inbox'); app.selectOption('repeat', 'none', 'None'); els.taskReminder.value = ''
             }
-            app.updateTotalEst(); 
-            els.modal.classList.remove('hidden'); 
-            setTimeout(() => els.modal.classList.remove('opacity-0'), 10); 
+            app.updateTotalEst();
+            els.modal.classList.remove('hidden');
+            setTimeout(() => els.modal.classList.remove('opacity-0'), 10);
             setTimeout(() => {
                 els.modalPanel.classList.remove('translate-y-full', 'md:scale-95');
                 els.modalPanel.classList.add('translate-y-0', 'md:scale-100');
@@ -469,7 +467,7 @@ const app = {
             $('task-title').focus()
         } else {
             haptic('light');
-            els.modal.classList.add('opacity-0'); 
+            els.modal.classList.add('opacity-0');
             els.modalPanel.classList.add('translate-y-full', 'md:scale-95');
             els.modalPanel.classList.remove('translate-y-0', 'md:scale-100');
             setTimeout(() => els.modal.classList.add('hidden'), 300)
@@ -479,67 +477,67 @@ const app = {
     adjustEst: d => { let v = state.newEst + d; if (v < 1) v = 1; if (v > 50) v = 50; state.newEst = v; $('est-display').innerText = v; app.updateTotalEst() },
     adjustPomoDuration: d => { let c = parseInt($('task-pomo-display').innerText), v = c + d; if (v < 5) v = 5; if (v > 60) v = 60; $('task-pomo-display').innerText = v; app.updateTotalEst() },
     updateTotalEst: () => { const d = parseInt($('task-pomo-display').innerText), n = state.newEst, t = d * n, h = Math.floor(t / 60), m = t % 60; $('total-time-calc').innerText = h > 0 ? `${h}h ${m}m` : `${m}m` },
-    
+
     editTask: (id, e) => { e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (t) app.toggleAddTaskModal(t) },
     handleSaveTask: async e => {
-        e.preventDefault(); 
+        e.preventDefault();
         const els = getEls();
-        const title = $('task-title').value; if (!title) return; 
+        const title = $('task-title').value; if (!title) return;
         const subtasks = Array.from(D.querySelectorAll('.subtask-input')).map(i => i.value.trim()).filter(v => v);
         const tags = $('task-tags').value.split(',').map(t => t.trim()).filter(t => t);
-        const data = { 
-            title, dueDate: els.dateInput.value, estimatedPomos: state.newEst, pomoDuration: parseInt(els.taskPomoDisplay.innerText), 
-            priority: $('task-priority').value, project: $('task-project').value, note: $('task-note').value, 
-            repeat: els.taskRepeat.value, reminder: els.taskReminder.value, subtasks, tags 
+        const data = {
+            title, dueDate: els.dateInput.value, estimatedPomos: state.newEst, pomoDuration: parseInt(els.taskPomoDisplay.innerText),
+            priority: $('task-priority').value, project: $('task-project').value, note: $('task-note').value,
+            repeat: els.taskRepeat.value, reminder: els.taskReminder.value, subtasks, tags
         };
-        const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'); 
-        try { 
-            state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedSessionIds: [], status: 'todo', createdAt: new Date().toISOString() }); 
+        const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks');
+        try {
+            state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedSessionIds: [], status: 'todo', createdAt: new Date().toISOString() });
             haptic('success');
-            app.toggleAddTaskModal() 
+            app.toggleAddTaskModal()
         } catch (err) { app.showToast("Error saving") }
     },
-    toggleTaskStatus: async (id, s) => { 
-        try { 
+    toggleTaskStatus: async (id, s) => {
+        try {
             haptic('light');
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null }) 
-        } catch (e) { app.showToast("Connection error") } 
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null })
+        } catch (e) { app.showToast("Connection error") }
     },
     deleteTask: async (id, e) => { e.stopPropagation(); if (confirm('Delete task?')) try { haptic('heavy'); await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id)) } catch (e) { app.showToast("Error deleting") } },
-    
+
     startTask: async (id, e) => {
-        e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (!t) return; 
+        e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (!t) return;
         haptic('medium');
-        state.selectedTaskId = id; renderTasks(); updateTimerUI(t); 
-        if (window.innerWidth < 1280) app.toggleFocusPanel(true); 
+        state.selectedTaskId = id; renderTasks(); updateTimerUI(t);
+        if (window.innerWidth < 1280) app.toggleFocusPanel(true);
         if (state.timer.status !== 'running') {
-            const d = t.pomoDuration || 25; 
+            const d = t.pomoDuration || 25;
             const sessionId = `${id}_${Date.now()}`;
 
-            try { 
-                await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { 
-                    status: 'running', 
-                    mode: 'focus', 
-                    taskId: id, 
+            try {
+                await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
+                    status: 'running',
+                    mode: 'focus',
+                    taskId: id,
                     sessionId: sessionId,
-                    remaining: d * 60, 
-                    totalDuration: d * 60, 
-                    endTime: new Date(Date.now() + d * 60000) 
-                }); 
-                app.updateSettings('focus', d) 
+                    remaining: d * 60,
+                    totalDuration: d * 60,
+                    endTime: new Date(Date.now() + d * 60000)
+                });
+                app.updateSettings('focus', d)
             } catch (e) { app.showToast("Failed to start") }
         }
     },
     selectTask: id => {
-        state.selectedTaskId = id; renderTasks(); const t = state.tasks.find(x => x.id === id); updateTimerUI(t); 
-        if (state.timer.status !== 'running') updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { taskId: id }).catch(() => { }); 
+        state.selectedTaskId = id; renderTasks(); const t = state.tasks.find(x => x.id === id); updateTimerUI(t);
+        if (state.timer.status !== 'running') updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { taskId: id }).catch(() => { });
         if (window.innerWidth < 1280) app.toggleFocusPanel(true)
     },
-    
+
     showToast: (m, t = 'error') => {
-        const c = $('toast-container'), e = D.createElement('div'); 
-        e.className = `px-4 py-2 rounded shadow text-white text-sm font-medium animate-fade-in ${t === 'error' ? 'bg-red-500' : 'bg-green-600'}`; 
-        e.innerText = m; c.appendChild(e); 
+        const c = $('toast-container'), e = D.createElement('div');
+        e.className = `px-4 py-2 rounded shadow text-white text-sm font-medium animate-fade-in ${t === 'error' ? 'bg-red-500' : 'bg-green-600'}`;
+        e.innerText = m; c.appendChild(e);
         setTimeout(() => { e.style.opacity = '0'; setTimeout(() => e.remove(), 300) }, 3000)
     },
 
@@ -558,7 +556,7 @@ const app = {
     resetTimer: async (r = false) => {
         if (!r) {
             haptic('light');
-            const d = state.timer.settings[state.timer.mode]; 
+            const d = state.timer.settings[state.timer.mode];
             await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'idle', endTime: null, remaining: d * 60, totalDuration: d * 60, mode: state.timer.mode, taskId: state.timer.activeTaskId || null }).catch(() => { })
         }
     },
@@ -575,7 +573,7 @@ const app = {
                 o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .2);
             }
         } catch(e) { console.warn("Audio Context Error", e); }
-        
+
         try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete"); } catch (e) { }
 
         if (state.timer.mode === 'focus') {
@@ -584,15 +582,15 @@ const app = {
                 if (t) {
                     try {
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
-                            completedSessionIds: arrayUnion(sessionId) 
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), {
+                            completedSessionIds: arrayUnion(sessionId)
                         });
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
-                            taskId: t.id, 
-                            taskTitle: t.title, 
-                            project: t.project || 'Inbox', 
-                            duration: state.timer.totalDuration / 60, 
-                            completedAt: serverTimestamp() 
+                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), {
+                            taskId: t.id,
+                            taskTitle: t.title,
+                            project: t.project || 'Inbox',
+                            duration: state.timer.totalDuration / 60,
+                            completedAt: serverTimestamp()
                         });
                     } catch (e) { console.error("Sync Error", e); }
                 }
@@ -616,41 +614,41 @@ const app = {
     setTimerModeUI: m => {
         const els = getEls();
         if(els.timerMode) {
-            els.timerMode.innerText = m === 'focus' ? 'FOCUS' : m === 'short' ? 'SHORT BREAK' : 'LONG BREAK'; 
+            els.timerMode.innerText = m === 'focus' ? 'FOCUS' : m === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
             els.timerMode.className = `text-xs font-bold tracking-widest uppercase mt-4 ${m === 'focus' ? 'text-brand' : 'text-blue-400'}`
         }
     },
     setSound: t => {
         const els = getEls();
         state.sound = t;
-        saveLocalState(); // Save preference locally
+        saveLocalState();
         if(els.audio) els.audio.src = sounds[t];
-        D.querySelectorAll('.sound-option').forEach(b => b.className = b.className.replace('text-brand', 'text-text-muted')); 
-        const a = $(`sound-${t}`); if (a) a.className = a.className.replace('text-text-muted', 'text-brand'); 
-        D.querySelectorAll('[id^="check-sound-"]').forEach(i => i.classList.add('hidden')); 
-        const check = $(`check-sound-${t}`); if (check) check.classList.remove('hidden'); 
+        D.querySelectorAll('.sound-option').forEach(b => b.className = b.className.replace('text-brand', 'text-text-muted'));
+        const a = $(`sound-${t}`); if (a) a.className = a.className.replace('text-text-muted', 'text-brand');
+        D.querySelectorAll('[id^="check-sound-"]').forEach(i => i.classList.add('hidden'));
+        const check = $(`check-sound-${t}`); if (check) check.classList.remove('hidden');
         if(els.audio) t === 'none' ? els.audio.pause() : (state.timer.status === 'running' && els.audio.play().catch(() => { }));
     },
     toggleGlobalSettings: () => {
         const els = getEls();
         if (els.settingsModal.classList.contains('hidden')) {
             haptic('light');
-            els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10); 
+            els.settingsModal.classList.remove('hidden'); setTimeout(() => els.settingsModal.classList.remove('opacity-0'), 10);
             setTimeout(() => {
                 els.settingsPanel.classList.remove('translate-y-full', 'md:scale-95');
                 els.settingsPanel.classList.add('translate-y-0', 'md:scale-100');
             }, 10);
-            
-            app.switchSettingsTab('timer'); 
-            $('strict-mode-toggle').checked = state.timer.settings.strictMode; 
-            $('auto-pomo-toggle').checked = state.timer.settings.autoStartPomo; 
-            $('auto-break-toggle').checked = state.timer.settings.autoStartBreak; 
-            $('disable-break-toggle').checked = state.timer.settings.disableBreak; 
-            $('set-longBreakInterval-val-g').innerText = state.timer.settings.longBreakInterval; 
+
+            app.switchSettingsTab('timer');
+            $('strict-mode-toggle').checked = state.timer.settings.strictMode;
+            $('auto-pomo-toggle').checked = state.timer.settings.autoStartPomo;
+            $('auto-break-toggle').checked = state.timer.settings.autoStartBreak;
+            $('disable-break-toggle').checked = state.timer.settings.disableBreak;
+            $('set-longBreakInterval-val-g').innerText = state.timer.settings.longBreakInterval;
             app.setSound(state.sound);
         } else {
             haptic('light');
-            els.settingsModal.classList.add('opacity-0'); 
+            els.settingsModal.classList.add('opacity-0');
             els.settingsPanel.classList.add('translate-y-full', 'md:scale-95');
             els.settingsPanel.classList.remove('translate-y-0', 'md:scale-100');
             setTimeout(() => els.settingsModal.classList.add('hidden'), 300);
@@ -663,18 +661,15 @@ const app = {
         }); D.querySelectorAll('.settings-content').forEach(c => c.classList.add('hidden')); $(`settings-tab-${t}`).classList.remove('hidden'); els.settingsTitle.textContent = t.charAt(0).toUpperCase() + t.slice(1);
     },
     updateSettings: (k, v) => {
-        // OPTIMIZATION: Immediate UI update
-        if (['strictMode', 'autoStartPomo', 'autoStartBreak', 'disableBreak'].includes(k)) { 
+        if (['strictMode', 'autoStartPomo', 'autoStartBreak', 'disableBreak'].includes(k)) {
             state.timer.settings[k] = v;
-        } else { 
-            state.timer.settings[k] = parseInt(v); 
-            const d = $(`set-${k}-val`); if (d) d.innerText = v; 
-            const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v; 
+        } else {
+            state.timer.settings[k] = parseInt(v);
+            const d = $(`set-${k}-val`); if (d) d.innerText = v;
+            const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v;
         }
-        
-        saveLocalState(); // Save settings locally
 
-        // OPTIMIZATION: Debounced DB write
+        saveLocalState();
         _saveSetting(k, v);
     },
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
@@ -719,28 +714,28 @@ function updateCounts() {
     const els = getEls();
     const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     const t = getDayStr(new Date()), tm = getDayStr(new Date(Date.now() + 864e5));
-    
+
     els.navCounts.all.textContent = state.tasks.length;
-    
+
     const tasksTodo = state.tasks.filter(x => x.status === 'todo');
     let tasksViewTodo;
     if (state.view === 'all') tasksViewTodo = state.tasks; else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
-    
+
     els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
-    
-    const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : 0), 0); 
-    
-    els.stats.pomosToday.textContent = tp; 
+
+    const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : 0), 0);
+
+    els.stats.pomosToday.textContent = tp;
     els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
-    els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0); 
+    els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0);
 
     const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === t);
     const fm = logsToday.reduce((acc, log) => acc + (log.duration || 25), 0);
-    
-    els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`; 
+
+    els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`;
     els.stats.tasksRemain.textContent = tasksViewTodo.length;
-    
-    const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0); 
+
+    const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
     els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
 }
 
@@ -772,10 +767,10 @@ function updateTimerUI(t) {
         els.focusActive.classList.remove('hidden');
         els.focusTitle.textContent = t.title;
         els.focusProject.textContent = t.project || 'Inbox';
-        els.focusProject.className = "truncate max-w-[150px] text-brand"; 
+        els.focusProject.className = "truncate max-w-[150px] text-brand";
         els.focusCompleted.textContent = t.completedSessionIds ? t.completedSessionIds.length : 0;
         els.focusTotal.textContent = t.estimatedPomos || 1;
-        
+
         if(state.timer.status === 'running') {
             const m = Math.floor(state.timer.remaining/60);
             const s = state.timer.remaining%60;
@@ -791,5 +786,4 @@ function updateTimerUI(t) {
     }
 }
 
-// Initialize with cached view
 app.setView(localUI.view);

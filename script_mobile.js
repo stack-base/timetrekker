@@ -18,17 +18,13 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// OPTIMIZATION: Persistence caches data locally so we don't re-download everything on reload
 try { 
     enableIndexedDbPersistence(db).catch(() => {});
 } catch (e) {}
 
-// OPTIMIZATION: Register Service Worker for Asset Caching
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw_mobile.js')
-            .then(reg => console.log('SW Registered'))
-            .catch(err => console.log('SW Failed', err));
+        navigator.serviceWorker.register('./sw_mobile.js').catch(() => {});
     });
 }
 
@@ -36,7 +32,6 @@ const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
 const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-// OPTIMIZATION: Debounce function to prevent write-bombs
 const debounce = (func, wait) => {
     let timeout;
     return (...args) => {
@@ -73,7 +68,6 @@ const wakeLock = {
     }
 };
 
-// OPTIMIZATION: Load Local Storage state synchronously before app init
 const localSettings = JSON.parse(localStorage.getItem(APP_ID + '_settings')) || {
     focus: 25, short: 5, long: 15, longBreakInterval: 4, 
     strictMode: false, autoStartPomo: false, autoStartBreak: false, disableBreak: false
@@ -107,7 +101,6 @@ const state = {
     audioUnlocked: false
 };
 
-// OPTIMIZATION: Helper to save UI state immediately
 const saveLocalState = () => {
     localStorage.setItem(APP_ID + '_settings', JSON.stringify(state.timer.settings));
     localStorage.setItem(APP_ID + '_ui', JSON.stringify({
@@ -202,7 +195,6 @@ onAuthStateChanged(auth, u => {
                     pomoCountCurrentSession: d.sessionCount || 0
                 };
                 
-                // Sync settings from DB (Cloud overwrites local if newer/exists)
                 let settingsChanged = false;
                 if(d.strictMode !== undefined) { state.timer.settings.strictMode = d.strictMode; settingsChanged = true; }
                 if(d.autoStartPomo !== undefined) { state.timer.settings.autoStartPomo = d.autoStartPomo; settingsChanged = true; }
@@ -339,7 +331,7 @@ const app = {
             history.pushState({ view: tab }, '', `#${tab}`);
         }
         state.activeTab = tab;
-        saveLocalState(); // OPTIMIZATION: Save tab state
+        saveLocalState(); 
 
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const view = $(`view-${tab}`);
@@ -384,7 +376,7 @@ const app = {
         haptic('light');
         state.activeFilter = f;
         state.filterProject = null;
-        saveLocalState(); // OPTIMIZATION: Save filter state
+        saveLocalState(); 
 
         document.querySelectorAll('#task-filters button').forEach(b => {
             if(b.id === 'filter-folders') {
@@ -1279,7 +1271,7 @@ const app = {
 
     setSound: (t) => {
         state.sound = t;
-        saveLocalState(); // OPTIMIZATION: Save sound preference
+        saveLocalState(); 
         const audio = $('audio-player');
         if(audio) audio.src = ASSETS.sounds[t];
         ['none','rain','cafe','forest'].forEach(x => {
@@ -1292,24 +1284,20 @@ const app = {
         else audio.pause();
     },
 
-    // OPTIMIZATION: Debounced private function
     _saveSetting: debounce((uid, k, v) => {
          updateDoc(doc(db, 'artifacts', APP_ID, 'users', uid, 'timer', 'active'), { [k]: v }).catch(()=>{});
     }, 500),
 
     updateSetting: (k, v) => {
         const val = ['strictMode','autoStartPomo','autoStartBreak','disableBreak'].includes(k) ? v : parseInt(v);
-        // Immediate local update for UI responsiveness
         state.timer.settings[k] = val;
-        saveLocalState(); // OPTIMIZATION: Save settings
+        saveLocalState(); 
         
-        // Update display immediately
         if($('set-focus-display')) $('set-focus-display').innerText = state.timer.settings.focus + 'm';
         if($('set-short-display')) $('set-short-display').innerText = state.timer.settings.short + 'm';
         if($('set-long-display')) $('set-long-display').innerText = state.timer.settings.long + 'm';
         if($('set-long-interval-display')) $('set-long-interval-display').innerText = state.timer.settings.longBreakInterval + 'x';
         
-        // Debounced DB write
         if(state.user) app._saveSetting(state.user.uid, k, val);
     },
 

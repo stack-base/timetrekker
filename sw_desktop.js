@@ -3,7 +3,7 @@ const CACHE_NAME = 'timetrekker-desktop-v1';
 const ASSETS_TO_CACHE = [
     './',
     './application.html',
-    './timetrekker.js',
+    './script_desktop.js',
     'https://cdn.tailwindcss.com',
     'https://cdn.jsdelivr.net/npm/chart.js',
     'https://unpkg.com/@phosphor-icons/web',

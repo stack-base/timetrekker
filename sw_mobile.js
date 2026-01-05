@@ -3,7 +3,7 @@ const CACHE_NAME = 'timetrekker-v2-static';
 const ASSETS_TO_CACHE = [
     './',
     './application_mobile.html',
-    './mobile.js',
+    './script_mobile.js',
     'https://unpkg.com/@phosphor-icons/web',
     'https://cdn.jsdelivr.net/npm/chart.js',
     'https://cdn.tailwindcss.com',
