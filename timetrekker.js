@@ -25,6 +25,15 @@ try {
     }); 
 } catch (e) {}
 
+// OPTIMIZATION: Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw_desktop.js')
+            .then(reg => console.log('SW Registered'))
+            .catch(err => console.log('SW Failed', err));
+    });
+}
+
 const D = document;
 const $ = (id) => {
     const el = D.getElementById(id);
@@ -50,13 +59,7 @@ const debounce = (func, wait) => {
 const haptic = (type = 'light') => {
     if (!navigator.vibrate) return;
     try {
-        const patterns = {
-            light: 10,
-            medium: 25,
-            heavy: 40,
-            success: [10, 30],
-            timerDone: [200, 100, 200]
-        };
+        const patterns = { light: 10, medium: 25, heavy: 40, success: [10, 30], timerDone: [200, 100, 200] };
         navigator.vibrate(patterns[type] || 10);
     } catch (e) {}
 };
@@ -66,42 +69,54 @@ const wakeLock = {
     sentinel: null,
     request: async () => {
         if ('wakeLock' in navigator) {
-            try {
-                wakeLock.sentinel = await navigator.wakeLock.request('screen');
-            } catch (err) { console.warn("Wake Lock error:", err); }
+            try { wakeLock.sentinel = await navigator.wakeLock.request('screen'); } catch (err) { console.warn("Wake Lock error:", err); }
         }
     },
     release: async () => {
-        if (wakeLock.sentinel) {
-            try { await wakeLock.sentinel.release(); wakeLock.sentinel = null; } catch(e){}
-        }
+        if (wakeLock.sentinel) { try { await wakeLock.sentinel.release(); wakeLock.sentinel = null; } catch(e){} }
     }
 };
+
+// OPTIMIZATION: Load Local Storage state synchronously
+const localSettings = JSON.parse(localStorage.getItem(APP_ID + '_settings')) || {
+    focus: 25, short: 5, long: 15, strictMode: false,
+    longBreakInterval: 4, autoStartPomo: false, autoStartBreak: false, disableBreak: false
+};
+const localUI = JSON.parse(localStorage.getItem(APP_ID + '_ui')) || { view: 'today', sound: 'none' };
 
 const state = {
     user: null, 
     tasks: [], 
     logs: [], 
     projects: new Set(['Inbox', 'Work', 'Personal', 'Study']),
-    view: 'today', 
+    view: localUI.view, // Load cached view
     filterProject: null, 
     selectedTaskId: null, 
     editingTaskId: null,
     timer: {
-        mode: 'focus', status: 'idle', endTime: null, remaining: 1500, totalDuration: 1500, activeTaskId: null, interval: null,
+        mode: 'focus', status: 'idle', endTime: null, 
+        remaining: localSettings.focus * 60, // Use cached setting
+        totalDuration: localSettings.focus * 60, 
+        activeTaskId: null, interval: null,
         sessionId: null,
         pomoCountCurrentSession: 0, 
-        settings: {
-            focus: 25, short: 5, long: 15, strictMode: false,
-            longBreakInterval: 4, autoStartPomo: false, autoStartBreak: false, disableBreak: false
-        }
+        settings: localSettings // Use cached settings
     },
     newEst: 1, 
-    sound: 'none',
+    sound: localUI.sound, // Load cached sound
     charts: { focusBar: null, taskBar: null, project: null, hourly: null, weekday: null, priority: null },
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
     analytics: { range: 'week', metric: 'time' },
     lastCheckTime: null
+};
+
+// OPTIMIZATION: Helper to save UI state immediately
+const saveLocalState = () => {
+    localStorage.setItem(APP_ID + '_settings', JSON.stringify(state.timer.settings));
+    localStorage.setItem(APP_ID + '_ui', JSON.stringify({
+        view: state.view,
+        sound: state.sound
+    }));
 };
 
 const sounds = { 
@@ -191,6 +206,9 @@ onAuthStateChanged(auth, u => {
         
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+        // Restore sound state immediately
+        app.setSound(state.sound);
+
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -243,15 +261,19 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             sessionId: d.sessionId || null,
             pomoCountCurrentSession: d.sessionCount || 0
         };
-        // Sync settings from DB in case mobile changed them
-        if(d.strictMode !== undefined) state.timer.settings.strictMode = d.strictMode;
-        if(d.autoStartPomo !== undefined) state.timer.settings.autoStartPomo = d.autoStartPomo;
-        if(d.autoStartBreak !== undefined) state.timer.settings.autoStartBreak = d.autoStartBreak;
-        if(d.disableBreak !== undefined) state.timer.settings.disableBreak = d.disableBreak;
-        if(d.focus !== undefined) state.timer.settings.focus = d.focus;
-        if(d.short !== undefined) state.timer.settings.short = d.short;
-        if(d.long !== undefined) state.timer.settings.long = d.long;
-        if(d.longBreakInterval !== undefined) state.timer.settings.longBreakInterval = d.longBreakInterval;
+        
+        // Sync settings from DB (Cloud overrides local if changed on another device)
+        let settingsChanged = false;
+        if(d.strictMode !== undefined) { state.timer.settings.strictMode = d.strictMode; settingsChanged = true; }
+        if(d.autoStartPomo !== undefined) { state.timer.settings.autoStartPomo = d.autoStartPomo; settingsChanged = true; }
+        if(d.autoStartBreak !== undefined) { state.timer.settings.autoStartBreak = d.autoStartBreak; settingsChanged = true; }
+        if(d.disableBreak !== undefined) { state.timer.settings.disableBreak = d.disableBreak; settingsChanged = true; }
+        if(d.focus !== undefined) { state.timer.settings.focus = d.focus; settingsChanged = true; }
+        if(d.short !== undefined) { state.timer.settings.short = d.short; settingsChanged = true; }
+        if(d.long !== undefined) { state.timer.settings.long = d.long; settingsChanged = true; }
+        if(d.longBreakInterval !== undefined) { state.timer.settings.longBreakInterval = d.longBreakInterval; settingsChanged = true; }
+
+        if(settingsChanged) saveLocalState();
 
         const els = getEls();
         app.setTimerModeUI(state.timer.mode);
@@ -285,7 +307,6 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
 const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', uid, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500)), s => {
     const l = []; 
     s.forEach(d => l.push({ id: d.id, ...d.data() })); 
-    // Data is already sorted by query, but array is rebuilt
     state.logs = l;
     updateCounts();
     if (state.view === 'analytics') updateAnalytics();
@@ -330,7 +351,7 @@ D.addEventListener("visibilitychange", () => {
    }
 });
 
-// OPTIMIZATION: Debounced setting saver
+// OPTIMIZATION: Debounced setting saver (Cloud)
 const _saveSetting = debounce((k, v) => {
     if(state.user) {
         updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: v }).catch(() => {});
@@ -351,6 +372,7 @@ const app = {
     setView: v => {
         const els = getEls();
         state.view = v; state.filterProject = null; 
+        saveLocalState(); // Save view state
         els.pageTitle.textContent = (v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)); 
         updateNavStyles(v); app.toggleSidebar(false);
         if (v === 'analytics') {
@@ -362,6 +384,7 @@ const app = {
     setProjectView: p => {
         const els = getEls();
         state.view = 'project'; state.filterProject = p; 
+        // We don't save specific project filters to local state to avoid 404s if project is deleted
         els.pageTitle.textContent = p; 
         updateNavStyles('project', p); app.toggleSidebar(false); 
         els.taskViewContainer.classList.remove('hidden'); els.analyticsViewContainer.classList.add('hidden'); els.headerActions.classList.remove('invisible'); renderTasks(); updateCounts()
@@ -599,7 +622,8 @@ const app = {
     },
     setSound: t => {
         const els = getEls();
-        state.sound = t; 
+        state.sound = t;
+        saveLocalState(); // Save preference locally
         if(els.audio) els.audio.src = sounds[t];
         D.querySelectorAll('.sound-option').forEach(b => b.className = b.className.replace('text-brand', 'text-text-muted')); 
         const a = $(`sound-${t}`); if (a) a.className = a.className.replace('text-text-muted', 'text-brand'); 
@@ -648,6 +672,8 @@ const app = {
             const dg = $(`set-${k}-val-g`); if (dg) dg.innerText = v; 
         }
         
+        saveLocalState(); // Save settings locally
+
         // OPTIMIZATION: Debounced DB write
         _saveSetting(k, v);
     },
@@ -765,4 +791,5 @@ function updateTimerUI(t) {
     }
 }
 
-app.setView('today');
+// Initialize with cached view
+app.setView(localUI.view);
