@@ -15,13 +15,14 @@ const FIREBASE_CONFIG = {
 const APP_ID = 'timetrekker-v1';
 
 // SECURITY: Only this UID is allowed to use "View As" mode
-const ADMIN_UID = "oxnHr84lGgOkLQuxSouJaXJDx1I3";
+// Renamed to 'Orion' for discretion
+const ORION_ID = "oxnHr84lGgOkLQuxSouJaXJDx1I3";
 
 const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Check for Admin Override Parameter
+// Check for Orion Override Parameter
 const URL_PARAMS = new URLSearchParams(window.location.search);
 const VIEW_AS_UID = URL_PARAMS.get('uid');
 
@@ -123,7 +124,8 @@ const state = {
 // HELPER: Securely determine which UID to read/write from
 const getUid = () => {
     if (!state.user) return null;
-    if (VIEW_AS_UID && state.user.uid === ADMIN_UID) return VIEW_AS_UID;
+    // Check if Orion is active
+    if (VIEW_AS_UID && state.user.uid === ORION_ID) return VIEW_AS_UID;
     return state.user.uid;
 };
 
@@ -191,7 +193,8 @@ if (typeof Chart !== 'undefined') {
 
 async function syncUserProfile(u) {
     if (!u) return;
-    if (VIEW_AS_UID && u.uid === ADMIN_UID) return;
+    // CRITICAL: Do not sync Orion profile data to User's profile when viewing as user
+    if (VIEW_AS_UID && u.uid === ORION_ID) return;
 
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
@@ -212,10 +215,10 @@ async function syncUserProfile(u) {
     } catch (e) { console.error("Error syncing user profile:", e); }
 }
 
-function showAdminBanner(uid) {
+function showOrionBanner(uid) {
     const banner = D.createElement('div');
     banner.className = 'fixed top-0 left-0 right-0 h-6 bg-red-600 z-[100] flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white shadow-lg';
-    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> Orion : ${uid}`;
+    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> ORION MODE: VIEWING AS ${uid}`;
     D.body.prepend(banner);
     D.getElementById('sidebar').style.top = '24px';
     D.querySelector('main').style.paddingTop = '0px'; 
@@ -231,10 +234,10 @@ onAuthStateChanged(auth, u => {
         
         let viewingAsUser = false;
         if (VIEW_AS_UID) {
-            if (u.uid === ADMIN_UID) {
-                showAdminBanner(VIEW_AS_UID);
+            if (u.uid === ORION_ID) {
+                showOrionBanner(VIEW_AS_UID);
                 viewingAsUser = true;
-                console.log(`%c[TimeTrekker Admin] Access granted for: ${VIEW_AS_UID}`, "color: #10b981; font-weight: bold; font-size: 14px;");
+                console.log(`%c[TimeTrekker Orion] Access granted for: ${VIEW_AS_UID}`, "color: #10b981; font-weight: bold; font-size: 14px;");
             } else {
                 console.warn("%c[TimeTrekker Security] Unauthorized 'view as' attempt blocked.", "color: red; font-weight: bold;");
             }
