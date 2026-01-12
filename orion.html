@@ -57,7 +57,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
 <main class="flex-1 flex flex-col min-w-0 bg-dark-bg overflow-hidden relative">
     <header class="h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
         <h1 class="text-xl font-semibold text-white" id="page-title">Product Analytics</h1>
-        <button onclick="app.refreshData()" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all">
+        <button onclick="app.refreshData(true)" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all">
             <i class="ph-bold ph-arrows-clockwise mr-2"></i> Refresh Data
         </button>
     </header>
@@ -216,6 +216,8 @@ const appId='timetrekker-v1';
 const fb=initializeApp(C);
 const auth=getAuth(fb);
 const db=getFirestore(fb);
+const CACHE_KEY = 'orion_local_cache_v1'; // CACHE KEY
+
 Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#2a2a2a';
@@ -226,6 +228,41 @@ const log=(msg)=>{
 };
 
 const state={sessions:[],tasks:[],usersList:[],charts:{},view:'overview',usersMap:{},filterUser:null};
+
+// --- CACHE LOGIC START ---
+const saveCache = () => {
+    try {
+        const cacheData = {
+            sessions: state.sessions,
+            tasks: state.tasks,
+            usersList: state.usersList,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        log('<span class="text-green-400">Data cached successfully.</span>');
+    } catch (e) {
+        log('Cache Error (Quota Exceeded?): ' + e.message);
+    }
+};
+
+const loadCache = () => {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return false;
+    try {
+        const data = JSON.parse(raw);
+        state.sessions = data.sessions || [];
+        state.tasks = data.tasks || [];
+        state.usersList = data.usersList || [];
+        
+        const age = Math.round((Date.now() - data.timestamp) / 1000 / 60); // in minutes
+        log(`<span class="text-blue-400">Loaded from Cache (${age} mins ago).</span>`);
+        return true;
+    } catch (e) {
+        console.error("Cache parsing failed", e);
+        return false;
+    }
+};
+// --- CACHE LOGIC END ---
 
 const showLoginModal=()=>{
     if(document.getElementById('dev-login-modal'))return;
@@ -258,8 +295,8 @@ onAuthStateChanged(auth,async u=>{
     if(u){
         if(modal)modal.remove();
         log(`Authenticated as ${u.email}`);
-        log('Starting data aggregation...');
-        app.refreshData();
+        // Default to cache on load (false = do not force refresh)
+        app.refreshData(false);
     }else{
         log('No user detected. Showing login prompt...');
         showLoginModal();
@@ -300,15 +337,24 @@ const app={
             tr.style.display=txt.includes(q)?'':'none';
         });
     },
-    refreshData:async()=>{
+    // REFRESH LOGIC UPDATED
+    refreshData:async(forceRefresh = true)=>{
         try{
-            log('Fetching global sessions...');
+            // Try loading from cache if forceRefresh is false
+            if(!forceRefresh && loadCache()){
+                renderAll();
+                return;
+            }
+
+            log('Fetching LIVE data from Firestore...');
+            
             const qSessions=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(500));
             const snapSessions=await getDocs(qSessions);
             state.sessions=snapSessions.docs.map(d=>{
                 const uid=d.ref.parent?.parent?.id||'unknown';
                 return{...d.data(),_uid:uid};
             });
+            
             log('Fetching global tasks...');
             const qTasks=query(collectionGroup(db,'tasks'),limit(500));
             const snapTasks=await getDocs(qTasks);
@@ -316,17 +362,18 @@ const app={
                 const uid=d.ref.parent?.parent?.id||'unknown';
                 return{...d.data(),_uid:uid};
             });
+            
             log('Fetching user profiles...');
             const qUsers=query(collection(db,'artifacts',appId,'users'));
             const snapUsers=await getDocs(qUsers);
             state.usersList=snapUsers.docs.map(d=>({id:d.id,...d.data()}));
+            
             log(`Found ${state.usersList.length} registered users.`);
-            processUsers();
-            updateKPIs();
-            updateCharts();
-            updateFeed();
-            if(state.view==='users')renderUsersTable();
-            if(state.view==='tasks')renderTasksTable();
+            
+            // SAVE TO CACHE
+            saveCache();
+            renderAll();
+
         }catch(e){
             log(`ERROR: ${e.message}`);
             if(e.message.includes('index'))alert('Missing Firestore Index! Check Console.');
@@ -334,6 +381,16 @@ const app={
         }
     }
 };
+
+function renderAll(){
+    processUsers();
+    updateKPIs();
+    updateCharts();
+    updateFeed();
+    if(state.view==='users')renderUsersTable();
+    if(state.view==='tasks')renderTasksTable();
+}
+
 window.app=app;
 
 function processUsers(){
@@ -347,7 +404,8 @@ function processUsers(){
             provider:u.providerId||'Unknown',
             tasks:0,
             focus:0,
-            lastActive:u.lastLogin?(u.lastLogin.seconds*1000):0,
+            // Handle Timestamp objects vs Cached numbers
+            lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0,
             profileLoaded:true
         };
     });
@@ -358,7 +416,8 @@ function processUsers(){
     state.sessions.forEach(s=>{
         if(!map[s._uid])map[s._uid]={uid:s._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:s._uid};
         map[s._uid].focus+=(s.duration||25);
-        const t=s.completedAt?s.completedAt.seconds*1000:0;
+        // Handle Timestamp objects vs Cached numbers
+        const t=s.completedAt ? (s.completedAt.seconds ? s.completedAt.seconds*1000 : s.completedAt) : 0;
         if(t>map[s._uid].lastActive)map[s._uid].lastActive=t;
     });
     state.usersMap=map;
@@ -488,7 +547,12 @@ function updateFeed(){
     const b=document.getElementById('live-feed-body');
     if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-text-muted italic">No recent activity.</td></tr>`;return;}
     b.innerHTML=state.sessions.slice(0,20).map(s=>{
-        const d=s.completedAt?new Date(s.completedAt.seconds*1000):new Date();
+        // Handle timestamps that might be numbers (from cache) or Objects (from Firestore)
+        let millis = new Date().getTime();
+        if(s.completedAt){
+             millis = typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000;
+        }
+        const d=new Date(millis);
         return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors"><td class="p-4 text-text-muted">${d.toLocaleDateString()} <span class="text-text-faint">${d.toLocaleTimeString()}</span></td><td class="p-4 text-white font-medium">${s.taskTitle||'Unknown Task'}</td><td class="p-4 text-brand">${s.duration||25}m</td></tr>`
     }).join('');
 }
@@ -497,7 +561,9 @@ function updateCharts(){
     const days={};
     state.sessions.forEach(s=>{
         if(!s.completedAt)return;
-        const d=new Date(s.completedAt.seconds*1000).toLocaleDateString();
+        // Handle timestamps uniformly
+        const millis = typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000;
+        const d=new Date(millis).toLocaleDateString();
         days[d]=(days[d]||0)+(s.duration||25);
     });
     const sortedDays=Object.keys(days).sort((a,b)=>new Date(a)-new Date(b)).slice(-7);
