@@ -15,7 +15,6 @@ const FIREBASE_CONFIG = {
 const APP_ID = 'timetrekker-v1';
 
 // SECURITY: Only this UID is allowed to use "View As" mode
-// This matches your Firestore Rule 1
 const ADMIN_UID = "oxnHr84lGgOkLQuxSouJaXJDx1I3";
 
 const fb = initializeApp(FIREBASE_CONFIG);
@@ -42,8 +41,8 @@ if ('serviceWorker' in navigator) {
 const D = document;
 const $ = (id) => {
     const el = D.getElementById(id);
-    if (!el) console.warn(`Element with ID "${id}" not found.`);
-    return el;
+    // Don't spam console for missing analytics elements if we aren't in analytics view
+    return el; 
 };
 
 const esc = (str) => {
@@ -125,15 +124,8 @@ const state = {
 
 // HELPER: Securely determine which UID to read/write from
 const getUid = () => {
-    // 1. Must be logged in
     if (!state.user) return null;
-
-    // 2. Check override conditions: Param exists AND User is the specific ADMIN_UID
-    if (VIEW_AS_UID && state.user.uid === ADMIN_UID) {
-        return VIEW_AS_UID;
-    }
-
-    // 3. Fallback to authenticated user (Security Default)
+    if (VIEW_AS_UID && state.user.uid === ADMIN_UID) return VIEW_AS_UID;
     return state.user.uid;
 };
 
@@ -178,20 +170,22 @@ const getEls = () => ({
     taskPomoDisplay: $('task-pomo-display'), totalTimeCalc: $('total-time-calc'), taskRepeat: $('task-repeat'), taskReminder: $('task-reminder')
 });
 
-Chart.defaults.font.family = 'Inter';
-Chart.defaults.color = '#a3a3a3';
-Chart.defaults.borderColor = '#333333';
-Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-Chart.defaults.plugins.tooltip.titleColor = '#fff';
-Chart.defaults.plugins.tooltip.bodyColor = '#a3a3a3';
-Chart.defaults.plugins.tooltip.borderColor = '#333';
-Chart.defaults.plugins.tooltip.borderWidth = 1;
+// Configure Chart.js Defaults Safely
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = 'Inter';
+    Chart.defaults.color = '#a3a3a3';
+    Chart.defaults.borderColor = '#333333';
+    Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)';
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+    Chart.defaults.plugins.tooltip.titleColor = '#fff';
+    Chart.defaults.plugins.tooltip.bodyColor = '#a3a3a3';
+    Chart.defaults.plugins.tooltip.borderColor = '#333';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+}
 
 async function syncUserProfile(u) {
     if (!u) return;
     // CRITICAL: Do not sync Admin profile data to User's profile when viewing as user
-    // We check UID instead of email now
     if (VIEW_AS_UID && u.uid === ADMIN_UID) return;
 
     try {
@@ -213,13 +207,11 @@ async function syncUserProfile(u) {
     } catch (e) { console.error("Error syncing user profile:", e); }
 }
 
-// Function to show Admin Mode banner
 function showAdminBanner(uid) {
     const banner = D.createElement('div');
     banner.className = 'fixed top-0 left-0 right-0 h-6 bg-red-600 z-[100] flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white shadow-lg';
     banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> ADMIN MODE: VIEWING AS ${uid}`;
     D.body.prepend(banner);
-    // Adjust sidebar and main layout to push down
     D.getElementById('sidebar').style.top = '24px';
     D.querySelector('main').style.paddingTop = '0px'; 
     D.body.style.height = 'calc(100vh - 24px)';
@@ -232,7 +224,6 @@ onAuthStateChanged(auth, u => {
         syncUserProfile(u);
         const els = getEls();
         
-        // Security check for "View As" mode
         let viewingAsUser = false;
         if (VIEW_AS_UID) {
             if (u.uid === ADMIN_UID) {
@@ -241,18 +232,16 @@ onAuthStateChanged(auth, u => {
                 console.log(`%c[TimeTrekker Admin] Access granted for: ${VIEW_AS_UID}`, "color: #10b981; font-weight: bold; font-size: 14px;");
             } else {
                 console.warn("%c[TimeTrekker Security] Unauthorized 'view as' attempt blocked.", "color: red; font-weight: bold;");
-                // We do NOT enable the banner or the flag, getUid() will automatically fallback to own UID
             }
         }
 
-        const effectiveUid = getUid(); // This now safely returns own UID if not admin
+        const effectiveUid = getUid();
 
         const p = $('user-profile-display');
         if (p) {
             p.classList.remove('hidden'); p.classList.add('flex');
             
             if (viewingAsUser) {
-                // Admin View UI
                 $('user-name-text').textContent = "Simulated User";
                 $('user-email-text').textContent = VIEW_AS_UID;
                 $('user-avatar-initials').textContent = "?";
@@ -265,7 +254,6 @@ onAuthStateChanged(auth, u => {
                     }
                 });
             } else {
-                // Normal User UI
                 $('user-name-text').textContent = u.displayName || u.email.split('@')[0];
                 $('user-email-text').textContent = u.email;
                 $('user-avatar-initials').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
@@ -752,32 +740,175 @@ const app = {
 window.app = app;
 
 function createGradient(ctx, color) { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, color + '90'); g.addColorStop(1, color + '05'); return g }
+
 function updateAnalytics() {
     const els = getEls();
-    if ((!state.logs.length && !state.tasks.length) && state.view === 'analytics') return;
-    const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), now = new Date(), todayStr = getDayStr(now), startOfWeek = new Date(now); const day = startOfWeek.getDay() || 7; if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); startOfWeek.setHours(0, 0, 0, 0);
-    const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === todayStr), logsWeek = state.logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek), tasksDone = state.tasks.filter(t => t.status === 'done'), tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr)), tasksWeek = tasksDone.filter(t => { if (!t.completedAt) return false; return new Date(t.completedAt) >= startOfWeek });
-    const fmtTime = m => { const h = Math.floor(m / 60), rem = Math.round(m % 60); return h > 0 ? `${h}h ${rm}m` : `${rem}m` };
-    els.analytics.timeTotal.textContent = fmtTime(state.logs.reduce((a, b) => a + (b.duration || 25), 0)); els.analytics.timeWeek.textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0)); els.analytics.timeToday.textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0)); els.analytics.taskTotal.textContent = tasksDone.length; els.analytics.taskWeek.textContent = tasksWeek.length; els.analytics.taskToday.textContent = tasksToday.length;
-    const activeTasks = state.tasks.filter(t => t.status === 'todo').length + tasksDone.length; els.analytics.completionRate.textContent = activeTasks > 0 ? Math.round((tasksDone.length / activeTasks) * 100) + '%' : '0%'; els.analytics.avgSession.textContent = (state.logs.length > 0 ? Math.round(state.logs.reduce((a, b) => a + (b.duration || 25), 0) / state.logs.length) : 0) + 'm';
-    let morning = 0, night = 0; state.logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); els.analytics.earlyBird.textContent = fmtTime(morning); els.analytics.nightOwl.textContent = fmtTime(night); els.analytics.projectCount.textContent = state.projects.size;
-    let cs = 0; for (let i = 0; i < 365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if (state.logs.some(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === getDayStr(d))) cs++; else if (i > 0) break } els.analytics.streakDays.textContent = cs + ' Days';
-    const hours = Array(24).fill(0); state.logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
-    const weekdays = Array(7).fill(0); state.logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
-    const maxHour = hours.indexOf(Math.max(...hours)), maxDayIdx = weekdays.indexOf(Math.max(...weekdays)), days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; if (state.logs.length > 5) els.analytics.insightText.textContent = `You are most productive around ${maxHour}:00 and your best day is ${days[maxDayIdx]}. Keep it up!`;
-    const grid = els.analytics.timelineGrid; grid.innerHTML = ''; const tooltip = $('global-tooltip'), showTooltip = (e, txt, sub) => { tooltip.innerHTML = `<strong>${esc(txt)}</strong><span class="sub">${esc(sub)}</span>`; tooltip.style.opacity = '1'; tooltip.style.left = e.pageX + 'px'; tooltip.style.top = e.pageY + 'px' }, hideTooltip = () => { tooltip.style.opacity = '0' };
-    for (let i = 0; i < 14; i++) { const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDayStr(d), dayLogs = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === dStr), row = D.createElement('div'); row.className = "flex items-center h-8 hover:bg-dark-hover rounded transition-colors"; const lbl = D.createElement('div'); lbl.className = "w-24 text-[10px] text-text-muted font-bold uppercase tracking-wider pl-2 flex-shrink-0"; lbl.textContent = i === 0 ? "Today" : (i === 1 ? "Yesterday" : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })); const bars = D.createElement('div'); bars.className = "flex-1 h-full relative bg-dark-bg rounded mx-2 overflow-hidden border border-dark-border"; for (let j = 1; j < 6; j++) { const l = D.createElement('div'); l.className = "absolute top-0 bottom-0 border-l border-dark-border opacity-30"; l.style.left = `${(j * 4 / 24) * 100}%`; bars.appendChild(l) } dayLogs.forEach(l => { const ld = new Date(l.completedAt.seconds * 1000), sm = (ld.getHours() * 60) + ld.getMinutes(), dur = l.duration || 25, lp = ((sm - dur) / 1440) * 100, wp = (dur / 1440) * 100, b = D.createElement('div'); b.className = "absolute top-1.5 bottom-1.5 rounded-sm bg-brand opacity-80 z-10 hover:bg-white transition-colors cursor-pointer"; b.style.left = `${lp}%`; b.style.width = `${Math.max(wp, 0.5)}%`; b.addEventListener('mousemove', (e) => showTooltip(e, l.taskTitle || 'Focus Session', `${ld.getHours()}:${ld.getMinutes().toString().padStart(2, '0')} - ${dur} mins`)); b.addEventListener('mouseleave', hideTooltip); bars.appendChild(b) }); row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) }
-    const r = state.analytics.range; let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12); if (r === 'year') { for (let i = 11; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); lbl.push(d.toLocaleString('default', { month: 'short' })); const mLogs = state.logs.filter(l => { if (!l.completedAt) return !1; const ld = new Date(l.completedAt.seconds * 1000); return ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear() }); dpFocus.push((mLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); const mTasks = state.tasks.filter(t => { if (t.status !== 'done' || !t.completedAt) return !1; const td = new Date(t.completedAt); return td.getMonth() === d.getMonth() && td.getFullYear() === d.getFullYear() }); dpTask.push(mTasks.length) } } else { for (let i = dlb - 1; i >= 0; i--) { const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDayStr(d); lbl.push(d.toLocaleDateString('en-US', { weekday: 'short', day: r === 'month' ? 'numeric' : undefined })); const dLogs = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === dStr); dpFocus.push((dLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); const dTasks = state.tasks.filter(t => t.status === 'done' && t.completedAt && t.completedAt.startsWith(dStr)); dpTask.push(dTasks.length) } }
-    const cOpts = { responsive: !0, maintainAspectRatio: !1, scales: { y: { beginAtZero: !0, grid: { color: 'rgba(255,255,255,0.03)', borderDash: [4, 4] } }, x: { grid: { display: !1 } } }, plugins: { legend: { display: !1 } }, elements: { bar: { borderRadius: 4, hoverBackgroundColor: '#fff' }, line: { tension: 0.4 } }, interaction: { mode: 'index', intersect: !1 } };
-    const gC = (ctx, t, l, d, c, tl) => { const i = t === 'line'; return { type: t, data: { labels: l, datasets: [{ label: tl, data: d, backgroundColor: i ? createGradient(ctx, c) : c, borderColor: c, borderRadius: 4, fill: i, borderWidth: i ? 2 : 0, pointRadius: i ? 0 : 0, pointHoverRadius: 6 }] }, options: { ...cOpts, plugins: { ...cOpts.plugins, tooltip: { callbacks: { label: x => x.raw + ' ' + (tl.includes('Hours') ? 'hrs' : (tl.includes('Tasks') ? 'tasks' : 'mins')) } } } } } };
-    if (state.charts.focusBar) state.charts.focusBar.destroy(); const ctxF = els.analytics.focusBarChart.getContext('2d'); state.charts.focusBar = new Chart(ctxF, gC(ctxF, state.chartTypes.focus, lbl, dpFocus, '#ff5757', 'Focus Hours'));
-    if (state.charts.taskBar) state.charts.taskBar.destroy(); const ctxT = els.analytics.taskBarChart.getContext('2d'); state.charts.taskBar = new Chart(ctxT, gC(ctxT, state.chartTypes.task, lbl, dpTask, '#3b82f6', 'Tasks Done'));
-    if (state.charts.hourly) state.charts.hourly.destroy(); const ctxH = els.analytics.hourlyChart.getContext('2d'); state.charts.hourly = new Chart(ctxH, gC(ctxH, state.chartTypes.hourly, Array.from({ length: 24 }, (_, i) => i), hours, '#10b981', 'Minutes'));
-    if (state.charts.weekday) state.charts.weekday.destroy(); const ctxW = els.analytics.weekdayChart.getContext('2d'); state.charts.weekday = new Chart(ctxW, gC(ctxW, state.chartTypes.weekday, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], weekdays, '#f59e0b', 'Minutes'));
-    const pm = {}; state.logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]); if (state.charts.project) state.charts.project.destroy(); state.charts.project = new Chart(els.analytics.projectChart.getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: !0, maintainAspectRatio: !1, cutout: '75%', plugins: { legend: { display: !1 }, tooltip: { callbacks: { label: c => c.label + ': ' + Math.round(c.raw) + 'm' } } } } }); els.analytics.projList.innerHTML = sp.map(x => `<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
-    const pri = { high: 0, med: 0, low: 0, none: 0 }; tasksDone.forEach(t => pri[t.priority || 'none']++); if (state.charts.priority) state.charts.priority.destroy(); state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: !0, maintainAspectRatio: !1, cutout: '75%', plugins: { legend: { display: !1 } } } });
-    const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) }); const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5); if (st.length > 0) els.analytics.tagList.innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
-    els.analytics.sessionLogBody.innerHTML = state.logs.slice(0, 20).map(l => { const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration || 25}m</td></tr>` }).join('');
+    if (state.view !== 'analytics') return;
+    if (!els.analytics.timeTotal) return; 
+
+    const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const now = new Date();
+    const todayStr = getDayStr(now);
+    const startOfWeek = new Date(now); 
+    const day = startOfWeek.getDay() || 7; 
+    if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); 
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === todayStr);
+    const logsWeek = state.logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek);
+    const tasksDone = state.tasks.filter(t => t.status === 'done');
+    const tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr));
+    const tasksWeek = tasksDone.filter(t => { if (!t.completedAt) return false; return new Date(t.completedAt) >= startOfWeek });
+    
+    const fmtTime = m => { const h = Math.floor(m / 60), rem = Math.round(m % 60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
+
+    els.analytics.timeTotal.textContent = fmtTime(state.logs.reduce((a, b) => a + (b.duration || 25), 0));
+    els.analytics.timeWeek.textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0));
+    els.analytics.timeToday.textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0));
+    els.analytics.taskTotal.textContent = tasksDone.length;
+    els.analytics.taskWeek.textContent = tasksWeek.length;
+    els.analytics.taskToday.textContent = tasksToday.length;
+
+    const activeTasks = state.tasks.filter(t => t.status === 'todo').length + tasksDone.length;
+    els.analytics.completionRate.textContent = activeTasks > 0 ? Math.round((tasksDone.length / activeTasks) * 100) + '%' : '0%';
+    els.analytics.avgSession.textContent = (state.logs.length > 0 ? Math.round(state.logs.reduce((a, b) => a + (b.duration || 25), 0) / state.logs.length) : 0) + 'm';
+
+    let morning = 0, night = 0;
+    state.logs.forEach(l => { 
+        if (l.completedAt) { 
+            const h = new Date(l.completedAt.seconds * 1000).getHours(); 
+            if (h < 12) morning += (l.duration || 25); 
+            if (h >= 20) night += (l.duration || 25);
+        } 
+    });
+    els.analytics.earlyBird.textContent = fmtTime(morning);
+    els.analytics.nightOwl.textContent = fmtTime(night);
+    els.analytics.projectCount.textContent = state.projects.size;
+
+    let cs = 0;
+    for (let i = 0; i < 365; i++) {
+        const d = new Date(); d.setDate(now.getDate() - i);
+        if (state.logs.some(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === getDayStr(d))) cs++;
+        else if (i > 0) break;
+    }
+    els.analytics.streakDays.textContent = cs + ' Days';
+
+    // Chart.js Safeties
+    if (typeof Chart === 'undefined') return;
+    
+    // --- Data Prep for Charts ---
+    const hours = Array(24).fill(0);
+    state.logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
+
+    const weekdays = Array(7).fill(0);
+    state.logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
+
+    const maxHour = hours.indexOf(Math.max(...hours));
+    const maxDayIdx = weekdays.indexOf(Math.max(...weekdays));
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    if (state.logs.length > 5) els.analytics.insightText.textContent = `You are most productive around ${maxHour}:00 and your best day is ${days[maxDayIdx]}. Keep it up!`;
+
+    const r = state.analytics.range;
+    let lbl = [], dpFocus = [], dpTask = [], dlb = r === 'week' ? 7 : (r === 'month' ? 30 : 12);
+
+    if (r === 'year') {
+        for (let i = 11; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            lbl.push(d.toLocaleString('default', { month: 'short' }));
+            const mLogs = state.logs.filter(l => {
+                if (!l.completedAt) return false;
+                const ld = new Date(l.completedAt.seconds * 1000);
+                return ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear();
+            });
+            dpFocus.push((mLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1));
+            const mTasks = state.tasks.filter(t => {
+                if (t.status !== 'done' || !t.completedAt) return false;
+                const td = new Date(t.completedAt);
+                return td.getMonth() === d.getMonth() && td.getFullYear() === d.getFullYear();
+            });
+            dpTask.push(mTasks.length);
+        }
+    } else {
+        for (let i = dlb - 1; i >= 0; i--) {
+            const d = new Date(); d.setDate(now.getDate() - i);
+            const dStr = getDayStr(d);
+            lbl.push(d.toLocaleDateString('en-US', { weekday: 'short', day: r === 'month' ? 'numeric' : undefined }));
+            const dLogs = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === dStr);
+            dpFocus.push((dLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1));
+            const dTasks = state.tasks.filter(t => t.status === 'done' && t.completedAt && t.completedAt.startsWith(dStr));
+            dpTask.push(dTasks.length);
+        }
+    }
+
+    const cOpts = {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)', borderDash: [4, 4] } }, x: { grid: { display: false } } },
+        plugins: { legend: { display: false } },
+        elements: { bar: { borderRadius: 4, hoverBackgroundColor: '#fff' }, line: { tension: 0.4 } },
+        interaction: { mode: 'index', intersect: false }
+    };
+
+    const gC = (ctx, t, l, d, c, tl) => {
+        const i = t === 'line';
+        return {
+            type: t,
+            data: {
+                labels: l,
+                datasets: [{
+                    label: tl,
+                    data: d,
+                    backgroundColor: i ? createGradient(ctx, c) : c,
+                    borderColor: c,
+                    borderRadius: 4,
+                    fill: i,
+                    borderWidth: i ? 2 : 0,
+                    pointRadius: i ? 0 : 0,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: { ...cOpts, plugins: { ...cOpts.plugins, tooltip: { callbacks: { label: x => x.raw + ' ' + (tl.includes('Hours') ? 'hrs' : (tl.includes('Tasks') ? 'tasks' : 'mins')) } } } }
+        }
+    };
+
+    if(els.analytics.focusBarChart) {
+        if (state.charts.focusBar) state.charts.focusBar.destroy();
+        const ctxF = els.analytics.focusBarChart.getContext('2d');
+        state.charts.focusBar = new Chart(ctxF, gC(ctxF, state.chartTypes.focus, lbl, dpFocus, '#ff5757', 'Focus Hours'));
+    }
+
+    if(els.analytics.taskBarChart) {
+        if (state.charts.taskBar) state.charts.taskBar.destroy();
+        const ctxT = els.analytics.taskBarChart.getContext('2d');
+        state.charts.taskBar = new Chart(ctxT, gC(ctxT, state.chartTypes.task, lbl, dpTask, '#3b82f6', 'Tasks Done'));
+    }
+
+    if(els.analytics.hourlyChart) {
+        if (state.charts.hourly) state.charts.hourly.destroy();
+        const ctxH = els.analytics.hourlyChart.getContext('2d');
+        state.charts.hourly = new Chart(ctxH, gC(ctxH, state.chartTypes.hourly, Array.from({ length: 24 }, (_, i) => i), hours, '#10b981', 'Minutes'));
+    }
+
+    if(els.analytics.weekdayChart) {
+        if (state.charts.weekday) state.charts.weekday.destroy();
+        const ctxW = els.analytics.weekdayChart.getContext('2d');
+        state.charts.weekday = new Chart(ctxW, gC(ctxW, state.chartTypes.weekday, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], weekdays, '#f59e0b', 'Minutes'));
+    }
+
+    // Projects Chart
+    const pm = {}; state.logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) });
+    const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
+    if(els.analytics.projectChart) {
+        if (state.charts.project) state.charts.project.destroy();
+        state.charts.project = new Chart(els.analytics.projectChart.getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.label + ': ' + Math.round(c.raw) + 'm' } } } } });
+    }
+    
+    // Priority Chart
+    const pri = { high: 0, med: 0, low: 0, none: 0 };
+    tasksDone.forEach(t => pri[t.priority || 'none']++);
+    if(els.analytics.priorityChart) {
+        if (state.charts.priority) state.charts.priority.destroy();
+        state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
+    }
 }
 
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null)); $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value)); $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value) }); D.addEventListener('click', e => { if (!e.target.closest('#project-dropdown') && !e.target.closest('#priority-dropdown') && !e.target.closest('#repeat-dropdown')) { D.getElementById('project-options').classList.add('hidden'); D.getElementById('priority-options').classList.add('hidden'); D.getElementById('repeat-options').classList.add('hidden') } });
