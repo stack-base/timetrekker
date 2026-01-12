@@ -152,12 +152,16 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                         <h3 class="text-lg font-bold text-white">Active Users</h3>
                         <p class="text-xs text-text-muted mt-1">Full user directory from Firestore.</p>
                     </div>
+                    <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-bg border border-dark-border text-text-muted hover:text-white hover:border-yellow-500 transition-all">
+                        <i class="ph-bold ph-star mr-2"></i> Show Starred Only
+                    </button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                          <thead class="bg-dark-sidebar border-b border-dark-border">
                             <tr>
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase w-16"></th>
+                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th> 
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">User Profile</th>
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">Login/Provider</th>
                                 <th class="p-4 text-xs font-bold text-text-muted uppercase">Engagement</th>
@@ -216,7 +220,7 @@ const appId='timetrekker-v1';
 const fb=initializeApp(C);
 const auth=getAuth(fb);
 const db=getFirestore(fb);
-const CACHE_KEY = 'orion_local_cache_v1'; // CACHE KEY
+const CACHE_KEY = 'orion_local_cache_v1';
 
 Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
@@ -227,9 +231,20 @@ const log=(msg)=>{
     if(b){b.innerHTML+=`> ${msg}<br>`;b.scrollTop=b.scrollHeight;}
 };
 
-const state={sessions:[],tasks:[],usersList:[],charts:{},view:'overview',usersMap:{},filterUser:null};
+// --- UPDATED STATE WITH STARRED LOGIC ---
+const state={
+    sessions:[],
+    tasks:[],
+    usersList:[],
+    charts:{},
+    view:'overview',
+    usersMap:{},
+    filterUser:null,
+    // Initialize starred list from LocalStorage
+    starred: JSON.parse(localStorage.getItem('orion_starred_users') || '[]'),
+    showStarredOnly: false
+};
 
-// --- CACHE LOGIC START ---
 const saveCache = () => {
     try {
         const cacheData = {
@@ -253,8 +268,7 @@ const loadCache = () => {
         state.sessions = data.sessions || [];
         state.tasks = data.tasks || [];
         state.usersList = data.usersList || [];
-        
-        const age = Math.round((Date.now() - data.timestamp) / 1000 / 60); // in minutes
+        const age = Math.round((Date.now() - data.timestamp) / 1000 / 60);
         log(`<span class="text-blue-400">Loaded from Cache (${age} mins ago).</span>`);
         return true;
     } catch (e) {
@@ -262,7 +276,6 @@ const loadCache = () => {
         return false;
     }
 };
-// --- CACHE LOGIC END ---
 
 const showLoginModal=()=>{
     if(document.getElementById('dev-login-modal'))return;
@@ -295,7 +308,6 @@ onAuthStateChanged(auth,async u=>{
     if(u){
         if(modal)modal.remove();
         log(`Authenticated as ${u.email}`);
-        // Default to cache on load (false = do not force refresh)
         app.refreshData(false);
     }else{
         log('No user detected. Showing login prompt...');
@@ -337,24 +349,44 @@ const app={
             tr.style.display=txt.includes(q)?'':'none';
         });
     },
-    // REFRESH LOGIC UPDATED
+    // --- NEW STAR FEATURE LOGIC ---
+    toggleStar: (uid) => {
+        if (state.starred.includes(uid)) {
+            state.starred = state.starred.filter(id => id !== uid);
+        } else {
+            state.starred.push(uid);
+        }
+        localStorage.setItem('orion_starred_users', JSON.stringify(state.starred));
+        renderUsersTable();
+    },
+    toggleStarredFilter: () => {
+        state.showStarredOnly = !state.showStarredOnly;
+        const btn = document.getElementById('btn-star-filter');
+        if (state.showStarredOnly) {
+            btn.classList.add('bg-yellow-500/10', 'text-yellow-500', 'border-yellow-500/20');
+            btn.classList.remove('bg-dark-bg', 'text-text-muted', 'border-dark-border');
+            btn.innerHTML = `<i class="ph-fill ph-star mr-2"></i> Starred Only`;
+        } else {
+            btn.classList.remove('bg-yellow-500/10', 'text-yellow-500', 'border-yellow-500/20');
+            btn.classList.add('bg-dark-bg', 'text-text-muted', 'border-dark-border');
+            btn.innerHTML = `<i class="ph-bold ph-star mr-2"></i> Show Starred Only`;
+        }
+        renderUsersTable();
+    },
+    // ----------------------------
     refreshData:async(forceRefresh = true)=>{
         try{
-            // Try loading from cache if forceRefresh is false
             if(!forceRefresh && loadCache()){
                 renderAll();
                 return;
             }
-
             log('Fetching LIVE data from Firestore...');
-            
             const qSessions=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(500));
             const snapSessions=await getDocs(qSessions);
             state.sessions=snapSessions.docs.map(d=>{
                 const uid=d.ref.parent?.parent?.id||'unknown';
                 return{...d.data(),_uid:uid};
             });
-            
             log('Fetching global tasks...');
             const qTasks=query(collectionGroup(db,'tasks'),limit(500));
             const snapTasks=await getDocs(qTasks);
@@ -362,18 +394,13 @@ const app={
                 const uid=d.ref.parent?.parent?.id||'unknown';
                 return{...d.data(),_uid:uid};
             });
-            
             log('Fetching user profiles...');
             const qUsers=query(collection(db,'artifacts',appId,'users'));
             const snapUsers=await getDocs(qUsers);
             state.usersList=snapUsers.docs.map(d=>({id:d.id,...d.data()}));
-            
             log(`Found ${state.usersList.length} registered users.`);
-            
-            // SAVE TO CACHE
             saveCache();
             renderAll();
-
         }catch(e){
             log(`ERROR: ${e.message}`);
             if(e.message.includes('index'))alert('Missing Firestore Index! Check Console.');
@@ -404,7 +431,6 @@ function processUsers(){
             provider:u.providerId||'Unknown',
             tasks:0,
             focus:0,
-            // Handle Timestamp objects vs Cached numbers
             lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0,
             profileLoaded:true
         };
@@ -416,20 +442,35 @@ function processUsers(){
     state.sessions.forEach(s=>{
         if(!map[s._uid])map[s._uid]={uid:s._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:s._uid};
         map[s._uid].focus+=(s.duration||25);
-        // Handle Timestamp objects vs Cached numbers
         const t=s.completedAt ? (s.completedAt.seconds ? s.completedAt.seconds*1000 : s.completedAt) : 0;
         if(t>map[s._uid].lastActive)map[s._uid].lastActive=t;
     });
     state.usersMap=map;
 }
 
+// --- REPLACED RENDER FUNCTION FOR STARS ---
 function renderUsersTable(){
     const tbody=document.getElementById('users-table-body');
-    const users=Object.values(state.usersMap);
-    if(users.length===0){tbody.innerHTML=`<tr><td colspan="6" class="p-4 text-center text-text-muted">No user data found.</td></tr>`;return;}
+    let users=Object.values(state.usersMap);
+
+    // Filter Logic
+    if(state.showStarredOnly) {
+        users = users.filter(u => state.starred.includes(u.uid));
+    }
+
+    if(users.length===0){
+        tbody.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-text-muted">No user data found.</td></tr>`;
+        return;
+    }
+
     tbody.innerHTML=users.map(u=>{
         const last=u.lastActive?new Date(u.lastActive).toLocaleDateString()+' '+new Date(u.lastActive).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Never';
         const h=Math.floor(u.focus/60);
+        
+        // Check Star Status
+        const isStarred = state.starred.includes(u.uid);
+        const starIconClass = isStarred ? "ph-fill ph-star text-yellow-500" : "ph-bold ph-star text-dark-border hover:text-text-muted";
+        
         let avatarHTML;
         if(u.avatar){
              avatarHTML=`<img src="${u.avatar}" class="w-8 h-8 rounded-full bg-gray-700 object-cover">`;
@@ -437,7 +478,37 @@ function renderUsersTable(){
             const initial=(u.name||u.email||'?').charAt(0).toUpperCase();
             avatarHTML=`<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">${initial}</div>`;
         }
-        return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors"><td class="p-4">${avatarHTML}</td><td class="p-4"><div class="text-white font-medium text-sm">${u.name||'No Name'}</div><div class="text-xs text-text-muted">${u.email||'No Email'}</div></td><td class="p-4"><span class="px-2 py-1 rounded bg-dark-bg border border-dark-border text-xs text-text-muted">${u.provider}</span></td><td class="p-4"><div class="flex flex-col gap-1"><span class="text-xs text-text-muted"><strong class="text-white">${u.tasks}</strong> tasks</span><span class="text-xs text-brand"><strong class="text-brand">${h}h ${u.focus%60}m</strong> focus</span></div></td><td class="p-4 text-text-muted text-xs">${last}</td><td class="p-4 text-right"><div class="flex items-center justify-end gap-2"><button onclick="app.viewAsUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-brand/10 text-brand border border-brand/20 hover:bg-brand/20 transition-all flex items-center justify-center" title="Simulate User View"><i class="ph-bold ph-app-window mr-2"></i> View App</button><button onclick="app.filterTasksByUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all flex items-center justify-center group"><i class="ph-bold ph-list-magnifying mr-2 group-hover:text-brand"></i> View Tasks</button></div></td></tr>`;
+        return `
+        <tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
+            <td class="p-4 w-8 text-center">
+                <button onclick="app.toggleStar('${u.uid}')" class="transition-transform active:scale-90">
+                    <i class="${starIconClass} text-lg"></i>
+                </button>
+            </td>
+            <td class="p-4">${avatarHTML}</td>
+            <td class="p-4">
+                <div class="text-white font-medium text-sm">${u.name||'No Name'}</div>
+                <div class="text-xs text-text-muted">${u.email||'No Email'}</div>
+            </td>
+            <td class="p-4"><span class="px-2 py-1 rounded bg-dark-bg border border-dark-border text-xs text-text-muted">${u.provider}</span></td>
+            <td class="p-4">
+                <div class="flex flex-col gap-1">
+                    <span class="text-xs text-text-muted"><strong class="text-white">${u.tasks}</strong> tasks</span>
+                    <span class="text-xs text-brand"><strong class="text-brand">${h}h ${u.focus%60}m</strong> focus</span>
+                </div>
+            </td>
+            <td class="p-4 text-text-muted text-xs">${last}</td>
+            <td class="p-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                    <button onclick="app.viewAsUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-brand/10 text-brand border border-brand/20 hover:bg-brand/20 transition-all flex items-center justify-center" title="Simulate User View">
+                        <i class="ph-bold ph-app-window mr-2"></i> View App
+                    </button>
+                    <button onclick="app.filterTasksByUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all flex items-center justify-center group">
+                        <i class="ph-bold ph-list-magnifying mr-2 group-hover:text-brand"></i> View Tasks
+                    </button>
+                </div>
+            </td>
+        </tr>`;
     }).join('');
 }
 
@@ -547,7 +618,6 @@ function updateFeed(){
     const b=document.getElementById('live-feed-body');
     if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-text-muted italic">No recent activity.</td></tr>`;return;}
     b.innerHTML=state.sessions.slice(0,20).map(s=>{
-        // Handle timestamps that might be numbers (from cache) or Objects (from Firestore)
         let millis = new Date().getTime();
         if(s.completedAt){
              millis = typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000;
@@ -561,7 +631,6 @@ function updateCharts(){
     const days={};
     state.sessions.forEach(s=>{
         if(!s.completedAt)return;
-        // Handle timestamps uniformly
         const millis = typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000;
         const d=new Date(millis).toLocaleDateString();
         days[d]=(days[d]||0)+(s.duration||25);
