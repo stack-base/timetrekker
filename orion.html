@@ -178,14 +178,21 @@ body{background-color:#0a0a0a;color:#ededed;font-family:'Inter',sans-serif}
 
         <div id="view-users" class="view-section hidden animate-fade-in">
              <div class="glass-panel border border-dark-border rounded-xl overflow-hidden">
-                <div class="p-5 border-b border-dark-border bg-white/5">
-                    <h3 class="text-sm font-bold text-white">User Directory</h3>
+                <div class="p-5 border-b border-dark-border bg-white/5 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">User Directory</h3>
+                        <p class="text-[10px] text-text-muted mt-0.5" id="user-count-display">All registered accounts</p>
+                    </div>
+                    <div class="flex bg-black/40 p-1 rounded-full border border-white/5">
+                        <button onclick="app.setUserFilter('all')" id="btn-u-all" class="px-3 py-1 rounded-full bg-white/10 text-white text-[10px] font-bold transition-all">All Users</button>
+                        <button onclick="app.setUserFilter('starred')" id="btn-u-star" class="px-3 py-1 rounded-full text-text-muted hover:text-white text-[10px] transition-all flex items-center"><i class="ph-fill ph-star mr-1"></i> Watchlist</button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                          <thead class="bg-dark-sidebar border-b border-dark-border text-[10px] uppercase text-text-muted tracking-wider">
                             <tr>
-                                <th class="p-4 w-12"></th>
+                                <th class="p-4 w-12 text-center"></th>
                                 <th class="p-4">Identity</th>
                                 <th class="p-4">Cohort</th>
                                 <th class="p-4">Performance</th>
@@ -248,6 +255,7 @@ const fb=initializeApp(C);
 const auth=getAuth(fb);
 const db=getFirestore(fb);
 const CACHE_KEY = 'orion_pro_cache_v2'; 
+const STAR_KEY = 'orion_starred_users';
 
 // GRAPH STYLING
 Chart.defaults.font.family='Inter';
@@ -256,7 +264,7 @@ Chart.defaults.color='#888888';
 Chart.defaults.borderColor='#222222';
 
 const log=(msg)=>{console.log(`[ORION] ${msg}`)};
-const state={sessions:[],tasks:[],usersList:[],charts:{},view:'overview',usersMap:{},filterUser:null};
+const state={sessions:[],tasks:[],usersList:[],charts:{},view:'overview',usersMap:{},filterUser:null,starred:[],userFilter:'all'};
 
 // --- DATA LOGIC ---
 
@@ -271,6 +279,9 @@ const saveCache=()=>{
 };
 
 const loadCache=()=>{
+    // Always load stars from local storage independently
+    state.starred = JSON.parse(localStorage.getItem(STAR_KEY) || '[]');
+    
     const r=localStorage.getItem(CACHE_KEY);
     if(!r)return false;
     try{
@@ -320,6 +331,29 @@ const app={
         if(v==='users')renderUsersTable();
         if(v==='tasks')renderTasksTable();
     },
+    // USER FILTER LOGIC
+    setUserFilter:(f)=>{
+        state.userFilter = f;
+        renderUsersTable();
+        const bAll = document.getElementById('btn-u-all');
+        const bStar = document.getElementById('btn-u-star');
+        if(f==='all'){
+             bAll.className = 'px-3 py-1 rounded-full bg-white/10 text-white text-[10px] font-bold transition-all';
+             bStar.className = 'px-3 py-1 rounded-full text-text-muted hover:text-white text-[10px] transition-all flex items-center';
+        } else {
+             bAll.className = 'px-3 py-1 rounded-full text-text-muted hover:text-white text-[10px] transition-all';
+             bStar.className = 'px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 text-[10px] font-bold transition-all flex items-center';
+        }
+    },
+    toggleStar:(uid)=>{
+        if(state.starred.includes(uid)){
+            state.starred = state.starred.filter(i=>i!==uid);
+        } else {
+            state.starred.push(uid);
+        }
+        localStorage.setItem(STAR_KEY, JSON.stringify(state.starred));
+        renderUsersTable();
+    },
     filterTasksByUser:(uid)=>{state.filterUser=uid;state.keepFilter=true;app.setView('tasks');},
     clearTaskFilter:()=>{state.filterUser=null;renderTasksTable();},
     filterTasks:(q)=>{
@@ -341,6 +375,9 @@ const app={
             // Users
             const qU=query(collection(db,'artifacts','timetrekker-v1','users'));
             state.usersList=(await getDocs(qU)).docs.map(d=>({id:d.id,...d.data()}));
+            
+            // Reload stars just in case
+            state.starred = JSON.parse(localStorage.getItem(STAR_KEY) || '[]');
             
             saveCache();
             renderAll();
@@ -512,17 +549,33 @@ function updateCharts(){
 
 function renderUsersTable(){
     const b=document.getElementById('users-table-body');
-    const u=Object.values(state.usersMap);
-    if(!u.length){b.innerHTML='<tr><td colspan="6" class="p-4 text-center">No data</td></tr>';return;}
+    let u=Object.values(state.usersMap);
+    
+    // Filtering Logic
+    if(state.userFilter === 'starred'){
+        u = u.filter(x => state.starred.includes(x.uid));
+        document.getElementById('user-count-display').innerText = `Showing ${u.length} VIP users`;
+    } else {
+        document.getElementById('user-count-display').innerText = `All registered accounts`;
+    }
+
+    if(!u.length){b.innerHTML='<tr><td colspan="6" class="p-4 text-center">No data matching filter</td></tr>';return;}
+    
     b.innerHTML=u.map(x=>{
         const last=x.lastActive?new Date(x.lastActive).toLocaleDateString():'Never';
-        // Cohort Logic: Based on join date or activity (simplified)
         let cohort='<span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[10px]">CASUAL</span>';
         if(x.focus > 300) cohort='<span class="px-1.5 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 text-[10px] font-bold">POWER USER</span>';
         if(!x.lastActive) cohort='<span class="px-1.5 py-0.5 rounded bg-white/5 text-text-muted border border-white/10 text-[10px]">DORMANT</span>';
 
-        return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
-            <td class="p-4"><div class="w-6 h-6 rounded bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-[10px] font-bold">${x.name.charAt(0)}</div></td>
+        const isStarred = state.starred.includes(x.uid);
+        const starIcon = isStarred ? 'ph-fill ph-star text-yellow-500' : 'ph-bold ph-star text-text-muted group-hover:text-white';
+
+        return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors group">
+            <td class="p-4 text-center">
+                <button onclick="app.toggleStar('${x.uid}')" class="p-1 rounded hover:bg-white/10 transition-colors" title="${isStarred?'Remove from Watchlist':'Add to Watchlist'}">
+                    <i class="${starIcon} text-base transition-colors"></i>
+                </button>
+            </td>
             <td class="p-4"><div class="text-white font-medium">${x.name}</div><div class="text-[10px] text-text-muted">${x.email}</div></td>
             <td class="p-4">${cohort}</td>
             <td class="p-4"><div class="flex flex-col"><span class="text-white font-mono">${Math.floor(x.focus/60)}h ${x.focus%60}m</span><div class="w-12 h-0.5 bg-dark-border mt-1 rounded overflow-hidden"><div class="h-full bg-brand" style="width:${Math.min(x.focus/60,100)}%"></div></div></div></td>
@@ -545,7 +598,6 @@ function renderTasksTable(){
         const color = done ? 'text-green-500' : 'text-text-muted';
         const est = t.estimatedPomos || 1;
         const act = t.completedPomos || 0;
-        // Efficiency Ratio Calculation
         let ratio = 0;
         let barColor = 'bg-gray-600';
         if(act > 0) {
