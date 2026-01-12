@@ -14,6 +14,10 @@ const FIREBASE_CONFIG = {
 
 const APP_ID = 'timetrekker-v1';
 
+// SECURITY: Only this UID is allowed to use "View As" mode
+// This matches your Firestore Rule 1
+const ADMIN_UID = "oxnHr84lGgOkLQuxSouJaXJDx1I3";
+
 const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
@@ -119,10 +123,18 @@ const state = {
     lastCheckTime: null
 };
 
-// HELPER: Determine which UID to read/write from
+// HELPER: Securely determine which UID to read/write from
 const getUid = () => {
-    if (VIEW_AS_UID) return VIEW_AS_UID;
-    return state.user ? state.user.uid : null;
+    // 1. Must be logged in
+    if (!state.user) return null;
+
+    // 2. Check override conditions: Param exists AND User is the specific ADMIN_UID
+    if (VIEW_AS_UID && state.user.uid === ADMIN_UID) {
+        return VIEW_AS_UID;
+    }
+
+    // 3. Fallback to authenticated user (Security Default)
+    return state.user.uid;
 };
 
 const saveLocalState = () => {
@@ -179,7 +191,8 @@ Chart.defaults.plugins.tooltip.borderWidth = 1;
 async function syncUserProfile(u) {
     if (!u) return;
     // CRITICAL: Do not sync Admin profile data to User's profile when viewing as user
-    if (VIEW_AS_UID) return;
+    // We check UID instead of email now
+    if (VIEW_AS_UID && u.uid === ADMIN_UID) return;
 
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
@@ -218,23 +231,31 @@ onAuthStateChanged(auth, u => {
         state.user = u;
         syncUserProfile(u);
         const els = getEls();
-        const effectiveUid = getUid();
-
-        // Handle Admin Banner
+        
+        // Security check for "View As" mode
+        let viewingAsUser = false;
         if (VIEW_AS_UID) {
-            showAdminBanner(VIEW_AS_UID);
-            console.log(`%c[TimeTrekker Admin] Viewing data for: ${VIEW_AS_UID}`, "color: #ff5757; font-weight: bold; font-size: 14px;");
+            if (u.uid === ADMIN_UID) {
+                showAdminBanner(VIEW_AS_UID);
+                viewingAsUser = true;
+                console.log(`%c[TimeTrekker Admin] Access granted for: ${VIEW_AS_UID}`, "color: #10b981; font-weight: bold; font-size: 14px;");
+            } else {
+                console.warn("%c[TimeTrekker Security] Unauthorized 'view as' attempt blocked.", "color: red; font-weight: bold;");
+                // We do NOT enable the banner or the flag, getUid() will automatically fallback to own UID
+            }
         }
+
+        const effectiveUid = getUid(); // This now safely returns own UID if not admin
 
         const p = $('user-profile-display');
         if (p) {
             p.classList.remove('hidden'); p.classList.add('flex');
-            // If viewing as user, we might want to fetch THEIR name, but initially show Admin's or "User"
-            if (VIEW_AS_UID) {
+            
+            if (viewingAsUser) {
+                // Admin View UI
                 $('user-name-text').textContent = "Simulated User";
                 $('user-email-text').textContent = VIEW_AS_UID;
                 $('user-avatar-initials').textContent = "?";
-                // Try to fetch actual user profile name
                 getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
                     if(snap.exists()) {
                         const d = snap.data();
@@ -244,6 +265,7 @@ onAuthStateChanged(auth, u => {
                     }
                 });
             } else {
+                // Normal User UI
                 $('user-name-text').textContent = u.displayName || u.email.split('@')[0];
                 $('user-email-text').textContent = u.email;
                 $('user-avatar-initials').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
@@ -298,8 +320,8 @@ const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', 
     }
     if (state.view === 'analytics') updateAnalytics();
 }, err => {
-    console.error("Error fetching tasks. Admin permission issue?", err);
-    if(VIEW_AS_UID) app.showToast("View Only: Permission Error", "error");
+    console.error("Firestore Permission Error:", err);
+    if(VIEW_AS_UID) app.showToast("Permission Denied: Cannot access this data.", "error");
 });
 
 const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 'timer', 'active'), s => {
