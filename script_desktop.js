@@ -41,7 +41,6 @@ if ('serviceWorker' in navigator) {
 const D = document;
 const $ = (id) => {
     const el = D.getElementById(id);
-    // Don't spam console for missing analytics elements if we aren't in analytics view
     return el; 
 };
 
@@ -129,6 +128,15 @@ const getUid = () => {
     return state.user.uid;
 };
 
+// HELPER: Safely parse dates from various formats (Timestamp, String, Date)
+const parseDate = (val) => {
+    if (!val) return null;
+    if (val.seconds !== undefined) return new Date(val.seconds * 1000); // Firestore Timestamp
+    if (typeof val === 'string') return new Date(val); // ISO String
+    if (val instanceof Date) return val; // Date Object
+    return null;
+};
+
 const saveLocalState = () => {
     localStorage.setItem(APP_ID + '_settings', JSON.stringify(state.timer.settings));
     localStorage.setItem(APP_ID + '_ui', JSON.stringify({
@@ -185,7 +193,6 @@ if (typeof Chart !== 'undefined') {
 
 async function syncUserProfile(u) {
     if (!u) return;
-    // CRITICAL: Do not sync Admin profile data to User's profile when viewing as user
     if (VIEW_AS_UID && u.uid === ADMIN_UID) return;
 
     try {
@@ -754,11 +761,11 @@ function updateAnalytics() {
     if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); 
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === todayStr);
-    const logsWeek = state.logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek);
+    const logsToday = state.logs.filter(l => { const d = parseDate(l.completedAt); return d && getDayStr(d) === todayStr });
+    const logsWeek = state.logs.filter(l => { const d = parseDate(l.completedAt); return d && d >= startOfWeek });
     const tasksDone = state.tasks.filter(t => t.status === 'done');
-    const tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr));
-    const tasksWeek = tasksDone.filter(t => { if (!t.completedAt) return false; return new Date(t.completedAt) >= startOfWeek });
+    const tasksToday = tasksDone.filter(t => { const d = parseDate(t.completedAt); return d && getDayStr(d) === todayStr });
+    const tasksWeek = tasksDone.filter(t => { const d = parseDate(t.completedAt); return d && d >= startOfWeek });
     
     const fmtTime = m => { const h = Math.floor(m / 60), rem = Math.round(m % 60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
 
@@ -775,8 +782,9 @@ function updateAnalytics() {
 
     let morning = 0, night = 0;
     state.logs.forEach(l => { 
-        if (l.completedAt) { 
-            const h = new Date(l.completedAt.seconds * 1000).getHours(); 
+        const d = parseDate(l.completedAt);
+        if (d) { 
+            const h = d.getHours(); 
             if (h < 12) morning += (l.duration || 25); 
             if (h >= 20) night += (l.duration || 25);
         } 
@@ -788,7 +796,7 @@ function updateAnalytics() {
     let cs = 0;
     for (let i = 0; i < 365; i++) {
         const d = new Date(); d.setDate(now.getDate() - i);
-        if (state.logs.some(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === getDayStr(d))) cs++;
+        if (state.logs.some(l => { const ld = parseDate(l.completedAt); return ld && getDayStr(ld) === getDayStr(d) })) cs++;
         else if (i > 0) break;
     }
     els.analytics.streakDays.textContent = cs + ' Days';
@@ -798,10 +806,10 @@ function updateAnalytics() {
     
     // --- Data Prep for Charts ---
     const hours = Array(24).fill(0);
-    state.logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
+    state.logs.forEach(l => { const d = parseDate(l.completedAt); if (d) hours[d.getHours()] += (l.duration || 25) });
 
     const weekdays = Array(7).fill(0);
-    state.logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
+    state.logs.forEach(l => { const d = parseDate(l.completedAt); if (d) { const wd = d.getDay(); weekdays[wd == 0 ? 6 : wd - 1] += (l.duration || 25) } });
 
     const maxHour = hours.indexOf(Math.max(...hours));
     const maxDayIdx = weekdays.indexOf(Math.max(...weekdays));
@@ -816,14 +824,15 @@ function updateAnalytics() {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             lbl.push(d.toLocaleString('default', { month: 'short' }));
             const mLogs = state.logs.filter(l => {
-                if (!l.completedAt) return false;
-                const ld = new Date(l.completedAt.seconds * 1000);
+                const ld = parseDate(l.completedAt);
+                if (!ld) return false;
                 return ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear();
             });
-            dpFocus.push((mLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1));
+            dpFocus.push(parseFloat((mLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)));
             const mTasks = state.tasks.filter(t => {
-                if (t.status !== 'done' || !t.completedAt) return false;
-                const td = new Date(t.completedAt);
+                if (t.status !== 'done') return false;
+                const td = parseDate(t.completedAt);
+                if (!td) return false;
                 return td.getMonth() === d.getMonth() && td.getFullYear() === d.getFullYear();
             });
             dpTask.push(mTasks.length);
@@ -833,9 +842,13 @@ function updateAnalytics() {
             const d = new Date(); d.setDate(now.getDate() - i);
             const dStr = getDayStr(d);
             lbl.push(d.toLocaleDateString('en-US', { weekday: 'short', day: r === 'month' ? 'numeric' : undefined }));
-            const dLogs = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === dStr);
-            dpFocus.push((dLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1));
-            const dTasks = state.tasks.filter(t => t.status === 'done' && t.completedAt && t.completedAt.startsWith(dStr));
+            const dLogs = state.logs.filter(l => { const ld = parseDate(l.completedAt); return ld && getDayStr(ld) === dStr });
+            dpFocus.push(parseFloat((dLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)));
+            const dTasks = state.tasks.filter(t => {
+                if (t.status !== 'done') return false;
+                const td = parseDate(t.completedAt);
+                return td && getDayStr(td) === dStr;
+            });
             dpTask.push(dTasks.length);
         }
     }
@@ -900,6 +913,7 @@ function updateAnalytics() {
     if(els.analytics.projectChart) {
         if (state.charts.project) state.charts.project.destroy();
         state.charts.project = new Chart(els.analytics.projectChart.getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.label + ': ' + Math.round(c.raw) + 'm' } } } } });
+        if(els.analytics.projList) els.analytics.projList.innerHTML = sp.map(x => `<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
     }
     
     // Priority Chart
@@ -909,6 +923,14 @@ function updateAnalytics() {
         if (state.charts.priority) state.charts.priority.destroy();
         state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
     }
+
+    // Tag List
+    const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
+    const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if(els.analytics.tagList && st.length > 0) els.analytics.tagList.innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+
+    // Session Log
+    if(els.analytics.sessionLogBody) els.analytics.sessionLogBody.innerHTML = state.logs.slice(0, 20).map(l => { const d = parseDate(l.completedAt) || new Date(); return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration || 25}m</td></tr>` }).join('');
 }
 
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null)); $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value)); $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value) }); D.addEventListener('click', e => { if (!e.target.closest('#project-dropdown') && !e.target.closest('#priority-dropdown') && !e.target.closest('#repeat-dropdown')) { D.getElementById('project-options').classList.add('hidden'); D.getElementById('priority-options').classList.add('hidden'); D.getElementById('repeat-options').classList.add('hidden') } });
@@ -934,7 +956,7 @@ function updateCounts() {
     els.stats.tasksToday.textContent = state.tasks.filter(x => x.status === 'done' && x.dueDate === t).length;
     els.stats.estRemain.textContent = tasksViewTodo.reduce((a, b) => a + (parseInt(b.estimatedPomos) || 0), 0);
 
-    const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === t);
+    const logsToday = state.logs.filter(l => { const d = parseDate(l.completedAt); return d && getDayStr(d) === t });
     const fm = logsToday.reduce((acc, log) => acc + (log.duration || 25), 0);
 
     els.stats.focusTime.textContent = `${Math.floor(fm / 60)}h ${fm % 60}m`;
