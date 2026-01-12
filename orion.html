@@ -43,6 +43,10 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
         <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
             <i class="ph-bold ph-check-square text-lg"></i><span class="ml-3 font-medium text-sm">Tasks Master</span>
         </button>
+        <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">System</div>
+        <button onclick="app.setView('data')" id="nav-data" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
+            <i class="ph-bold ph-database text-lg"></i><span class="ml-3 font-medium text-sm">Data Management</span>
+        </button>
     </nav>
     <div class="p-4 border-t border-dark-border">
         <div class="flex items-center gap-3 mb-4">
@@ -208,6 +212,70 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                 </div>
             </div>
         </div>
+        
+        <div id="view-data" class="view-section hidden animate-fade-in">
+            <div class="bg-dark-card border border-dark-border rounded-xl p-8 max-w-4xl mx-auto">
+                <div class="mb-8 border-b border-dark-border pb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">Data Management & Storage</h2>
+                    <p class="text-text-muted">Manage your local storage, export backups to save Firestore read quotas, and restore data from files.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-dark-bg border border-dark-border rounded-lg p-6 flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="p-3 rounded bg-blue-500/10 text-blue-500 mr-4"><i class="ph-bold ph-download-simple text-2xl"></i></div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Export & Backup</h3>
+                                <p class="text-xs text-text-muted">Save quota: download current state.</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-text-muted mb-6 flex-1">
+                            Download all currently loaded data (Users, Tasks, Sessions) and your Settings (Starred Users) to a JSON file.
+                        </p>
+                        <button onclick="app.exportData()" class="w-full py-3 rounded bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors flex items-center justify-center">
+                            <i class="ph-bold ph-download-simple mr-2"></i> Download Backup
+                        </button>
+                    </div>
+
+                    <div class="bg-dark-bg border border-dark-border rounded-lg p-6 flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="p-3 rounded bg-green-500/10 text-green-500 mr-4"><i class="ph-bold ph-upload-simple text-2xl"></i></div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Import Data</h3>
+                                <p class="text-xs text-text-muted">Restore state without API calls.</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-text-muted mb-6 flex-1">
+                            Load a previously downloaded JSON file. This will populate the dashboard <strong>without</strong> hitting Firestore read limits.
+                        </p>
+                        <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                        <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded bg-dark-card border border-dark-border hover:border-green-500 hover:text-green-500 text-text-muted font-bold transition-all flex items-center justify-center">
+                            <i class="ph-bold ph-upload-simple mr-2"></i> Select Backup File
+                        </button>
+                    </div>
+
+                    <div class="md:col-span-2 bg-dark-sidebar border border-dark-border rounded-lg p-6">
+                        <h3 class="text-lg font-bold text-white mb-4">Local Storage Status</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            <div class="p-4 rounded bg-dark-bg border border-dark-border">
+                                <div class="text-xs text-text-muted uppercase font-bold mb-1">Cache Size</div>
+                                <div class="text-2xl font-mono text-white" id="storage-size">-- KB</div>
+                            </div>
+                            <div class="p-4 rounded bg-dark-bg border border-dark-border">
+                                <div class="text-xs text-text-muted uppercase font-bold mb-1">Starred Users</div>
+                                <div class="text-2xl font-mono text-white" id="storage-starred">0</div>
+                            </div>
+                             <div class="p-4 rounded bg-dark-bg border border-dark-border flex items-center">
+                                <button onclick="app.clearLocalData()" class="w-full h-full py-2 rounded border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors text-sm font-bold uppercase">
+                                    <i class="ph-bold ph-trash mr-2"></i> Clear Cache
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </main>
 <script type="module">
@@ -221,6 +289,7 @@ const fb=initializeApp(C);
 const auth=getAuth(fb);
 const db=getFirestore(fb);
 const CACHE_KEY = 'orion_local_cache_v1';
+const STAR_KEY = 'orion_starred_users';
 
 Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
@@ -231,7 +300,6 @@ const log=(msg)=>{
     if(b){b.innerHTML+=`> ${msg}<br>`;b.scrollTop=b.scrollHeight;}
 };
 
-// --- UPDATED STATE WITH STARRED LOGIC ---
 const state={
     sessions:[],
     tasks:[],
@@ -240,8 +308,7 @@ const state={
     view:'overview',
     usersMap:{},
     filterUser:null,
-    // Initialize starred list from LocalStorage
-    starred: JSON.parse(localStorage.getItem('orion_starred_users') || '[]'),
+    starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
     showStarredOnly: false
 };
 
@@ -253,8 +320,10 @@ const saveCache = () => {
             usersList: state.usersList,
             timestamp: Date.now()
         };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        const str = JSON.stringify(cacheData);
+        localStorage.setItem(CACHE_KEY, str);
         log('<span class="text-green-400">Data cached successfully.</span>');
+        updateStorageStats();
     } catch (e) {
         log('Cache Error (Quota Exceeded?): ' + e.message);
     }
@@ -270,11 +339,24 @@ const loadCache = () => {
         state.usersList = data.usersList || [];
         const age = Math.round((Date.now() - data.timestamp) / 1000 / 60);
         log(`<span class="text-blue-400">Loaded from Cache (${age} mins ago).</span>`);
+        updateStorageStats();
         return true;
     } catch (e) {
         console.error("Cache parsing failed", e);
         return false;
     }
+};
+
+const updateStorageStats = () => {
+    const cache = localStorage.getItem(CACHE_KEY) || '';
+    const stars = localStorage.getItem(STAR_KEY) || '';
+    const totalBytes = cache.length + stars.length;
+    const kb = (totalBytes / 1024).toFixed(2);
+    const mb = (totalBytes / (1024 * 1024)).toFixed(2);
+    const elSize = document.getElementById('storage-size');
+    const elStar = document.getElementById('storage-starred');
+    if(elSize) elSize.innerText = mb > 1 ? `${mb} MB` : `${kb} KB`;
+    if(elStar) elStar.innerText = state.starred.length;
 };
 
 const showLoginModal=()=>{
@@ -325,9 +407,14 @@ const app={
         document.getElementById(`view-${v}`).classList.remove('hidden');
         document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
         document.getElementById(`nav-${v}`).classList.add('active');
-        document.getElementById('page-title').innerText=v==='overview'?'Product Analytics':(v==='users'?'User Directory':'Tasks Master');
+        
+        // Update Title
+        const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'data': 'Data Management'};
+        document.getElementById('page-title').innerText = titles[v] || 'Orion';
+
         if(v==='users')renderUsersTable();
         if(v==='tasks')renderTasksTable();
+        if(v==='data')updateStorageStats();
     },
     filterTasksByUser:(uid)=>{
         state.filterUser=uid;
@@ -349,14 +436,13 @@ const app={
             tr.style.display=txt.includes(q)?'':'none';
         });
     },
-    // --- NEW STAR FEATURE LOGIC ---
     toggleStar: (uid) => {
         if (state.starred.includes(uid)) {
             state.starred = state.starred.filter(id => id !== uid);
         } else {
             state.starred.push(uid);
         }
-        localStorage.setItem('orion_starred_users', JSON.stringify(state.starred));
+        localStorage.setItem(STAR_KEY, JSON.stringify(state.starred));
         renderUsersTable();
     },
     toggleStarredFilter: () => {
@@ -373,7 +459,57 @@ const app={
         }
         renderUsersTable();
     },
-    // ----------------------------
+    // --- NEW DATA MANAGEMENT FUNCTIONS ---
+    exportData: () => {
+        const exportObj = {
+            meta: { version: '1.0', exportDate: new Date().toISOString() },
+            cache: localStorage.getItem(CACHE_KEY),
+            starred: localStorage.getItem(STAR_KEY)
+        };
+        const blob = new Blob([JSON.stringify(exportObj)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orion_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        log('<span class="text-blue-400">Backup downloaded successfully.</span>');
+    },
+    handleFileImport: (input) => {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.cache) localStorage.setItem(CACHE_KEY, data.cache);
+                if (data.starred) {
+                    localStorage.setItem(STAR_KEY, data.starred);
+                    state.starred = JSON.parse(data.starred);
+                }
+                log('<span class="text-green-400">Import successful. Reloading data...</span>');
+                app.refreshData(false); // Reload from the newly imported cache
+                alert('Data imported successfully! The dashboard has been updated.');
+            } catch (err) {
+                alert('Error parsing JSON file. Is it a valid backup?');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+        // reset input
+        input.value = '';
+    },
+    clearLocalData: () => {
+        if(confirm('Are you sure? This will remove all cached data and starred users. You will need to fetch from Firestore again.')){
+            localStorage.removeItem(CACHE_KEY);
+            localStorage.removeItem(STAR_KEY);
+            state.starred = [];
+            window.location.reload();
+        }
+    },
+    // -------------------------------------
     refreshData:async(forceRefresh = true)=>{
         try{
             if(!forceRefresh && loadCache()){
@@ -416,6 +552,7 @@ function renderAll(){
     updateFeed();
     if(state.view==='users')renderUsersTable();
     if(state.view==='tasks')renderTasksTable();
+    updateStorageStats();
 }
 
 window.app=app;
@@ -448,12 +585,10 @@ function processUsers(){
     state.usersMap=map;
 }
 
-// --- REPLACED RENDER FUNCTION FOR STARS ---
 function renderUsersTable(){
     const tbody=document.getElementById('users-table-body');
     let users=Object.values(state.usersMap);
 
-    // Filter Logic
     if(state.showStarredOnly) {
         users = users.filter(u => state.starred.includes(u.uid));
     }
@@ -467,7 +602,6 @@ function renderUsersTable(){
         const last=u.lastActive?new Date(u.lastActive).toLocaleDateString()+' '+new Date(u.lastActive).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Never';
         const h=Math.floor(u.focus/60);
         
-        // Check Star Status
         const isStarred = state.starred.includes(u.uid);
         const starIconClass = isStarred ? "ph-fill ph-star text-yellow-500" : "ph-bold ph-star text-dark-border hover:text-text-muted";
         
