@@ -315,6 +315,9 @@ const app = {
         state.keepFilter = true;
         app.setView('tasks');
     },
+    viewAsUser: (uid) => {
+        window.open(`application.html?uid=${uid}`, '_blank');
+    },
     clearTaskFilter: () => {
         state.filterUser = null;
         renderTasksTable();
@@ -428,9 +431,14 @@ function renderUsersTable() {
             </td>
             <td class="p-4 text-text-muted text-xs">${last}</td>
             <td class="p-4 text-right">
-                <button onclick="app.filterTasksByUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all flex items-center justify-center ml-auto group">
-                    <i class="ph-bold ph-list-magnifying mr-2 group-hover:text-brand"></i> View Tasks
-                </button>
+                <div class="flex items-center justify-end gap-2">
+                    <button onclick="app.viewAsUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-brand/10 text-brand border border-brand/20 hover:bg-brand/20 transition-all flex items-center justify-center" title="Simulate User View">
+                        <i class="ph-bold ph-app-window mr-2"></i> View App
+                    </button>
+                    <button onclick="app.filterTasksByUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all flex items-center justify-center group">
+                        <i class="ph-bold ph-list-magnifying mr-2 group-hover:text-brand"></i> View Tasks
+                    </button>
+                </div>
             </td>
         </tr>`;
     }).join('');
