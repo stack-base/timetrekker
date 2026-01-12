@@ -13,36 +13,27 @@ const FIREBASE_CONFIG = {
 };
 
 const APP_ID = 'timetrekker-v1';
-
-// SECURITY: Only this UID is allowed to use "View As" mode
-// Renamed to 'Orion' for discretion
 const ORION_ID = "oxnHr84lGgOkLQuxSouJaXJDx1I3";
 
 const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
-// Check for Orion Override Parameter
 const URL_PARAMS = new URLSearchParams(window.location.search);
 const VIEW_AS_UID = URL_PARAMS.get('uid');
 
 try {
-    enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code === 'failed-precondition') console.warn('Persistence failed: Multiple tabs open.');
-        else if (err.code === 'unimplemented') console.warn('Persistence not supported.');
-    });
+    enableIndexedDbPersistence(db).catch(() => {});
 } catch (e) {}
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw_desktop.js').catch(err => console.error('SW Failed', err));
+        navigator.serviceWorker.register('./sw_desktop.js').catch(() => {});
     });
 }
 
 const D = document;
-const $ = (id) => {
-    return D.getElementById(id);
-};
+const $ = (id) => D.getElementById(id);
 
 const esc = (str) => {
     if (!str) return '';
@@ -73,9 +64,7 @@ const wakeLock = {
         if ('wakeLock' in navigator) {
             try {
                 wakeLock.sentinel = await navigator.wakeLock.request('screen');
-            } catch (err) {
-                console.warn("Wake Lock error:", err);
-            }
+            } catch (err) {}
         }
     },
     release: async () => {
@@ -121,20 +110,17 @@ const state = {
     lastCheckTime: null
 };
 
-// HELPER: Securely determine which UID to read/write from
 const getUid = () => {
     if (!state.user) return null;
-    // Check if Orion is active
     if (VIEW_AS_UID && state.user.uid === ORION_ID) return VIEW_AS_UID;
     return state.user.uid;
 };
 
-// HELPER: Safely parse dates from various formats (Timestamp, String, Date)
 const parseDate = (val) => {
     if (!val) return null;
-    if (val.seconds !== undefined) return new Date(val.seconds * 1000); // Firestore Timestamp
-    if (typeof val === 'string') return new Date(val); // ISO String
-    if (val instanceof Date) return val; // Date Object
+    if (val.seconds !== undefined) return new Date(val.seconds * 1000);
+    if (typeof val === 'string') return new Date(val);
+    if (val instanceof Date) return val;
     return null;
 };
 
@@ -179,7 +165,6 @@ const getEls = () => ({
     taskPomoDisplay: $('task-pomo-display'), totalTimeCalc: $('total-time-calc'), taskRepeat: $('task-repeat'), taskReminder: $('task-reminder')
 });
 
-// Configure Chart.js Defaults Safely
 if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = 'Inter';
     Chart.defaults.color = '#a3a3a3';
@@ -193,7 +178,6 @@ if (typeof Chart !== 'undefined') {
 
 async function syncUserProfile(u) {
     if (!u) return;
-    // CRITICAL: Do not sync Orion profile data to User's profile when viewing as user
     if (VIEW_AS_UID && u.uid === ORION_ID) return;
 
     try {
@@ -212,7 +196,7 @@ async function syncUserProfile(u) {
         } else {
             await setDoc(userRef, profileData, { merge: true });
         }
-    } catch (e) { console.error("Error syncing user profile:", e); }
+    } catch (e) {}
 }
 
 function showOrionBanner(uid) {
@@ -237,14 +221,10 @@ onAuthStateChanged(auth, u => {
             if (u.uid === ORION_ID) {
                 showOrionBanner(VIEW_AS_UID);
                 viewingAsUser = true;
-                console.log(`%c[TimeTrekker Orion] Access granted for: ${VIEW_AS_UID}`, "color: #10b981; font-weight: bold; font-size: 14px;");
-            } else {
-                console.warn("%c[TimeTrekker Security] Unauthorized 'view as' attempt blocked.", "color: red; font-weight: bold;");
             }
         }
 
         const effectiveUid = getUid();
-
         const p = $('user-profile-display');
         if (p) {
             p.classList.remove('hidden'); p.classList.add('flex');
@@ -316,7 +296,6 @@ const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', 
     }
     if (state.view === 'analytics') updateAnalytics();
 }, err => {
-    console.error("Firestore Permission Error:", err);
     if(VIEW_AS_UID) app.showToast("Permission Denied: Cannot access this data.", "error");
 });
 
@@ -362,7 +341,7 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             wakeLock.request();
             updateTimerVisuals();
             if (state.sound !== 'none' && els.audio && els.audio.paused) {
-                els.audio.play().catch(e => { console.warn('Audio play blocked', e); });
+                els.audio.play().catch(e => {});
             }
         } else {
             stopLocalInterval();
@@ -642,7 +621,7 @@ const app = {
                 const c = new AudioContext(), o = c.createOscillator();
                 o.connect(c.destination); o.frequency.value = 523.25; o.start(); o.stop(c.currentTime + .2);
             }
-        } catch(e) { console.warn("Audio Context Error", e); }
+        } catch(e) {}
 
         try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete"); } catch (e) { }
 
@@ -662,7 +641,7 @@ const app = {
                             duration: state.timer.totalDuration / 60,
                             completedAt: serverTimestamp()
                         });
-                    } catch (e) { console.error("Sync Error", e); }
+                    } catch (e) {}
                 }
             }
             if (state.timer.settings.disableBreak) {
@@ -802,7 +781,6 @@ function updateAnalytics() {
     }
     els.analytics.streakDays.textContent = cs + ' Days';
 
-    // === Timeline Grid Fix ===
     const grid = els.analytics.timelineGrid; 
     if(grid) {
         grid.innerHTML = ''; 
@@ -864,10 +842,8 @@ function updateAnalytics() {
         }
     }
 
-    // Chart.js Safeties
     if (typeof Chart === 'undefined') return;
     
-    // --- Data Prep for Charts ---
     const hours = Array(24).fill(0);
     state.logs.forEach(l => { const d = parseDate(l.completedAt); if (d) hours[d.getHours()] += (l.duration || 25) });
 
@@ -970,7 +946,6 @@ function updateAnalytics() {
         state.charts.weekday = new Chart(ctxW, gC(ctxW, state.chartTypes.weekday, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], weekdays, '#f59e0b', 'Minutes'));
     }
 
-    // Projects Chart
     const pm = {}; state.logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) });
     const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
     if(els.analytics.projectChart) {
@@ -979,7 +954,6 @@ function updateAnalytics() {
         if(els.analytics.projList) els.analytics.projList.innerHTML = sp.map(x => `<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
     }
     
-    // Priority Chart
     const pri = { high: 0, med: 0, low: 0, none: 0 };
     tasksDone.forEach(t => pri[t.priority || 'none']++);
     if(els.analytics.priorityChart) {
@@ -987,12 +961,10 @@ function updateAnalytics() {
         state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
     }
 
-    // Tag List
     const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
     const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
     if(els.analytics.tagList && st.length > 0) els.analytics.tagList.innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
 
-    // Session Log
     if(els.analytics.sessionLogBody) els.analytics.sessionLogBody.innerHTML = state.logs.slice(0, 20).map(l => { const d = parseDate(l.completedAt) || new Date(); return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration || 25}m</td></tr>` }).join('');
 }
 
