@@ -40,8 +40,7 @@ if ('serviceWorker' in navigator) {
 
 const D = document;
 const $ = (id) => {
-    const el = D.getElementById(id);
-    return el; 
+    return D.getElementById(id);
 };
 
 const esc = (str) => {
@@ -183,7 +182,6 @@ if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = 'Inter';
     Chart.defaults.color = '#a3a3a3';
     Chart.defaults.borderColor = '#333333';
-    Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)';
     Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.95)';
     Chart.defaults.plugins.tooltip.titleColor = '#fff';
     Chart.defaults.plugins.tooltip.bodyColor = '#a3a3a3';
@@ -217,7 +215,7 @@ async function syncUserProfile(u) {
 function showAdminBanner(uid) {
     const banner = D.createElement('div');
     banner.className = 'fixed top-0 left-0 right-0 h-6 bg-red-600 z-[100] flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white shadow-lg';
-    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> ADMIN MODE: VIEWING AS ${uid}`;
+    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> Orion : ${uid}`;
     D.body.prepend(banner);
     D.getElementById('sidebar').style.top = '24px';
     D.querySelector('main').style.paddingTop = '0px'; 
@@ -800,6 +798,68 @@ function updateAnalytics() {
         else if (i > 0) break;
     }
     els.analytics.streakDays.textContent = cs + ' Days';
+
+    // === Timeline Grid Fix ===
+    const grid = els.analytics.timelineGrid; 
+    if(grid) {
+        grid.innerHTML = ''; 
+        const tooltip = $('global-tooltip');
+        const showTooltip = (e, txt, sub) => { 
+            tooltip.innerHTML = `<strong>${esc(txt)}</strong><span class="sub">${esc(sub)}</span>`; 
+            tooltip.style.opacity = '1'; 
+            tooltip.style.left = e.pageX + 'px'; 
+            tooltip.style.top = e.pageY + 'px';
+        };
+        const hideTooltip = () => { tooltip.style.opacity = '0'; };
+
+        for (let i = 0; i < 14; i++) { 
+            const d = new Date(); 
+            d.setDate(now.getDate() - i); 
+            const dStr = getDayStr(d);
+            const dayLogs = state.logs.filter(l => {
+                const ld = parseDate(l.completedAt);
+                return ld && getDayStr(ld) === dStr;
+            });
+
+            const row = D.createElement('div'); 
+            row.className = "flex items-center h-8 hover:bg-dark-hover rounded transition-colors"; 
+            
+            const lbl = D.createElement('div'); 
+            lbl.className = "w-24 text-[10px] text-text-muted font-bold uppercase tracking-wider pl-2 flex-shrink-0"; 
+            lbl.textContent = i === 0 ? "Today" : (i === 1 ? "Yesterday" : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })); 
+            
+            const bars = D.createElement('div'); 
+            bars.className = "flex-1 h-full relative bg-dark-bg rounded mx-2 overflow-hidden border border-dark-border"; 
+            
+            for (let j = 1; j < 6; j++) { 
+                const l = D.createElement('div'); 
+                l.className = "absolute top-0 bottom-0 border-l border-dark-border opacity-30"; 
+                l.style.left = `${(j * 4 / 24) * 100}%`; 
+                bars.appendChild(l);
+            } 
+            
+            dayLogs.forEach(l => { 
+                const ld = parseDate(l.completedAt);
+                const sm = (ld.getHours() * 60) + ld.getMinutes(); 
+                const dur = l.duration || 25; 
+                const lp = ((sm - dur) / 1440) * 100; 
+                const wp = (dur / 1440) * 100; 
+                
+                const b = D.createElement('div'); 
+                b.className = "absolute top-1.5 bottom-1.5 rounded-sm bg-brand opacity-80 z-10 hover:bg-white transition-colors cursor-pointer"; 
+                b.style.left = `${lp}%`; 
+                b.style.width = `${Math.max(wp, 0.5)}%`; 
+                
+                b.addEventListener('mousemove', (e) => showTooltip(e, l.taskTitle || 'Focus Session', `${ld.getHours()}:${ld.getMinutes().toString().padStart(2, '0')} - ${dur} mins`)); 
+                b.addEventListener('mouseleave', hideTooltip); 
+                bars.appendChild(b);
+            }); 
+            
+            row.appendChild(lbl); 
+            row.appendChild(bars); 
+            grid.appendChild(row);
+        }
+    }
 
     // Chart.js Safeties
     if (typeof Chart === 'undefined') return;
