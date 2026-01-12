@@ -18,6 +18,10 @@ const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 
+// Check for Admin Override Parameter
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const VIEW_AS_UID = URL_PARAMS.get('uid');
+
 try {
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') console.warn('Persistence failed: Multiple tabs open.');
@@ -115,6 +119,12 @@ const state = {
     lastCheckTime: null
 };
 
+// HELPER: Determine which UID to read/write from
+const getUid = () => {
+    if (VIEW_AS_UID) return VIEW_AS_UID;
+    return state.user ? state.user.uid : null;
+};
+
 const saveLocalState = () => {
     localStorage.setItem(APP_ID + '_settings', JSON.stringify(state.timer.settings));
     localStorage.setItem(APP_ID + '_ui', JSON.stringify({
@@ -168,6 +178,9 @@ Chart.defaults.plugins.tooltip.borderWidth = 1;
 
 async function syncUserProfile(u) {
     if (!u) return;
+    // CRITICAL: Do not sync Admin profile data to User's profile when viewing as user
+    if (VIEW_AS_UID) return;
+
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
         const userSnap = await getDoc(userRef);
@@ -187,26 +200,62 @@ async function syncUserProfile(u) {
     } catch (e) { console.error("Error syncing user profile:", e); }
 }
 
+// Function to show Admin Mode banner
+function showAdminBanner(uid) {
+    const banner = D.createElement('div');
+    banner.className = 'fixed top-0 left-0 right-0 h-6 bg-red-600 z-[100] flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white shadow-lg';
+    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> ADMIN MODE: VIEWING AS ${uid}`;
+    D.body.prepend(banner);
+    // Adjust sidebar and main layout to push down
+    D.getElementById('sidebar').style.top = '24px';
+    D.querySelector('main').style.paddingTop = '0px'; 
+    D.body.style.height = 'calc(100vh - 24px)';
+    D.body.style.marginTop = '24px';
+}
+
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
         syncUserProfile(u);
         const els = getEls();
+        const effectiveUid = getUid();
+
+        // Handle Admin Banner
+        if (VIEW_AS_UID) {
+            showAdminBanner(VIEW_AS_UID);
+            console.log(`%c[TimeTrekker Admin] Viewing data for: ${VIEW_AS_UID}`, "color: #ff5757; font-weight: bold; font-size: 14px;");
+        }
 
         const p = $('user-profile-display');
         if (p) {
             p.classList.remove('hidden'); p.classList.add('flex');
-            $('user-name-text').textContent = u.displayName || u.email.split('@')[0];
-            $('user-email-text').textContent = u.email;
-            $('user-avatar-initials').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
-            els.settingsName.textContent = u.displayName || u.email.split('@')[0];
-            els.settingsEmail.textContent = u.email;
-            els.settingsAvatar.textContent = (u.displayName || u.email).charAt(0).toUpperCase();
+            // If viewing as user, we might want to fetch THEIR name, but initially show Admin's or "User"
+            if (VIEW_AS_UID) {
+                $('user-name-text').textContent = "Simulated User";
+                $('user-email-text').textContent = VIEW_AS_UID;
+                $('user-avatar-initials').textContent = "?";
+                // Try to fetch actual user profile name
+                getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
+                    if(snap.exists()) {
+                        const d = snap.data();
+                        $('user-name-text').textContent = d.displayName || d.name || 'User';
+                        $('user-email-text').textContent = d.email;
+                        if(d.displayName) $('user-avatar-initials').textContent = d.displayName.charAt(0).toUpperCase();
+                    }
+                });
+            } else {
+                $('user-name-text').textContent = u.displayName || u.email.split('@')[0];
+                $('user-email-text').textContent = u.email;
+                $('user-avatar-initials').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
+                els.settingsName.textContent = u.displayName || u.email.split('@')[0];
+                els.settingsEmail.textContent = u.email;
+                els.settingsAvatar.textContent = (u.displayName || u.email).charAt(0).toUpperCase();
+            }
         }
 
-        subTasks(u.uid);
-        subLogs(u.uid);
-        subTimer(u.uid);
+        subTasks(effectiveUid);
+        subLogs(effectiveUid);
+        subTimer(effectiveUid);
 
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -248,6 +297,9 @@ const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', 
         updateTimerUI(activeTask);
     }
     if (state.view === 'analytics') updateAnalytics();
+}, err => {
+    console.error("Error fetching tasks. Admin permission issue?", err);
+    if(VIEW_AS_UID) app.showToast("View Only: Permission Error", "error");
 });
 
 const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 'timer', 'active'), s => {
@@ -352,8 +404,8 @@ D.addEventListener("visibilitychange", () => {
 });
 
 const _saveSetting = debounce((k, v) => {
-    if(state.user) {
-        updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { [k]: v }).catch(() => {});
+    if(getUid()) {
+        updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { [k]: v }).catch(() => {});
     }
 }, 500);
 
@@ -407,13 +459,13 @@ const app = {
     promptNewProject: async () => { const n = await app.showPrompt("Enter project name:"); if (n) { state.projects.add(n); updateProjectsUI() } },
     renameProject: async (o, e) => {
         e.stopPropagation(); const n = await app.showPrompt(`Rename "${o}" to:`, o); if (!n || n === o) return;
-        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", o)))).forEach(d => b.update(d.ref, { project: n }));
+        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks'), where("project", "==", o)))).forEach(d => b.update(d.ref, { project: n }));
         await b.commit(); state.projects.delete(o); state.projects.add(n);
         state.filterProject === o ? app.setProjectView(n) : updateProjectsUI()
     },
     deleteProject: async (p, e) => {
         e.stopPropagation(); if (!confirm(`Delete "${p}"?`)) return; haptic('heavy');
-        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", p)))).forEach(d => b.update(d.ref, { project: 'Inbox' }));
+        const b = writeBatch(db); (await getDocs(query(collection(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks'), where("project", "==", p)))).forEach(d => b.update(d.ref, { project: 'Inbox' }));
         await b.commit(); state.projects.delete(p);
         state.filterProject === p ? app.setView('today') : updateProjectsUI()
     },
@@ -490,7 +542,7 @@ const app = {
             priority: $('task-priority').value, project: $('task-project').value, note: $('task-note').value,
             repeat: els.taskRepeat.value, reminder: els.taskReminder.value, subtasks, tags
         };
-        const ref = collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks');
+        const ref = collection(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks');
         try {
             state.editingTaskId ? await updateDoc(doc(ref, state.editingTaskId), data) : await addDoc(ref, { ...data, completedSessionIds: [], status: 'todo', createdAt: new Date().toISOString() });
             haptic('success');
@@ -500,10 +552,10 @@ const app = {
     toggleTaskStatus: async (id, s) => {
         try {
             haptic('light');
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null })
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', id), { status: s === 'todo' ? 'done' : 'todo', completedAt: s === 'todo' ? new Date().toISOString() : null })
         } catch (e) { app.showToast("Connection error") }
     },
-    deleteTask: async (id, e) => { e.stopPropagation(); if (confirm('Delete task?')) try { haptic('heavy'); await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id)) } catch (e) { app.showToast("Error deleting") } },
+    deleteTask: async (id, e) => { e.stopPropagation(); if (confirm('Delete task?')) try { haptic('heavy'); await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', id)) } catch (e) { app.showToast("Error deleting") } },
 
     startTask: async (id, e) => {
         e.stopPropagation(); const t = state.tasks.find(x => x.id === id); if (!t) return;
@@ -515,7 +567,7 @@ const app = {
             const sessionId = `${id}_${Date.now()}`;
 
             try {
-                await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
+                await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
                     status: 'running',
                     mode: 'focus',
                     taskId: id,
@@ -530,7 +582,7 @@ const app = {
     },
     selectTask: id => {
         state.selectedTaskId = id; renderTasks(); const t = state.tasks.find(x => x.id === id); updateTimerUI(t);
-        if (state.timer.status !== 'running') updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { taskId: id }).catch(() => { });
+        if (state.timer.status !== 'running') updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { taskId: id }).catch(() => { });
         if (window.innerWidth < 1280) app.toggleFocusPanel(true)
     },
 
@@ -546,10 +598,10 @@ const app = {
         haptic('medium');
         if (state.timer.status === 'running') {
             if (state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000)) }).catch(() => { })
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000)) }).catch(() => { })
         } else {
             if (!state.timer.activeTaskId && state.timer.mode === 'focus') { app.showToast("Select task!", "error"); return }
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000) }).catch(() => { })
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000) }).catch(() => { })
         }
     },
 
@@ -557,7 +609,7 @@ const app = {
         if (!r) {
             haptic('light');
             const d = state.timer.settings[state.timer.mode];
-            await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), { status: 'idle', endTime: null, remaining: d * 60, totalDuration: d * 60, mode: state.timer.mode, taskId: state.timer.activeTaskId || null }).catch(() => { })
+            await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { status: 'idle', endTime: null, remaining: d * 60, totalDuration: d * 60, mode: state.timer.mode, taskId: state.timer.activeTaskId || null }).catch(() => { })
         }
     },
     skipTimer: () => app.completeTimer(),
@@ -582,10 +634,10 @@ const app = {
                 if (t) {
                     try {
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), {
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', t.id), {
                             completedSessionIds: arrayUnion(sessionId)
                         });
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), {
+                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'focus_sessions', sessionId), {
                             taskId: t.id,
                             taskTitle: t.title,
                             project: t.project || 'Inbox',
@@ -609,7 +661,7 @@ const app = {
     setTimerMode: async (m, sessionCount = null) => {
         const v = state.timer.settings[m]; const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.activeTaskId || null, sessionId: null };
         if (sessionCount !== null) updates.sessionCount = sessionCount;
-        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), updates).catch(() => { });
+        await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), updates).catch(() => { });
     },
     setTimerModeUI: m => {
         const els = getEls();
@@ -683,7 +735,7 @@ function updateAnalytics() {
     if ((!state.logs.length && !state.tasks.length) && state.view === 'analytics') return;
     const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), now = new Date(), todayStr = getDayStr(now), startOfWeek = new Date(now); const day = startOfWeek.getDay() || 7; if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); startOfWeek.setHours(0, 0, 0, 0);
     const logsToday = state.logs.filter(l => l.completedAt && getDayStr(new Date(l.completedAt.seconds * 1000)) === todayStr), logsWeek = state.logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek), tasksDone = state.tasks.filter(t => t.status === 'done'), tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr)), tasksWeek = tasksDone.filter(t => { if (!t.completedAt) return false; return new Date(t.completedAt) >= startOfWeek });
-    const fmtTime = m => { const h = Math.floor(m / 60), rem = Math.round(m % 60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
+    const fmtTime = m => { const h = Math.floor(m / 60), rem = Math.round(m % 60); return h > 0 ? `${h}h ${rm}m` : `${rem}m` };
     els.analytics.timeTotal.textContent = fmtTime(state.logs.reduce((a, b) => a + (b.duration || 25), 0)); els.analytics.timeWeek.textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0)); els.analytics.timeToday.textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0)); els.analytics.taskTotal.textContent = tasksDone.length; els.analytics.taskWeek.textContent = tasksWeek.length; els.analytics.taskToday.textContent = tasksToday.length;
     const activeTasks = state.tasks.filter(t => t.status === 'todo').length + tasksDone.length; els.analytics.completionRate.textContent = activeTasks > 0 ? Math.round((tasksDone.length / activeTasks) * 100) + '%' : '0%'; els.analytics.avgSession.textContent = (state.logs.length > 0 ? Math.round(state.logs.reduce((a, b) => a + (b.duration || 25), 0) / state.logs.length) : 0) + 'm';
     let morning = 0, night = 0; state.logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); els.analytics.earlyBird.textContent = fmtTime(morning); els.analytics.nightOwl.textContent = fmtTime(night); els.analytics.projectCount.textContent = state.projects.size;
