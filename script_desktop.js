@@ -218,7 +218,7 @@ async function syncUserProfile(u) {
 function showOrionBanner(uid) {
     const banner = D.createElement('div');
     banner.className = 'fixed top-0 left-0 right-0 h-6 bg-red-600 z-[100] flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white shadow-lg';
-    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> ORION MODE: VIEWING AS ${uid}`;
+    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> Orion : ${uid}`;
     D.body.prepend(banner);
     D.getElementById('sidebar').style.top = '24px';
     D.querySelector('main').style.paddingTop = '0px'; 
