@@ -39,8 +39,8 @@ body{background-color:#0a0a0a;color:#ededed;font-family:'Inter',sans-serif}
         <button onclick="app.setView('overview')" id="nav-overview" class="nav-btn w-full flex items-center px-3 py-2 rounded-md text-text-muted hover:text-white hover:bg-dark-hover transition-all duration-200 active">
             <i class="ph-duotone ph-squares-four text-lg"></i><span class="ml-3 text-xs font-medium">Dashboard</span>
         </button>
-        <button onclick="app.setView('performance')" id="nav-performance" class="nav-btn w-full flex items-center px-3 py-2 rounded-md text-text-muted hover:text-white hover:bg-dark-hover transition-all duration-200">
-            <i class="ph-duotone ph-lightning text-lg"></i><span class="ml-3 text-xs font-medium">Performance</span>
+        <button onclick="app.setView('settings')" id="nav-settings" class="nav-btn w-full flex items-center px-3 py-2 rounded-md text-text-muted hover:text-white hover:bg-dark-hover transition-all duration-200">
+            <i class="ph-duotone ph-hard-drives text-lg"></i><span class="ml-3 text-xs font-medium">Data Management</span>
         </button>
         <div class="px-3 mb-2 mt-6 text-[10px] font-bold text-text-faint uppercase tracking-widest">Management</div>
         <button onclick="app.setView('users')" id="nav-users" class="nav-btn w-full flex items-center px-3 py-2 rounded-md text-text-muted hover:text-white hover:bg-dark-hover transition-all duration-200">
@@ -84,93 +84,51 @@ body{background-color:#0a0a0a;color:#ededed;font-family:'Inter',sans-serif}
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
                     <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Total Audience</div>
-                            <div class="text-2xl font-bold text-white font-mono" id="kpi-users">--</div>
-                        </div>
+                        <div><div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Total Audience</div><div class="text-2xl font-bold text-white font-mono" id="kpi-users">--</div></div>
                         <div class="p-2 rounded bg-white/5 text-text-muted group-hover:text-brand transition-colors"><i class="ph-fill ph-users text-xl"></i></div>
                     </div>
-                    <div class="flex items-center text-[10px]">
-                        <span id="trend-users" class="px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 mr-2 font-mono flex items-center">
-                            <i class="ph-bold ph-trend-up mr-1"></i>0%
-                        </span>
-                        <span class="text-text-faint">vs last 30 days</span>
-                    </div>
+                    <div class="flex items-center text-[10px]"><span id="trend-users" class="px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 mr-2 font-mono flex items-center"><i class="ph-bold ph-trend-up mr-1"></i>0%</span><span class="text-text-faint">vs last 30 days</span></div>
                 </div>
-                 <div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
+                <div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
                     <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Deep Work Vol.</div>
-                            <div class="text-2xl font-bold text-white font-mono" id="kpi-focus">--</div>
-                        </div>
+                        <div><div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Deep Work Vol.</div><div class="text-2xl font-bold text-white font-mono" id="kpi-focus">--</div></div>
                         <div class="p-2 rounded bg-white/5 text-text-muted group-hover:text-blue-500 transition-colors"><i class="ph-fill ph-brain text-xl"></i></div>
                     </div>
-                    <div class="flex items-center text-[10px]">
-                        <span id="trend-focus" class="px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 mr-2 font-mono flex items-center">
-                            <i class="ph-bold ph-trend-up mr-1"></i>0%
-                        </span>
-                        <span class="text-text-faint">rolling 7d avg</span>
-                    </div>
+                    <div class="flex items-center text-[10px]"><span id="trend-focus" class="px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 mr-2 font-mono flex items-center"><i class="ph-bold ph-trend-up mr-1"></i>0%</span><span class="text-text-faint">rolling 7d avg</span></div>
                 </div>
-                 <div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
+                <div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
                     <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Task Velocity</div>
-                            <div class="text-2xl font-bold text-white font-mono" id="kpi-velocity">--</div>
-                        </div>
+                        <div><div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Task Velocity</div><div class="text-2xl font-bold text-white font-mono" id="kpi-velocity">--</div></div>
                         <div class="p-2 rounded bg-white/5 text-text-muted group-hover:text-purple-500 transition-colors"><i class="ph-fill ph-rocket-launch text-xl"></i></div>
                     </div>
-                    <div class="text-[10px] text-text-muted mt-1">
-                        Avg tasks completed per active user
-                    </div>
+                    <div class="text-[10px] text-text-muted mt-1">Avg tasks completed per active user</div>
                 </div>
-                 <div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
+                <div class="glass-panel rounded-xl p-5 relative overflow-hidden group">
                     <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Completion Rate</div>
-                            <div class="text-2xl font-bold text-white font-mono" id="kpi-completion">--</div>
-                        </div>
+                        <div><div class="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Completion Rate</div><div class="text-2xl font-bold text-white font-mono" id="kpi-completion">--</div></div>
                         <div class="p-2 rounded bg-white/5 text-text-muted group-hover:text-green-500 transition-colors"><i class="ph-fill ph-check-fat text-xl"></i></div>
                     </div>
-                     <div class="w-full bg-white/5 rounded-full h-1 mt-2 overflow-hidden">
-                        <div id="bar-completion-mini" class="bg-green-500 h-full rounded-full transition-all duration-1000" style="width: 0%"></div>
-                    </div>
+                    <div class="w-full bg-white/5 rounded-full h-1 mt-2 overflow-hidden"><div id="bar-completion-mini" class="bg-green-500 h-full rounded-full transition-all duration-1000" style="width: 0%"></div></div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 glass-panel rounded-xl p-5 border border-dark-border">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-sm font-semibold text-white">Focus Activity Trend</h3>
-                        <div class="flex gap-2">
-                             <span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-text-muted">Last 7 Days</span>
-                        </div>
-                    </div>
+                    <div class="flex justify-between items-center mb-6"><h3 class="text-sm font-semibold text-white">Focus Activity Trend</h3><span class="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 text-text-muted">Last 7 Days</span></div>
                     <div class="h-[280px] w-full"><canvas id="activityChart"></canvas></div>
                 </div>
                 <div class="glass-panel rounded-xl p-5 border border-dark-border flex flex-col">
-                    <h3 class="text-sm font-semibold text-white mb-2">Peak Productivity Hours</h3>
-                    <p class="text-[10px] text-text-muted mb-6">Aggregated UTC time of completed sessions.</p>
+                    <h3 class="text-sm font-semibold text-white mb-2">Peak Productivity Hours</h3><p class="text-[10px] text-text-muted mb-6">Aggregated UTC time of completed sessions.</p>
                     <div class="h-[200px] w-full flex justify-center mb-4"><canvas id="hoursChart"></canvas></div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[400px]">
                 <div class="glass-panel rounded-xl overflow-hidden flex flex-col border border-dark-border">
-                    <div class="p-4 border-b border-dark-border flex justify-between items-center bg-white/5">
-                        <h3 class="text-sm font-bold text-white flex items-center"><i class="ph-bold ph-broadcast text-brand mr-2 animate-pulse"></i> Live Events</h3>
-                    </div>
-                    <div class="flex-1 overflow-auto custom-scrollbar">
-                        <table class="w-full text-left border-collapse">
-                            <tbody id="live-feed-body" class="text-xs"></tbody>
-                        </table>
-                    </div>
+                    <div class="p-4 border-b border-dark-border flex justify-between items-center bg-white/5"><h3 class="text-sm font-bold text-white flex items-center"><i class="ph-bold ph-broadcast text-brand mr-2 animate-pulse"></i> Live Events</h3></div>
+                    <div class="flex-1 overflow-auto custom-scrollbar"><table class="w-full text-left border-collapse"><tbody id="live-feed-body" class="text-xs"></tbody></table></div>
                 </div>
                 <div class="glass-panel rounded-xl overflow-hidden flex flex-col border border-dark-border p-5">
                     <h3 class="text-sm font-bold text-white mb-4">Project Distribution</h3>
-                    <div class="flex-1 flex items-center justify-center">
-                         <div class="h-[200px] w-[200px]"><canvas id="projectDistChart"></canvas></div>
-                    </div>
+                    <div class="flex-1 flex items-center justify-center"><div class="h-[200px] w-[200px]"><canvas id="projectDistChart"></canvas></div></div>
                     <div id="top-projects-list" class="grid grid-cols-2 gap-2 mt-4"></div>
                 </div>
             </div>
@@ -179,10 +137,7 @@ body{background-color:#0a0a0a;color:#ededed;font-family:'Inter',sans-serif}
         <div id="view-users" class="view-section hidden animate-fade-in">
              <div class="glass-panel border border-dark-border rounded-xl overflow-hidden">
                 <div class="p-5 border-b border-dark-border bg-white/5 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-sm font-bold text-white">User Directory</h3>
-                        <p class="text-[10px] text-text-muted mt-0.5" id="user-count-display">All registered accounts</p>
-                    </div>
+                    <div><h3 class="text-sm font-bold text-white">User Directory</h3><p class="text-[10px] text-text-muted mt-0.5" id="user-count-display">All registered accounts</p></div>
                     <div class="flex bg-black/40 p-1 rounded-full border border-white/5">
                         <button onclick="app.setUserFilter('all')" id="btn-u-all" class="px-3 py-1 rounded-full bg-white/10 text-white text-[10px] font-bold transition-all">All Users</button>
                         <button onclick="app.setUserFilter('starred')" id="btn-u-star" class="px-3 py-1 rounded-full text-text-muted hover:text-white text-[10px] transition-all flex items-center"><i class="ph-fill ph-star mr-1"></i> Watchlist</button>
@@ -191,14 +146,7 @@ body{background-color:#0a0a0a;color:#ededed;font-family:'Inter',sans-serif}
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                          <thead class="bg-dark-sidebar border-b border-dark-border text-[10px] uppercase text-text-muted tracking-wider">
-                            <tr>
-                                <th class="p-4 w-12 text-center"></th>
-                                <th class="p-4">Identity</th>
-                                <th class="p-4">Cohort</th>
-                                <th class="p-4">Performance</th>
-                                <th class="p-4">Last Seen</th>
-                                <th class="p-4 text-right">Console</th>
-                            </tr>
+                            <tr><th class="p-4 w-12 text-center"></th><th class="p-4">Identity</th><th class="p-4">Cohort</th><th class="p-4">Performance</th><th class="p-4">Last Seen</th><th class="p-4 text-right">Console</th></tr>
                         </thead>
                         <tbody id="users-table-body" class="text-xs"></tbody>
                     </table>
@@ -211,23 +159,14 @@ body{background-color:#0a0a0a;color:#ededed;font-family:'Inter',sans-serif}
                 <div class="p-4 border-b border-dark-border bg-white/5 flex justify-between items-center">
                     <div class="flex items-center gap-3">
                         <h3 class="text-sm font-bold text-white" id="tasks-header-title">Master Task List</h3>
-                        <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden px-2 py-1 bg-brand/10 text-brand border border-brand/20 rounded text-[10px] font-bold uppercase hover:bg-brand/20 transition-colors">
-                            Clear Filter
-                        </button>
+                        <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden px-2 py-1 bg-brand/10 text-brand border border-brand/20 rounded text-[10px] font-bold uppercase hover:bg-brand/20 transition-colors">Clear Filter</button>
                     </div>
                     <input type="text" placeholder="Search GUID or Title..." onkeyup="app.filterTasks(this.value)" class="bg-dark-bg border border-dark-border rounded-md pl-3 pr-3 py-1.5 text-xs text-white focus:border-brand outline-none w-64 placeholder-text-faint font-mono">
                 </div>
                 <div class="flex-1 overflow-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
                          <thead class="bg-dark-sidebar sticky top-0 z-10 border-b border-dark-border text-[10px] uppercase text-text-muted tracking-wider">
-                            <tr>
-                                <th class="p-3 w-8"></th>
-                                <th class="p-3">Task Meta</th>
-                                <th class="p-3">Priority</th>
-                                <th class="p-3">Efficiency (Act/Est)</th>
-                                <th class="p-3">Context</th>
-                                <th class="p-3 text-right">Deadline</th>
-                            </tr>
+                            <tr><th class="p-3 w-8"></th><th class="p-3">Task Meta</th><th class="p-3">Priority</th><th class="p-3">Efficiency (Act/Est)</th><th class="p-3">Context</th><th class="p-3 text-right">Deadline</th></tr>
                         </thead>
                         <tbody id="tasks-table-body" class="text-xs"></tbody>
                     </table>
@@ -235,10 +174,57 @@ body{background-color:#0a0a0a;color:#ededed;font-family:'Inter',sans-serif}
             </div>
         </div>
 
-        <div id="view-performance" class="view-section hidden animate-fade-in">
-             <div class="flex items-center justify-center h-[50vh] text-text-muted flex-col">
-                <i class="ph-duotone ph-chart-line-up text-4xl mb-4 text-brand opacity-50"></i>
-                <p>Advanced Performance Metrics are under construction.</p>
+        <div id="view-settings" class="view-section hidden animate-fade-in">
+             <div class="max-w-4xl mx-auto space-y-6">
+                 <div class="flex items-center space-x-4 mb-8">
+                     <div class="p-3 rounded bg-white/5 border border-white/10"><i class="ph-duotone ph-hard-drives text-3xl text-brand"></i></div>
+                     <div><h2 class="text-lg font-bold text-white">Data Management</h2><p class="text-xs text-text-muted">Backup, restore, and manage your local data cache.</p></div>
+                 </div>
+
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div class="glass-panel p-6 rounded-xl border border-dark-border flex flex-col group hover:border-brand/30 transition-colors">
+                         <div class="flex justify-between items-start mb-4">
+                             <div class="p-2 rounded bg-blue-500/10 text-blue-500"><i class="ph-bold ph-export text-xl"></i></div>
+                             <span class="text-[10px] uppercase tracking-wider font-bold text-text-faint">Storage</span>
+                         </div>
+                         <h3 class="text-base font-bold text-white mb-2">Export Data Snapshot</h3>
+                         <p class="text-xs text-text-muted mb-6 flex-1">Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.</p>
+                         <button onclick="app.exportData()" class="w-full py-2.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center justify-center">
+                             <i class="ph-bold ph-download-simple mr-2"></i> Download JSON
+                         </button>
+                     </div>
+
+                     <div class="glass-panel p-6 rounded-xl border border-dark-border flex flex-col group hover:border-brand/30 transition-colors">
+                         <div class="flex justify-between items-start mb-4">
+                             <div class="p-2 rounded bg-green-500/10 text-green-500"><i class="ph-bold ph-upload text-xl"></i></div>
+                             <span class="text-[10px] uppercase tracking-wider font-bold text-text-faint">Restore</span>
+                         </div>
+                         <h3 class="text-base font-bold text-white mb-2">Import Data Snapshot</h3>
+                         <p class="text-xs text-text-muted mb-6 flex-1">Restore a previously saved JSON file. <strong class="text-brand">Warning:</strong> This will overwrite your current local dashboard view.</p>
+                         <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.importData(this)">
+                         <button onclick="document.getElementById('import-file').click()" class="w-full py-2.5 rounded bg-dark-card border border-dark-border hover:bg-white/5 text-text-muted hover:text-white text-xs font-bold transition-colors flex items-center justify-center">
+                             <i class="ph-bold ph-file-arrow-up mr-2"></i> Select Backup File
+                         </button>
+                     </div>
+                 </div>
+
+                 <div class="glass-panel p-6 rounded-xl border border-dark-border mt-6">
+                     <h3 class="text-sm font-bold text-white mb-4">Local Cache Status</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                         <div class="p-4 rounded bg-white/5 border border-white/5">
+                             <div class="text-[10px] text-text-muted uppercase mb-1">Cache Age</div>
+                             <div class="text-lg font-mono text-white" id="stat-age">--</div>
+                         </div>
+                         <div class="p-4 rounded bg-white/5 border border-white/5">
+                             <div class="text-[10px] text-text-muted uppercase mb-1">Items Stored</div>
+                             <div class="text-lg font-mono text-white" id="stat-items">--</div>
+                         </div>
+                         <div class="p-4 rounded bg-white/5 border border-white/5">
+                             <div class="text-[10px] text-text-muted uppercase mb-1">Storage Usage</div>
+                             <div class="text-lg font-mono text-white" id="stat-size">--</div>
+                         </div>
+                     </div>
+                 </div>
              </div>
         </div>
 
@@ -257,7 +243,6 @@ const db=getFirestore(fb);
 const CACHE_KEY = 'orion_pro_cache_v2'; 
 const STAR_KEY = 'orion_starred_users';
 
-// GRAPH STYLING
 Chart.defaults.font.family='Inter';
 Chart.defaults.font.size=10;
 Chart.defaults.color='#888888';
@@ -267,21 +252,16 @@ const log=(msg)=>{console.log(`[ORION] ${msg}`)};
 const state={sessions:[],tasks:[],usersList:[],charts:{},view:'overview',usersMap:{},filterUser:null,starred:[],userFilter:'all'};
 
 // --- DATA LOGIC ---
-
 const saveCache=()=>{
     try{
         localStorage.setItem(CACHE_KEY,JSON.stringify({...state,timestamp:Date.now()}));
-        document.getElementById('cache-indicator').classList.remove('hidden');
-        document.getElementById('cache-indicator').innerText = "LIVE (SYNCED)";
-        document.getElementById('cache-indicator').className = "px-2 py-0.5 rounded text-[10px] font-mono bg-green-500/10 text-green-400 border border-green-500/20";
-        updateSyncTime();
+        updateUIState('LIVE (SYNCED)', 'bg-green-500/10 text-green-400 border-green-500/20');
+        updateStorageStats();
     }catch(e){console.warn('Cache limit',e)}
 };
 
 const loadCache=()=>{
-    // Always load stars from local storage independently
     state.starred = JSON.parse(localStorage.getItem(STAR_KEY) || '[]');
-    
     const r=localStorage.getItem(CACHE_KEY);
     if(!r)return false;
     try{
@@ -290,16 +270,30 @@ const loadCache=()=>{
         state.tasks=d.tasks||[];
         state.usersList=d.usersList||[];
         const age=Math.round((Date.now()-d.timestamp)/1000/60);
-        document.getElementById('cache-indicator').classList.remove('hidden');
-        document.getElementById('cache-indicator').innerText = `CACHED (${age}m ago)`;
-        document.getElementById('cache-indicator').className = "px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20";
-        updateSyncTime(d.timestamp);
+        updateUIState(`CACHED (${age}m ago)`, 'bg-blue-500/10 text-blue-400 border-blue-500/20', d.timestamp);
+        updateStorageStats();
         return true;
     }catch(e){return false;}
 };
 
-const updateSyncTime=(ts=Date.now())=>{
+const updateUIState=(text, cls, ts=Date.now())=>{
+    const el = document.getElementById('cache-indicator');
+    el.classList.remove('hidden');
+    el.innerText = text;
+    el.className = `px-2 py-0.5 rounded text-[10px] font-mono border ${cls}`;
     document.getElementById('last-sync-time').innerText = new Date(ts).toLocaleTimeString([],{hour12:false});
+};
+
+const updateStorageStats=()=>{
+    const r=localStorage.getItem(CACHE_KEY);
+    if(!r)return;
+    const size = (r.length / 1024).toFixed(2);
+    const d=JSON.parse(r);
+    const age=Math.round((Date.now()-d.timestamp)/1000/60);
+    const count = (state.sessions.length + state.tasks.length + state.usersList.length);
+    document.getElementById('stat-age').innerText = `${age} mins`;
+    document.getElementById('stat-items').innerText = `${count} objects`;
+    document.getElementById('stat-size').innerText = `${size} KB`;
 }
 
 const showLoginModal=()=>{
@@ -327,9 +321,47 @@ const app={
         document.getElementById(`view-${v}`).classList.remove('hidden');
         document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
         document.getElementById(`nav-${v}`)?.classList.add('active');
-        document.getElementById('page-title').innerText=v.charAt(0).toUpperCase()+v.slice(1);
+        document.getElementById('page-title').innerText=v==='settings'?'Data Management':(v.charAt(0).toUpperCase()+v.slice(1));
         if(v==='users')renderUsersTable();
         if(v==='tasks')renderTasksTable();
+        if(v==='settings')updateStorageStats();
+    },
+    // IMPORT / EXPORT
+    exportData:()=>{
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({...state, timestamp:Date.now()}));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "orion_backup_" + new Date().toISOString().slice(0,10) + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    },
+    importData:(input)=>{
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const d = JSON.parse(e.target.result);
+                if(d.sessions && d.tasks && d.usersList){
+                    state.sessions = d.sessions;
+                    state.tasks = d.tasks;
+                    state.usersList = d.usersList;
+                    // Also restore starred if present, else keep current
+                    if(d.starred) state.starred = d.starred;
+                    
+                    saveCache(); // Save to localStorage
+                    renderAll(); // Update UI
+                    alert("Import successful! Dashboard updated.");
+                } else {
+                    alert("Invalid JSON format. Missing required data fields.");
+                }
+            } catch(err) {
+                alert("Error parsing file: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        input.value = ''; // Reset input
     },
     // USER FILTER LOGIC
     setUserFilter:(f)=>{
@@ -366,19 +398,13 @@ const app={
         const btn=document.querySelector('button .ph-arrows-clockwise');
         if(btn)btn.classList.add('animate-spin');
         try{
-            // Sessions
             const qS=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(1000));
             state.sessions=(await getDocs(qS)).docs.map(d=>({...d.data(),_uid:d.ref.parent?.parent?.id||'unknown'}));
-            // Tasks
             const qT=query(collectionGroup(db,'tasks'),limit(800));
             state.tasks=(await getDocs(qT)).docs.map(d=>({...d.data(),_uid:d.ref.parent?.parent?.id||'unknown'}));
-            // Users
             const qU=query(collection(db,'artifacts','timetrekker-v1','users'));
             state.usersList=(await getDocs(qU)).docs.map(d=>({id:d.id,...d.data()}));
-            
-            // Reload stars just in case
             state.starred = JSON.parse(localStorage.getItem(STAR_KEY) || '[]');
-            
             saveCache();
             renderAll();
         }catch(e){console.error(e);}
@@ -394,6 +420,7 @@ function renderAll(){
     updateFeed();
     if(state.view==='users')renderUsersTable();
     if(state.view==='tasks')renderTasksTable();
+    if(state.view==='settings')updateStorageStats();
 }
 
 function processData(){
@@ -405,7 +432,6 @@ function processData(){
             tasks:0,focus:0,lastActive:u.lastLogin?(u.lastLogin.seconds?u.lastLogin.seconds*1000:u.lastLogin):0
         };
     });
-    // Link Tasks & Sessions to Users
     state.tasks.forEach(t=>{if(map[t._uid])map[t._uid].tasks++;});
     state.sessions.forEach(s=>{
         if(map[s._uid]){
@@ -417,29 +443,19 @@ function processData(){
     state.usersMap=map;
 }
 
-// --- ADVANCED METRICS ---
 function updateKPIs(){
     const totalTime=state.sessions.reduce((a,b)=>a+(b.duration||25),0);
     const h=Math.floor(totalTime/60);
     const done=state.tasks.filter(t=>t.status==='done').length;
     const rate=state.tasks.length?Math.round((done/state.tasks.length)*100):0;
-    
-    // Calculate Active Users vs Last Month (Mock logic for "Trend")
     const usersCount=Object.keys(state.usersMap).length;
-    // Mock Trend: Random subtle float for "Real feel"
     const userTrend = "+"+Math.floor(Math.random()*5+1)+"%"; 
-    
-    // Calculate Velocity (Tasks / Active User)
     const activeUsers = Object.values(state.usersMap).filter(u=>u.focus>0).length || 1;
     const velocity = (done / activeUsers).toFixed(1);
-
     document.getElementById('kpi-users').innerText=usersCount;
     document.getElementById('trend-users').innerHTML=`<i class="ph-bold ph-trend-up mr-1"></i>${userTrend}`;
-    
     document.getElementById('kpi-focus').innerText=`${h}h`;
-    
     document.getElementById('kpi-velocity').innerText=velocity;
-    
     document.getElementById('kpi-completion').innerText=`${rate}%`;
     document.getElementById('bar-completion-mini').style.width=`${rate}%`;
 }
@@ -450,17 +466,14 @@ function updateFeed(){
     b.innerHTML=state.sessions.slice(0,15).map(s=>{
         let ms=s.completedAt?(typeof s.completedAt==='number'?s.completedAt:s.completedAt.seconds*1000):Date.now();
         const d=new Date(ms);
-        const timeStr=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
         return `<tr class="border-b border-dark-border/50 hover:bg-white/5 transition-colors group">
-            <td class="p-3 text-text-muted font-mono whitespace-nowrap">${timeStr}</td>
+            <td class="p-3 text-text-muted font-mono whitespace-nowrap">${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
             <td class="p-3 text-white font-medium truncate max-w-[150px]"><span class="text-brand mr-2">●</span>${s.taskTitle||'Focus Session'}</td>
-            <td class="p-3 text-right text-text-muted text-[10px]">+${s.duration||25}m</td>
-        </tr>`
+            <td class="p-3 text-right text-text-muted text-[10px]">+${s.duration||25}m</td></tr>`
     }).join('');
 }
 
 function updateCharts(){
-    // 1. Activity Line Chart (Last 7 days)
     const days={};
     const now=new Date();
     for(let i=6;i>=0;i--){
@@ -473,115 +486,61 @@ function updateCharts(){
         const dStr=new Date(ms).toISOString().split('T')[0];
         if(days[dStr]!==undefined)days[dStr]+=(s.duration||25);
     });
-    
     const ctxA=document.getElementById('activityChart').getContext('2d');
     if(state.charts.activity)state.charts.activity.destroy();
-    
     const gradient = ctxA.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, 'rgba(255, 87, 87, 0.5)');
     gradient.addColorStop(1, 'rgba(255, 87, 87, 0)');
-
     state.charts.activity=new Chart(ctxA,{
         type:'line',
         data:{
-            labels:Object.keys(days).map(d=>d.slice(5)), // MM-DD
-            datasets:[{
-                label:'Minutes',data:Object.values(days),
-                borderColor:'#ff5757',backgroundColor:gradient,
-                borderWidth:2, fill:true, tension:0.4, pointRadius:0, pointHoverRadius:4
-            }]
+            labels:Object.keys(days).map(d=>d.slice(5)),
+            datasets:[{label:'Minutes',data:Object.values(days),borderColor:'#ff5757',backgroundColor:gradient,borderWidth:2, fill:true, tension:0.4, pointRadius:0, pointHoverRadius:4}]
         },
-        options:{
-            responsive:true, maintainAspectRatio:false,
-            plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'#161616',borderColor:'#333',borderWidth:1}},
-            scales:{
-                y:{grid:{color:'#222',borderDash:[4,4]},border:{display:false}},
-                x:{grid:{display:false},border:{display:false}}
-            }
-        }
+        options:{responsive:true, maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'#161616',borderColor:'#333',borderWidth:1}},scales:{y:{grid:{color:'#222',borderDash:[4,4]},border:{display:false}},x:{grid:{display:false},border:{display:false}}}}
     });
-
-    // 2. Peak Hours Bar Chart
     const hours=Array(24).fill(0);
     state.sessions.forEach(s=>{
         if(!s.completedAt)return;
         let ms=typeof s.completedAt==='number'?s.completedAt:s.completedAt.seconds*1000;
         hours[new Date(ms).getHours()]++;
     });
-    
     const ctxH=document.getElementById('hoursChart').getContext('2d');
     if(state.charts.hours)state.charts.hours.destroy();
-    state.charts.hours=new Chart(ctxH,{
-        type:'bar',
-        data:{
-            labels:hours.map((_,i)=>i),
-            datasets:[{data:hours,backgroundColor:'#333',hoverBackgroundColor:'#ff5757',borderRadius:2}]
-        },
-        options:{
-            responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{display:false}},
-            scales:{y:{display:false},x:{grid:{display:false},ticks:{font:{size:8}}}}
-        }
-    });
-
-    // 3. Project Doughnut
+    state.charts.hours=new Chart(ctxH,{type:'bar',data:{labels:hours.map((_,i)=>i),datasets:[{data:hours,backgroundColor:'#333',hoverBackgroundColor:'#ff5757',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{display:false},x:{grid:{display:false},ticks:{font:{size:8}}}}}});
     const projs={};
     state.sessions.forEach(s=>{const p=s.project||'Inbox';projs[p]=(projs[p]||0)+1;});
     const sortedP=Object.entries(projs).sort((a,b)=>b[1]-a[1]).slice(0,4);
-    
     const ctxP=document.getElementById('projectDistChart').getContext('2d');
     if(state.charts.proj)state.charts.proj.destroy();
-    state.charts.proj=new Chart(ctxP,{
-        type:'doughnut',
-        data:{
-            labels:sortedP.map(x=>x[0]),
-            datasets:[{data:sortedP.map(x=>x[1]),backgroundColor:['#ff5757','#3b82f6','#10b981','#8b5cf6'],borderWidth:0}]
-        },
-        options:{responsive:true,maintainAspectRatio:false,cutout:'85%',plugins:{legend:{display:false}}}
-    });
-    document.getElementById('top-projects-list').innerHTML=sortedP.map((p,i)=>`
-        <div class="flex items-center justify-between px-3 py-2 bg-white/5 rounded text-[10px]">
-            <span class="text-white truncate max-w-[80px]"><span class="w-1.5 h-1.5 rounded-full inline-block mr-2" style="background:${['#ff5757','#3b82f6','#10b981','#8b5cf6'][i]}"></span>${p[0]}</span>
-            <span class="font-mono text-text-muted">${p[1]}</span>
-        </div>
-    `).join('');
+    state.charts.proj=new Chart(ctxP,{type:'doughnut',data:{labels:sortedP.map(x=>x[0]),datasets:[{data:sortedP.map(x=>x[1]),backgroundColor:['#ff5757','#3b82f6','#10b981','#8b5cf6'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'85%',plugins:{legend:{display:false}}}});
+    document.getElementById('top-projects-list').innerHTML=sortedP.map((p,i)=>`<div class="flex items-center justify-between px-3 py-2 bg-white/5 rounded text-[10px]"><span class="text-white truncate max-w-[80px]"><span class="w-1.5 h-1.5 rounded-full inline-block mr-2" style="background:${['#ff5757','#3b82f6','#10b981','#8b5cf6'][i]}"></span>${p[0]}</span><span class="font-mono text-text-muted">${p[1]}</span></div>`).join('');
 }
 
 function renderUsersTable(){
     const b=document.getElementById('users-table-body');
     let u=Object.values(state.usersMap);
-    
-    // Filtering Logic
     if(state.userFilter === 'starred'){
         u = u.filter(x => state.starred.includes(x.uid));
         document.getElementById('user-count-display').innerText = `Showing ${u.length} VIP users`;
     } else {
         document.getElementById('user-count-display').innerText = `All registered accounts`;
     }
-
     if(!u.length){b.innerHTML='<tr><td colspan="6" class="p-4 text-center">No data matching filter</td></tr>';return;}
-    
     b.innerHTML=u.map(x=>{
         const last=x.lastActive?new Date(x.lastActive).toLocaleDateString():'Never';
         let cohort='<span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[10px]">CASUAL</span>';
         if(x.focus > 300) cohort='<span class="px-1.5 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 text-[10px] font-bold">POWER USER</span>';
         if(!x.lastActive) cohort='<span class="px-1.5 py-0.5 rounded bg-white/5 text-text-muted border border-white/10 text-[10px]">DORMANT</span>';
-
         const isStarred = state.starred.includes(x.uid);
         const starIcon = isStarred ? 'ph-fill ph-star text-yellow-500' : 'ph-bold ph-star text-text-muted group-hover:text-white';
-
         return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors group">
-            <td class="p-4 text-center">
-                <button onclick="app.toggleStar('${x.uid}')" class="p-1 rounded hover:bg-white/10 transition-colors" title="${isStarred?'Remove from Watchlist':'Add to Watchlist'}">
-                    <i class="${starIcon} text-base transition-colors"></i>
-                </button>
-            </td>
+            <td class="p-4 text-center"><button onclick="app.toggleStar('${x.uid}')" class="p-1 rounded hover:bg-white/10 transition-colors"><i class="${starIcon} text-base transition-colors"></i></button></td>
             <td class="p-4"><div class="text-white font-medium">${x.name}</div><div class="text-[10px] text-text-muted">${x.email}</div></td>
             <td class="p-4">${cohort}</td>
             <td class="p-4"><div class="flex flex-col"><span class="text-white font-mono">${Math.floor(x.focus/60)}h ${x.focus%60}m</span><div class="w-12 h-0.5 bg-dark-border mt-1 rounded overflow-hidden"><div class="h-full bg-brand" style="width:${Math.min(x.focus/60,100)}%"></div></div></div></td>
             <td class="p-4 text-text-muted font-mono">${last}</td>
-            <td class="p-4 text-right"><button onclick="app.filterTasksByUser('${x.uid}')" class="text-[10px] px-2 py-1 rounded border border-dark-border hover:bg-white/10 hover:text-white transition-colors">AUDIT</button></td>
-        </tr>`;
+            <td class="p-4 text-right"><button onclick="app.filterTasksByUser('${x.uid}')" class="text-[10px] px-2 py-1 rounded border border-dark-border hover:bg-white/10 hover:text-white transition-colors">AUDIT</button></td></tr>`;
     }).join('');
 }
 
@@ -590,9 +549,7 @@ function renderTasksTable(){
     const list = state.filterUser ? state.tasks.filter(t=>t._uid===state.filterUser) : state.tasks;
     document.getElementById('tasks-header-title').innerText = state.filterUser ? `Tasks for User: ${state.usersMap[state.filterUser]?.name}` : "Master Task List";
     document.getElementById('clear-filter-btn').classList.toggle('hidden', !state.filterUser);
-
     if(!list.length){b.innerHTML='<tr><td colspan="6" class="p-4 text-center">No tasks</td></tr>';return;}
-    
     b.innerHTML=list.slice(0,100).map(t=>{
         const done = t.status==='done';
         const color = done ? 'text-green-500' : 'text-text-muted';
@@ -600,22 +557,14 @@ function renderTasksTable(){
         const act = t.completedPomos || 0;
         let ratio = 0;
         let barColor = 'bg-gray-600';
-        if(act > 0) {
-            ratio = (act / est) * 100;
-            barColor = ratio > 120 ? 'bg-red-500' : (ratio < 80 ? 'bg-green-500' : 'bg-yellow-500'); 
-        }
-
+        if(act > 0) { ratio = (act / est) * 100; barColor = ratio > 120 ? 'bg-red-500' : (ratio < 80 ? 'bg-green-500' : 'bg-yellow-500'); }
         return `<tr class="border-b border-dark-border hover:bg-dark-hover group transition-colors">
             <td class="p-3"><i class="${done?'ph-fill ph-check-circle':'ph-bold ph-circle'} ${color}"></i></td>
             <td class="p-3"><div class="text-white text-xs font-medium truncate max-w-[200px]">${t.title}</div><div class="text-[10px] text-text-faint font-mono">${t._uid.slice(0,5)}...</div></td>
             <td class="p-3"><span class="px-1.5 py-0.5 rounded text-[10px] uppercase border ${t.priority==='high'?'border-red-500/20 text-red-500 bg-red-500/5':'border-dark-border text-text-muted'}">${t.priority||'none'}</span></td>
-            <td class="p-3">
-                <div class="flex items-center gap-2 text-[10px] font-mono"><span class="text-white">${act}</span><span class="text-text-faint">/ ${est}</span></div>
-                <div class="w-16 h-1 bg-dark-bg rounded mt-1 overflow-hidden"><div class="h-full ${barColor}" style="width:${Math.min(ratio,100)}%"></div></div>
-            </td>
+            <td class="p-3"><div class="flex items-center gap-2 text-[10px] font-mono"><span class="text-white">${act}</span><span class="text-text-faint">/ ${est}</span></div><div class="w-16 h-1 bg-dark-bg rounded mt-1 overflow-hidden"><div class="h-full ${barColor}" style="width:${Math.min(ratio,100)}%"></div></div></td>
             <td class="p-3"><span class="px-1.5 py-0.5 rounded text-[10px] bg-white/5 border border-white/10 text-text-muted">${t.project||'Inbox'}</span></td>
-            <td class="p-3 text-right text-[10px] text-text-muted font-mono">${t.dueDate||'-'}</td>
-        </tr>`;
+            <td class="p-3 text-right text-[10px] text-text-muted font-mono">${t.dueDate||'-'}</td></tr>`;
     }).join('');
 }
 </script>
