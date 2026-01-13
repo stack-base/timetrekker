@@ -214,62 +214,84 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
         </div>
         
         <div id="view-data" class="view-section hidden animate-fade-in">
-            <div class="bg-dark-card border border-dark-border rounded-xl p-8 max-w-4xl mx-auto">
-                <div class="mb-8 border-b border-dark-border pb-6">
-                    <h2 class="text-2xl font-bold text-white mb-2">Data Management & Storage</h2>
-                    <p class="text-text-muted">Manage your local storage, export backups to save Firestore read quotas, and restore data from files.</p>
+            <div class="max-w-6xl mx-auto p-6">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                        <i class="ph-bold ph-database text-red-500 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-3">
+                            Data Management
+                            <span id="data-cache-badge" class="hidden px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wide">
+                                Cached (<span id="data-cache-time">--</span>)
+                            </span>
+                        </h2>
+                        <p class="text-sm text-text-muted mt-1">Backup, restore, and manage your local data cache.</p>
+                    </div>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-dark-bg border border-dark-border rounded-lg p-6 flex flex-col">
-                        <div class="flex items-center mb-4">
-                            <div class="p-3 rounded bg-blue-500/10 text-blue-500 mr-4"><i class="ph-bold ph-download-simple text-2xl"></i></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col relative overflow-hidden group">
+                        <div class="absolute top-4 right-4 text-[10px] font-bold text-text-faint tracking-widest uppercase">Storage</div>
+                        <div class="flex items-start mb-6 mt-2">
+                            <div class="p-3 rounded-lg bg-blue-600/10 text-blue-500 border border-blue-600/20 mr-4">
+                                <i class="ph-fill ph-upload-simple text-xl"></i>
+                            </div>
                             <div>
-                                <h3 class="text-lg font-bold text-white">Export & Backup</h3>
-                                <p class="text-xs text-text-muted">Save quota: download current state.</p>
+                                <h3 class="text-base font-bold text-white">Export Data Snapshot</h3>
+                                <p class="text-xs text-text-muted mt-2 leading-relaxed">
+                                    Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
+                                </p>
                             </div>
                         </div>
-                        <p class="text-sm text-text-muted mb-6 flex-1">
-                            Download all currently loaded data (Users, Tasks, Sessions) and your Settings (Starred Users) to a JSON file.
-                        </p>
-                        <button onclick="app.exportData()" class="w-full py-3 rounded bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors flex items-center justify-center">
-                            <i class="ph-bold ph-download-simple mr-2"></i> Download Backup
-                        </button>
+                        <div class="mt-auto">
+                            <button onclick="app.exportData()" class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center">
+                                <i class="ph-bold ph-download-simple mr-2"></i> Download JSON
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="bg-dark-bg border border-dark-border rounded-lg p-6 flex flex-col">
-                        <div class="flex items-center mb-4">
-                            <div class="p-3 rounded bg-green-500/10 text-green-500 mr-4"><i class="ph-bold ph-upload-simple text-2xl"></i></div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col relative overflow-hidden">
+                        <div class="absolute top-4 right-4 text-[10px] font-bold text-text-faint tracking-widest uppercase">Restore</div>
+                        <div class="flex items-start mb-6 mt-2">
+                            <div class="p-3 rounded-lg bg-green-500/10 text-green-500 border border-green-500/20 mr-4">
+                                <i class="ph-fill ph-download-simple text-xl"></i>
+                            </div>
                             <div>
-                                <h3 class="text-lg font-bold text-white">Import Data</h3>
-                                <p class="text-xs text-text-muted">Restore state without API calls.</p>
+                                <h3 class="text-base font-bold text-white">Import Data Snapshot</h3>
+                                <p class="text-xs text-text-muted mt-2 leading-relaxed">
+                                    Restore a previously saved JSON file. <span class="text-red-400">Warning:</span> This will overwrite your current local dashboard view.
+                                </p>
                             </div>
                         </div>
-                        <p class="text-sm text-text-muted mb-6 flex-1">
-                            Load a previously downloaded JSON file. This will populate the dashboard <strong>without</strong> hitting Firestore read limits.
-                        </p>
-                        <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
-                        <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded bg-dark-card border border-dark-border hover:border-green-500 hover:text-green-500 text-text-muted font-bold transition-all flex items-center justify-center">
-                            <i class="ph-bold ph-upload-simple mr-2"></i> Select Backup File
-                        </button>
+                        <div class="mt-auto">
+                            <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                            <button onclick="document.getElementById('import-file').click()" class="w-full py-2.5 rounded-lg bg-transparent border border-dark-border hover:border-text-muted hover:bg-dark-hover text-text-muted hover:text-white text-sm font-bold transition-all flex items-center justify-center">
+                                <i class="ph-bold ph-file-arrow-up mr-2"></i> Select Backup File
+                            </button>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="md:col-span-2 bg-dark-sidebar border border-dark-border rounded-lg p-6">
-                        <h3 class="text-lg font-bold text-white mb-4">Local Storage Status</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            <div class="p-4 rounded bg-dark-bg border border-dark-border">
-                                <div class="text-xs text-text-muted uppercase font-bold mb-1">Cache Size</div>
-                                <div class="text-2xl font-mono text-white" id="storage-size">-- KB</div>
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-text-muted uppercase tracking-wider pl-1">Local Cache Status</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                            <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Cache Age</div>
+                            <div class="text-2xl font-mono text-white" id="stat-age">--</div>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                            <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Items Stored</div>
+                            <div class="text-2xl font-mono text-white" id="stat-items">0 <span class="text-sm text-text-faint font-sans">objects</span></div>
+                        </div>
+                        <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex justify-between items-end">
+                            <div>
+                                <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Storage Usage</div>
+                                <div class="text-2xl font-mono text-white" id="stat-size">0 KB</div>
                             </div>
-                            <div class="p-4 rounded bg-dark-bg border border-dark-border">
-                                <div class="text-xs text-text-muted uppercase font-bold mb-1">Starred Users</div>
-                                <div class="text-2xl font-mono text-white" id="storage-starred">0</div>
-                            </div>
-                             <div class="p-4 rounded bg-dark-bg border border-dark-border flex items-center">
-                                <button onclick="app.clearLocalData()" class="w-full h-full py-2 rounded border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors text-sm font-bold uppercase">
-                                    <i class="ph-bold ph-trash mr-2"></i> Clear Cache
-                                </button>
-                            </div>
+                            <button onclick="app.clearLocalData()" class="p-2 rounded text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors" title="Clear Cache">
+                                <i class="ph-bold ph-trash text-lg"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -312,6 +334,61 @@ const state={
     showStarredOnly: false
 };
 
+const updateStorageStats = () => {
+    const rawCache = localStorage.getItem(CACHE_KEY);
+    const stars = localStorage.getItem(STAR_KEY) || '';
+    
+    // 1. Calculate Size
+    const totalBytes = (rawCache ? rawCache.length : 0) + stars.length;
+    const kb = (totalBytes / 1024).toFixed(2);
+    const mb = (totalBytes / (1024 * 1024)).toFixed(2);
+    const sizeStr = mb > 1 ? `${mb} MB` : `${kb} KB`;
+
+    // 2. Calculate Items
+    let totalItems = 0;
+    let ageStr = 'None';
+    
+    if (rawCache) {
+        try {
+            const data = JSON.parse(rawCache);
+            const sessCount = (data.sessions || []).length;
+            const taskCount = (data.tasks || []).length;
+            const userCount = (data.usersList || []).length;
+            totalItems = sessCount + taskCount + userCount;
+
+            // 3. Calculate Age
+            if(data.timestamp){
+                const diffMs = Date.now() - data.timestamp;
+                const mins = Math.floor(diffMs / 60000);
+                if(mins < 1) ageStr = 'Just now';
+                else if(mins < 60) ageStr = `${mins} mins`;
+                else {
+                    const hrs = Math.floor(mins / 60);
+                    ageStr = `${hrs} hours`;
+                }
+            }
+        } catch(e) {}
+    }
+
+    // Update DOM
+    const elSize = document.getElementById('stat-size');
+    const elItems = document.getElementById('stat-items');
+    const elAge = document.getElementById('stat-age');
+    const elBadge = document.getElementById('data-cache-badge');
+    const elBadgeTime = document.getElementById('data-cache-time');
+
+    if(elSize) elSize.innerText = sizeStr;
+    if(elItems) elItems.innerHTML = `${totalItems} <span class="text-sm text-text-faint font-sans">objects</span>`;
+    if(elAge) elAge.innerText = ageStr;
+    
+    if(elBadge && rawCache) {
+        elBadge.classList.remove('hidden');
+        if(elBadgeTime) elBadgeTime.innerText = ageStr.includes('Just') ? 'Now' : ageStr + ' ago';
+    } else if (elBadge) {
+        elBadge.classList.add('hidden');
+    }
+};
+
 const saveCache = () => {
     try {
         const cacheData = {
@@ -337,26 +414,13 @@ const loadCache = () => {
         state.sessions = data.sessions || [];
         state.tasks = data.tasks || [];
         state.usersList = data.usersList || [];
-        const age = Math.round((Date.now() - data.timestamp) / 1000 / 60);
-        log(`<span class="text-blue-400">Loaded from Cache (${age} mins ago).</span>`);
+        
         updateStorageStats();
         return true;
     } catch (e) {
         console.error("Cache parsing failed", e);
         return false;
     }
-};
-
-const updateStorageStats = () => {
-    const cache = localStorage.getItem(CACHE_KEY) || '';
-    const stars = localStorage.getItem(STAR_KEY) || '';
-    const totalBytes = cache.length + stars.length;
-    const kb = (totalBytes / 1024).toFixed(2);
-    const mb = (totalBytes / (1024 * 1024)).toFixed(2);
-    const elSize = document.getElementById('storage-size');
-    const elStar = document.getElementById('storage-starred');
-    if(elSize) elSize.innerText = mb > 1 ? `${mb} MB` : `${kb} KB`;
-    if(elStar) elStar.innerText = state.starred.length;
 };
 
 const showLoginModal=()=>{
