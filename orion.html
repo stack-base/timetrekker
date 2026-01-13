@@ -3,174 +3,254 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orion</title>
+<title>Orion Console</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:{brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a'},dark:{bg:'#0f0f0f',sidebar:'#141414',card:'#1e1e1e',border:'#2a2a2a',hover:'#333333'},text:{main:'#e5e7eb',muted:'#a3a3a3',faint:'#525252'}}}}};
+tailwind.config={
+    darkMode:'class',
+    theme:{
+        extend:{
+            fontFamily:{
+                sans:['Inter','sans-serif'],
+                mono:['JetBrains Mono', 'monospace']
+            },
+            colors:{
+                brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a', glow: 'rgba(255,87,87,0.5)'},
+                dark:{bg:'#09090b',sidebar:'#101012',card:'#18181b',border:'#27272a',hover:'#27272a', surface: '#202022'}
+            },
+            boxShadow: {
+                'glow': '0 0 20px -5px rgba(255, 87, 87, 0.15)',
+                'card': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+            }
+        }
+    }
+};
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <style>
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:#141414}
-::-webkit-scrollbar-thumb{background:#333;border-radius:4px;border:2px solid #141414}
-body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
-.animate-fade-in{animation:fadeIn .3s ease-out forwards}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.nav-btn.active{background:rgba(255,87,87,0.1);color:#ff5757;border-color:rgba(255,87,87,0.2)}
+    /* Premium Scrollbar */
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:3px;}
+    ::-webkit-scrollbar-thumb:hover{background:#52525b}
+    
+    body{background-color:#09090b;color:#e4e4e7;font-family:'Inter',sans-serif}
+    
+    /* Animation Utilities */
+    .animate-fade-in{animation:fadeIn .4s cubic-bezier(0.16, 1, 0.3, 1) forwards}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    
+    .nav-btn.active{background: linear-gradient(90deg, rgba(255,87,87,0.08) 0%, transparent 100%); color:#ff5757; border-left: 2px solid #ff5757;}
+    .nav-btn {border-left: 2px solid transparent;}
+    
+    /* Tech Card Styles */
+    .tech-card {
+        background: linear-gradient(145deg, #18181b 0%, #101012 100%);
+        box-shadow: 0 4px 20px -5px rgba(0,0,0,0.4);
+    }
+    .tech-border {
+        border: 1px solid rgba(255,255,255,0.05);
+    }
 </style>
 </head>
-<body class="h-screen w-full flex overflow-hidden">
+<body class="h-screen w-full flex overflow-hidden selection:bg-brand/30 selection:text-white">
+
 <aside class="w-64 bg-dark-sidebar border-r border-dark-border flex flex-col shrink-0 z-20">
-    <div class="h-16 flex items-center px-6 border-b border-dark-border">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-red-600 flex items-center justify-center shadow-lg shadow-brand/20">
-            <i class="ph-bold ph-chart-polar text-white text-lg"></i>
+    <div class="h-16 flex items-center px-6 border-b border-dark-border/50">
+        <div class="relative group">
+            <div class="absolute -inset-1 bg-brand rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-200"></div>
+            <div class="relative w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-red-700 flex items-center justify-center shadow-lg">
+                <i class="ph-bold ph-chart-polar text-white text-lg"></i>
+            </div>
         </div>
-        <span class="ml-3 font-bold text-lg text-white tracking-tight">Orion</span>
+        <div class="ml-3 flex flex-col">
+            <span class="font-bold text-lg text-white tracking-tight leading-none">Orion</span>
+            <span class="text-[10px] text-text-faint font-mono uppercase tracking-widest mt-1">Console v2.1</span>
+        </div>
     </div>
+    
     <nav class="flex-1 p-4 space-y-1">
-        <button onclick="app.setView('overview')" id="nav-overview" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors active">
-            <i class="ph-bold ph-squares-four text-lg"></i><span class="ml-3 font-medium text-sm">Overview</span>
+        <div class="px-3 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Analytics</div>
+        <button onclick="app.setView('overview')" id="nav-overview" class="nav-btn w-full flex items-center px-3 py-2 rounded-r-lg text-zinc-400 hover:text-zinc-100 hover:bg-dark-hover transition-all duration-200 active group">
+            <i class="ph-duotone ph-squares-four text-lg group-hover:text-white transition-colors"></i><span class="ml-3 font-medium text-sm">Dashboard</span>
         </button>
-        <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">Data Sources</div>
-        <button onclick="app.setView('users')" id="nav-users" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
-            <i class="ph-bold ph-users text-lg"></i><span class="ml-3 font-medium text-sm">Users</span>
+        
+        <div class="mt-8 px-3 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Management</div>
+        <button onclick="app.setView('users')" id="nav-users" class="nav-btn w-full flex items-center px-3 py-2 rounded-r-lg text-zinc-400 hover:text-zinc-100 hover:bg-dark-hover transition-all duration-200 group">
+            <i class="ph-duotone ph-users text-lg group-hover:text-white transition-colors"></i><span class="ml-3 font-medium text-sm">User Directory</span>
         </button>
-        <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
-            <i class="ph-bold ph-check-square text-lg"></i><span class="ml-3 font-medium text-sm">Tasks Master</span>
+        <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-btn w-full flex items-center px-3 py-2 rounded-r-lg text-zinc-400 hover:text-zinc-100 hover:bg-dark-hover transition-all duration-200 group">
+            <i class="ph-duotone ph-check-square text-lg group-hover:text-white transition-colors"></i><span class="ml-3 font-medium text-sm">Task Explorer</span>
         </button>
-        <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">System</div>
-        <button onclick="app.setView('data')" id="nav-data" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
-            <i class="ph-bold ph-database text-lg"></i><span class="ml-3 font-medium text-sm">Data Management</span>
+        
+        <div class="mt-8 px-3 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">System</div>
+        <button onclick="app.setView('data')" id="nav-data" class="nav-btn w-full flex items-center px-3 py-2 rounded-r-lg text-zinc-400 hover:text-zinc-100 hover:bg-dark-hover transition-all duration-200 group">
+            <i class="ph-duotone ph-database text-lg group-hover:text-white transition-colors"></i><span class="ml-3 font-medium text-sm">Data & Storage</span>
         </button>
     </nav>
-    <div class="p-4 border-t border-dark-border">
-        <div class="flex items-center gap-3 mb-4">
-             <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">O</div>
-             <div class="flex flex-col min-w-0"><span class="text-sm font-medium text-white truncate">Orion Console</span><span class="text-xs text-text-muted">Connected</span></div>
+
+    <div class="p-4 border-t border-dark-border/50 bg-dark-sidebar">
+        <div class="flex items-center gap-3 mb-4 p-2 rounded-lg bg-dark-surface border border-white/5">
+             <div class="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-white ring-2 ring-dark-bg">OP</div>
+             <div class="flex flex-col min-w-0">
+                 <span class="text-xs font-bold text-white truncate">Operator</span>
+                 <span class="text-[10px] text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Live Stream</span>
+             </div>
         </div>
-        <button onclick="app.signOut()" class="w-full flex items-center justify-center px-3 py-2 rounded border border-red-900/30 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-wide">
-            <i class="ph-bold ph-sign-out mr-2"></i> Sign Out
+        <button onclick="app.signOut()" class="w-full group flex items-center justify-center px-3 py-2 rounded border border-red-900/20 text-red-500/80 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all text-[10px] font-bold uppercase tracking-wider">
+            <span class="group-hover:translate-x-1 transition-transform inline-flex items-center">Disconnect <i class="ph-bold ph-power ml-2"></i></span>
         </button>
     </div>
 </aside>
+
 <main class="flex-1 flex flex-col min-w-0 bg-dark-bg overflow-hidden relative">
-    <header class="h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
-        <h1 class="text-xl font-semibold text-white" id="page-title">Product Analytics</h1>
-        <button onclick="app.refreshData(true)" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all">
-            <i class="ph-bold ph-arrows-clockwise mr-2"></i> Refresh Data
-        </button>
+    <header class="h-16 flex items-center justify-between px-8 border-b border-dark-border/50 bg-dark-bg/80 backdrop-blur-md z-10 sticky top-0">
+        <div class="flex items-center gap-4">
+            <h1 class="text-lg font-semibold text-white tracking-tight" id="page-title">Dashboard</h1>
+            <div id="status-badge" class="hidden px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-mono font-medium flex items-center gap-1">
+                <span class="w-1 h-1 rounded-full bg-green-500"></span> SYNCED
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+             <div class="text-[10px] text-zinc-500 font-mono text-right hidden sm:block">
+                <div id="clock-time">00:00:00</div>
+                <div id="clock-date">YYYY-MM-DD</div>
+            </div>
+            <div class="h-8 w-px bg-dark-border mx-2"></div>
+            <button onclick="app.refreshData(true)" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-surface border border-dark-border text-zinc-400 hover:text-white hover:border-zinc-600 transition-all shadow-sm">
+                <i class="ph-bold ph-arrows-clockwise mr-2"></i> Sync Data
+            </button>
+        </div>
     </header>
+
     <div class="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+        
         <div id="view-overview" class="view-section animate-fade-in">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-users text-6xl text-brand"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Users</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-users">--</div>
-                    <div class="text-xs text-green-500 font-medium flex items-center"><i class="ph-bold ph-trend-up mr-1"></i> Lifetime signups</div>
+                <div class="tech-card tech-border rounded-xl p-6 relative overflow-hidden group hover:border-brand/30 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><i class="ph-fill ph-users text-7xl text-white"></i></div>
+                    <div class="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2">Total Users</div>
+                    <div class="text-3xl font-mono font-medium text-white mb-1" id="kpi-users">--</div>
+                    <div class="text-[11px] text-green-500 font-medium flex items-center bg-green-500/5 w-fit px-1.5 py-0.5 rounded border border-green-500/10">
+                        <i class="ph-bold ph-trend-up mr-1"></i> Lifetime
+                    </div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-clock text-6xl text-blue-500"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Focus Time</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-focus">--</div>
-                    <div class="text-xs text-text-faint">Aggregated hours</div>
+                <div class="tech-card tech-border rounded-xl p-6 relative overflow-hidden group hover:border-blue-500/30 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><i class="ph-fill ph-clock text-7xl text-blue-500"></i></div>
+                    <div class="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2">Focus Time</div>
+                    <div class="text-3xl font-mono font-medium text-white mb-1" id="kpi-focus">--</div>
+                    <div class="text-[11px] text-zinc-500">Aggregated hours</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-check-circle text-6xl text-green-500"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Tasks Created</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-tasks">--</div>
-                    <div class="text-xs text-text-faint">Across all projects</div>
+                <div class="tech-card tech-border rounded-xl p-6 relative overflow-hidden group hover:border-green-500/30 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><i class="ph-fill ph-check-circle text-7xl text-green-500"></i></div>
+                    <div class="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2">Tasks Created</div>
+                    <div class="text-3xl font-mono font-medium text-white mb-1" id="kpi-tasks">--</div>
+                    <div class="text-[11px] text-zinc-500">Global volume</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-lightning text-6xl text-yellow-500"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Avg Session</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-avg">--</div>
-                    <div class="text-xs text-text-faint">Minutes per focus</div>
+                <div class="tech-card tech-border rounded-xl p-6 relative overflow-hidden group hover:border-yellow-500/30 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><i class="ph-fill ph-lightning text-7xl text-yellow-500"></i></div>
+                    <div class="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2">Avg Session</div>
+                    <div class="text-3xl font-mono font-medium text-white mb-1" id="kpi-avg">--</div>
+                    <div class="text-[11px] text-zinc-500">Minutes / session</div>
                 </div>
             </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-6">
-                    <h3 class="text-lg font-bold text-white mb-6">Global Focus Activity</h3>
+                <div class="lg:col-span-2 tech-card tech-border rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wide">Activity Trend</h3>
+                        <div class="text-[10px] text-zinc-500 font-mono bg-dark-bg px-2 py-1 rounded border border-dark-border">LAST 7 DAYS</div>
+                    </div>
                     <div class="h-[300px] w-full"><canvas id="activityChart"></canvas></div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col">
-                    <h3 class="text-lg font-bold text-white mb-2">Popular Projects</h3>
-                    <p class="text-xs text-text-muted mb-6">Top categories users create</p>
+                <div class="tech-card tech-border rounded-xl p-6 flex flex-col">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wide mb-2">Project Distribution</h3>
+                    <p class="text-[11px] text-zinc-500 mb-6">Top categories by session count</p>
                     <div class="h-[200px] w-full flex justify-center mb-4"><canvas id="projectDistChart"></canvas></div>
-                    <div id="top-projects-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2"></div>
+                    <div id="top-projects-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-1 mt-2"></div>
                 </div>
             </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
-                    <div class="p-6 border-b border-dark-border flex justify-between items-center bg-dark-card/50">
-                        <h3 class="text-lg font-bold text-white">Recent Sessions</h3>
-                        <span class="text-xs px-2 py-1 rounded bg-brand/10 text-brand border border-brand/20">Live Feed</span>
+                <div class="tech-card tech-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-dark-border bg-dark-surface/50 flex justify-between items-center backdrop-blur-sm">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wide">Live Feed</h3>
+                        <span class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand/10 text-brand border border-brand/20 text-[10px] font-bold uppercase">
+                            <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-brand"></span></span>
+                            Real-time
+                        </span>
                     </div>
                     <div class="flex-1 overflow-auto custom-scrollbar">
                         <table class="w-full text-left border-collapse">
-                            <thead class="bg-dark-sidebar sticky top-0 z-10">
+                            <thead class="bg-dark-surface sticky top-0 z-10 text-[10px] uppercase font-bold text-zinc-500">
                                 <tr>
-                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Timestamp</th>
-                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Task</th>
-                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Duration</th>
+                                    <th class="p-3 pl-4 border-b border-dark-border">Time</th>
+                                    <th class="p-3 border-b border-dark-border">Task</th>
+                                    <th class="p-3 border-b border-dark-border text-right pr-4">Dur</th>
                                 </tr>
                             </thead>
-                            <tbody id="live-feed-body" class="text-sm">
-                                <tr><td colspan="3" class="p-4 text-center text-text-muted italic">Loading...</td></tr>
+                            <tbody id="live-feed-body" class="text-xs font-mono">
+                                <tr><td colspan="3" class="p-4 text-center text-zinc-500">Initializing stream...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
-                    <div class="p-6 border-b border-dark-border bg-dark-card/50">
-                        <h3 class="text-lg font-bold text-white">System Health</h3>
+
+                <div class="tech-card tech-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                    <div class="p-4 border-b border-dark-border bg-dark-surface/50">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wide">System Health</h3>
                     </div>
-                    <div class="p-6 space-y-6">
+                    <div class="p-6 space-y-8">
                         <div>
-                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Task Completion Rate</span><span class="text-white font-bold" id="health-completion">0%</span></div>
-                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-completion" class="bg-green-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                            <div class="flex justify-between text-xs mb-2"><span class="text-zinc-400">Task Completion Rate</span><span class="text-white font-mono" id="health-completion">0%</span></div>
+                            <div class="w-full bg-dark-bg rounded-full h-1.5 overflow-hidden border border-white/5"><div id="bar-completion" class="bg-green-500 h-full rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(34,197,94,0.3)]" style="width: 0%"></div></div>
                         </div>
                         <div>
-                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">High Priority Task Ratio</span><span class="text-white font-bold" id="health-priority">0%</span></div>
-                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-priority" class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                            <div class="flex justify-between text-xs mb-2"><span class="text-zinc-400">High Priority Ratio</span><span class="text-white font-mono" id="health-priority">0%</span></div>
+                            <div class="w-full bg-dark-bg rounded-full h-1.5 overflow-hidden border border-white/5"><div id="bar-priority" class="bg-brand h-full rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(255,87,87,0.3)]" style="width: 0%"></div></div>
                         </div>
-                        <div class="p-4 rounded border border-dark-border bg-dark-bg mt-6">
-                            <div class="text-xs text-text-muted font-bold uppercase mb-2">Console Logs</div>
-                            <div id="console-log" class="text-[10px] font-mono text-text-faint h-24 overflow-y-auto">
-                                > Initializing Orion Console...<br>
+                        
+                        <div class="rounded-lg border border-dark-border bg-black/40 p-0 overflow-hidden flex flex-col h-32">
+                            <div class="bg-white/5 px-3 py-1.5 border-b border-white/5 flex justify-between items-center">
+                                <span class="text-[10px] font-mono text-zinc-500 uppercase">Console Output</span>
+                                <div class="flex gap-1"><div class="w-2 h-2 rounded-full bg-red-500/50"></div><div class="w-2 h-2 rounded-full bg-yellow-500/50"></div><div class="w-2 h-2 rounded-full bg-green-500/50"></div></div>
+                            </div>
+                            <div id="console-log" class="p-3 text-[10px] font-mono text-zinc-400 overflow-y-auto custom-scrollbar flex-1 leading-relaxed">
+                                <span class="text-green-500">➜</span> System initialized.<br>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div id="view-users" class="view-section hidden animate-fade-in">
-             <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
-                <div class="p-6 border-b border-dark-border bg-dark-card/50 flex items-start justify-between">
+             <div class="tech-card tech-border rounded-xl overflow-hidden">
+                <div class="p-4 border-b border-dark-border bg-dark-surface/50 flex items-center justify-between backdrop-blur-sm">
                     <div>
-                        <h3 class="text-lg font-bold text-white">Active Users</h3>
-                        <p class="text-xs text-text-muted mt-1">Full user directory from Firestore.</p>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wide">User Directory</h3>
+                        <p class="text-[10px] text-zinc-500 mt-0.5">Firestore Collection: /users</p>
                     </div>
-                    <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-bg border border-dark-border text-text-muted hover:text-white hover:border-yellow-500 transition-all">
-                        <i class="ph-bold ph-star mr-2"></i> Show Starred Only
+                    <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-bg border border-dark-border text-zinc-400 hover:text-white hover:border-yellow-500/50 transition-all">
+                        <i class="ph-bold ph-star mr-2"></i> Starred Only
                     </button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
-                         <thead class="bg-dark-sidebar border-b border-dark-border">
+                         <thead class="bg-dark-surface border-b border-dark-border text-[10px] uppercase font-bold text-zinc-500">
                             <tr>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-16"></th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th> 
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">User Profile</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Login/Provider</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Engagement</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Last Active</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Actions</th>
+                                <th class="p-4 w-12 text-center"></th>
+                                <th class="p-4 w-12"></th> 
+                                <th class="p-4">Profile Identity</th>
+                                <th class="p-4">Provider</th>
+                                <th class="p-4">Metrics</th>
+                                <th class="p-4">Last Seen</th>
+                                <th class="p-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="users-table-body" class="text-sm"></tbody>
@@ -178,33 +258,34 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                 </div>
             </div>
         </div>
+
         <div id="view-tasks" class="view-section hidden animate-fade-in">
-             <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[85vh]">
-                <div class="p-6 border-b border-dark-border bg-dark-card/50 flex justify-between items-center">
-                    <div class="flex items-center">
+             <div class="tech-card tech-border rounded-xl overflow-hidden flex flex-col h-[85vh]">
+                <div class="p-4 border-b border-dark-border bg-dark-surface/50 flex justify-between items-center backdrop-blur-sm">
+                    <div class="flex items-center gap-4">
                         <div>
-                            <h3 class="text-lg font-bold text-white" id="tasks-header-title">Global Task Master List</h3>
-                            <p class="text-xs text-text-muted mt-1" id="tasks-header-desc">Most recent 500 tasks from all users.</p>
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wide" id="tasks-header-title">Master Task List</h3>
+                            <p class="text-[10px] text-zinc-500 mt-0.5" id="tasks-header-desc">Global aggregation</p>
                         </div>
-                        <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden ml-4 flex items-center px-2 py-1 bg-brand/10 text-brand border border-brand/20 rounded text-xs font-bold hover:bg-brand/20 transition-colors">
-                            <i class="ph-bold ph-x-circle mr-1"></i> Show All
+                        <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden flex items-center px-2 py-1 bg-brand/10 text-brand border border-brand/20 rounded text-[10px] font-bold hover:bg-brand/20 transition-colors uppercase">
+                            <i class="ph-bold ph-x mr-1"></i> Clear Filter
                         </button>
                     </div>
-                    <div class="relative">
-                        <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></i>
-                        <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="bg-dark-bg border border-dark-border rounded-full pl-9 pr-4 py-1.5 text-sm text-white focus:border-brand outline-none w-64">
+                    <div class="relative group">
+                        <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-white transition-colors"></i>
+                        <input type="text" placeholder="Search GUID or Title..." onkeyup="app.filterTasks(this.value)" class="bg-dark-bg border border-dark-border rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:border-brand focus:ring-1 focus:ring-brand/50 outline-none w-64 transition-all placeholder:text-zinc-600 font-mono">
                     </div>
                 </div>
                 <div class="flex-1 overflow-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
-                         <thead class="bg-dark-sidebar sticky top-0 z-10 border-b border-dark-border">
+                         <thead class="bg-dark-surface sticky top-0 z-10 border-b border-dark-border text-[10px] uppercase font-bold text-zinc-500">
                             <tr>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Task Details</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Priority</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Pomos</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Duration</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Due Date</th>
+                                <th class="p-4 w-10"></th>
+                                <th class="p-4">Task Payload</th>
+                                <th class="p-4">Priority Level</th>
+                                <th class="p-4">Progress (Pomo)</th>
+                                <th class="p-4">Time Spent</th>
+                                <th class="p-4 text-right">Target Date</th>
                             </tr>
                         </thead>
                         <tbody id="tasks-table-body" class="text-sm"></tbody>
@@ -214,84 +295,108 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
         </div>
         
         <div id="view-data" class="view-section hidden animate-fade-in">
-            <div class="max-w-6xl mx-auto p-6">
-                <div class="flex items-center gap-4 mb-10">
-                    <div class="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                        <i class="ph-bold ph-database text-red-500 text-xl"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-white flex items-center gap-3">
-                            Data Management
-                            <span id="data-cache-badge" class="hidden px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wide">
-                                Cached (<span id="data-cache-time">--</span>)
-                            </span>
-                        </h2>
-                        <p class="text-sm text-text-muted mt-1">Backup, restore, and manage your local data cache.</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col relative overflow-hidden group">
-                        <div class="absolute top-4 right-4 text-[10px] font-bold text-text-faint tracking-widest uppercase">Storage</div>
-                        <div class="flex items-start mb-6 mt-2">
-                            <div class="p-3 rounded-lg bg-blue-600/10 text-blue-500 border border-blue-600/20 mr-4">
-                                <i class="ph-fill ph-upload-simple text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-base font-bold text-white">Export Data Snapshot</h3>
-                                <p class="text-xs text-text-muted mt-2 leading-relaxed">
-                                    Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
-                                </p>
-                            </div>
+            <div class="max-w-6xl mx-auto pt-4">
+                
+                <div class="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-900/40 to-transparent border border-blue-500/20 flex items-center justify-center shadow-lg shadow-blue-900/10">
+                            <i class="ph-duotone ph-database text-blue-400 text-2xl"></i>
                         </div>
-                        <div class="mt-auto">
-                            <button onclick="app.exportData()" class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center">
-                                <i class="ph-bold ph-download-simple mr-2"></i> Download JSON
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col relative overflow-hidden">
-                        <div class="absolute top-4 right-4 text-[10px] font-bold text-text-faint tracking-widest uppercase">Restore</div>
-                        <div class="flex items-start mb-6 mt-2">
-                            <div class="p-3 rounded-lg bg-green-500/10 text-green-500 border border-green-500/20 mr-4">
-                                <i class="ph-fill ph-download-simple text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-base font-bold text-white">Import Data Snapshot</h3>
-                                <p class="text-xs text-text-muted mt-2 leading-relaxed">
-                                    Restore a previously saved JSON file. <span class="text-red-400">Warning:</span> This will overwrite your current local dashboard view.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="mt-auto">
-                            <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
-                            <button onclick="document.getElementById('import-file').click()" class="w-full py-2.5 rounded-lg bg-transparent border border-dark-border hover:border-text-muted hover:bg-dark-hover text-text-muted hover:text-white text-sm font-bold transition-all flex items-center justify-center">
-                                <i class="ph-bold ph-file-arrow-up mr-2"></i> Select Backup File
-                            </button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                                Data Management
+                                <div id="data-cache-badge" class="hidden flex items-center gap-2 px-2 py-1 rounded border border-blue-500/30 bg-blue-500/10 backdrop-blur-sm">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></span>
+                                    <span class="text-[10px] font-mono text-blue-300 uppercase tracking-wider">Cached <span id="data-cache-time">--</span></span>
+                                </div>
+                            </h2>
+                            <p class="text-sm text-zinc-500 mt-1">Manage local storage artifacts, create snapshots, and restore system state.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-text-muted uppercase tracking-wider pl-1">Local Cache Status</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                            <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Cache Age</div>
-                            <div class="text-2xl font-mono text-white" id="stat-age">--</div>
-                        </div>
-                        <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                            <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Items Stored</div>
-                            <div class="text-2xl font-mono text-white" id="stat-items">0 <span class="text-sm text-text-faint font-sans">objects</span></div>
-                        </div>
-                        <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex justify-between items-end">
-                            <div>
-                                <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Storage Usage</div>
-                                <div class="text-2xl font-mono text-white" id="stat-size">0 KB</div>
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div class="tech-card tech-border rounded-xl p-6 flex flex-col relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300">
+                            <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                            <div class="flex justify-between items-start mb-6 z-10">
+                                <div class="p-3 rounded-lg bg-dark-bg border border-dark-border text-blue-400 shadow-inner">
+                                    <i class="ph-fill ph-download-simple text-xl"></i>
+                                </div>
+                                <span class="text-[10px] font-bold text-blue-500/50 uppercase tracking-widest border border-blue-500/10 px-2 py-0.5 rounded">Snapshot</span>
                             </div>
-                            <button onclick="app.clearLocalData()" class="p-2 rounded text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors" title="Clear Cache">
-                                <i class="ph-bold ph-trash text-lg"></i>
-                            </button>
+                            <h3 class="text-lg font-bold text-white z-10">Export Configuration</h3>
+                            <p class="text-xs text-zinc-500 mt-2 mb-8 leading-relaxed z-10">
+                                Serialize current session state (Users, Tasks, Focus Logs) into a portable JSON artifact. 
+                            </p>
+                            <div class="mt-auto z-10">
+                                <button onclick="app.exportData()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center transition-all active:scale-[0.98]">
+                                    <i class="ph-bold ph-download-simple mr-2"></i> Generate Backup
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tech-card tech-border rounded-xl p-6 flex flex-col relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+                            <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                            <div class="flex justify-between items-start mb-6 z-10">
+                                <div class="p-3 rounded-lg bg-dark-bg border border-dark-border text-emerald-500 shadow-inner">
+                                    <i class="ph-fill ph-upload-simple text-xl"></i>
+                                </div>
+                                <span class="text-[10px] font-bold text-emerald-500/50 uppercase tracking-widest border border-emerald-500/10 px-2 py-0.5 rounded">Restore</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white z-10">Import Configuration</h3>
+                            <p class="text-xs text-zinc-500 mt-2 mb-8 leading-relaxed z-10">
+                                Rehydrate state from a JSON artifact. <span class="text-brand">Warning:</span> Overwrites current in-memory data structure.
+                            </p>
+                            <div class="mt-auto z-10">
+                                <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                                <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded-lg bg-dark-bg border border-dark-border hover:border-emerald-500/50 hover:text-emerald-400 text-zinc-400 text-sm font-bold transition-all flex items-center justify-center active:scale-[0.98]">
+                                    <i class="ph-bold ph-file-arrow-up mr-2"></i> Select File
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                        <div class="tech-card tech-border rounded-xl p-6 h-full relative flex flex-col">
+                            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6">System Status</h3>
+                            
+                            <div class="mb-6">
+                                <div class="flex justify-between items-end mb-2">
+                                    <span class="text-xs text-zinc-400">Total Objects</span>
+                                    <span class="text-xl font-mono text-white" id="stat-items">0</span>
+                                </div>
+                                <div class="w-full h-1 bg-dark-bg rounded-full overflow-hidden"><div class="h-full bg-white/20 w-3/4"></div></div>
+                            </div>
+
+                            <div class="mb-6">
+                                <div class="flex justify-between items-end mb-2">
+                                    <span class="text-xs text-zinc-400">Cache Age</span>
+                                    <span class="text-xl font-mono text-brand" id="stat-age">--</span>
+                                </div>
+                                <div class="w-full h-1 bg-dark-bg rounded-full overflow-hidden"><div class="h-full bg-brand/50 w-full"></div></div>
+                            </div>
+
+                             <div class="p-4 rounded-lg bg-dark-bg border border-dark-border mb-6">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] font-bold text-zinc-500 uppercase">Local Storage</span>
+                                    <span class="text-[10px] font-mono text-zinc-300" id="stat-size">0 KB</span>
+                                </div>
+                                <div class="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden mt-2">
+                                    <div id="storage-bar" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 1%"></div>
+                                </div>
+                                <div class="text-[9px] text-zinc-600 text-right mt-1 font-mono">Quota: ~5 MB</div>
+                            </div>
+
+                            <div class="mt-auto space-y-3">
+                                <button onclick="window.location.reload()" class="w-full py-2.5 rounded border border-zinc-700 text-zinc-300 hover:bg-white/5 hover:text-white transition-colors text-xs font-bold uppercase tracking-wide flex items-center justify-center group" title="Fetch latest app version without clearing data">
+                                    <i class="ph-bold ph-browser mr-2 group-hover:text-brand transition-colors"></i> Reload Console
+                                </button>
+                                <button onclick="app.clearLocalData()" class="w-full py-2.5 rounded border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors text-xs font-bold uppercase tracking-wide flex items-center justify-center">
+                                    <i class="ph-bold ph-trash mr-2"></i> Purge Cache
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -314,12 +419,23 @@ const CACHE_KEY = 'orion_local_cache_v1';
 const STAR_KEY = 'orion_starred_users';
 
 Chart.defaults.font.family='Inter';
-Chart.defaults.color='#a3a3a3';
-Chart.defaults.borderColor='#2a2a2a';
+Chart.defaults.color='#71717a';
+Chart.defaults.borderColor='#27272a';
+
+// Clock
+setInterval(() => {
+    const now = new Date();
+    document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-US', {hour12:false});
+    document.getElementById('clock-date').innerText = now.toISOString().split('T')[0];
+}, 1000);
 
 const log=(msg)=>{
     const b=document.getElementById('console-log');
-    if(b){b.innerHTML+=`> ${msg}<br>`;b.scrollTop=b.scrollHeight;}
+    if(b){
+        const time = new Date().toLocaleTimeString('en-US',{hour12:false});
+        b.innerHTML+=`<div class="mb-1"><span class="text-zinc-600 mr-2">[${time}]</span>${msg}</div>`;
+        b.scrollTop=b.scrollHeight;
+    }
 };
 
 const state={
@@ -343,6 +459,9 @@ const updateStorageStats = () => {
     const kb = (totalBytes / 1024).toFixed(2);
     const mb = (totalBytes / (1024 * 1024)).toFixed(2);
     const sizeStr = mb > 1 ? `${mb} MB` : `${kb} KB`;
+    
+    // Calculate usage percentage (assuming 5MB localstorage limit mostly)
+    const usagePct = Math.min((totalBytes / (5 * 1024 * 1024)) * 100, 100);
 
     // 2. Calculate Items
     let totalItems = 0;
@@ -361,10 +480,10 @@ const updateStorageStats = () => {
                 const diffMs = Date.now() - data.timestamp;
                 const mins = Math.floor(diffMs / 60000);
                 if(mins < 1) ageStr = 'Just now';
-                else if(mins < 60) ageStr = `${mins} mins`;
+                else if(mins < 60) ageStr = `${mins}m ago`;
                 else {
                     const hrs = Math.floor(mins / 60);
-                    ageStr = `${hrs} hours`;
+                    ageStr = `${hrs}h ${mins%60}m ago`;
                 }
             }
         } catch(e) {}
@@ -376,16 +495,21 @@ const updateStorageStats = () => {
     const elAge = document.getElementById('stat-age');
     const elBadge = document.getElementById('data-cache-badge');
     const elBadgeTime = document.getElementById('data-cache-time');
+    const elBar = document.getElementById('storage-bar');
 
     if(elSize) elSize.innerText = sizeStr;
-    if(elItems) elItems.innerHTML = `${totalItems} <span class="text-sm text-text-faint font-sans">objects</span>`;
+    if(elItems) elItems.innerText = totalItems;
     if(elAge) elAge.innerText = ageStr;
+    if(elBar) elBar.style.width = `${Math.max(usagePct, 1)}%`;
+    if(usagePct > 80 && elBar) elBar.classList.replace('bg-blue-500', 'bg-red-500');
     
     if(elBadge && rawCache) {
         elBadge.classList.remove('hidden');
-        if(elBadgeTime) elBadgeTime.innerText = ageStr.includes('Just') ? 'Now' : ageStr + ' ago';
+        elBadge.classList.add('flex');
+        if(elBadgeTime) elBadgeTime.innerText = ageStr;
     } else if (elBadge) {
         elBadge.classList.add('hidden');
+        elBadge.classList.remove('flex');
     }
 };
 
@@ -399,10 +523,10 @@ const saveCache = () => {
         };
         const str = JSON.stringify(cacheData);
         localStorage.setItem(CACHE_KEY, str);
-        log('<span class="text-green-400">Data cached successfully.</span>');
+        log('<span class="text-green-400">State snapshot cached locally.</span>');
         updateStorageStats();
     } catch (e) {
-        log('Cache Error (Quota Exceeded?): ' + e.message);
+        log('<span class="text-red-400">Cache Error (Quota Exceeded?): ' + e.message + '</span>');
     }
 };
 
@@ -428,7 +552,7 @@ const showLoginModal=()=>{
     const div=document.createElement('div');
     div.id='dev-login-modal';
     div.className='fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm';
-    div.innerHTML=`<div class="bg-dark-card border border-dark-border p-8 rounded-xl w-full max-w-sm shadow-2xl"><h2 class="text-xl font-bold text-white mb-6 flex items-center"><i class="ph-bold ph-lock-key mr-2"></i> Orion Login</h2><form id="dev-login-form" class="space-y-4"><div><label class="block text-xs font-bold text-text-muted uppercase mb-1">Email</label><input type="email" id="dev-email" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-white focus:border-brand outline-none" placeholder="access@orion.com" required></div><div><label class="block text-xs font-bold text-text-muted uppercase mb-1">Password</label><input type="password" id="dev-pass" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-white focus:border-brand outline-none" placeholder="••••••••" required></div><div id="login-error" class="text-red-500 text-xs hidden"></div><button type="submit" class="w-full bg-brand hover:bg-brand-hover text-white font-bold py-2 rounded transition-colors mt-2">Access Dashboard</button></form></div>`;
+    div.innerHTML=`<div class="tech-card tech-border p-8 rounded-xl w-full max-w-sm shadow-2xl relative overflow-hidden"><div class="absolute top-0 left-0 w-full h-1 bg-brand"></div><h2 class="text-xl font-bold text-white mb-6 flex items-center"><i class="ph-bold ph-shield-check mr-2 text-brand"></i> Secure Login</h2><form id="dev-login-form" class="space-y-4"><div><label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1 tracking-wider">Identity</label><input type="email" id="dev-email" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2.5 text-white focus:border-brand focus:ring-1 focus:ring-brand/50 outline-none text-sm transition-all" placeholder="admin@orion.com" required></div><div><label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1 tracking-wider">Key</label><input type="password" id="dev-pass" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2.5 text-white focus:border-brand focus:ring-1 focus:ring-brand/50 outline-none text-sm transition-all" placeholder="••••••••" required></div><div id="login-error" class="text-red-500 text-xs hidden font-mono bg-red-500/10 p-2 rounded border border-red-500/20"></div><button type="submit" class="w-full bg-brand hover:bg-brand-hover text-white font-bold py-2.5 rounded transition-colors mt-2 shadow-lg shadow-brand/20">Authenticate</button></form></div>`;
     document.body.appendChild(div);
     document.getElementById('dev-login-form').onsubmit=async(e)=>{
         e.preventDefault();
@@ -437,13 +561,15 @@ const showLoginModal=()=>{
         const btn=e.target.querySelector('button');
         const err=document.getElementById('login-error');
         try{
-            btn.innerText='Authenticating...';
+            btn.innerText='Verifying Credentials...';
             btn.disabled=true;
+            btn.classList.add('opacity-70');
             await signInWithEmailAndPassword(auth,email,pass);
         }catch(error){
-            btn.innerText='Access Dashboard';
+            btn.innerText='Authenticate';
             btn.disabled=false;
-            err.innerText=error.message;
+            btn.classList.remove('opacity-70');
+            err.innerText = `Error: ${error.message}`;
             err.classList.remove('hidden');
         }
     };
@@ -453,10 +579,10 @@ onAuthStateChanged(auth,async u=>{
     const modal=document.getElementById('dev-login-modal');
     if(u){
         if(modal)modal.remove();
-        log(`Authenticated as ${u.email}`);
+        log(`Session authenticated: <span class="text-white">${u.email}</span>`);
         app.refreshData(false);
     }else{
-        log('No user detected. Showing login prompt...');
+        log('Session terminated. Requesting auth.');
         showLoginModal();
     }
 });
@@ -473,7 +599,7 @@ const app={
         document.getElementById(`nav-${v}`).classList.add('active');
         
         // Update Title
-        const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'data': 'Data Management'};
+        const titles = {'overview': 'Dashboard', 'users': 'Directory', 'tasks': 'Task Explorer', 'data': 'Storage & Config'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
 
         if(v==='users')renderUsersTable();
@@ -514,12 +640,12 @@ const app={
         const btn = document.getElementById('btn-star-filter');
         if (state.showStarredOnly) {
             btn.classList.add('bg-yellow-500/10', 'text-yellow-500', 'border-yellow-500/20');
-            btn.classList.remove('bg-dark-bg', 'text-text-muted', 'border-dark-border');
+            btn.classList.remove('bg-dark-bg', 'text-zinc-400', 'border-dark-border');
             btn.innerHTML = `<i class="ph-fill ph-star mr-2"></i> Starred Only`;
         } else {
             btn.classList.remove('bg-yellow-500/10', 'text-yellow-500', 'border-yellow-500/20');
-            btn.classList.add('bg-dark-bg', 'text-text-muted', 'border-dark-border');
-            btn.innerHTML = `<i class="ph-bold ph-star mr-2"></i> Show Starred Only`;
+            btn.classList.add('bg-dark-bg', 'text-zinc-400', 'border-dark-border');
+            btn.innerHTML = `<i class="ph-bold ph-star mr-2"></i> Starred Only`;
         }
         renderUsersTable();
     },
@@ -534,12 +660,12 @@ const app={
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `orion_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.download = `orion_snapshot_${new Date().toISOString().slice(0,10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        log('<span class="text-blue-400">Backup downloaded successfully.</span>');
+        log('<span class="text-blue-400">Snapshot generated and downloaded.</span>');
     },
     handleFileImport: (input) => {
         if (!input.files || !input.files[0]) return;
@@ -553,11 +679,11 @@ const app={
                     localStorage.setItem(STAR_KEY, data.starred);
                     state.starred = JSON.parse(data.starred);
                 }
-                log('<span class="text-green-400">Import successful. Reloading data...</span>');
+                log('<span class="text-green-400">Import successful. Rehydrating state...</span>');
                 app.refreshData(false); // Reload from the newly imported cache
-                alert('Data imported successfully! The dashboard has been updated.');
+                alert('System State Restored.');
             } catch (err) {
-                alert('Error parsing JSON file. Is it a valid backup?');
+                alert('Critical Error: Invalid Snapshot File.');
                 console.error(err);
             }
         };
@@ -566,7 +692,7 @@ const app={
         input.value = '';
     },
     clearLocalData: () => {
-        if(confirm('Are you sure? This will remove all cached data and starred users. You will need to fetch from Firestore again.')){
+        if(confirm('Confirm Purge: This will wipe all cached data. Application will require a network fetch to rebuild.')){
             localStorage.removeItem(CACHE_KEY);
             localStorage.removeItem(STAR_KEY);
             state.starred = [];
@@ -580,29 +706,39 @@ const app={
                 renderAll();
                 return;
             }
-            log('Fetching LIVE data from Firestore...');
+            log('Initiating <span class="text-brand">network fetch</span> from Firestore...');
             const qSessions=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(500));
             const snapSessions=await getDocs(qSessions);
             state.sessions=snapSessions.docs.map(d=>{
                 const uid=d.ref.parent?.parent?.id||'unknown';
                 return{...d.data(),_uid:uid};
             });
-            log('Fetching global tasks...');
+            log(`Retrieved ${state.sessions.length} session logs.`);
+            
             const qTasks=query(collectionGroup(db,'tasks'),limit(500));
             const snapTasks=await getDocs(qTasks);
             state.tasks=snapTasks.docs.map(d=>{
                 const uid=d.ref.parent?.parent?.id||'unknown';
                 return{...d.data(),_uid:uid};
             });
-            log('Fetching user profiles...');
+            
             const qUsers=query(collection(db,'artifacts',appId,'users'));
             const snapUsers=await getDocs(qUsers);
             state.usersList=snapUsers.docs.map(d=>({id:d.id,...d.data()}));
-            log(`Found ${state.usersList.length} registered users.`);
+            log(`Directory updated: ${state.usersList.length} users.`);
+            
             saveCache();
             renderAll();
+            
+            // Sync badge
+            const badge = document.getElementById('status-badge');
+            if(badge) {
+                badge.classList.remove('hidden');
+                setTimeout(()=>badge.classList.add('hidden'), 5000);
+            }
+            
         }catch(e){
-            log(`ERROR: ${e.message}`);
+            log(`SYSTEM ERROR: ${e.message}`);
             if(e.message.includes('index'))alert('Missing Firestore Index! Check Console.');
             else if(e.message.includes('permission')||e.code==='permission-denied')alert('Permission Denied. Check Rules.');
         }
@@ -658,7 +794,7 @@ function renderUsersTable(){
     }
 
     if(users.length===0){
-        tbody.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-text-muted">No user data found.</td></tr>`;
+        tbody.innerHTML=`<tr><td colspan="7" class="p-8 text-center text-zinc-500 italic">Query returned no results.</td></tr>`;
         return;
     }
 
@@ -667,42 +803,49 @@ function renderUsersTable(){
         const h=Math.floor(u.focus/60);
         
         const isStarred = state.starred.includes(u.uid);
-        const starIconClass = isStarred ? "ph-fill ph-star text-yellow-500" : "ph-bold ph-star text-dark-border hover:text-text-muted";
+        const starIconClass = isStarred ? "ph-fill ph-star text-yellow-500" : "ph-bold ph-star text-zinc-600 hover:text-zinc-400";
         
         let avatarHTML;
         if(u.avatar){
-             avatarHTML=`<img src="${u.avatar}" class="w-8 h-8 rounded-full bg-gray-700 object-cover">`;
+             avatarHTML=`<img src="${u.avatar}" class="w-8 h-8 rounded-lg bg-zinc-800 object-cover ring-1 ring-white/10">`;
         }else{
             const initial=(u.name||u.email||'?').charAt(0).toUpperCase();
-            avatarHTML=`<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">${initial}</div>`;
+            avatarHTML=`<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-lg">${initial}</div>`;
         }
         return `
-        <tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
-            <td class="p-4 w-8 text-center">
-                <button onclick="app.toggleStar('${u.uid}')" class="transition-transform active:scale-90">
+        <tr class="border-b border-dark-border hover:bg-dark-surface/50 transition-colors group">
+            <td class="p-4 w-12 text-center">
+                <button onclick="app.toggleStar('${u.uid}')" class="transition-transform active:scale-90 p-1">
                     <i class="${starIconClass} text-lg"></i>
                 </button>
             </td>
             <td class="p-4">${avatarHTML}</td>
             <td class="p-4">
-                <div class="text-white font-medium text-sm">${u.name||'No Name'}</div>
-                <div class="text-xs text-text-muted">${u.email||'No Email'}</div>
+                <div class="text-white font-medium text-sm flex items-center gap-2">${u.name||'No Name'}</div>
+                <div class="text-xs text-zinc-500 font-mono mt-0.5">${u.email||'No Email'}</div>
             </td>
-            <td class="p-4"><span class="px-2 py-1 rounded bg-dark-bg border border-dark-border text-xs text-text-muted">${u.provider}</span></td>
+            <td class="p-4"><span class="px-2 py-0.5 rounded bg-dark-bg border border-dark-border text-[10px] text-zinc-400 uppercase tracking-wide font-bold">${u.provider}</span></td>
             <td class="p-4">
-                <div class="flex flex-col gap-1">
-                    <span class="text-xs text-text-muted"><strong class="text-white">${u.tasks}</strong> tasks</span>
-                    <span class="text-xs text-brand"><strong class="text-brand">${h}h ${u.focus%60}m</strong> focus</span>
+                <div class="flex items-center gap-3">
+                    <div class="text-center">
+                        <div class="text-white font-bold text-xs">${u.tasks}</div>
+                        <div class="text-[9px] text-zinc-500 uppercase">Tasks</div>
+                    </div>
+                    <div class="w-px h-6 bg-dark-border"></div>
+                    <div class="text-center">
+                        <div class="text-brand font-bold text-xs font-mono">${h}h ${u.focus%60}m</div>
+                        <div class="text-[9px] text-zinc-500 uppercase">Focus</div>
+                    </div>
                 </div>
             </td>
-            <td class="p-4 text-text-muted text-xs">${last}</td>
+            <td class="p-4 text-zinc-400 text-xs font-mono">${last}</td>
             <td class="p-4 text-right">
-                <div class="flex items-center justify-end gap-2">
-                    <button onclick="app.viewAsUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-brand/10 text-brand border border-brand/20 hover:bg-brand/20 transition-all flex items-center justify-center" title="Simulate User View">
-                        <i class="ph-bold ph-app-window mr-2"></i> View App
+                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="app.viewAsUser('${u.uid}')" class="px-3 py-1.5 rounded text-[10px] font-bold uppercase bg-brand/10 text-brand border border-brand/20 hover:bg-brand/20 transition-all" title="Simulate">
+                        Simulate
                     </button>
-                    <button onclick="app.filterTasksByUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all flex items-center justify-center group">
-                        <i class="ph-bold ph-list-magnifying mr-2 group-hover:text-brand"></i> View Tasks
+                    <button onclick="app.filterTasksByUser('${u.uid}')" class="p-1.5 rounded bg-dark-card border border-dark-border text-zinc-400 hover:text-white hover:border-brand transition-all">
+                        <i class="ph-bold ph-list-magnifying text-lg"></i>
                     </button>
                 </div>
             </td>
@@ -718,7 +861,7 @@ const fmtTime=(m)=>{
 };
 
 const getDateLabel=(dateStr)=>{
-    if(!dateStr)return'No Due Date';
+    if(!dateStr)return'Backlog';
     const today=new Date().toISOString().split('T')[0];
     const tomorrow=new Date(Date.now()+86400000).toISOString().split('T')[0];
     if(dateStr<today)return'Overdue';
@@ -737,17 +880,17 @@ function renderTasksTable(){
         filteredTasks=state.tasks.filter(t=>t._uid===state.filterUser);
         const user=state.usersMap[state.filterUser];
         const uName=user?(user.name||user.email):'User';
-        headerTitle.innerHTML=`Tasks for <span class="text-brand">${uName}</span>`;
-        headerDesc.innerText=`Showing filtered list of ${filteredTasks.length} tasks.`;
+        headerTitle.innerHTML=`Tasks <span class="text-zinc-600 mx-1">/</span> <span class="text-brand">${uName}</span>`;
+        headerDesc.innerText=`Filtered subset: ${filteredTasks.length} objects.`;
         clearBtn.classList.remove('hidden');
     }else{
-        headerTitle.innerText="Global Task Master List";
-        headerDesc.innerText="Most recent 500 tasks from all users.";
+        headerTitle.innerText="Master Task List";
+        headerDesc.innerText="Global aggregation of recent 500 tasks.";
         clearBtn.classList.add('hidden');
     }
-    if(filteredTasks.length===0){tbody.innerHTML=`<tr><td colspan="6" class="p-4 text-center text-text-muted">No tasks found.</td></tr>`;return;}
+    if(filteredTasks.length===0){tbody.innerHTML=`<tr><td colspan="6" class="p-8 text-center text-zinc-500 italic">No task objects matching query.</td></tr>`;return;}
     const groups={};
-    const sortOrder=['Overdue','Today','Tomorrow','No Due Date'];
+    const sortOrder=['Overdue','Today','Tomorrow','Backlog'];
     filteredTasks.forEach(t=>{
         const label=getDateLabel(t.dueDate);
         if(!groups[label])groups[label]=[];
@@ -759,21 +902,22 @@ function renderTasksTable(){
         if(idxA!==-1&&idxB!==-1)return idxA-idxB;
         if(idxA!==-1)return-1;
         if(idxB!==-1)return 1;
-        if(a==='No Due Date')return 1;
-        if(b==='No Due Date')return-1;
+        if(a==='Backlog')return 1;
+        if(b==='Backlog')return-1;
         return a.localeCompare(b);
     });
     let html='';
     sortedKeys.forEach(label=>{
-        html+=`<tr class="bg-dark-sidebar/50 border-b border-dark-border"><td colspan="6" class="p-2 px-4 text-xs font-bold text-brand uppercase tracking-wider">${label}</td></tr>`;
+        const labelColor = label==='Overdue' ? 'text-red-500' : (label==='Today' ? 'text-green-500' : 'text-zinc-500');
+        html+=`<tr class="bg-dark-bg/50 border-b border-dark-border"><td colspan="6" class="p-2 px-4 text-[10px] font-bold ${labelColor} uppercase tracking-widest flex items-center gap-2"><div class="h-px bg-current w-4 opacity-50"></div>${label}</td></tr>`;
         html+=groups[label].map(t=>{
-            const statusClass=t.status==='done'?'text-green-500':'text-text-muted';
-            const icon=t.status==='done'?'<i class="ph-fill ph-check-circle text-green-500 text-lg"></i>':'<i class="ph-regular ph-circle text-text-muted text-lg"></i>';
+            const statusClass=t.status==='done'?'text-green-500':'text-zinc-500';
+            const icon=t.status==='done'?'<i class="ph-fill ph-check-circle text-green-500 text-lg"></i>':'<i class="ph-bold ph-circle text-zinc-600 text-lg group-hover:text-zinc-400 transition-colors"></i>';
             const priBadge={
-                high:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20">HIGH</span>',
-                med:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">MED</span>',
-                low:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">LOW</span>',
-                none:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-dark-card border border-dark-border text-text-faint">NONE</span>'
+                high:'<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 shadow-[0_0_8px_rgba(239,68,68,0.2)]">CRITICAL</span>',
+                med:'<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">MEDIUM</span>',
+                low:'<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">LOW</span>',
+                none:'<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-dark-bg border border-dark-border text-zinc-600">--</span>'
             }[t.priority||'none'];
             const dur=t.pomoDuration||25;
             const estPomos=t.estimatedPomos||1;
@@ -782,13 +926,35 @@ function renderTasksTable(){
             const doneDur=donePomos*dur;
             const user=state.usersMap[t._uid];
             const userName=user?(user.name||user.email):'Unknown';
-            const userTag=!state.filterUser?`<div class="text-[10px] text-text-faint mt-1"><i class="ph-bold ph-user mr-1"></i>${userName}</div>`:'';
-            const repeatBadge=(t.repeat&&t.repeat!=='none')?`<span class="ml-2 text-[10px] text-brand bg-brand/10 px-1 rounded border border-brand/20"><i class="ph-bold ph-arrows-clockwise mr-0.5"></i>${t.repeat}</span>`:'';
-            const noteHtml=t.note?`<div class="text-xs text-text-muted mt-1 italic line-clamp-2">${t.note}</div>`:'';
-            const subtasksHtml=(t.subtasks&&t.subtasks.length>0)?`<div class="mt-2 space-y-0.5">${t.subtasks.map(s=>`<div class="flex items-center text-[10px] text-text-muted"><i class="ph-bold ph-caret-right mr-1 text-text-faint"></i>${s}</div>`).join('')}</div>`:'';
-            const tagsHtml=(t.tags&&t.tags.length>0)?`<div class="flex flex-wrap gap-1 mt-2">${t.tags.map(tag=>`<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/5 text-brand border border-brand/10">${tag}</span>`).join('')}</div>`:'';
-            const reminderHtml=t.reminder?`<div class="text-[10px] text-text-muted mt-1 flex items-center"><i class="ph-bold ph-bell mr-1"></i>${t.reminder}</div>`:'';
-            return `<tr class="task-row border-b border-dark-border hover:bg-dark-hover group"><td class="p-4 w-8 align-top pt-5">${icon}</td><td class="p-4 align-top"><div class="text-white font-medium text-sm flex items-center">${t.title||'Untitled'} ${repeatBadge}</div>${noteHtml}${subtasksHtml}<div class="flex flex-wrap items-center gap-2 mt-2"><span class="bg-dark-bg px-1.5 py-0.5 rounded border border-dark-border text-[10px] text-text-muted">${t.project||'Inbox'}</span>${userTag}${reminderHtml}</div>${tagsHtml}</td><td class="p-4 align-top pt-4">${priBadge}</td><td class="p-4 align-top pt-4"><div class="text-xs text-white font-mono"><span class="text-brand font-bold">${donePomos}</span> / ${estPomos}</div><div class="w-16 h-1 bg-dark-bg rounded-full mt-1 overflow-hidden"><div class="h-full bg-brand" style="width:${Math.min((donePomos/estPomos)*100,100)}%"></div></div></td><td class="p-4 align-top pt-4"><div class="text-xs text-text-muted">${fmtTime(doneDur)} / ${fmtTime(totalDur)}</div></td><td class="p-4 text-right text-text-muted text-xs font-mono align-top pt-4">${t.dueDate||'-'}</td></tr>`;
+            const userTag=!state.filterUser?`<div class="text-[9px] text-zinc-500 mt-1 flex items-center"><i class="ph-bold ph-user mr-1"></i>${userName}</div>`:'';
+            const repeatBadge=(t.repeat&&t.repeat!=='none')?`<span class="ml-2 text-[9px] text-brand bg-brand/5 px-1 rounded border border-brand/10"><i class="ph-bold ph-arrows-clockwise mr-0.5"></i>${t.repeat}</span>`:'';
+            const noteHtml=t.note?`<div class="text-[10px] text-zinc-500 mt-1 italic line-clamp-1 border-l-2 border-zinc-700 pl-2">${t.note}</div>`:'';
+            const tagsHtml=(t.tags&&t.tags.length>0)?`<div class="flex flex-wrap gap-1 mt-2">${t.tags.map(tag=>`<span class="px-1 py-0.5 rounded text-[9px] bg-white/5 text-zinc-400 border border-white/5 font-mono">#${tag}</span>`).join('')}</div>`:'';
+            
+            return `<tr class="task-row border-b border-dark-border hover:bg-dark-surface/50 transition-colors group">
+                <td class="p-4 w-10 align-top pt-5 text-center">${icon}</td>
+                <td class="p-4 align-top">
+                    <div class="text-white font-medium text-sm flex items-center">${t.title||'Untitled Object'} ${repeatBadge}</div>
+                    ${noteHtml}
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <span class="bg-dark-bg px-1.5 py-0.5 rounded border border-dark-border text-[9px] text-zinc-400 font-mono uppercase">${t.project||'INBOX'}</span>
+                        ${userTag}
+                    </div>
+                    ${tagsHtml}
+                </td>
+                <td class="p-4 align-top pt-5">${priBadge}</td>
+                <td class="p-4 align-top pt-5 w-32">
+                    <div class="flex justify-between text-[10px] font-mono text-zinc-400 mb-1">
+                        <span>${donePomos}</span>
+                        <span>${estPomos}</span>
+                    </div>
+                    <div class="w-full h-1 bg-dark-bg rounded-full overflow-hidden"><div class="h-full bg-brand shadow-[0_0_8px_rgba(255,87,87,0.4)]" style="width:${Math.min((donePomos/estPomos)*100,100)}%"></div></div>
+                </td>
+                <td class="p-4 align-top pt-5">
+                    <div class="text-xs text-zinc-300 font-mono">${fmtTime(doneDur)} <span class="text-zinc-600">/ ${fmtTime(totalDur)}</span></div>
+                </td>
+                <td class="p-4 text-right text-zinc-400 text-xs font-mono align-top pt-5">${t.dueDate||'<span class="text-zinc-700">-</span>'}</td>
+            </tr>`;
         }).join('');
     });
     tbody.innerHTML=html;
@@ -814,14 +980,19 @@ function updateKPIs(){
 
 function updateFeed(){
     const b=document.getElementById('live-feed-body');
-    if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-text-muted italic">No recent activity.</td></tr>`;return;}
+    if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" class="p-8 text-center text-zinc-500 italic">Stream offline. No data.</td></tr>`;return;}
     b.innerHTML=state.sessions.slice(0,20).map(s=>{
         let millis = new Date().getTime();
         if(s.completedAt){
              millis = typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000;
         }
         const d=new Date(millis);
-        return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors"><td class="p-4 text-text-muted">${d.toLocaleDateString()} <span class="text-text-faint">${d.toLocaleTimeString()}</span></td><td class="p-4 text-white font-medium">${s.taskTitle||'Unknown Task'}</td><td class="p-4 text-brand">${s.duration||25}m</td></tr>`
+        const timeStr = d.toLocaleTimeString([],{hour12:false});
+        return `<tr class="border-b border-dark-border hover:bg-dark-surface/50 transition-colors group">
+            <td class="p-3 pl-4 text-zinc-500 font-mono text-[10px] group-hover:text-white transition-colors">${timeStr}</td>
+            <td class="p-3 text-zinc-300 font-medium truncate max-w-[120px]">${s.taskTitle||'Unknown Object'}</td>
+            <td class="p-3 text-right pr-4 text-brand font-mono">${s.duration||25}m</td>
+        </tr>`
     }).join('');
 }
 
@@ -836,10 +1007,16 @@ function updateCharts(){
     const sortedDays=Object.keys(days).sort((a,b)=>new Date(a)-new Date(b)).slice(-7);
     if(state.charts.activity)state.charts.activity.destroy();
     const ctxA=document.getElementById('activityChart').getContext('2d');
+    
+    // Gradient for chart
+    const grad = ctxA.createLinearGradient(0,0,0,300);
+    grad.addColorStop(0, 'rgba(255, 87, 87, 0.2)');
+    grad.addColorStop(1, 'rgba(255, 87, 87, 0)');
+
     state.charts.activity=new Chart(ctxA,{
         type:'line',
-        data:{labels:sortedDays,datasets:[{label:'Global Focus Minutes',data:sortedDays.map(d=>days[d]),borderColor:'#ff5757',backgroundColor:'rgba(255, 87, 87, 0.1)',fill:true,tension:0.4}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#2a2a2a'}},x:{grid:{display:false}}}}
+        data:{labels:sortedDays,datasets:[{label:'Focus Duration',data:sortedDays.map(d=>days[d]),borderColor:'#ff5757',backgroundColor:grad,fill:true,tension:0.3, pointBackgroundColor:'#09090b', pointBorderWidth:2}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#27272a'}, border:{display:false}},x:{grid:{display:false}, border:{display:false}}}}
     });
     const projs={};
     state.sessions.forEach(s=>{const p=s.project||'Inbox';projs[p]=(projs[p]||0)+1;});
@@ -849,9 +1026,9 @@ function updateCharts(){
     state.charts.proj=new Chart(ctxP,{
         type:'doughnut',
         data:{labels:sortedProj.map(x=>x[0]),datasets:[{data:sortedProj.map(x=>x[1]),backgroundColor:['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],borderWidth:0}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'75%'}
     });
-    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div class="flex justify-between items-center text-sm p-2 rounded hover:bg-dark-hover"><div class="flex items-center"><span class="w-2 h-2 rounded-full mr-3" style="background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span class="text-white">${p[0]}</span></div><span class="text-text-muted font-mono">${p[1]}</span></div>`).join('');
+    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div class="flex justify-between items-center text-xs p-2 rounded hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"><div class="flex items-center"><span class="w-2 h-2 rounded-full mr-3 shadow-[0_0_8px_rgba(0,0,0,0.5)]" style="background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span class="text-zinc-300">${p[0]}</span></div><span class="text-zinc-500 font-mono">${p[1]}</span></div>`).join('');
 }
 </script>
 </body>
