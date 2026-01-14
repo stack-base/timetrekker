@@ -59,14 +59,32 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
     </div>
 </aside>
 <main class="flex-1 flex flex-col min-w-0 bg-dark-bg overflow-hidden relative">
-    <header class="h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
+    
+    <header id="standard-header" class="h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
         <h1 class="text-xl font-semibold text-white" id="page-title">Product Analytics</h1>
         <button onclick="app.refreshData(true)" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all">
             <i class="ph-bold ph-arrows-clockwise mr-2"></i> Refresh Data
         </button>
     </header>
-    <div class="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
-        <div id="view-overview" class="view-section animate-fade-in">
+
+    <header id="data-header" class="hidden h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
+        <div class="flex items-center gap-3">
+           <h1 class="text-xl font-semibold text-white">Data Management</h1>
+           <span id="cache-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold tracking-wide">CACHED (0m ago)</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-xs text-text-muted text-right">
+                <div class="font-bold text-text-faint uppercase tracking-wider text-[10px]">Last Sync</div>
+                <div id="last-sync-time" class="font-mono text-white">--:--:--</div>
+            </div>
+            <button onclick="app.hardRefresh()" class="flex items-center px-3 py-2 rounded text-xs font-bold bg-dark-card border border-dark-border hover:border-text-muted transition-all text-text-muted hover:text-white">
+                <i class="ph-bold ph-download-simple mr-2"></i> Update App
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+        <div id="view-overview" class="view-section animate-fade-in p-8">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                 <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
                     <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-users text-6xl text-brand"></i></div>
@@ -149,7 +167,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                 </div>
             </div>
         </div>
-        <div id="view-users" class="view-section hidden animate-fade-in">
+        <div id="view-users" class="view-section hidden animate-fade-in p-8">
              <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
                 <div class="p-6 border-b border-dark-border bg-dark-card/50 flex items-start justify-between">
                     <div>
@@ -178,7 +196,7 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
                 </div>
             </div>
         </div>
-        <div id="view-tasks" class="view-section hidden animate-fade-in">
+        <div id="view-tasks" class="view-section hidden animate-fade-in p-8">
              <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[85vh]">
                 <div class="p-6 border-b border-dark-border bg-dark-card/50 flex justify-between items-center">
                     <div class="flex items-center">
@@ -213,87 +231,74 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
             </div>
         </div>
         
-        <div id="view-data" class="view-section hidden animate-fade-in">
-            <div class="max-w-6xl mx-auto p-6">
-                <div class="flex items-center gap-4 mb-10">
-                    <div class="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                        <i class="ph-bold ph-database text-red-500 text-xl"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-white flex items-center gap-3">
-                            Data Management
-                            <span id="data-cache-badge" class="hidden px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wide">
-                                Cached (<span id="data-cache-time">--</span>)
-                            </span>
-                        </h2>
-                        <p class="text-sm text-text-muted mt-1">Backup, restore, and manage your local data cache.</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col relative overflow-hidden group">
-                        <div class="absolute top-4 right-4 text-[10px] font-bold text-text-faint tracking-widest uppercase">Storage</div>
-                        <div class="flex items-start mb-6 mt-2">
-                            <div class="p-3 rounded-lg bg-blue-600/10 text-blue-500 border border-blue-600/20 mr-4">
-                                <i class="ph-fill ph-upload-simple text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-base font-bold text-white">Export Data Snapshot</h3>
-                                <p class="text-xs text-text-muted mt-2 leading-relaxed">
-                                    Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
-                                </p>
-                            </div>
+        <div id="view-data" class="view-section hidden animate-fade-in flex flex-col h-full">
+            <div class="flex-1 p-12 overflow-y-auto custom-scrollbar">
+                <div class="max-w-5xl mx-auto space-y-10">
+                    
+                    <div class="flex items-center gap-6">
+                        <div class="w-14 h-14 rounded-lg bg-dark-card border border-dark-border flex items-center justify-center shadow-lg">
+                             <i class="ph-bold ph-database text-brand text-2xl"></i>
                         </div>
-                        <div class="mt-auto">
-                            <button onclick="app.exportData()" class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white tracking-tight">Data Management</h2>
+                            <p class="text-text-muted mt-1">Backup, restore, and manage your local data cache.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
+                            <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">STORAGE</span>
+                            <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 mb-6">
+                                <i class="ph-bold ph-export text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-2">Export Data Snapshot</h3>
+                            <p class="text-sm text-text-muted mb-8 leading-relaxed">
+                                Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
+                            </p>
+                            <button onclick="app.exportData()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-[0.98]">
                                 <i class="ph-bold ph-download-simple mr-2"></i> Download JSON
                             </button>
                         </div>
-                    </div>
 
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col relative overflow-hidden">
-                        <div class="absolute top-4 right-4 text-[10px] font-bold text-text-faint tracking-widest uppercase">Restore</div>
-                        <div class="flex items-start mb-6 mt-2">
-                            <div class="p-3 rounded-lg bg-green-500/10 text-green-500 border border-green-500/20 mr-4">
-                                <i class="ph-fill ph-download-simple text-xl"></i>
+                         <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
+                            <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">RESTORE</span>
+                            <div class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 mb-6">
+                                <i class="ph-bold ph-upload-simple text-2xl"></i>
                             </div>
-                            <div>
-                                <h3 class="text-base font-bold text-white">Import Data Snapshot</h3>
-                                <p class="text-xs text-text-muted mt-2 leading-relaxed">
-                                    Restore a previously saved JSON file. <span class="text-red-400">Warning:</span> This will overwrite your current local dashboard view.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="mt-auto">
-                            <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
-                            <button onclick="document.getElementById('import-file').click()" class="w-full py-2.5 rounded-lg bg-transparent border border-dark-border hover:border-text-muted hover:bg-dark-hover text-text-muted hover:text-white text-sm font-bold transition-all flex items-center justify-center">
+                            <h3 class="text-xl font-bold text-white mb-2">Import Data Snapshot</h3>
+                             <p class="text-sm text-text-muted mb-8 leading-relaxed">
+                                Restore a previously saved JSON file. <span class="text-brand font-bold">Warning:</span> This will overwrite your current local dashboard view.
+                            </p>
+                             <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                            <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded-lg bg-transparent border border-dark-border hover:border-text-muted text-text-muted hover:text-white font-bold text-sm transition-all flex items-center justify-center active:scale-[0.98]">
                                 <i class="ph-bold ph-file-arrow-up mr-2"></i> Select Backup File
                             </button>
                         </div>
                     </div>
-                </div>
 
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-text-muted uppercase tracking-wider pl-1">Local Cache Status</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                            <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Cache Age</div>
-                            <div class="text-2xl font-mono text-white" id="stat-age">--</div>
-                        </div>
-                        <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                            <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Items Stored</div>
-                            <div class="text-2xl font-mono text-white" id="stat-items">0 <span class="text-sm text-text-faint font-sans">objects</span></div>
-                        </div>
-                        <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex justify-between items-end">
-                            <div>
-                                <div class="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-2">Storage Usage</div>
-                                <div class="text-2xl font-mono text-white" id="stat-size">0 KB</div>
-                            </div>
-                            <button onclick="app.clearLocalData()" class="p-2 rounded text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors" title="Clear Cache">
-                                <i class="ph-bold ph-trash text-lg"></i>
-                            </button>
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-4">Local Cache Status</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Cache Age</div>
+                                <div class="text-2xl font-mono text-white tracking-tight" id="stat-cache-age">--</div>
+                             </div>
+                             <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Items Stored</div>
+                                <div class="text-2xl font-mono text-white tracking-tight" id="stat-items-count">-- objects</div>
+                             </div>
+                             <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Storage Usage</div>
+                                <div class="text-2xl font-mono text-white tracking-tight" id="stat-storage-size">-- KB</div>
+                             </div>
                         </div>
                     </div>
+                     <div class="flex justify-end">
+                        <button onclick="app.clearLocalData()" class="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-wide opacity-50 hover:opacity-100 transition-opacity">
+                            Clear Local Cache & Reset
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -331,74 +336,22 @@ const state={
     usersMap:{},
     filterUser:null,
     starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
-    showStarredOnly: false
-};
-
-const updateStorageStats = () => {
-    const rawCache = localStorage.getItem(CACHE_KEY);
-    const stars = localStorage.getItem(STAR_KEY) || '';
-    
-    // 1. Calculate Size
-    const totalBytes = (rawCache ? rawCache.length : 0) + stars.length;
-    const kb = (totalBytes / 1024).toFixed(2);
-    const mb = (totalBytes / (1024 * 1024)).toFixed(2);
-    const sizeStr = mb > 1 ? `${mb} MB` : `${kb} KB`;
-
-    // 2. Calculate Items
-    let totalItems = 0;
-    let ageStr = 'None';
-    
-    if (rawCache) {
-        try {
-            const data = JSON.parse(rawCache);
-            const sessCount = (data.sessions || []).length;
-            const taskCount = (data.tasks || []).length;
-            const userCount = (data.usersList || []).length;
-            totalItems = sessCount + taskCount + userCount;
-
-            // 3. Calculate Age
-            if(data.timestamp){
-                const diffMs = Date.now() - data.timestamp;
-                const mins = Math.floor(diffMs / 60000);
-                if(mins < 1) ageStr = 'Just now';
-                else if(mins < 60) ageStr = `${mins} mins`;
-                else {
-                    const hrs = Math.floor(mins / 60);
-                    ageStr = `${hrs} hours`;
-                }
-            }
-        } catch(e) {}
-    }
-
-    // Update DOM
-    const elSize = document.getElementById('stat-size');
-    const elItems = document.getElementById('stat-items');
-    const elAge = document.getElementById('stat-age');
-    const elBadge = document.getElementById('data-cache-badge');
-    const elBadgeTime = document.getElementById('data-cache-time');
-
-    if(elSize) elSize.innerText = sizeStr;
-    if(elItems) elItems.innerHTML = `${totalItems} <span class="text-sm text-text-faint font-sans">objects</span>`;
-    if(elAge) elAge.innerText = ageStr;
-    
-    if(elBadge && rawCache) {
-        elBadge.classList.remove('hidden');
-        if(elBadgeTime) elBadgeTime.innerText = ageStr.includes('Just') ? 'Now' : ageStr + ' ago';
-    } else if (elBadge) {
-        elBadge.classList.add('hidden');
-    }
+    showStarredOnly: false,
+    lastSyncTime: null
 };
 
 const saveCache = () => {
     try {
+        const now = Date.now();
         const cacheData = {
             sessions: state.sessions,
             tasks: state.tasks,
             usersList: state.usersList,
-            timestamp: Date.now()
+            timestamp: now
         };
         const str = JSON.stringify(cacheData);
         localStorage.setItem(CACHE_KEY, str);
+        state.lastSyncTime = now;
         log('<span class="text-green-400">Data cached successfully.</span>');
         updateStorageStats();
     } catch (e) {
@@ -414,13 +367,52 @@ const loadCache = () => {
         state.sessions = data.sessions || [];
         state.tasks = data.tasks || [];
         state.usersList = data.usersList || [];
-        
+        state.lastSyncTime = data.timestamp || Date.now();
+        const age = Math.round((Date.now() - state.lastSyncTime) / 1000 / 60);
+        log(`<span class="text-blue-400">Loaded from Cache (${age} mins ago).</span>`);
         updateStorageStats();
         return true;
     } catch (e) {
         console.error("Cache parsing failed", e);
         return false;
     }
+};
+
+const updateStorageStats = () => {
+    // 1. Calculate Sizes
+    const cache = localStorage.getItem(CACHE_KEY) || '';
+    const stars = localStorage.getItem(STAR_KEY) || '';
+    const totalBytes = cache.length + stars.length;
+    const kb = (totalBytes / 1024).toFixed(2);
+    const mb = (totalBytes / (1024 * 1024)).toFixed(2);
+    const sizeStr = mb > 1 ? `${mb} MB` : `${kb} KB`;
+    
+    // 2. Calculate Age
+    let ageStr = "Just now";
+    if(state.lastSyncTime){
+        const diffMins = Math.round((Date.now() - state.lastSyncTime) / 60000);
+        ageStr = diffMins < 1 ? "Just now" : `${diffMins} mins`;
+        
+        // Update Time display
+        const dateObj = new Date(state.lastSyncTime);
+        const timeStr = dateObj.toLocaleTimeString([], { hour12: false });
+        const elTime = document.getElementById('last-sync-time');
+        if(elTime) elTime.innerText = timeStr;
+    }
+
+    // 3. Count Items
+    const count = state.sessions.length + state.tasks.length + state.usersList.length;
+
+    // 4. Update DOM Elements
+    const elSize = document.getElementById('stat-storage-size');
+    const elItems = document.getElementById('stat-items-count');
+    const elAge = document.getElementById('stat-cache-age');
+    const elBadge = document.getElementById('cache-badge');
+    
+    if(elSize) elSize.innerText = sizeStr;
+    if(elItems) elItems.innerText = `${count} objects`;
+    if(elAge) elAge.innerText = ageStr;
+    if(elBadge) elBadge.innerText = `CACHED (${ageStr} ago)`;
 };
 
 const showLoginModal=()=>{
@@ -463,6 +455,15 @@ onAuthStateChanged(auth,async u=>{
 
 const app={
     signOut:async()=>{try{await signOut(auth);window.location.reload();}catch(e){log(e.message);}},
+    
+    // NEW HARD REFRESH FUNCTION
+    hardRefresh: () => {
+        if(confirm('This will reload the application to fetch the newest version from the server. Unsaved changes (if any) might be lost. Continue?')) {
+            // Bypass cache reload
+            window.location.reload(true);
+        }
+    },
+
     setView:(v)=>{
         state.view=v;
         if(v==='tasks'&&!state.keepFilter)state.filterUser=null;
@@ -472,13 +473,24 @@ const app={
         document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
         document.getElementById(`nav-${v}`).classList.add('active');
         
-        // Update Title
+        // Header Logic
         const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
 
+        // Toggle Header Types (Standard vs Data View)
+        if(v === 'data'){
+            document.getElementById('standard-header').classList.add('hidden');
+            document.getElementById('data-header').classList.remove('hidden');
+            document.getElementById('data-header').classList.add('flex');
+            updateStorageStats();
+        } else {
+            document.getElementById('data-header').classList.add('hidden');
+            document.getElementById('data-header').classList.remove('flex');
+            document.getElementById('standard-header').classList.remove('hidden');
+        }
+
         if(v==='users')renderUsersTable();
         if(v==='tasks')renderTasksTable();
-        if(v==='data')updateStorageStats();
     },
     filterTasksByUser:(uid)=>{
         state.filterUser=uid;
@@ -523,7 +535,6 @@ const app={
         }
         renderUsersTable();
     },
-    // --- NEW DATA MANAGEMENT FUNCTIONS ---
     exportData: () => {
         const exportObj = {
             meta: { version: '1.0', exportDate: new Date().toISOString() },
@@ -573,7 +584,6 @@ const app={
             window.location.reload();
         }
     },
-    // -------------------------------------
     refreshData:async(forceRefresh = true)=>{
         try{
             if(!forceRefresh && loadCache()){
