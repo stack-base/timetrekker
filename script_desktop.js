@@ -183,18 +183,25 @@ async function syncUserProfile(u) {
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
         const userSnap = await getDoc(userRef);
-        const profileData = {
-            displayName: u.displayName || u.email.split('@')[0],
-            email: u.email,
-            photoURL: u.photoURL,
-            providerId: u.providerData.length > 0 ? u.providerData[0].providerId : 'password',
-            lastLogin: serverTimestamp(),
-            uid: u.uid
-        };
+
         if (!userSnap.exists()) {
-            await setDoc(userRef, { ...profileData, createdAt: serverTimestamp() });
+            // NEW USER: Save complete profile information
+            const newProfileData = {
+                displayName: u.displayName || u.email.split('@')[0],
+                email: u.email,
+                photoURL: u.photoURL,
+                providerId: u.providerData.length > 0 ? u.providerData[0].providerId : 'password',
+                lastLogin: serverTimestamp(),
+                createdAt: serverTimestamp(),
+                uid: u.uid
+            };
+            await setDoc(userRef, newProfileData);
         } else {
-            await setDoc(userRef, profileData, { merge: true });
+            // EXISTING USER: Only update the lastLogin timestamp
+            // This prevents overwriting custom names or changed profile pictures
+            await updateDoc(userRef, {
+                lastLogin: serverTimestamp()
+            });
         }
     } catch (e) {}
 }
