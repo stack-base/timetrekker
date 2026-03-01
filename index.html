@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeTrekker | StackBase</title>
+    <link rel="shortcut icon" href="https://stack-base.github.io/media/brand/stackbase/stackbase-icon.png" type="image/x-icon">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        $(function() {
+            $("#navbar-placeholder").load("https://stack-base.github.io/framework/navbar-1/index.html");
+        });
+    </script>
+    <script>
+        $(function() {
+            $("#footer-placeholder").load("https://stack-base.github.io/framework/footer-1/index.html");
+        });
+    </script>
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Roboto', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #f9fafb;
+            color: #1f2937;
+            margin: 0; padding: 0;
+            font-size: 16px; line-height: 1.6;
+        }
+        
+        a { text-decoration: none; color: inherit; transition: color 0.2s ease-in-out; }
+        button { cursor: pointer; font-family: inherit; border: none; background: none; }
+        h1, h2, h3, h4 { font-family: 'Ubuntu', sans-serif; }
+        
+        .hero-section {
+            color: white; padding-top: 6rem; padding-bottom: 6rem; text-align: center;
+            background-image: linear-gradient(rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.95)), 
+                              url('https://placehold.co/1920x1080/1f2937/ff5757?text=TimeTrekker');
+            background-size: cover; background-position: center;
+        }
+        .hero-section h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.025em; margin: 0 auto 1.5rem auto; }
+        .hero-section p { font-size: 1.25rem; color: #d1d5db; max-width: 48rem; margin: 0 auto 2.5rem auto; }
+        
+        .hero-cta-container { display: flex; flex-direction: column; justify-content: center; gap: 1rem; margin-bottom: 4rem; }
+        .hero-cta-container a {
+            padding: 0.75rem 2rem; border-radius: 0.5rem; font-size: 1.125rem; font-weight: 500;
+            transition: all 0.2s ease-in-out; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .hero-cta-primary { background-image: linear-gradient(to right, #ff5757, #e11d48); color: white; }
+        .hero-cta-primary:hover { transform: scale(1.05); }
+        .hero-cta-secondary { background-color: #4b5563; color: #d1d5db; }
+        .hero-cta-secondary:hover { background-color: #374151; }
+
+        .hero-visual-wrapper {
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 10px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .screenshot-frame {
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #000000;
+            position: relative;
+            padding-top: 56.25%;
+            border: 1px solid #333333;
+        }
+        .screenshot-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            object-position: top;
+        }
+        
+        .features-section { padding-top: 6rem; padding-bottom: 6rem; background-color: white; }
+        .features-header { text-align: center; margin-bottom: 4rem; }
+        .features-header .tagline { color: #ff5757; font-weight: 600; font-size: 0.875rem; text-transform: uppercase; }
+        .features-header h2 { font-size: 2.25rem; font-weight: 700; color: #111827; margin-top: 0.5rem; }
+        .features-header p { font-size: 1.125rem; color: #4b5563; margin-top: 1rem; max-width: 42rem; margin-left: auto; margin-right: auto; }
+        
+        .features-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+        .feature-card {
+            background-color: #f9fafb; padding: 2rem; border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: box-shadow 0.3s ease-in-out;
+            display: flex; flex-direction: column; border: 1px solid #e5e7eb;
+        }
+        .feature-card:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: #ff5757; }
+        .feature-icon-container {
+            background-color: #fee2e2; color: #ef4444; border-radius: 9999px;
+            height: 3rem; width: 3rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;
+        }
+        .feature-icon-container svg { height: 1.5rem; width: 1.5rem; }
+        .feature-card h3 { font-size: 1.5rem; font-weight: 600; color: #111827; margin: 0 0 0.75rem 0; }
+        .feature-card p { color: #4b5563; margin: 0; flex-grow: 1; }
+
+        .studio-section {
+            background-color: #000000;
+            color: #fff;
+            padding-top: 6rem;
+            padding-bottom: 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .studio-section::before {
+            content: '';
+            position: absolute;
+            top: -10%; right: -10%;
+            width: 60%; height: 80%;
+            background: radial-gradient(circle, rgba(255, 87, 87, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 0;
+        }
+
+        .studio-intro { text-align: center; margin-bottom: 5rem; position: relative; z-index: 1; }
+        .studio-intro .tagline { color: #ff5757; font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.1em; }
+        .studio-intro h2 { 
+            font-size: 2.5rem; font-weight: 800; margin-top: 0.5rem; 
+            background: linear-gradient(to right, #fff, #fca5a5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .studio-intro p { font-size: 1.25rem; color: #a3a3a3; max-width: 48rem; margin: 1rem auto 0 auto; }
+
+        .feature-row {
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            margin-bottom: 6rem;
+            position: relative;
+            z-index: 1;
+            align-items: center;
+        }
+        
+        .feature-row:last-child { margin-bottom: 0; }
+
+        .feature-text { flex: 1; }
+        .feature-text h3 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: white; }
+        .feature-text p { font-size: 1.1rem; color: #d1d5db; margin-bottom: 1.5rem; }
+        .feature-list { list-style: none; padding: 0; margin: 0; }
+        .feature-list li { display: flex; align-items: start; gap: 0.75rem; margin-bottom: 0.75rem; color: #a3a3a3; }
+        .feature-list svg { width: 1.25rem; height: 1.25rem; color: #ff5757; flex-shrink: 0; margin-top: 4px; }
+
+        .feature-visual { flex: 1; width: 100%; }
+        
+        .studio-screenshot-container {
+            background: #09090b;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .screenshot-placeholder {
+            background-color: #000000;
+            width: 100%;
+            aspect-ratio: 16/10;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #525252;
+            font-family: monospace;
+            font-size: 0.9rem;
+            overflow: hidden;
+            border: 1px solid #27272a;
+        }
+        
+        .screenshot-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+        }
+
+        .phone-mockup {
+            aspect-ratio: 9/19;
+            max-width: 300px;
+            margin: 0 auto;
+            border-radius: 36px;
+            padding: 12px;
+            background: #27272a;
+            border: 1px solid #3f3f46;
+        }
+        .phone-mockup .screenshot-placeholder {
+            border-radius: 24px;
+            aspect-ratio: auto;
+            height: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .feature-row { flex-direction: row; gap: 5rem; }
+            .feature-row.reverse { flex-direction: row-reverse; }
+        }
+
+        .app-first-section { padding-top: 6rem; padding-bottom: 6rem; background-color: #f9fafb; }
+        .app-first-container { display: flex; flex-direction: column; align-items: center; gap: 3rem; }
+        .app-first-text { width: 100%; }
+        .app-first-text .tagline { color: #ff5757; font-weight: 600; font-size: 0.875rem; text-transform: uppercase; }
+        .app-first-text h2 { font-size: 2.25rem; font-weight: 700; color: #111827; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+        .app-first-text p { font-size: 1.125rem; color: #4b5563; margin-bottom: 1.5rem; }
+        .app-first-list { list-style: none; padding-left: 0; margin: 0; }
+        .app-first-list li { display: flex; align-items: flex-start; margin-bottom: 1rem; }
+        .app-first-list .icon-check { flex-shrink: 0; background-color: #fee2e2; color: #b91c1c; border-radius: 9999px; height: 1.5rem; width: 1.5rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem; margin-top: 0.25rem; }
+        .app-first-list .icon-check svg { height: 1rem; width: 1rem; }
+        .app-first-list li span strong { color: #111827; }
+        .app-first-graphic { width: 100%; }
+        
+        .app-preview-block { background-color: #ffffff; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 1.5rem; border: 1px solid #e5e7eb; }
+
+        .cta-section {
+            background-image: linear-gradient(to right, #ff5757, #e11d48); color: white;
+            padding-top: 5rem; padding-bottom: 5rem; text-align: center;
+        }
+        .cta-section h2 { font-size: 2.25rem; font-weight: 700; margin-top: 0; margin-bottom: 1rem; }
+        .cta-section p { font-size: 1.25rem; color: #ffe4e6; max-width: 42rem; margin: 0 auto 2rem auto; }
+        .cta-section a {
+            background-color: white; color: #e11d48; padding: 0.75rem 2.5rem;
+            border-radius: 0.5rem; font-size: 1.125rem; font-weight: 700;
+            transition: all 0.2s ease-in-out; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: inline-block;
+        }
+        .cta-section a:hover { background-color: #f3f4f6; transform: scale(1.05); }
+
+        #darkModeToggle { background: none; border: none; color: #9ca3af; cursor: pointer; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
+        #darkModeToggle:hover { color: white; }
+        #darkModeToggle svg { height: 1.5rem; width: 1.5rem; }
+        #darkModeToggle .icon-sun { display: none; }
+        #darkModeToggle .icon-moon { display: block; }
+        body.dark-mode #darkModeToggle .icon-sun { display: block; }
+        body.dark-mode #darkModeToggle .icon-moon { display: none; }
+
+        body.dark-mode { background-color: #111827; color: #d1d5db; }
+        body.dark-mode .features-section { background-color: #1f2937; }
+        body.dark-mode .features-header h2 { color: white; }
+        body.dark-mode .features-header p { color: #d1d5db; }
+        body.dark-mode .feature-card { background-color: #111827; box-shadow: none; border: 1px solid #374151; }
+        body.dark-mode .feature-card h3 { color: white; }
+        body.dark-mode .feature-card p { color: #d1d5db; }
+        body.dark-mode .app-first-section { background-color: #1f2937; }
+        body.dark-mode .app-first-text h2 { color: white; }
+        body.dark-mode .app-first-text p { color: #d1d5db; }
+        body.dark-mode .app-first-list li span { color: #d1d5db; }
+        body.dark-mode .app-first-list li span strong { color: white; }
+        body.dark-mode .app-preview-block { background-color: #111827; border-color: #374151; }
+
+        @media (min-width: 640px) {
+            .hero-section h1 { font-size: 3rem; }
+            .hero-section p { font-size: 1.5rem; }
+            .hero-cta-container { flex-direction: row; }
+            .features-header h2, .app-first-text h2, .cta-section h2 { font-size: 2.5rem; }
+        }
+        @media (min-width: 768px) {
+            .mobile-menu { display: none !important; }
+            .features-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (min-width: 1024px) {
+            .hero-section h1 { font-size: 3.75rem; }
+            .app-first-container { flex-direction: row; gap: 4rem; }
+            .app-first-text, .app-first-graphic { width: 50%; }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main>
+        
+        <section class="hero-section">
+            <div class="container">
+                <h1>Deep Work, Decoded.</h1>
+                <p>
+                    A production-grade focus timer and task manager. Eliminate distractions, run highly configurable Pomodoros, and analyze your productivity down to the minute.
+                </p>
+                <div class="hero-cta-container">
+                    <a href="https://stack-base.github.io/timetrekker/application" class="hero-cta-primary">Launch Desktop App</a>
+                    <a href="https://stack-base.github.io/timetrekker/application_mobile" class="hero-cta-secondary">Launch Mobile App</a>
+                </div>
+                
+                <div class="hero-visual-wrapper">
+                    <div class="screenshot-frame">
+                        <div class="screenshot-placeholder" style="position: absolute; top:0; left:0; height:100%; width:100%;">
+                            <div style="text-align:center;">
+                                <img src="https://placehold.co/1280x800/000000/333333?text=TimeTrekker+Desktop+UI" alt="TimeTrekker UI Preview" class="screenshot-img">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="features" class="features-section">
+            <div class="container">
+                <div class="features-header">
+                    <span class="tagline">Core Tools</span>
+                    <h2>Everything for Deep Focus</h2>
+                    <p>Designed strictly for productivity. No bloat, just workflow.</p>
+                </div>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        </div>
+                        <h3>Pro-Grade Timer</h3>
+                        <p>Fully customizable focus durations, short breaks, and long breaks. Turn on Strict Mode to lock yourself in, or use Auto-Start to chain sessions effortlessly.</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" /></svg>
+                        </div>
+                        <h3>Smart Task Pipeline</h3>
+                        <p>Manage projects, set due dates, map out subtasks, and estimate Pomodoros required. Filter by 'Today', 'Upcoming', or 'Completed' effortlessly.</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>
+                        </div>
+                        <h3>Built-in Ambience</h3>
+                        <p>Drown out distractions instantly. Toggle integrated high-fidelity soundscapes right from the timer menu—choose between Rain, Cafe, or Forest.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="studio" class="studio-section">
+            <div class="container">
+                <div class="studio-intro">
+                    <span class="tagline">Data-Driven Workflow</span>
+                    <h2>Comprehensive Analytics</h2>
+                    <p>
+                        Don't just track time—understand it. TimeTrekker's built-in Analytics Dashboard reveals exactly how, when, and where you do your best work.
+                    </p>
+                </div>
+
+                <div class="feature-row">
+                    <div class="feature-text">
+                        <h3>Visualize Your Habits</h3>
+                        <p>
+                            Swap between Bar and Line charts to visualize your Focus Trends and Task Completions over weeks, months, or the entire year.
+                        </p>
+                        <ul class="feature-list">
+                            <li><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> <strong>Hourly Productivity:</strong> Discover your peak focus hours automatically.</li>
+                            <li><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> <strong>Weekly Performance:</strong> See which days of the week you perform best.</li>
+                            <li><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> <strong>Pomodoro Records:</strong> A Github-style timeline grid maps every session.</li>
+                        </ul>
+                    </div>
+                    <div class="feature-visual">
+                        <div class="studio-screenshot-container">
+                            <div class="screenshot-placeholder">
+                                <img src="https://placehold.co/800x500/000000/ff5757?text=TimeTrekker+Charts" alt="Analytics View">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feature-row reverse">
+                    <div class="feature-text">
+                        <h3>Smart Insights Engine</h3>
+                        <p>
+                            Get intelligent summaries based on your raw data. See exactly where your effort is going without needing to crunch the numbers.
+                        </p>
+                        <ul class="feature-list">
+                            <li><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> <strong>Project & Tag Rankings:</strong> Know exactly which categories demand your time.</li>
+                            <li><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> <strong>Priority Distribution:</strong> Monitor your ratio of High, Med, and Low priority tasks.</li>
+                            <li><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> <strong>Streaks & Rhythms:</strong> Track early bird vs. night owl metrics alongside active streaks.</li>
+                        </ul>
+                    </div>
+                    <div class="feature-visual">
+                        <div class="studio-screenshot-container">
+                            <div class="screenshot-placeholder">
+                                <img src="https://placehold.co/800x500/000000/ff5757?text=Data+Insights+Panel" alt="Insights View">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="app-first-section">
+            <div class="container app-first-container">
+                <div class="app-first-text">
+                    <span class="tagline">Always In Sync</span>
+                    <h2>A Flawless Mobile Experience</h2>
+                    <p>TimeTrekker on mobile isn't an afterthought. It's a completely reimagined interface optimized for touch, gestures, and on-the-go focus.</p>
+                    <ul class="app-first-list">
+                        <li>
+                            <div class="icon-check"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>
+                            <span><strong>Gesture-Driven Sheets:</strong> Instantly pull up task details, project folders, or add new items via intuitive bottom sheets.</span>
+                        </li>
+                        <li>
+                            <div class="icon-check"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>
+                            <span><strong>Fluid Bottom Navigation:</strong> Seamlessly switch between Tasks, the Focus Timer, Analytics, and Settings.</span>
+                        </li>
+                        <li>
+                            <div class="icon-check"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>
+                            <span><strong>Zero Latency:</strong> Offline-capable UI that responds instantly. Background audio continues even when your screen sleeps.</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="app-first-graphic">
+                    <div class="phone-mockup">
+                        <div class="screenshot-placeholder">
+                            <div style="text-align: center; color: #a3a3a3;">
+                                <img src="https://placehold.co/600x1200/09090b/ff5757?text=Mobile+UI" alt="Mobile App View" style="border-radius: 24px; height: 100%; width: 100%; object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container">
+                <h2>Ready to Trek Your Time?</h2>
+                <p>Start mastering your schedule today. TimeTrekker runs entirely in your browser with no installation required.</p>
+                <a href="https://stack-base.github.io/timetrekker/application">Launch the Web App</a>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="footer-placeholder"></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var menuButton = document.getElementById('mobile-menu-button');
+            var mobileMenu = document.getElementById('mobile-menu');
+            if (menuButton && mobileMenu) {
+                menuButton.addEventListener('click', function() {
+                    if (mobileMenu.classList.contains('open')) {
+                        mobileMenu.classList.remove('open');
+                    } else {
+                        mobileMenu.classList.add('open');
+                    }
+                });
+            }
+
+            var toggleButton = document.getElementById('darkModeToggle');
+            var body = document.body;
+            function applyTheme() {
+                var isDarkMode = localStorage.getItem('darkMode') === 'true';
+                if (isDarkMode) { body.classList.add('dark-mode'); } else { body.classList.remove('dark-mode'); }
+            }
+            applyTheme();
+            if(toggleButton) {
+                toggleButton.addEventListener('click', function() {
+                    body.classList.toggle('dark-mode');
+                    localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
