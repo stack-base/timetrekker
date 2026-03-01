@@ -433,34 +433,33 @@
     <div id="footer-placeholder"></div>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var menuButton = document.getElementById('mobile-menu-button');
-            var mobileMenu = document.getElementById('mobile-menu');
-            if (menuButton && mobileMenu) {
-                menuButton.addEventListener('click', function() {
-                    if (mobileMenu.classList.contains('open')) {
-                        mobileMenu.classList.remove('open');
-                    } else {
-                        mobileMenu.classList.add('open');
-                    }
-                });
-            }
-
-            var toggleButton = document.getElementById('darkModeToggle');
-            var body = document.body;
+        (function() {
+            // 1. Apply the theme immediately on page load (prevents white flash)
             function applyTheme() {
                 var isDarkMode = localStorage.getItem('darkMode') === 'true';
-                if (isDarkMode) { body.classList.add('dark-mode'); } else { body.classList.remove('dark-mode'); }
+                if (isDarkMode) {
+                    document.body.classList.add('dark-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                }
             }
+            
             applyTheme();
-            if(toggleButton) {
-                toggleButton.addEventListener('click', function() {
-                    body.classList.toggle('dark-mode');
-                    localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
-                });
-            }
-        });
-    </script>
+
+            // 2. Use Event Delegation for dynamically loaded elements
+            document.addEventListener('click', function(event) {
+                // .closest() ensures that clicking the SVG or paths inside the button also works
+                var toggleBtn = event.target.closest('#darkModeToggle');
+                
+                if (toggleBtn) {
+                    // Toggle the class and save preference
+                    document.body.classList.toggle('dark-mode');
+                    var isDarkMode = document.body.classList.contains('dark-mode');
+                    localStorage.setItem('darkMode', isDarkMode);
+                }
+            });
+        })();
+</script>
 
 </body>
 </html>
