@@ -286,7 +286,7 @@ onAuthStateChanged(auth, u => {
         }, 10000);
 
     } else {
-        window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href);
+        window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href);
     }
 });
 
@@ -728,7 +728,7 @@ const app = {
         saveLocalState();
         _saveSetting(k, v);
     },
-    signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login.html?redirectUrl=' + encodeURIComponent(window.location.href))
+    signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
 window.app = app;
