@@ -386,6 +386,13 @@
                         </div>
 
                         <div class="divide-y divide-dark-border bg-dark-card">
+                            <button id="btn-install-mobile" onclick="app.installApp()" class="hidden w-full p-4 flex items-center justify-between hover:bg-dark-active transition-colors active:bg-dark-active/80">
+                                <div class="flex flex-col items-start">
+                                    <span class="text-sm font-medium text-brand">Install App</span>
+                                    <span class="text-[10px] text-text-muted">Add to your home screen</span>
+                                </div>
+                                <i class="ph-bold ph-download-simple text-brand text-xl"></i>
+                            </button>
                             <button onclick="app.refreshApp()" class="w-full p-4 flex items-center justify-between hover:bg-dark-active transition-colors active:bg-dark-active/80">
                                  <div class="flex flex-col items-start">
                                     <span class="text-sm font-medium text-white">Refresh</span>

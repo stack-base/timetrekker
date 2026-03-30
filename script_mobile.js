@@ -35,6 +35,21 @@ window.addEventListener('appinstalled', () => {
     // Hide the install button
     // document.getElementById('install-btn').classList.add('hidden');
     console.log('TimeTrekker was installed');
+})
+
+// settings app install button 
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show the install button in settings
+    const installBtn = document.getElementById('btn-install-mobile');
+    if (installBtn) installBtn.classList.remove('hidden');
+});
+
+window.addEventListener('appinstalled', () => {
+    const installBtn = document.getElementById('btn-install-mobile');
+    if (installBtn) installBtn.classList.add('hidden');
+    app.showToast('App installed to home screen!');
 });
 
 
@@ -342,6 +357,17 @@ document.addEventListener('touchstart', function() {
 }, { once: true });
 
 const app = {
+    installApp: async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('btn-install-mobile').classList.add('hidden');
+            }
+            deferredPrompt = null;
+        }
+    },
+    
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     
     unlockAudio: () => {
