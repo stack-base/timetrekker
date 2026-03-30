@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="description" content="TimeTrekker - A production-grade focus timer and task manager.">
 <meta name="theme-color" content="#000000">
+<link rel="manifest" href="./manifest_desktop.json">
+<script>
+    // Redirect mobile users to the mobile app
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        window.location.href = './application_mobile.html' + window.location.search;
+    }
+</script>
 <title>TimeTrekker</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -1,3 +1,42 @@
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    
+    // TODO: Update your UI here to show your custom "Install App" button.
+    // For example: document.getElementById('install-btn').classList.remove('hidden');
+});
+
+// Create a function to call when the user clicks your custom Install button
+async function installApp() {
+    if (deferredPrompt) {
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        } else {
+            console.log('User dismissed the install prompt');
+        }
+        // We've used the prompt, and can't use it again, throw it away
+        deferredPrompt = null;
+        
+        // TODO: Hide your custom install button here
+        // document.getElementById('install-btn').classList.add('hidden');
+    }
+}
+
+// Optional: Detect if the app was successfully installed
+window.addEventListener('appinstalled', () => {
+    // Hide the install button
+    // document.getElementById('install-btn').classList.add('hidden');
+    console.log('TimeTrekker was installed');
+});
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, serverTimestamp, enableIndexedDbPersistence, arrayUnion, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
