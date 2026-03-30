@@ -37,6 +37,8 @@ window.addEventListener('appinstalled', () => {
     console.log('TimeTrekker was installed');
 });
 
+
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, where, getDocs, writeBatch, serverTimestamp, enableIndexedDbPersistence, arrayUnion, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
