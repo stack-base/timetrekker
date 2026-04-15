@@ -1,47 +1,30 @@
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
-    // Stash the event so it can be triggered later.
     deferredPrompt = e;
-    
-    // TODO: Update your UI here to show your custom "Install App" button.
-    // For example: document.getElementById('install-btn').classList.remove('hidden');
 });
 
-// Create a function to call when the user clicks your custom Install button
 async function installApp() {
     if (deferredPrompt) {
-        // Show the install prompt
         deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
             console.log('User accepted the install prompt');
         } else {
             console.log('User dismissed the install prompt');
         }
-        // We've used the prompt, and can't use it again, throw it away
         deferredPrompt = null;
-        
-        // TODO: Hide your custom install button here
-        // document.getElementById('install-btn').classList.add('hidden');
     }
 }
 
-// Optional: Detect if the app was successfully installed
 window.addEventListener('appinstalled', () => {
-    // Hide the install button
-    // document.getElementById('install-btn').classList.add('hidden');
     console.log('TimeTrekker was installed');
 })
 
-// settings app install button 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    // Show the install button in settings
     const installBtn = document.getElementById('btn-install-mobile');
     if (installBtn) installBtn.classList.remove('hidden');
 });
@@ -51,8 +34,6 @@ window.addEventListener('appinstalled', () => {
     if (installBtn) installBtn.classList.add('hidden');
     app.showToast('App installed to home screen!');
 });
-
-
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -73,6 +54,29 @@ const ASSETS = {
 const fb = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
+
+const ORION_ID = "oxnHr84lGgOkLQuxSouJaXJDx1I3";
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const VIEW_AS_UID = URL_PARAMS.get('uid');
+
+const getUid = () => {
+    if (!state.user) return null;
+    if (VIEW_AS_UID && state.user.uid === ORION_ID) return VIEW_AS_UID;
+    return state.user.uid;
+};
+
+function showOrionBanner(uid) {
+    const banner = document.createElement('div');
+    banner.className = 'w-full h-6 shrink-0 bg-red-600 z-[100] flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-white shadow-lg fixed top-0 left-0';
+    banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> Orion : ${uid}`;
+    document.body.prepend(banner);
+    
+    // Adjust top padding to account for fixed banner
+    const mainContainer = document.getElementById('main-container');
+    if(mainContainer) {
+        mainContainer.style.paddingTop = 'calc(env(safe-area-inset-top) + 24px)';
+    }
+}
 
 try { 
     enableIndexedDbPersistence(db).catch(() => {});
@@ -180,12 +184,13 @@ Chart.defaults.plugins.tooltip.displayColors = false;
 
 async function syncUserProfile(u) {
     if (!u) return;
+    if (VIEW_AS_UID && u.uid === ORION_ID) return; // Orion Bailout
+
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
         const userSnap = await getDoc(userRef);
         
         if (!userSnap.exists()) {
-            // NEW USER: Save complete profile information
             const newProfileData = { 
                 displayName: u.displayName || u.email.split('@')[0], 
                 email: u.email, 
@@ -197,7 +202,6 @@ async function syncUserProfile(u) {
             };
             await setDoc(userRef, newProfileData);
         } else {
-            // EXISTING USER: Only update the lastLogin timestamp
             await updateDoc(userRef, { 
                 lastLogin: serverTimestamp() 
             });
@@ -209,26 +213,56 @@ onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
         syncUserProfile(u);
-        
-        onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid), s => {
-            if(s.exists()) {
-                const d = s.data();
-                const name = d.displayName || u.email.split('@')[0];
-                const pic = d.photoURL;
-                if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
-                if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
-                if($('settings-name')) $('settings-name').textContent = name;
-                if($('settings-email')) $('settings-email').textContent = u.email;
-                if (pic) {
-                    if($('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
-                    if($('settings-avatar-img')) { $('settings-avatar-img').src = pic; $('settings-avatar-img').classList.remove('hidden'); }
+
+        let viewingAsUser = false;
+        if (VIEW_AS_UID && u.uid === ORION_ID) {
+            showOrionBanner(VIEW_AS_UID);
+            viewingAsUser = true;
+        }
+
+        const effectiveUid = getUid();
+
+        if (viewingAsUser) {
+            if($('header-avatar')) $('header-avatar').textContent = "?";
+            if($('settings-avatar')) $('settings-avatar').textContent = "?";
+            if($('settings-name')) $('settings-name').textContent = "Simulated User";
+            if($('settings-email')) $('settings-email').textContent = VIEW_AS_UID;
+            
+            getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
+                if(snap.exists()) {
+                    const d = snap.data();
+                    const name = d.displayName || d.name || 'User';
+                    if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
+                    if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
+                    if($('settings-name')) $('settings-name').textContent = name;
+                    if($('settings-email')) $('settings-email').textContent = d.email || VIEW_AS_UID;
+                    if (d.photoURL) {
+                        if($('header-avatar-img')) { $('header-avatar-img').src = d.photoURL; $('header-avatar-img').classList.remove('hidden'); }
+                        if($('settings-avatar-img')) { $('settings-avatar-img').src = d.photoURL; $('settings-avatar-img').classList.remove('hidden'); }
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            onSnapshot(doc(db, 'artifacts', APP_ID, 'users', effectiveUid), s => {
+                if(s.exists()) {
+                    const d = s.data();
+                    const name = d.displayName || u.email.split('@')[0];
+                    const pic = d.photoURL;
+                    if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
+                    if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
+                    if($('settings-name')) $('settings-name').textContent = name;
+                    if($('settings-email')) $('settings-email').textContent = u.email;
+                    if (pic) {
+                        if($('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
+                        if($('settings-avatar-img')) { $('settings-avatar-img').src = pic; $('settings-avatar-img').classList.remove('hidden'); }
+                    }
+                }
+            });
+        }
 
         if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-        onSnapshot(collection(db, 'artifacts', APP_ID, 'users', u.uid, 'tasks'), s => {
+        onSnapshot(collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
             const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
             state.tasks.forEach(t => { if(t.project && t.project !== 'Inbox') p.add(t.project); });
@@ -245,7 +279,7 @@ onAuthStateChanged(auth, u => {
             }
         });
         
-        onSnapshot(doc(db, 'artifacts', APP_ID, 'users', u.uid, 'timer', 'active'), s => {
+        onSnapshot(doc(db, 'artifacts', APP_ID, 'users', effectiveUid, 'timer', 'active'), s => {
             if(s.exists()) {
                 const d = s.data();
                 state.timer = {
@@ -293,7 +327,7 @@ onAuthStateChanged(auth, u => {
         });
 
         const sessionQuery = query(
-            collection(db, 'artifacts', APP_ID, 'users', u.uid, 'focus_sessions'),
+            collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'focus_sessions'),
             orderBy('completedAt', 'desc'),
             limit(500)
         );
@@ -544,7 +578,7 @@ const app = {
         if (!newName || newName === oldName) return;
         try {
             const batch = writeBatch(db);
-            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", oldName));
+            const q = query(collection(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks'), where("project", "==", oldName));
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => { batch.update(doc.ref, { project: newName }); });
             await batch.commit();
@@ -560,7 +594,7 @@ const app = {
         if(!confirm(`Delete project "${pName}"? Tasks will move to Inbox.`)) return;
         try {
             const batch = writeBatch(db);
-            const q = query(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), where("project", "==", pName));
+            const q = query(collection(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks'), where("project", "==", pName));
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => { batch.update(doc.ref, { project: 'Inbox' }); });
             await batch.commit();
@@ -962,7 +996,7 @@ const app = {
         if(state.viewingTask && confirm('Delete this task?')) {
             haptic('heavy');
             try {
-                await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.viewingTask.id));
+                await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', state.viewingTask.id));
                 history.back(); 
                 app.showToast('Task deleted');
             } catch(e) { app.showToast('Error deleting'); }
@@ -1157,11 +1191,11 @@ const app = {
         
         try {
             if(state.editingId) {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', state.editingId), data);
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', state.editingId), data);
                 haptic('success');
                 app.showToast('Task updated');
             } else {
-                await addDoc(collection(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks'), {
+                await addDoc(collection(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks'), {
                     ...data,
                     status: 'todo',
                     createdAt: new Date().toISOString(),
@@ -1182,7 +1216,7 @@ const app = {
     toggleStatus: async (id, s) => {
         haptic('light');
         try {
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', id), { 
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', id), { 
                 status: s === 'todo' ? 'done' : 'todo',
                 completedAt: s === 'todo' ? new Date().toISOString() : null
             });
@@ -1204,7 +1238,7 @@ const app = {
 
         const sessionId = `${t.id}_${Date.now()}`;
         
-        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
+        await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
             status: 'running', 
             mode: 'focus', 
             taskId: t.id, 
@@ -1225,12 +1259,12 @@ const app = {
         
         if(state.timer.status === 'running') {
             if(state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
                 status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000))
             });
         } else {
             if(!state.timer.taskId && state.timer.mode === 'focus') { app.showToast('Select a task'); app.switchTab('tasks'); return; }
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
                 status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000)
             });
         }
@@ -1240,7 +1274,7 @@ const app = {
         if (!r) {
             haptic('medium');
             const d = state.timer.settings[state.timer.mode] * 60;
-            await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), {
+            await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
                 status: 'idle', remaining: d, totalDuration: d, endTime: null, mode: state.timer.mode, taskId: state.timer.taskId || null
             });
         }
@@ -1272,12 +1306,12 @@ const app = {
                     try {
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
 
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'tasks', t.id), { 
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', t.id), { 
                             completedSessionIds: arrayUnion(sessionId)
                         });
 
                         const durMin = state.timer.totalDuration / 60;
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'focus_sessions', sessionId), { 
+                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'focus_sessions', sessionId), { 
                             taskTitle: t.title, 
                             taskId: t.id, 
                             project: t.project || 'Inbox', 
@@ -1311,7 +1345,7 @@ const app = {
         const v = state.timer.settings[m]; 
         const updates = { status: 'idle', mode: m, remaining: v * 60, totalDuration: v * 60, endTime: null, taskId: state.timer.taskId || null, sessionId: null };
         if (sessionCount !== null) updates.sessionCount = sessionCount;
-        await setDoc(doc(db, 'artifacts', APP_ID, 'users', state.user.uid, 'timer', 'active'), updates);
+        await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), updates);
     },
 
     updateTimerUI: () => {
@@ -1382,7 +1416,7 @@ const app = {
         if($('set-long-display')) $('set-long-display').innerText = state.timer.settings.long + 'm';
         if($('set-long-interval-display')) $('set-long-interval-display').innerText = state.timer.settings.longBreakInterval + 'x';
         
-        if(state.user) app._saveSetting(state.user.uid, k, val);
+        if(state.user) app._saveSetting(getUid(), k, val);
     },
 
     showToast: (msg) => {
