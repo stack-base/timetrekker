@@ -498,7 +498,7 @@ const app={
         app.setView('tasks');
     },
     viewAsUser:(uid)=>{
-        window.open(`application.html?uid=${uid}`,'_blank');
+        window.open(`application?uid=${uid}`,'_blank');
     },
     clearTaskFilter:()=>{
         state.filterUser=null;
