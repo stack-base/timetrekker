@@ -3,6 +3,7 @@
   "short_name": "TimeTrekker",
   "start_url": "./application",
   "display": "standalone",
+  "scope": "/",
   "background_color": "#000000",
   "theme_color": "#000000",
   "description": "TimeTrekker - A production-grade focus timer and task manager.",
