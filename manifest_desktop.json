@@ -18,5 +18,21 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Task",
+      "short_name": "New Task",
+      "description": "Quickly add a new task",
+      "url": "./application?action=new-task",
+      "icons": [{ "src": "https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Start Focus",
+      "short_name": "Focus",
+      "description": "Open the focus timer",
+      "url": "./application?action=focus",
+      "icons": [{ "src": "https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ]
 }

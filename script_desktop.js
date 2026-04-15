@@ -341,6 +341,13 @@ onAuthStateChanged(auth, u => {
             }
         }, 10000);
 
+        const action = URL_PARAMS.get('action');
+        if (action === 'new-task') {
+            setTimeout(() => app.toggleAddTaskModal(), 500);
+        } else if (action === 'focus') {
+            setTimeout(() => app.toggleFocusPanel(true), 500);
+        }
+
     } else {
         window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href);
     }
