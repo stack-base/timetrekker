@@ -318,9 +318,9 @@ import{getFirestore,collection,collectionGroup,getDocs,query,where,orderBy,limit
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
-const fb=initializeApp(C);
-const auth=getAuth(fb);
-const db=getFirestore(fb);
+const fb = initializeApp(C, "OrionConsole");
+const auth = getAuth(fb);
+const db = getFirestore(fb);
 const CACHE_KEY = 'orion_local_cache_v1';
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; // Orion Admin UID
