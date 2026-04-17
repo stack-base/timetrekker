@@ -24,287 +24,293 @@ body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
 .nav-btn.active{background:rgba(255,87,87,0.1);color:#ff5757;border-color:rgba(255,87,87,0.2)}
 </style>
 </head>
-<body class="h-screen w-full flex overflow-hidden">
-<aside class="w-64 bg-dark-sidebar border-r border-dark-border flex flex-col shrink-0 z-20">
-    <div class="h-16 flex items-center px-6 border-b border-dark-border">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-red-600 flex items-center justify-center shadow-lg shadow-brand/20">
-            <i class="ph-bold ph-chart-polar text-white text-lg"></i>
-        </div>
-        <span class="ml-3 font-bold text-lg text-white tracking-tight">Orion</span>
-    </div>
-    <nav class="flex-1 p-4 space-y-1">
-        <button onclick="app.setView('overview')" id="nav-overview" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors active">
-            <i class="ph-bold ph-squares-four text-lg"></i><span class="ml-3 font-medium text-sm">Overview</span>
-        </button>
-        <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">Data Sources</div>
-        <button onclick="app.setView('users')" id="nav-users" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
-            <i class="ph-bold ph-users text-lg"></i><span class="ml-3 font-medium text-sm">Users</span>
-        </button>
-        <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
-            <i class="ph-bold ph-check-square text-lg"></i><span class="ml-3 font-medium text-sm">Tasks Master</span>
-        </button>
-        <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">System</div>
-        <button onclick="app.setView('data')" id="nav-data" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
-            <i class="ph-bold ph-database text-lg"></i><span class="ml-3 font-medium text-sm">Data Management</span>
-        </button>
-    </nav>
-    <div class="p-4 border-t border-dark-border">
-        <div class="flex items-center gap-3 mb-4">
-             <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">O</div>
-             <div class="flex flex-col min-w-0"><span class="text-sm font-medium text-white truncate">Orion Console</span><span class="text-xs text-text-muted">Connected</span></div>
-        </div>
-        <button onclick="app.signOut()" class="w-full flex items-center justify-center px-3 py-2 rounded border border-red-900/30 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-wide">
-            <i class="ph-bold ph-sign-out mr-2"></i> Sign Out
-        </button>
-    </div>
-</aside>
-<main class="flex-1 flex flex-col min-w-0 bg-dark-bg overflow-hidden relative">
-    
-    <header id="standard-header" class="h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
-        <h1 class="text-xl font-semibold text-white" id="page-title">Product Analytics</h1>
-        <button onclick="app.refreshData(true)" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all">
-            <i class="ph-bold ph-arrows-clockwise mr-2"></i> Refresh Data
-        </button>
-    </header>
+<body class="h-screen w-full overflow-hidden">
 
-    <header id="data-header" class="hidden h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
-        <div class="flex items-center gap-3">
-           <h1 class="text-xl font-semibold text-white">Data Management</h1>
-           <span id="cache-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold tracking-wide">CACHED (0m ago)</span>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="text-xs text-text-muted text-right">
-                <div class="font-bold text-text-faint uppercase tracking-wider text-[10px]">Last Sync</div>
-                <div id="last-sync-time" class="font-mono text-white">--:--:--</div>
+<div id="orion-app" style="display: none; width: 100%; height: 100%; flex-direction: row;">
+
+    <aside class="w-64 bg-dark-sidebar border-r border-dark-border flex flex-col shrink-0 z-20">
+        <div class="h-16 flex items-center px-6 border-b border-dark-border">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-red-600 flex items-center justify-center shadow-lg shadow-brand/20">
+                <i class="ph-bold ph-chart-polar text-white text-lg"></i>
             </div>
-            <button onclick="app.hardRefresh()" class="flex items-center px-3 py-2 rounded text-xs font-bold bg-dark-card border border-dark-border hover:border-text-muted transition-all text-text-muted hover:text-white">
-                <i class="ph-bold ph-download-simple mr-2"></i> Update App
+            <span class="ml-3 font-bold text-lg text-white tracking-tight">Orion</span>
+        </div>
+        <nav class="flex-1 p-4 space-y-1">
+            <button onclick="app.setView('overview')" id="nav-overview" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors active">
+                <i class="ph-bold ph-squares-four text-lg"></i><span class="ml-3 font-medium text-sm">Overview</span>
+            </button>
+            <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">Data Sources</div>
+            <button onclick="app.setView('users')" id="nav-users" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
+                <i class="ph-bold ph-users text-lg"></i><span class="ml-3 font-medium text-sm">Users</span>
+            </button>
+            <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
+                <i class="ph-bold ph-check-square text-lg"></i><span class="ml-3 font-medium text-sm">Tasks Master</span>
+            </button>
+            <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">System</div>
+            <button onclick="app.setView('data')" id="nav-data" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
+                <i class="ph-bold ph-database text-lg"></i><span class="ml-3 font-medium text-sm">Data Management</span>
+            </button>
+        </nav>
+        <div class="p-4 border-t border-dark-border">
+            <div class="flex items-center gap-3 mb-4">
+                 <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">O</div>
+                 <div class="flex flex-col min-w-0"><span class="text-sm font-medium text-white truncate">Orion Console</span><span class="text-xs text-text-muted">Connected</span></div>
+            </div>
+            <button onclick="app.signOut()" class="w-full flex items-center justify-center px-3 py-2 rounded border border-red-900/30 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-wide">
+                <i class="ph-bold ph-sign-out mr-2"></i> Sign Out
             </button>
         </div>
-    </header>
+    </aside>
+    <main class="flex-1 flex flex-col min-w-0 bg-dark-bg overflow-hidden relative">
+        
+        <header id="standard-header" class="h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
+            <h1 class="text-xl font-semibold text-white" id="page-title">Product Analytics</h1>
+            <button onclick="app.refreshData(true)" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all">
+                <i class="ph-bold ph-arrows-clockwise mr-2"></i> Refresh Data
+            </button>
+        </header>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar relative">
-        <div id="view-overview" class="view-section animate-fade-in p-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-users text-6xl text-brand"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Users</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-users">--</div>
-                    <div class="text-xs text-green-500 font-medium flex items-center"><i class="ph-bold ph-trend-up mr-1"></i> Lifetime signups</div>
-                </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-clock text-6xl text-blue-500"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Focus Time</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-focus">--</div>
-                    <div class="text-xs text-text-faint">Aggregated hours</div>
-                </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-check-circle text-6xl text-green-500"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Tasks Created</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-tasks">--</div>
-                    <div class="text-xs text-text-faint">Across all projects</div>
-                </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-lightning text-6xl text-yellow-500"></i></div>
-                    <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Avg Session</div>
-                    <div class="text-3xl font-bold text-white mb-1" id="kpi-avg">--</div>
-                    <div class="text-xs text-text-faint">Minutes per focus</div>
-                </div>
+        <header id="data-header" class="hidden h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
+            <div class="flex items-center gap-3">
+               <h1 class="text-xl font-semibold text-white">Data Management</h1>
+               <span id="cache-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold tracking-wide">CACHED (0m ago)</span>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-6">
-                    <h3 class="text-lg font-bold text-white mb-6">Global Focus Activity</h3>
-                    <div class="h-[300px] w-full"><canvas id="activityChart"></canvas></div>
+            <div class="flex items-center gap-4">
+                <div class="text-xs text-text-muted text-right">
+                    <div class="font-bold text-text-faint uppercase tracking-wider text-[10px]">Last Sync</div>
+                    <div id="last-sync-time" class="font-mono text-white">--:--:--</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col">
-                    <h3 class="text-lg font-bold text-white mb-2">Popular Projects</h3>
-                    <p class="text-xs text-text-muted mb-6">Top categories users create</p>
-                    <div class="h-[200px] w-full flex justify-center mb-4"><canvas id="projectDistChart"></canvas></div>
-                    <div id="top-projects-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2"></div>
-                </div>
+                <button onclick="app.hardRefresh()" class="flex items-center px-3 py-2 rounded text-xs font-bold bg-dark-card border border-dark-border hover:border-text-muted transition-all text-text-muted hover:text-white">
+                    <i class="ph-bold ph-download-simple mr-2"></i> Update App
+                </button>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
-                    <div class="p-6 border-b border-dark-border flex justify-between items-center bg-dark-card/50">
-                        <h3 class="text-lg font-bold text-white">Recent Sessions</h3>
-                        <span class="text-xs px-2 py-1 rounded bg-brand/10 text-brand border border-brand/20">Live Feed</span>
+        </header>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+            <div id="view-overview" class="view-section animate-fade-in p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-users text-6xl text-brand"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Users</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-users">--</div>
+                        <div class="text-xs text-green-500 font-medium flex items-center"><i class="ph-bold ph-trend-up mr-1"></i> Lifetime signups</div>
                     </div>
-                    <div class="flex-1 overflow-auto custom-scrollbar">
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-clock text-6xl text-blue-500"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Focus Time</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-focus">--</div>
+                        <div class="text-xs text-text-faint">Aggregated hours</div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-check-circle text-6xl text-green-500"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Tasks Created</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-tasks">--</div>
+                        <div class="text-xs text-text-faint">Across all projects</div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-lightning text-6xl text-yellow-500"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Avg Session</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-avg">--</div>
+                        <div class="text-xs text-text-faint">Minutes per focus</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-6">Global Focus Activity</h3>
+                        <div class="h-[300px] w-full"><canvas id="activityChart"></canvas></div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col">
+                        <h3 class="text-lg font-bold text-white mb-2">Popular Projects</h3>
+                        <p class="text-xs text-text-muted mb-6">Top categories users create</p>
+                        <div class="h-[200px] w-full flex justify-center mb-4"><canvas id="projectDistChart"></canvas></div>
+                        <div id="top-projects-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                        <div class="p-6 border-b border-dark-border flex justify-between items-center bg-dark-card/50">
+                            <h3 class="text-lg font-bold text-white">Recent Sessions</h3>
+                            <span class="text-xs px-2 py-1 rounded bg-brand/10 text-brand border border-brand/20">Live Feed</span>
+                        </div>
+                        <div class="flex-1 overflow-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-dark-sidebar sticky top-0 z-10">
+                                    <tr>
+                                        <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Timestamp</th>
+                                        <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Task</th>
+                                        <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="live-feed-body" class="text-sm">
+                                    <tr><td colspan="3" class="p-4 text-center text-text-muted italic">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                        <div class="p-6 border-b border-dark-border bg-dark-card/50">
+                            <h3 class="text-lg font-bold text-white">System Health</h3>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <div>
+                                <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Task Completion Rate</span><span class="text-white font-bold" id="health-completion">0%</span></div>
+                                <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-completion" class="bg-green-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">High Priority Task Ratio</span><span class="text-white font-bold" id="health-priority">0%</span></div>
+                                <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-priority" class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                            </div>
+                            <div class="p-4 rounded border border-dark-border bg-dark-bg mt-6">
+                                <div class="text-xs text-text-muted font-bold uppercase mb-2">Console Logs</div>
+                                <div id="console-log" class="text-[10px] font-mono text-text-faint h-24 overflow-y-auto">
+                                    > Initializing Orion Console...<br>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="view-users" class="view-section hidden animate-fade-in p-8">
+                 <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+                    <div class="p-6 border-b border-dark-border bg-dark-card/50 flex items-start justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Active Users</h3>
+                            <p class="text-xs text-text-muted mt-1">Full user directory from Firestore.</p>
+                        </div>
+                        <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-bg border border-dark-border text-text-muted hover:text-white hover:border-yellow-500 transition-all">
+                            <i class="ph-bold ph-star mr-2"></i> Show Starred Only
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
-                            <thead class="bg-dark-sidebar sticky top-0 z-10">
+                             <thead class="bg-dark-sidebar border-b border-dark-border">
                                 <tr>
-                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Timestamp</th>
-                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Task</th>
-                                    <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Duration</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase w-16"></th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th> 
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">User Profile</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Login/Provider</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Engagement</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Last Active</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="live-feed-body" class="text-sm">
-                                <tr><td colspan="3" class="p-4 text-center text-text-muted italic">Loading...</td></tr>
-                            </tbody>
+                            <tbody id="users-table-body" class="text-sm"></tbody>
                         </table>
                     </div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
-                    <div class="p-6 border-b border-dark-border bg-dark-card/50">
-                        <h3 class="text-lg font-bold text-white">System Health</h3>
+            </div>
+            <div id="view-tasks" class="view-section hidden animate-fade-in p-8">
+                 <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[85vh]">
+                    <div class="p-6 border-b border-dark-border bg-dark-card/50 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div>
+                                <h3 class="text-lg font-bold text-white" id="tasks-header-title">Global Task Master List</h3>
+                                <p class="text-xs text-text-muted mt-1" id="tasks-header-desc">Most recent 500 tasks from all users.</p>
+                            </div>
+                            <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden ml-4 flex items-center px-2 py-1 bg-brand/10 text-brand border border-brand/20 rounded text-xs font-bold hover:bg-brand/20 transition-colors">
+                                <i class="ph-bold ph-x-circle mr-1"></i> Show All
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></i>
+                            <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="bg-dark-bg border border-dark-border rounded-full pl-9 pr-4 py-1.5 text-sm text-white focus:border-brand outline-none w-64">
+                        </div>
                     </div>
-                    <div class="p-6 space-y-6">
-                        <div>
-                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Task Completion Rate</span><span class="text-white font-bold" id="health-completion">0%</span></div>
-                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-completion" class="bg-green-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">High Priority Task Ratio</span><span class="text-white font-bold" id="health-priority">0%</span></div>
-                            <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-priority" class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
-                        </div>
-                        <div class="p-4 rounded border border-dark-border bg-dark-bg mt-6">
-                            <div class="text-xs text-text-muted font-bold uppercase mb-2">Console Logs</div>
-                            <div id="console-log" class="text-[10px] font-mono text-text-faint h-24 overflow-y-auto">
-                                > Initializing Orion Console...<br>
+                    <div class="flex-1 overflow-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                             <thead class="bg-dark-sidebar sticky top-0 z-10 border-b border-dark-border">
+                                <tr>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Task Details</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Priority</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Pomos</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Duration</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasks-table-body" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="view-data" class="view-section hidden animate-fade-in flex flex-col h-full">
+                <div class="flex-1 p-12 overflow-y-auto custom-scrollbar">
+                    <div class="max-w-5xl mx-auto space-y-10">
+                        
+                        <div class="flex items-center gap-6">
+                            <div class="w-14 h-14 rounded-lg bg-dark-card border border-dark-border flex items-center justify-center shadow-lg">
+                                 <i class="ph-bold ph-database text-brand text-2xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white tracking-tight">Data Management</h2>
+                                <p class="text-text-muted mt-1">Backup, restore, and manage your local data cache.</p>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="view-users" class="view-section hidden animate-fade-in p-8">
-             <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
-                <div class="p-6 border-b border-dark-border bg-dark-card/50 flex items-start justify-between">
-                    <div>
-                        <h3 class="text-lg font-bold text-white">Active Users</h3>
-                        <p class="text-xs text-text-muted mt-1">Full user directory from Firestore.</p>
-                    </div>
-                    <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-bg border border-dark-border text-text-muted hover:text-white hover:border-yellow-500 transition-all">
-                        <i class="ph-bold ph-star mr-2"></i> Show Starred Only
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                         <thead class="bg-dark-sidebar border-b border-dark-border">
-                            <tr>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-16"></th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th> 
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">User Profile</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Login/Provider</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Engagement</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Last Active</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="users-table-body" class="text-sm"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div id="view-tasks" class="view-section hidden animate-fade-in p-8">
-             <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[85vh]">
-                <div class="p-6 border-b border-dark-border bg-dark-card/50 flex justify-between items-center">
-                    <div class="flex items-center">
-                        <div>
-                            <h3 class="text-lg font-bold text-white" id="tasks-header-title">Global Task Master List</h3>
-                            <p class="text-xs text-text-muted mt-1" id="tasks-header-desc">Most recent 500 tasks from all users.</p>
-                        </div>
-                        <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden ml-4 flex items-center px-2 py-1 bg-brand/10 text-brand border border-brand/20 rounded text-xs font-bold hover:bg-brand/20 transition-colors">
-                            <i class="ph-bold ph-x-circle mr-1"></i> Show All
-                        </button>
-                    </div>
-                    <div class="relative">
-                        <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></i>
-                        <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="bg-dark-bg border border-dark-border rounded-full pl-9 pr-4 py-1.5 text-sm text-white focus:border-brand outline-none w-64">
-                    </div>
-                </div>
-                <div class="flex-1 overflow-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse">
-                         <thead class="bg-dark-sidebar sticky top-0 z-10 border-b border-dark-border">
-                            <tr>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Task Details</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Priority</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Pomos</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase">Duration</th>
-                                <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Due Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tasks-table-body" class="text-sm"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        <div id="view-data" class="view-section hidden animate-fade-in flex flex-col h-full">
-            <div class="flex-1 p-12 overflow-y-auto custom-scrollbar">
-                <div class="max-w-5xl mx-auto space-y-10">
-                    
-                    <div class="flex items-center gap-6">
-                        <div class="w-14 h-14 rounded-lg bg-dark-card border border-dark-border flex items-center justify-center shadow-lg">
-                             <i class="ph-bold ph-database text-brand text-2xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-white tracking-tight">Data Management</h2>
-                            <p class="text-text-muted mt-1">Backup, restore, and manage your local data cache.</p>
-                        </div>
-                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
-                            <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">STORAGE</span>
-                            <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 mb-6">
-                                <i class="ph-bold ph-export text-2xl"></i>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
+                                <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">STORAGE</span>
+                                <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 mb-6">
+                                    <i class="ph-bold ph-export text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-white mb-2">Export Data Snapshot</h3>
+                                <p class="text-sm text-text-muted mb-8 leading-relaxed">
+                                    Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
+                                </p>
+                                <button onclick="app.exportData()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-[0.98]">
+                                    <i class="ph-bold ph-download-simple mr-2"></i> Download JSON
+                                </button>
                             </div>
-                            <h3 class="text-xl font-bold text-white mb-2">Export Data Snapshot</h3>
-                            <p class="text-sm text-text-muted mb-8 leading-relaxed">
-                                Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
-                            </p>
-                            <button onclick="app.exportData()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-[0.98]">
-                                <i class="ph-bold ph-download-simple mr-2"></i> Download JSON
+
+                             <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
+                                <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">RESTORE</span>
+                                <div class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 mb-6">
+                                    <i class="ph-bold ph-upload-simple text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-white mb-2">Import Data Snapshot</h3>
+                                 <p class="text-sm text-text-muted mb-8 leading-relaxed">
+                                    Restore a previously saved JSON file. <span class="text-brand font-bold">Warning:</span> This will overwrite your current local dashboard view.
+                                </p>
+                                 <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                                <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded-lg bg-transparent border border-dark-border hover:border-text-muted text-text-muted hover:text-white font-bold text-sm transition-all flex items-center justify-center active:scale-[0.98]">
+                                    <i class="ph-bold ph-file-arrow-up mr-2"></i> Select Backup File
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-bold text-white mb-4">Local Cache Status</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                    <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Cache Age</div>
+                                    <div class="text-2xl font-mono text-white tracking-tight" id="stat-cache-age">--</div>
+                                 </div>
+                                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                    <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Items Stored</div>
+                                    <div class="text-2xl font-mono text-white tracking-tight" id="stat-items-count">-- objects</div>
+                                 </div>
+                                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                    <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Storage Usage</div>
+                                    <div class="text-2xl font-mono text-white tracking-tight" id="stat-storage-size">-- KB</div>
+                                 </div>
+                            </div>
+                        </div>
+                         <div class="flex justify-end">
+                            <button onclick="app.clearLocalData()" class="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-wide opacity-50 hover:opacity-100 transition-opacity">
+                                Clear Local Cache & Reset
                             </button>
                         </div>
 
-                         <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
-                            <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">RESTORE</span>
-                            <div class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 mb-6">
-                                <i class="ph-bold ph-upload-simple text-2xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-2">Import Data Snapshot</h3>
-                             <p class="text-sm text-text-muted mb-8 leading-relaxed">
-                                Restore a previously saved JSON file. <span class="text-brand font-bold">Warning:</span> This will overwrite your current local dashboard view.
-                            </p>
-                             <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
-                            <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded-lg bg-transparent border border-dark-border hover:border-text-muted text-text-muted hover:text-white font-bold text-sm transition-all flex items-center justify-center active:scale-[0.98]">
-                                <i class="ph-bold ph-file-arrow-up mr-2"></i> Select Backup File
-                            </button>
-                        </div>
                     </div>
-
-                    <div>
-                        <h3 class="text-base font-bold text-white mb-4">Local Cache Status</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                             <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                                <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Cache Age</div>
-                                <div class="text-2xl font-mono text-white tracking-tight" id="stat-cache-age">--</div>
-                             </div>
-                             <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                                <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Items Stored</div>
-                                <div class="text-2xl font-mono text-white tracking-tight" id="stat-items-count">-- objects</div>
-                             </div>
-                             <div class="bg-dark-card border border-dark-border rounded-lg p-5">
-                                <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Storage Usage</div>
-                                <div class="text-2xl font-mono text-white tracking-tight" id="stat-storage-size">-- KB</div>
-                             </div>
-                        </div>
-                    </div>
-                     <div class="flex justify-end">
-                        <button onclick="app.clearLocalData()" class="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-wide opacity-50 hover:opacity-100 transition-opacity">
-                            Clear Local Cache & Reset
-                        </button>
-                    </div>
-
                 </div>
             </div>
-        </div>
 
-    </div>
-</main>
+        </div>
+    </main>
+
+</div>
+
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -317,6 +323,7 @@ const auth=getAuth(fb);
 const db=getFirestore(fb);
 const CACHE_KEY = 'orion_local_cache_v1';
 const STAR_KEY = 'orion_starred_users';
+const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; // Orion Admin UID
 
 Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
@@ -379,7 +386,6 @@ const loadCache = () => {
 };
 
 const updateStorageStats = () => {
-    // 1. Calculate Sizes
     const cache = localStorage.getItem(CACHE_KEY) || '';
     const stars = localStorage.getItem(STAR_KEY) || '';
     const totalBytes = cache.length + stars.length;
@@ -387,23 +393,19 @@ const updateStorageStats = () => {
     const mb = (totalBytes / (1024 * 1024)).toFixed(2);
     const sizeStr = mb > 1 ? `${mb} MB` : `${kb} KB`;
     
-    // 2. Calculate Age
     let ageStr = "Just now";
     if(state.lastSyncTime){
         const diffMins = Math.round((Date.now() - state.lastSyncTime) / 60000);
         ageStr = diffMins < 1 ? "Just now" : `${diffMins} mins`;
         
-        // Update Time display
         const dateObj = new Date(state.lastSyncTime);
         const timeStr = dateObj.toLocaleTimeString([], { hour12: false });
         const elTime = document.getElementById('last-sync-time');
         if(elTime) elTime.innerText = timeStr;
     }
 
-    // 3. Count Items
     const count = state.sessions.length + state.tasks.length + state.usersList.length;
 
-    // 4. Update DOM Elements
     const elSize = document.getElementById('stat-storage-size');
     const elItems = document.getElementById('stat-items-count');
     const elAge = document.getElementById('stat-cache-age');
@@ -441,13 +443,53 @@ const showLoginModal=()=>{
     };
 };
 
-onAuthStateChanged(auth,async u=>{
-    const modal=document.getElementById('dev-login-modal');
-    if(u){
-        if(modal)modal.remove();
-        log(`Authenticated as ${u.email}`);
-        app.refreshData(false);
-    }else{
+function showUnauthorizedScreen() {
+    document.body.innerHTML = `
+        <div class="lockdown-wrapper">
+            <div class="lockdown-card">
+                <div class="lockdown-icon">
+                    <i class="ph-bold ph-shield-warning"></i>
+                </div>
+                <h2>Clearance Required</h2>
+                <p>This console is strictly restricted to authorized administrators. Your TimeTrekker account does not have access here.</p>
+                <button onclick="app.signOut()">Return to Login</button>
+            </div>
+        </div>
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        .lockdown-wrapper { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; background-color: #0f0f0f; color: #e5e7eb; font-family: 'Inter', sans-serif; }
+        .lockdown-card { background: #141414; border: 1px solid #2a2a2a; border-radius: 12px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .lockdown-icon { font-size: 48px; color: #ff5757; margin-bottom: 16px; }
+        .lockdown-card h2 { margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff; }
+        .lockdown-card p { margin: 0 0 24px 0; font-size: 13px; color: #a3a3a3; line-height: 1.5; }
+        .lockdown-card button { background-color: transparent; border: 1px solid #ff5757; color: #ff5757; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .lockdown-card button:hover { background-color: #ff5757; color: #ffffff; }
+    `;
+    document.head.appendChild(style);
+}
+
+onAuthStateChanged(auth, async u => {
+    const modal = document.getElementById('dev-login-modal');
+    const orionApp = document.getElementById('orion-app');
+
+    if (u) {
+        if (modal) modal.remove();
+        
+        if (ADMIN_UIDS.includes(u.uid)) {
+            // Authorized Admin: Reveal the UI
+            if (orionApp) orionApp.style.display = 'flex';
+            log(`Authenticated as ${u.email}`);
+            app.refreshData(false);
+        } else {
+            // Regular user: Trigger lockdown screen
+            log(`Unauthorized access attempt by ${u.email}`);
+            showUnauthorizedScreen();
+        }
+    } else {
+        // Not logged in: Ensure UI stays hidden and show login prompt
+        if (orionApp) orionApp.style.display = 'none';
         log('No user detected. Showing login prompt...');
         showLoginModal();
     }
@@ -456,10 +498,8 @@ onAuthStateChanged(auth,async u=>{
 const app={
     signOut:async()=>{try{await signOut(auth);window.location.reload();}catch(e){log(e.message);}},
     
-    // NEW HARD REFRESH FUNCTION
     hardRefresh: () => {
         if(confirm('This will reload the application to fetch the newest version from the server. Unsaved changes (if any) might be lost. Continue?')) {
-            // Bypass cache reload
             window.location.reload(true);
         }
     },
@@ -473,11 +513,9 @@ const app={
         document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
         document.getElementById(`nav-${v}`).classList.add('active');
         
-        // Header Logic
         const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
 
-        // Toggle Header Types (Standard vs Data View)
         if(v === 'data'){
             document.getElementById('standard-header').classList.add('hidden');
             document.getElementById('data-header').classList.remove('hidden');
@@ -565,7 +603,7 @@ const app={
                     state.starred = JSON.parse(data.starred);
                 }
                 log('<span class="text-green-400">Import successful. Reloading data...</span>');
-                app.refreshData(false); // Reload from the newly imported cache
+                app.refreshData(false);
                 alert('Data imported successfully! The dashboard has been updated.');
             } catch (err) {
                 alert('Error parsing JSON file. Is it a valid backup?');
@@ -573,7 +611,6 @@ const app={
             }
         };
         reader.readAsText(file);
-        // reset input
         input.value = '';
     },
     clearLocalData: () => {
