@@ -75,7 +75,7 @@
     /* Sidebar */
     .sidebar { width: 256px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; transition: transform 0.3s ease; }
     .sidebar-brand { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--border); }
-    .brand-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(to bottom right, var(--brand), #dc2626); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.125rem; }
+    .brand-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
     .mobile-close-btn { display: none; background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
     .mobile-close-btn:hover { color: #fff; }
     
@@ -178,7 +178,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="flex items-center">
-                <div class="brand-icon"><img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo"></div>
+                <div class="brand-icon"><img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 40px; height: auto;"></div>
                 <span style="margin-left: 0.75rem; font-weight: 700; font-size: 1.125rem; color: #fff;">Orion</span>
             </div>
             <button class="mobile-close-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-x"></i></button>
