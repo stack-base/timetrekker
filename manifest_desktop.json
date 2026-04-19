@@ -33,6 +33,13 @@
       "description": "Open the focus timer",
       "url": "./application?action=focus",
       "icons": [{ "src": "./assets/icons/start-timer-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Today's Tasks",
+      "short_name": "Today",
+      "description": "View tasks scheduled for today",
+      "url": "./application?action=view-today",
+      "icons": [{ "src": "./assets/icons/today-task-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]
 }

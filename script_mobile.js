@@ -362,6 +362,11 @@ onAuthStateChanged(auth, u => {
             setTimeout(() => app.openTaskModal(), 500);
         } else if (action === 'focus') {
             setTimeout(() => app.switchTab('timer'), 500);
+        } else if (action === 'view-today') {
+            setTimeout(() => {
+                app.switchTab('tasks');
+                app.setFilter('today');
+            }, 500);
         }
 
     } else {

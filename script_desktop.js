@@ -346,6 +346,8 @@ onAuthStateChanged(auth, u => {
             setTimeout(() => app.toggleAddTaskModal(), 500);
         } else if (action === 'focus') {
             setTimeout(() => app.toggleFocusPanel(true), 500);
+        } else if (action === 'view-today') {
+            setTimeout(() => app.setView('today'), 500);
         }
 
     } else {
