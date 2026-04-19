@@ -367,6 +367,8 @@ onAuthStateChanged(auth, u => {
                 app.switchTab('tasks');
                 app.setFilter('today');
             }, 500);
+        } else if (action === 'view-analytics') {
+            setTimeout(() => app.switchTab('analytics'), 500);
         }
 
     } else {

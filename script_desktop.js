@@ -348,6 +348,8 @@ onAuthStateChanged(auth, u => {
             setTimeout(() => app.toggleFocusPanel(true), 500);
         } else if (action === 'view-today') {
             setTimeout(() => app.setView('today'), 500);
+        } else if (action === 'view-analytics') {
+            setTimeout(() => app.setView('analytics'), 500);
         }
 
     } else {
