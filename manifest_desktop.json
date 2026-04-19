@@ -14,7 +14,7 @@
       "type": "image/png"
     },
     {
-      "src": "./assets/icons/splashscreen-icon.png",
+      "src": "https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
