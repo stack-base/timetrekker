@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orion</title>
+<link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:{brand:{DEFAULT:'#ff5757',hover:'#e04848',dim:'#4a1a1a'},dark:{bg:'#0f0f0f',sidebar:'#141414',card:'#1e1e1e',border:'#2a2a2a',hover:'#333333'},text:{main:'#e5e7eb',muted:'#a3a3a3',faint:'#525252'}}}}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<style>
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#141414}
+::-webkit-scrollbar-thumb{background:#333;border-radius:4px;border:2px solid #141414}
+body{background-color:#0f0f0f;color:#e5e7eb;font-family:'Inter',sans-serif}
+.animate-fade-in{animation:fadeIn .3s ease-out forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.nav-btn.active{background:rgba(255,87,87,0.1);color:#ff5757;border-color:rgba(255,87,87,0.2)}
+</style>
+</head>
+<body class="h-screen w-full overflow-hidden">
+
+<div id="orion-app" style="display: none; width: 100%; height: 100%; flex-direction: row;">
+
+    <aside class="w-64 bg-dark-sidebar border-r border-dark-border flex flex-col shrink-0 z-20">
+        <div class="h-16 flex items-center px-6 border-b border-dark-border">
+            <div class="brand-icon"><img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 40px; height: auto;"></div>
+            </div>
+            <span class="ml-3 font-bold text-lg text-white tracking-tight">Orion</span>
+        </div>
+        <nav class="flex-1 p-4 space-y-1">
+            <button onclick="app.setView('overview')" id="nav-overview" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors active">
+                <i class="ph-bold ph-squares-four text-lg"></i><span class="ml-3 font-medium text-sm">Overview</span>
+            </button>
+            <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">Data Sources</div>
+            <button onclick="app.setView('users')" id="nav-users" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
+                <i class="ph-bold ph-users text-lg"></i><span class="ml-3 font-medium text-sm">Users</span>
+            </button>
+            <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
+                <i class="ph-bold ph-check-square text-lg"></i><span class="ml-3 font-medium text-sm">Tasks Master</span>
+            </button>
+            <div class="mt-8 px-3 text-xs font-bold text-text-faint uppercase tracking-wider">System</div>
+            <button onclick="app.setView('data')" id="nav-data" class="nav-btn w-full flex items-center px-3 py-2 rounded text-text-muted border border-transparent hover:text-white hover:bg-dark-hover transition-colors">
+                <i class="ph-bold ph-database text-lg"></i><span class="ml-3 font-medium text-sm">Data Management</span>
+            </button>
+        </nav>
+        <div class="p-4 border-t border-dark-border">
+            <div class="flex items-center gap-3 mb-4">
+                 <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">O</div>
+                 <div class="flex flex-col min-w-0"><span class="text-sm font-medium text-white truncate">Orion Console</span><span class="text-xs text-text-muted">Connected</span></div>
+            </div>
+            <button onclick="app.signOut()" class="w-full flex items-center justify-center px-3 py-2 rounded border border-red-900/30 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-wide">
+                <i class="ph-bold ph-sign-out mr-2"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+    <main class="flex-1 flex flex-col min-w-0 bg-dark-bg overflow-hidden relative">
+        
+        <header id="standard-header" class="h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
+            <h1 class="text-xl font-semibold text-white" id="page-title">Product Analytics</h1>
+            <button onclick="app.refreshData(true)" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all">
+                <i class="ph-bold ph-arrows-clockwise mr-2"></i> Refresh Data
+            </button>
+        </header>
+
+        <header id="data-header" class="hidden h-16 flex items-center justify-between px-8 border-b border-dark-border bg-dark-bg/80 backdrop-blur z-10">
+            <div class="flex items-center gap-3">
+               <h1 class="text-xl font-semibold text-white">Data Management</h1>
+               <span id="cache-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold tracking-wide">CACHED (0m ago)</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-xs text-text-muted text-right">
+                    <div class="font-bold text-text-faint uppercase tracking-wider text-[10px]">Last Sync</div>
+                    <div id="last-sync-time" class="font-mono text-white">--:--:--</div>
+                </div>
+                <button onclick="app.hardRefresh()" class="flex items-center px-3 py-2 rounded text-xs font-bold bg-dark-card border border-dark-border hover:border-text-muted transition-all text-text-muted hover:text-white">
+                    <i class="ph-bold ph-download-simple mr-2"></i> Update App
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+            <div id="view-overview" class="view-section animate-fade-in p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-users text-6xl text-brand"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Users</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-users">--</div>
+                        <div class="text-xs text-green-500 font-medium flex items-center"><i class="ph-bold ph-trend-up mr-1"></i> Lifetime signups</div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-clock text-6xl text-blue-500"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Total Focus Time</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-focus">--</div>
+                        <div class="text-xs text-text-faint">Aggregated hours</div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-check-circle text-6xl text-green-500"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Tasks Created</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-tasks">--</div>
+                        <div class="text-xs text-text-faint">Across all projects</div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="ph-fill ph-lightning text-6xl text-yellow-500"></i></div>
+                        <div class="text-sm text-text-muted font-medium uppercase tracking-wider mb-2">Avg Session</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="kpi-avg">--</div>
+                        <div class="text-xs text-text-faint">Minutes per focus</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-6">Global Focus Activity</h3>
+                        <div class="h-[300px] w-full"><canvas id="activityChart"></canvas></div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex flex-col">
+                        <h3 class="text-lg font-bold text-white mb-2">Popular Projects</h3>
+                        <p class="text-xs text-text-muted mb-6">Top categories users create</p>
+                        <div class="h-[200px] w-full flex justify-center mb-4"><canvas id="projectDistChart"></canvas></div>
+                        <div id="top-projects-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                        <div class="p-6 border-b border-dark-border flex justify-between items-center bg-dark-card/50">
+                            <h3 class="text-lg font-bold text-white">Recent Sessions</h3>
+                            <span class="text-xs px-2 py-1 rounded bg-brand/10 text-brand border border-brand/20">Live Feed</span>
+                        </div>
+                        <div class="flex-1 overflow-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-dark-sidebar sticky top-0 z-10">
+                                    <tr>
+                                        <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Timestamp</th>
+                                        <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Task</th>
+                                        <th class="p-4 text-xs font-bold text-text-muted uppercase border-b border-dark-border">Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="live-feed-body" class="text-sm">
+                                    <tr><td colspan="3" class="p-4 text-center text-text-muted italic">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[400px]">
+                        <div class="p-6 border-b border-dark-border bg-dark-card/50">
+                            <h3 class="text-lg font-bold text-white">System Health</h3>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <div>
+                                <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Task Completion Rate</span><span class="text-white font-bold" id="health-completion">0%</span></div>
+                                <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-completion" class="bg-green-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">High Priority Task Ratio</span><span class="text-white font-bold" id="health-priority">0%</span></div>
+                                <div class="w-full bg-dark-bg rounded-full h-2 overflow-hidden"><div id="bar-priority" class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                            </div>
+                            <div class="p-4 rounded border border-dark-border bg-dark-bg mt-6">
+                                <div class="text-xs text-text-muted font-bold uppercase mb-2">Console Logs</div>
+                                <div id="console-log" class="text-[10px] font-mono text-text-faint h-24 overflow-y-auto">
+                                    > Initializing Orion Console...<br>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="view-users" class="view-section hidden animate-fade-in p-8">
+                 <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+                    <div class="p-6 border-b border-dark-border bg-dark-card/50 flex items-start justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Active Users</h3>
+                            <p class="text-xs text-text-muted mt-1">Full user directory from Firestore.</p>
+                        </div>
+                        <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="flex items-center px-3 py-1.5 rounded text-xs font-medium bg-dark-bg border border-dark-border text-text-muted hover:text-white hover:border-yellow-500 transition-all">
+                            <i class="ph-bold ph-star mr-2"></i> Show Starred Only
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                             <thead class="bg-dark-sidebar border-b border-dark-border">
+                                <tr>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase w-16"></th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th> 
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">User Profile</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Login/Provider</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Engagement</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Last Active</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="view-tasks" class="view-section hidden animate-fade-in p-8">
+                 <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex flex-col h-[85vh]">
+                    <div class="p-6 border-b border-dark-border bg-dark-card/50 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div>
+                                <h3 class="text-lg font-bold text-white" id="tasks-header-title">Global Task Master List</h3>
+                                <p class="text-xs text-text-muted mt-1" id="tasks-header-desc">Most recent 500 tasks from all users.</p>
+                            </div>
+                            <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden ml-4 flex items-center px-2 py-1 bg-brand/10 text-brand border border-brand/20 rounded text-xs font-bold hover:bg-brand/20 transition-colors">
+                                <i class="ph-bold ph-x-circle mr-1"></i> Show All
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></i>
+                            <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="bg-dark-bg border border-dark-border rounded-full pl-9 pr-4 py-1.5 text-sm text-white focus:border-brand outline-none w-64">
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                             <thead class="bg-dark-sidebar sticky top-0 z-10 border-b border-dark-border">
+                                <tr>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase w-8"></th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Task Details</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Priority</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Pomos</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase">Duration</th>
+                                    <th class="p-4 text-xs font-bold text-text-muted uppercase text-right">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasks-table-body" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="view-data" class="view-section hidden animate-fade-in flex flex-col h-full">
+                <div class="flex-1 p-12 overflow-y-auto custom-scrollbar">
+                    <div class="max-w-5xl mx-auto space-y-10">
+                        
+                        <div class="flex items-center gap-6">
+                            <div class="w-14 h-14 rounded-lg bg-dark-card border border-dark-border flex items-center justify-center shadow-lg">
+                                 <i class="ph-bold ph-database text-brand text-2xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white tracking-tight">Data Management</h2>
+                                <p class="text-text-muted mt-1">Backup, restore, and manage your local data cache.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
+                                <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">STORAGE</span>
+                                <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 mb-6">
+                                    <i class="ph-bold ph-export text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-white mb-2">Export Data Snapshot</h3>
+                                <p class="text-sm text-text-muted mb-8 leading-relaxed">
+                                    Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
+                                </p>
+                                <button onclick="app.exportData()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center justify-center shadow-lg shadow-blue-600/20 active:scale-[0.98]">
+                                    <i class="ph-bold ph-download-simple mr-2"></i> Download JSON
+                                </button>
+                            </div>
+
+                             <div class="bg-dark-card border border-dark-border rounded-xl p-8 relative group hover:border-text-muted/50 transition-colors">
+                                <span class="absolute top-6 right-6 text-[10px] font-bold text-text-faint tracking-widest">RESTORE</span>
+                                <div class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 mb-6">
+                                    <i class="ph-bold ph-upload-simple text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-white mb-2">Import Data Snapshot</h3>
+                                 <p class="text-sm text-text-muted mb-8 leading-relaxed">
+                                    Restore a previously saved JSON file. <span class="text-brand font-bold">Warning:</span> This will overwrite your current local dashboard view.
+                                </p>
+                                 <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                                <button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded-lg bg-transparent border border-dark-border hover:border-text-muted text-text-muted hover:text-white font-bold text-sm transition-all flex items-center justify-center active:scale-[0.98]">
+                                    <i class="ph-bold ph-file-arrow-up mr-2"></i> Select Backup File
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-bold text-white mb-4">Local Cache Status</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                    <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Cache Age</div>
+                                    <div class="text-2xl font-mono text-white tracking-tight" id="stat-cache-age">--</div>
+                                 </div>
+                                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                    <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Items Stored</div>
+                                    <div class="text-2xl font-mono text-white tracking-tight" id="stat-items-count">-- objects</div>
+                                 </div>
+                                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                                    <div class="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-2">Storage Usage</div>
+                                    <div class="text-2xl font-mono text-white tracking-tight" id="stat-storage-size">-- KB</div>
+                                 </div>
+                            </div>
+                        </div>
+                         <div class="flex justify-end">
+                            <button onclick="app.clearLocalData()" class="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-wide opacity-50 hover:opacity-100 transition-opacity">
+                                Clear Local Cache & Reset
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import{getFirestore,collection,collectionGroup,getDocs,query,where,orderBy,limit,doc,getDoc}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
+const appId='timetrekker-v1';
+const fb = initializeApp(C, "OrionConsole");
+const auth = getAuth(fb);
+const db = getFirestore(fb);
+const CACHE_KEY = 'orion_local_cache_v1';
+const STAR_KEY = 'orion_starred_users';
+const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; // Orion Admin UID
+
+Chart.defaults.font.family='Inter';
+Chart.defaults.color='#a3a3a3';
+Chart.defaults.borderColor='#2a2a2a';
+
+const log=(msg)=>{
+    const b=document.getElementById('console-log');
+    if(b){b.innerHTML+=`> ${msg}<br>`;b.scrollTop=b.scrollHeight;}
+};
+
+const state={
+    sessions:[],
+    tasks:[],
+    usersList:[],
+    charts:{},
+    view:'overview',
+    usersMap:{},
+    filterUser:null,
+    starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
+    showStarredOnly: false,
+    lastSyncTime: null
+};
+
+const saveCache = () => {
+    try {
+        const now = Date.now();
+        const cacheData = {
+            sessions: state.sessions,
+            tasks: state.tasks,
+            usersList: state.usersList,
+            timestamp: now
+        };
+        const str = JSON.stringify(cacheData);
+        localStorage.setItem(CACHE_KEY, str);
+        state.lastSyncTime = now;
+        log('<span class="text-green-400">Data cached successfully.</span>');
+        updateStorageStats();
+    } catch (e) {
+        log('Cache Error (Quota Exceeded?): ' + e.message);
+    }
+};
+
+const loadCache = () => {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return false;
+    try {
+        const data = JSON.parse(raw);
+        state.sessions = data.sessions || [];
+        state.tasks = data.tasks || [];
+        state.usersList = data.usersList || [];
+        state.lastSyncTime = data.timestamp || Date.now();
+        const age = Math.round((Date.now() - state.lastSyncTime) / 1000 / 60);
+        log(`<span class="text-blue-400">Loaded from Cache (${age} mins ago).</span>`);
+        updateStorageStats();
+        return true;
+    } catch (e) {
+        console.error("Cache parsing failed", e);
+        return false;
+    }
+};
+
+const updateStorageStats = () => {
+    const cache = localStorage.getItem(CACHE_KEY) || '';
+    const stars = localStorage.getItem(STAR_KEY) || '';
+    const totalBytes = cache.length + stars.length;
+    const kb = (totalBytes / 1024).toFixed(2);
+    const mb = (totalBytes / (1024 * 1024)).toFixed(2);
+    const sizeStr = mb > 1 ? `${mb} MB` : `${kb} KB`;
+    
+    let ageStr = "Just now";
+    if(state.lastSyncTime){
+        const diffMins = Math.round((Date.now() - state.lastSyncTime) / 60000);
+        ageStr = diffMins < 1 ? "Just now" : `${diffMins} mins`;
+        
+        const dateObj = new Date(state.lastSyncTime);
+        const timeStr = dateObj.toLocaleTimeString([], { hour12: false });
+        const elTime = document.getElementById('last-sync-time');
+        if(elTime) elTime.innerText = timeStr;
+    }
+
+    const count = state.sessions.length + state.tasks.length + state.usersList.length;
+
+    const elSize = document.getElementById('stat-storage-size');
+    const elItems = document.getElementById('stat-items-count');
+    const elAge = document.getElementById('stat-cache-age');
+    const elBadge = document.getElementById('cache-badge');
+    
+    if(elSize) elSize.innerText = sizeStr;
+    if(elItems) elItems.innerText = `${count} objects`;
+    if(elAge) elAge.innerText = ageStr;
+    if(elBadge) elBadge.innerText = `CACHED (${ageStr} ago)`;
+};
+
+const showLoginModal=()=>{
+    if(document.getElementById('dev-login-modal'))return;
+    const div=document.createElement('div');
+    div.id='dev-login-modal';
+    div.className='fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm';
+    div.innerHTML=`<div class="bg-dark-card border border-dark-border p-8 rounded-xl w-full max-w-sm shadow-2xl"><h2 class="text-xl font-bold text-white mb-6 flex items-center"><i class="ph-bold ph-lock-key mr-2"></i> Orion Login</h2><form id="dev-login-form" class="space-y-4"><div><label class="block text-xs font-bold text-text-muted uppercase mb-1">Email</label><input type="email" id="dev-email" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-white focus:border-brand outline-none" placeholder="access@orion.com" required></div><div><label class="block text-xs font-bold text-text-muted uppercase mb-1">Password</label><input type="password" id="dev-pass" class="w-full bg-dark-bg border border-dark-border rounded px-3 py-2 text-white focus:border-brand outline-none" placeholder="••••••••" required></div><div id="login-error" class="text-red-500 text-xs hidden"></div><button type="submit" class="w-full bg-brand hover:bg-brand-hover text-white font-bold py-2 rounded transition-colors mt-2">Access Dashboard</button></form></div>`;
+    document.body.appendChild(div);
+    document.getElementById('dev-login-form').onsubmit=async(e)=>{
+        e.preventDefault();
+        const email=document.getElementById('dev-email').value;
+        const pass=document.getElementById('dev-pass').value;
+        const btn=e.target.querySelector('button');
+        const err=document.getElementById('login-error');
+        try{
+            btn.innerText='Authenticating...';
+            btn.disabled=true;
+            await signInWithEmailAndPassword(auth,email,pass);
+        }catch(error){
+            btn.innerText='Access Dashboard';
+            btn.disabled=false;
+            err.innerText=error.message;
+            err.classList.remove('hidden');
+        }
+    };
+};
+
+function showUnauthorizedScreen() {
+    document.body.innerHTML = `
+        <div class="lockdown-wrapper">
+            <div class="lockdown-card">
+                <div class="lockdown-icon">
+                    <i class="ph-bold ph-shield-warning"></i>
+                </div>
+                <h2>Clearance Required</h2>
+                <p>This console is strictly restricted to authorized administrators. Your TimeTrekker account does not have access here.</p>
+                <button onclick="app.signOut()">Return to Login</button>
+            </div>
+        </div>
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        .lockdown-wrapper { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; background-color: #0f0f0f; color: #e5e7eb; font-family: 'Inter', sans-serif; }
+        .lockdown-card { background: #141414; border: 1px solid #2a2a2a; border-radius: 12px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .lockdown-icon { font-size: 48px; color: #ff5757; margin-bottom: 16px; }
+        .lockdown-card h2 { margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff; }
+        .lockdown-card p { margin: 0 0 24px 0; font-size: 13px; color: #a3a3a3; line-height: 1.5; }
+        .lockdown-card button { background-color: transparent; border: 1px solid #ff5757; color: #ff5757; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .lockdown-card button:hover { background-color: #ff5757; color: #ffffff; }
+    `;
+    document.head.appendChild(style);
+}
+
+onAuthStateChanged(auth, async u => {
+    const modal = document.getElementById('dev-login-modal');
+    const orionApp = document.getElementById('orion-app');
+
+    if (u) {
+        if (modal) modal.remove();
+        
+        if (ADMIN_UIDS.includes(u.uid)) {
+            // Authorized Admin: Reveal the UI
+            if (orionApp) orionApp.style.display = 'flex';
+            log(`Authenticated as ${u.email}`);
+            app.refreshData(false);
+        } else {
+            // Regular user: Trigger lockdown screen
+            log(`Unauthorized access attempt by ${u.email}`);
+            showUnauthorizedScreen();
+        }
+    } else {
+        // Not logged in: Ensure UI stays hidden and show login prompt
+        if (orionApp) orionApp.style.display = 'none';
+        log('No user detected. Showing login prompt...');
+        showLoginModal();
+    }
+});
+
+const app={
+    signOut:async()=>{try{await signOut(auth);window.location.reload();}catch(e){log(e.message);}},
+    
+    hardRefresh: () => {
+        if(confirm('This will reload the application to fetch the newest version from the server. Unsaved changes (if any) might be lost. Continue?')) {
+            window.location.reload(true);
+        }
+    },
+
+    setView:(v)=>{
+        state.view=v;
+        if(v==='tasks'&&!state.keepFilter)state.filterUser=null;
+        state.keepFilter=false;
+        document.querySelectorAll('.view-section').forEach(el=>el.classList.add('hidden'));
+        document.getElementById(`view-${v}`).classList.remove('hidden');
+        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+        document.getElementById(`nav-${v}`).classList.add('active');
+        
+        const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'data': 'Data Management'};
+        document.getElementById('page-title').innerText = titles[v] || 'Orion';
+
+        if(v === 'data'){
+            document.getElementById('standard-header').classList.add('hidden');
+            document.getElementById('data-header').classList.remove('hidden');
+            document.getElementById('data-header').classList.add('flex');
+            updateStorageStats();
+        } else {
+            document.getElementById('data-header').classList.add('hidden');
+            document.getElementById('data-header').classList.remove('flex');
+            document.getElementById('standard-header').classList.remove('hidden');
+        }
+
+        if(v==='users')renderUsersTable();
+        if(v==='tasks')renderTasksTable();
+    },
+    filterTasksByUser:(uid)=>{
+        state.filterUser=uid;
+        state.keepFilter=true;
+        app.setView('tasks');
+    },
+    viewAsUser:(uid)=>{
+        window.open(`application?uid=${uid}`,'_blank');
+    },
+    clearTaskFilter:()=>{
+        state.filterUser=null;
+        renderTasksTable();
+    },
+    filterTasks:(q)=>{
+        const trs=document.getElementById('tasks-table-body').querySelectorAll('.task-row');
+        q=q.toLowerCase();
+        trs.forEach(tr=>{
+            const txt=tr.innerText.toLowerCase();
+            tr.style.display=txt.includes(q)?'':'none';
+        });
+    },
+    toggleStar: (uid) => {
+        if (state.starred.includes(uid)) {
+            state.starred = state.starred.filter(id => id !== uid);
+        } else {
+            state.starred.push(uid);
+        }
+        localStorage.setItem(STAR_KEY, JSON.stringify(state.starred));
+        renderUsersTable();
+    },
+    toggleStarredFilter: () => {
+        state.showStarredOnly = !state.showStarredOnly;
+        const btn = document.getElementById('btn-star-filter');
+        if (state.showStarredOnly) {
+            btn.classList.add('bg-yellow-500/10', 'text-yellow-500', 'border-yellow-500/20');
+            btn.classList.remove('bg-dark-bg', 'text-text-muted', 'border-dark-border');
+            btn.innerHTML = `<i class="ph-fill ph-star mr-2"></i> Starred Only`;
+        } else {
+            btn.classList.remove('bg-yellow-500/10', 'text-yellow-500', 'border-yellow-500/20');
+            btn.classList.add('bg-dark-bg', 'text-text-muted', 'border-dark-border');
+            btn.innerHTML = `<i class="ph-bold ph-star mr-2"></i> Show Starred Only`;
+        }
+        renderUsersTable();
+    },
+    exportData: () => {
+        const exportObj = {
+            meta: { version: '1.0', exportDate: new Date().toISOString() },
+            cache: localStorage.getItem(CACHE_KEY),
+            starred: localStorage.getItem(STAR_KEY)
+        };
+        const blob = new Blob([JSON.stringify(exportObj)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orion_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        log('<span class="text-blue-400">Backup downloaded successfully.</span>');
+    },
+    handleFileImport: (input) => {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.cache) localStorage.setItem(CACHE_KEY, data.cache);
+                if (data.starred) {
+                    localStorage.setItem(STAR_KEY, data.starred);
+                    state.starred = JSON.parse(data.starred);
+                }
+                log('<span class="text-green-400">Import successful. Reloading data...</span>');
+                app.refreshData(false);
+                alert('Data imported successfully! The dashboard has been updated.');
+            } catch (err) {
+                alert('Error parsing JSON file. Is it a valid backup?');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+        input.value = '';
+    },
+    clearLocalData: () => {
+        if(confirm('Are you sure? This will remove all cached data and starred users. You will need to fetch from Firestore again.')){
+            localStorage.removeItem(CACHE_KEY);
+            localStorage.removeItem(STAR_KEY);
+            state.starred = [];
+            window.location.reload();
+        }
+    },
+    refreshData:async(forceRefresh = true)=>{
+        try{
+            if(!forceRefresh && loadCache()){
+                renderAll();
+                return;
+            }
+            log('Fetching LIVE data from Firestore...');
+            const qSessions=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(500));
+            const snapSessions=await getDocs(qSessions);
+            state.sessions=snapSessions.docs.map(d=>{
+                const uid=d.ref.parent?.parent?.id||'unknown';
+                return{...d.data(),_uid:uid};
+            });
+            log('Fetching global tasks...');
+            const qTasks=query(collectionGroup(db,'tasks'),limit(500));
+            const snapTasks=await getDocs(qTasks);
+            state.tasks=snapTasks.docs.map(d=>{
+                const uid=d.ref.parent?.parent?.id||'unknown';
+                return{...d.data(),_uid:uid};
+            });
+            log('Fetching user profiles...');
+            const qUsers=query(collection(db,'artifacts',appId,'users'));
+            const snapUsers=await getDocs(qUsers);
+            state.usersList=snapUsers.docs.map(d=>({id:d.id,...d.data()}));
+            log(`Found ${state.usersList.length} registered users.`);
+            saveCache();
+            renderAll();
+        }catch(e){
+            log(`ERROR: ${e.message}`);
+            if(e.message.includes('index'))alert('Missing Firestore Index! Check Console.');
+            else if(e.message.includes('permission')||e.code==='permission-denied')alert('Permission Denied. Check Rules.');
+        }
+    }
+};
+
+function renderAll(){
+    processUsers();
+    updateKPIs();
+    updateCharts();
+    updateFeed();
+    if(state.view==='users')renderUsersTable();
+    if(state.view==='tasks')renderTasksTable();
+    updateStorageStats();
+}
+
+window.app=app;
+
+function processUsers(){
+    const map={};
+    state.usersList.forEach(u=>{
+        map[u.id]={
+            uid:u.id,
+            name:u.displayName||u.name||u.email.split('@')[0],
+            email:u.email,
+            avatar:u.photoURL,
+            provider:u.providerId||'Unknown',
+            tasks:0,
+            focus:0,
+            lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0,
+            profileLoaded:true
+        };
+    });
+    state.tasks.forEach(t=>{
+        if(!map[t._uid])map[t._uid]={uid:t._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:t._uid};
+        map[t._uid].tasks++;
+    });
+    state.sessions.forEach(s=>{
+        if(!map[s._uid])map[s._uid]={uid:s._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:s._uid};
+        map[s._uid].focus+=(s.duration||25);
+        const t=s.completedAt ? (s.completedAt.seconds ? s.completedAt.seconds*1000 : s.completedAt) : 0;
+        if(t>map[s._uid].lastActive)map[s._uid].lastActive=t;
+    });
+    state.usersMap=map;
+}
+
+function renderUsersTable(){
+    const tbody=document.getElementById('users-table-body');
+    let users=Object.values(state.usersMap);
+
+    if(state.showStarredOnly) {
+        users = users.filter(u => state.starred.includes(u.uid));
+    }
+
+    if(users.length===0){
+        tbody.innerHTML=`<tr><td colspan="7" class="p-4 text-center text-text-muted">No user data found.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML=users.map(u=>{
+        const last=u.lastActive?new Date(u.lastActive).toLocaleDateString()+' '+new Date(u.lastActive).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Never';
+        const h=Math.floor(u.focus/60);
+        
+        const isStarred = state.starred.includes(u.uid);
+        const starIconClass = isStarred ? "ph-fill ph-star text-yellow-500" : "ph-bold ph-star text-dark-border hover:text-text-muted";
+        
+        let avatarHTML;
+        if(u.avatar){
+             avatarHTML=`<img src="${u.avatar}" class="w-8 h-8 rounded-full bg-gray-700 object-cover">`;
+        }else{
+            const initial=(u.name||u.email||'?').charAt(0).toUpperCase();
+            avatarHTML=`<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">${initial}</div>`;
+        }
+        return `
+        <tr class="border-b border-dark-border hover:bg-dark-hover transition-colors">
+            <td class="p-4 w-8 text-center">
+                <button onclick="app.toggleStar('${u.uid}')" class="transition-transform active:scale-90">
+                    <i class="${starIconClass} text-lg"></i>
+                </button>
+            </td>
+            <td class="p-4">${avatarHTML}</td>
+            <td class="p-4">
+                <div class="text-white font-medium text-sm">${u.name||'No Name'}</div>
+                <div class="text-xs text-text-muted">${u.email||'No Email'}</div>
+            </td>
+            <td class="p-4"><span class="px-2 py-1 rounded bg-dark-bg border border-dark-border text-xs text-text-muted">${u.provider}</span></td>
+            <td class="p-4">
+                <div class="flex flex-col gap-1">
+                    <span class="text-xs text-text-muted"><strong class="text-white">${u.tasks}</strong> tasks</span>
+                    <span class="text-xs text-brand"><strong class="text-brand">${h}h ${u.focus%60}m</strong> focus</span>
+                </div>
+            </td>
+            <td class="p-4 text-text-muted text-xs">${last}</td>
+            <td class="p-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                    <button onclick="app.viewAsUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-brand/10 text-brand border border-brand/20 hover:bg-brand/20 transition-all flex items-center justify-center" title="Simulate User View">
+                        <i class="ph-bold ph-app-window mr-2"></i> View App
+                    </button>
+                    <button onclick="app.filterTasksByUser('${u.uid}')" class="px-3 py-1.5 rounded text-xs font-medium bg-dark-card border border-dark-border text-text-muted hover:text-white hover:border-brand transition-all flex items-center justify-center group">
+                        <i class="ph-bold ph-list-magnifying mr-2 group-hover:text-brand"></i> View Tasks
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+const fmtTime=(m)=>{
+    const h=Math.floor(m/60);
+    const rm=m%60;
+    if(h===0&&rm===0)return'0m';
+    return h>0?`${h}h ${rm}m`:`${rm}m`;
+};
+
+const getDateLabel=(dateStr)=>{
+    if(!dateStr)return'No Due Date';
+    const today=new Date().toISOString().split('T')[0];
+    const tomorrow=new Date(Date.now()+86400000).toISOString().split('T')[0];
+    if(dateStr<today)return'Overdue';
+    if(dateStr===today)return'Today';
+    if(dateStr===tomorrow)return'Tomorrow';
+    return dateStr;
+};
+
+function renderTasksTable(){
+    const tbody=document.getElementById('tasks-table-body');
+    const headerTitle=document.getElementById('tasks-header-title');
+    const headerDesc=document.getElementById('tasks-header-desc');
+    const clearBtn=document.getElementById('clear-filter-btn');
+    let filteredTasks=state.tasks;
+    if(state.filterUser){
+        filteredTasks=state.tasks.filter(t=>t._uid===state.filterUser);
+        const user=state.usersMap[state.filterUser];
+        const uName=user?(user.name||user.email):'User';
+        headerTitle.innerHTML=`Tasks for <span class="text-brand">${uName}</span>`;
+        headerDesc.innerText=`Showing filtered list of ${filteredTasks.length} tasks.`;
+        clearBtn.classList.remove('hidden');
+    }else{
+        headerTitle.innerText="Global Task Master List";
+        headerDesc.innerText="Most recent 500 tasks from all users.";
+        clearBtn.classList.add('hidden');
+    }
+    if(filteredTasks.length===0){tbody.innerHTML=`<tr><td colspan="6" class="p-4 text-center text-text-muted">No tasks found.</td></tr>`;return;}
+    const groups={};
+    const sortOrder=['Overdue','Today','Tomorrow','No Due Date'];
+    filteredTasks.forEach(t=>{
+        const label=getDateLabel(t.dueDate);
+        if(!groups[label])groups[label]=[];
+        groups[label].push(t);
+    });
+    const sortedKeys=Object.keys(groups).sort((a,b)=>{
+        const idxA=sortOrder.indexOf(a);
+        const idxB=sortOrder.indexOf(b);
+        if(idxA!==-1&&idxB!==-1)return idxA-idxB;
+        if(idxA!==-1)return-1;
+        if(idxB!==-1)return 1;
+        if(a==='No Due Date')return 1;
+        if(b==='No Due Date')return-1;
+        return a.localeCompare(b);
+    });
+    let html='';
+    sortedKeys.forEach(label=>{
+        html+=`<tr class="bg-dark-sidebar/50 border-b border-dark-border"><td colspan="6" class="p-2 px-4 text-xs font-bold text-brand uppercase tracking-wider">${label}</td></tr>`;
+        html+=groups[label].map(t=>{
+            const statusClass=t.status==='done'?'text-green-500':'text-text-muted';
+            const icon=t.status==='done'?'<i class="ph-fill ph-check-circle text-green-500 text-lg"></i>':'<i class="ph-regular ph-circle text-text-muted text-lg"></i>';
+            const priBadge={
+                high:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20">HIGH</span>',
+                med:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">MED</span>',
+                low:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">LOW</span>',
+                none:'<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-dark-card border border-dark-border text-text-faint">NONE</span>'
+            }[t.priority||'none'];
+            const dur=t.pomoDuration||25;
+            const estPomos=t.estimatedPomos||1;
+            const donePomos=t.completedPomos||0;
+            const totalDur=estPomos*dur;
+            const doneDur=donePomos*dur;
+            const user=state.usersMap[t._uid];
+            const userName=user?(user.name||user.email):'Unknown';
+            const userTag=!state.filterUser?`<div class="text-[10px] text-text-faint mt-1"><i class="ph-bold ph-user mr-1"></i>${userName}</div>`:'';
+            const repeatBadge=(t.repeat&&t.repeat!=='none')?`<span class="ml-2 text-[10px] text-brand bg-brand/10 px-1 rounded border border-brand/20"><i class="ph-bold ph-arrows-clockwise mr-0.5"></i>${t.repeat}</span>`:'';
+            const noteHtml=t.note?`<div class="text-xs text-text-muted mt-1 italic line-clamp-2">${t.note}</div>`:'';
+            const subtasksHtml=(t.subtasks&&t.subtasks.length>0)?`<div class="mt-2 space-y-0.5">${t.subtasks.map(s=>`<div class="flex items-center text-[10px] text-text-muted"><i class="ph-bold ph-caret-right mr-1 text-text-faint"></i>${s}</div>`).join('')}</div>`:'';
+            const tagsHtml=(t.tags&&t.tags.length>0)?`<div class="flex flex-wrap gap-1 mt-2">${t.tags.map(tag=>`<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/5 text-brand border border-brand/10">${tag}</span>`).join('')}</div>`:'';
+            const reminderHtml=t.reminder?`<div class="text-[10px] text-text-muted mt-1 flex items-center"><i class="ph-bold ph-bell mr-1"></i>${t.reminder}</div>`:'';
+            return `<tr class="task-row border-b border-dark-border hover:bg-dark-hover group"><td class="p-4 w-8 align-top pt-5">${icon}</td><td class="p-4 align-top"><div class="text-white font-medium text-sm flex items-center">${t.title||'Untitled'} ${repeatBadge}</div>${noteHtml}${subtasksHtml}<div class="flex flex-wrap items-center gap-2 mt-2"><span class="bg-dark-bg px-1.5 py-0.5 rounded border border-dark-border text-[10px] text-text-muted">${t.project||'Inbox'}</span>${userTag}${reminderHtml}</div>${tagsHtml}</td><td class="p-4 align-top pt-4">${priBadge}</td><td class="p-4 align-top pt-4"><div class="text-xs text-white font-mono"><span class="text-brand font-bold">${donePomos}</span> / ${estPomos}</div><div class="w-16 h-1 bg-dark-bg rounded-full mt-1 overflow-hidden"><div class="h-full bg-brand" style="width:${Math.min((donePomos/estPomos)*100,100)}%"></div></div></td><td class="p-4 align-top pt-4"><div class="text-xs text-text-muted">${fmtTime(doneDur)} / ${fmtTime(totalDur)}</div></td><td class="p-4 text-right text-text-muted text-xs font-mono align-top pt-4">${t.dueDate||'-'}</td></tr>`;
+        }).join('');
+    });
+    tbody.innerHTML=html;
+}
+
+function updateKPIs(){
+    const totalTime=state.sessions.reduce((a,b)=>a+(b.duration||25),0);
+    const h=Math.floor(totalTime/60);
+    document.getElementById('kpi-users').innerText=Object.keys(state.usersMap).length;
+    document.getElementById('kpi-focus').innerText=`${h}h`;
+    document.getElementById('kpi-tasks').innerText=state.tasks.length;
+    const avg=state.sessions.length?Math.round(totalTime/state.sessions.length):0;
+    document.getElementById('kpi-avg').innerText=`${avg}m`;
+    const done=state.tasks.filter(t=>t.status==='done').length;
+    const rate=state.tasks.length?Math.round((done/state.tasks.length)*100):0;
+    const high=state.tasks.filter(t=>t.priority==='high').length;
+    const priRate=state.tasks.length?Math.round((high/state.tasks.length)*100):0;
+    document.getElementById('health-completion').innerText=`${rate}%`;
+    document.getElementById('bar-completion').style.width=`${rate}%`;
+    document.getElementById('health-priority').innerText=`${priRate}%`;
+    document.getElementById('bar-priority').style.width=`${priRate}%`;
+}
+
+function updateFeed(){
+    const b=document.getElementById('live-feed-body');
+    if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" class="p-4 text-center text-text-muted italic">No recent activity.</td></tr>`;return;}
+    b.innerHTML=state.sessions.slice(0,20).map(s=>{
+        let millis = new Date().getTime();
+        if(s.completedAt){
+             millis = typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000;
+        }
+        const d=new Date(millis);
+        return `<tr class="border-b border-dark-border hover:bg-dark-hover transition-colors"><td class="p-4 text-text-muted">${d.toLocaleDateString()} <span class="text-text-faint">${d.toLocaleTimeString()}</span></td><td class="p-4 text-white font-medium">${s.taskTitle||'Unknown Task'}</td><td class="p-4 text-brand">${s.duration||25}m</td></tr>`
+    }).join('');
+}
+
+function updateCharts(){
+    const days={};
+    state.sessions.forEach(s=>{
+        if(!s.completedAt)return;
+        const millis = typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000;
+        const d=new Date(millis).toLocaleDateString();
+        days[d]=(days[d]||0)+(s.duration||25);
+    });
+    const sortedDays=Object.keys(days).sort((a,b)=>new Date(a)-new Date(b)).slice(-7);
+    if(state.charts.activity)state.charts.activity.destroy();
+    const ctxA=document.getElementById('activityChart').getContext('2d');
+    state.charts.activity=new Chart(ctxA,{
+        type:'line',
+        data:{labels:sortedDays,datasets:[{label:'Global Focus Minutes',data:sortedDays.map(d=>days[d]),borderColor:'#ff5757',backgroundColor:'rgba(255, 87, 87, 0.1)',fill:true,tension:0.4}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#2a2a2a'}},x:{grid:{display:false}}}}
+    });
+    const projs={};
+    state.sessions.forEach(s=>{const p=s.project||'Inbox';projs[p]=(projs[p]||0)+1;});
+    const sortedProj=Object.entries(projs).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(state.charts.proj)state.charts.proj.destroy();
+    const ctxP=document.getElementById('projectDistChart').getContext('2d');
+    state.charts.proj=new Chart(ctxP,{
+        type:'doughnut',
+        data:{labels:sortedProj.map(x=>x[0]),datasets:[{data:sortedProj.map(x=>x[1]),backgroundColor:['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}
+    });
+    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div class="flex justify-between items-center text-sm p-2 rounded hover:bg-dark-hover"><div class="flex items-center"><span class="w-2 h-2 rounded-full mr-3" style="background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span class="text-white">${p[0]}</span></div><span class="text-text-muted font-mono">${p[1]}</span></div>`).join('');
+}
+</script>
+</body>
+</html>
