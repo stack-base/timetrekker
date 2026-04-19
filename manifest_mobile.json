@@ -6,7 +6,7 @@
   "scope": "/",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "description": "TimeTrekker Mobile",
+  "description": "TimeTrekker - Focus timer and task manager app.",
   "icons": [
     {
       "src": "https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png",
@@ -25,14 +25,14 @@
       "short_name": "New Task",
       "description": "Quickly add a new task",
       "url": "./application_mobile?action=new-task",
-      "icons": [{ "src": "https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "./assets/icons/new-task-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     },
     {
       "name": "Start Focus",
       "short_name": "Focus",
       "description": "Open the focus timer",
       "url": "./application_mobile?action=focus",
-      "icons": [{ "src": "https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "./assets/icons/start-timer-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]
 }
