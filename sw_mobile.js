@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'timetrekker-v2-static';
+const CACHE_NAME = 'timetrekker-mobile-v1.1';
 const ASSETS_TO_CACHE = [
     './',
     './application_mobile.html',

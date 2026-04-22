@@ -319,7 +319,7 @@ onAuthStateChanged(auth, u => {
         subTasks(effectiveUid);
         subLogs(effectiveUid);
         subTimer(effectiveUid);
-        subBroadcasts(effectiveUid); 
+        subBroadcasts(effectiveUid); // <--- ADD THIS LINE HERE
 
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 

@@ -935,6 +935,32 @@ const app={
         }
     },
 
+    resendBroadcast: (id) => {
+        const b = state.broadcasts.find(x => x.id === id);
+        if (!b) return;
+        
+        // 1. Populate the modal with the old broadcast's data
+        document.getElementById('admin-broadcast-target').value = b.target || 'all';
+        document.getElementById('admin-broadcast-type').value = b.type || 'info';
+        document.getElementById('admin-broadcast-message').value = b.message || '';
+        document.getElementById('admin-broadcast-btn-text').value = b.btnText || '';
+        document.getElementById('admin-broadcast-btn-url').value = b.btnUrl || '';
+        document.getElementById('admin-broadcast-expiry').value = ''; // Leave blank so they can set a new expiry
+        
+        // 2. Clear the hidden ID so Firestore treats this as a brand NEW broadcast 
+        // (This ensures it bypasses the user's local 'dismissed' cache)
+        document.getElementById('admin-broadcast-id').value = '';
+        
+        // 3. Update the UI text
+        document.getElementById('admin-broadcast-title').innerText = "Resend Broadcast";
+        document.getElementById('admin-save-broadcast-btn').innerText = "Send New Broadcast";
+        
+        // 4. Open the Modal
+        const modal = document.getElementById('admin-broadcast-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.style.opacity = '1', 10);
+    },
+
     handleSaveBroadcast: async (e) => {
         e.preventDefault();
         const target = document.getElementById('admin-broadcast-target').value;
@@ -1202,7 +1228,10 @@ function renderBroadcastsTable(){
                 </div>
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
-                <button onclick="app.deleteBroadcast('${b.id}')" class="btn btn-icon text-xs text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
+                <div class="flex items-center justify-end gap-1">
+                    <button onclick="app.resendBroadcast('${b.id}')" class="btn btn-icon text-xs text-info" title="Duplicate & Resend"><i class="ph-bold ph-paper-plane-right text-sm"></i></button>
+                    <button onclick="app.deleteBroadcast('${b.id}')" class="btn btn-icon text-xs text-danger" title="Delete"><i class="ph-bold ph-trash text-sm"></i></button>
+                </div>
             </td>
         </tr>`;
     }).join('');

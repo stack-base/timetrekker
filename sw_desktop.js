@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'timetrekker-desktop-v1';
+const CACHE_NAME = 'timetrekker-desktop-v1.1';
 const ASSETS_TO_CACHE = [
     './',
     './application.html',
