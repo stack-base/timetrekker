@@ -197,7 +197,7 @@
         <header id="standard-header" class="header">
             <div class="flex items-center">
                 <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
-                <h1 id="page-title">Product Analytics</h1>
+                <h1 id="page-title">Overview</h1>
             </div>
             <button onclick="app.refreshData(true)" class="btn btn-outline text-xs btn-icon" title="Refresh Data">
                 <i class="ph-bold ph-arrows-clockwise"></i> <span style="margin-left: 0.5rem;" class="hidden sm:inline">Refresh</span>
@@ -256,12 +256,12 @@
                 <div class="dashboard-grid grid-cols-3">
                     <div class="card col-span-2">
                         <h3 class="card-title">Global Focus Activity</h3>
-                        <div style="height: 250px; width: 100%;"><canvas id="activityChart"></canvas></div>
+                        <div style="position: relative; height: 250px; width: 100%;"><canvas id="activityChart"></canvas></div>
                     </div>
                     <div class="card">
                         <h3 class="card-title" style="margin-bottom: 0.25rem;">Popular Projects</h3>
                         <p class="text-xs text-muted" style="margin-bottom: 1.5rem;">Top categories users create</p>
-                        <div style="height: 180px; width: 100%; display: flex; justify-content: center; margin-bottom: 1rem;"><canvas id="projectDistChart"></canvas></div>
+                        <div style="position: relative; height: 180px; width: 100%; display: flex; justify-content: center; margin-bottom: 1rem;"><canvas id="projectDistChart"></canvas></div>
                         <div id="top-projects-list" style="flex: 1; overflow-y: auto;"></div>
                     </div>
                 </div>
@@ -812,7 +812,7 @@ const app={
         const navTarget = document.getElementById(`nav-${v}`);
         if(navTarget) navTarget.classList.add('active');
         
-        const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'broadcasts': 'System Broadcasts', 'data': 'Data Management'};
+        const titles = {'overview': 'Overview', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
 
         if(v === 'data'){
@@ -1421,16 +1421,119 @@ function updateFeed(){
 }
 
 function updateCharts(){
-    const days={}; state.sessions.forEach(s=>{ if(!s.completedAt)return; const d=new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000).toLocaleDateString(); days[d]=(days[d]||0)+(s.duration||25); });
-    const sortedDays=Object.keys(days).sort((a,b)=>new Date(a)-new Date(b)).slice(-7);
-    if(state.charts.activity)state.charts.activity.destroy();
-    state.charts.activity=new Chart(document.getElementById('activityChart').getContext('2d'),{ type:'line', data:{labels:sortedDays,datasets:[{label:'Global Focus Minutes',data:sortedDays.map(d=>days[d]),borderColor:'#ff5757',backgroundColor:'rgba(255, 87, 87, 0.1)',fill:true,tension:0.4}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#2a2a2a'}},x:{grid:{display:false}}}} });
+    const days={}; 
+    state.sessions.forEach(s=>{ 
+        if(!s.completedAt) return; 
+        const d=new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000).toLocaleDateString(); 
+        days[d]=(days[d]||0)+(s.duration||25); 
+    });
     
-    const projs={}; state.sessions.forEach(s=>{const p=s.project||'Inbox';projs[p]=(projs[p]||0)+1;});
+    const sortedDays=Object.keys(days).sort((a,b)=>new Date(a)-new Date(b)).slice(-7);
+    
+    if(state.charts.activity) state.charts.activity.destroy();
+    state.charts.activity = new Chart(document.getElementById('activityChart').getContext('2d'), { 
+        type: 'line', 
+        data: {
+            labels: sortedDays,
+            datasets: [{
+                label: 'Focus Minutes',
+                data: sortedDays.map(d=>days[d]),
+                borderColor: '#ff5757',
+                backgroundColor: 'rgba(255, 87, 87, 0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#1e1e1e', // Match card background
+                pointBorderColor: '#ff5757',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6, // Expands on hover
+                fill: true,
+                tension: 0.4
+            }]
+        }, 
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index', // Tooltip appears when hovering the vertical slice
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(20, 20, 20, 0.9)',
+                    titleColor: '#a3a3a3',
+                    bodyColor: '#fff',
+                    borderColor: '#2a2a2a',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false, // Hides the little color square
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' minutes';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#2a2a2a', drawBorder: false },
+                    ticks: { maxTicksLimit: 6, padding: 10 }
+                },
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { padding: 10 }
+                }
+            }
+        } 
+    });
+    
+    const projs={}; 
+    state.sessions.forEach(s=>{
+        const p=s.project||'Inbox';
+        projs[p]=(projs[p]||0)+1;
+    });
     const sortedProj=Object.entries(projs).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    if(state.charts.proj)state.charts.proj.destroy();
-    state.charts.proj=new Chart(document.getElementById('projectDistChart').getContext('2d'),{ type:'doughnut', data:{labels:sortedProj.map(x=>x[0]),datasets:[{data:sortedProj.map(x=>x[1]),backgroundColor:['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'} });
-    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; padding: 0.5rem; border-radius: 4px;"><div style="display: flex; align-items: center;"><span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span style="color: #fff;">${p[0]}</span></div><span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span></div>`).join('');
+    
+    if(state.charts.proj) state.charts.proj.destroy();
+    state.charts.proj = new Chart(document.getElementById('projectDistChart').getContext('2d'), { 
+        type: 'doughnut', 
+        data: {
+            labels: sortedProj.map(x=>x[0]),
+            datasets: [{
+                data: sortedProj.map(x=>x[1]),
+                backgroundColor: ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],
+                borderWidth: 2,
+                borderColor: '#1e1e1e', // Creates gaps between slices
+                hoverOffset: 5 // Slices pop out slightly on hover
+            }]
+        }, 
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(20, 20, 20, 0.9)',
+                    bodyColor: '#fff',
+                    borderColor: '#2a2a2a',
+                    borderWidth: 1,
+                    padding: 10
+                }
+            },
+            cutout: '75%'
+        } 
+    });
+
+    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; padding: 0.5rem; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='transparent'">
+            <div style="display: flex; align-items: center;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span>
+                <span style="color: #fff;">${p[0]}</span>
+            </div>
+            <span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span>
+        </div>
+    `).join('');
 }
 </script>
 </body>
