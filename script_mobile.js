@@ -209,6 +209,22 @@ async function syncUserProfile(u) {
     } catch (e) { console.error(e); }
 }
 
+const subBroadcasts = (uid) => {
+    const dismissed = JSON.parse(localStorage.getItem('dismissed_broadcasts') || '[]');
+    const q = query(collection(db, 'artifacts', APP_ID, 'broadcasts'), orderBy('createdAt', 'desc'), limit(10));
+    
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+                const b = { id: change.doc.id, ...change.doc.data() };
+                if ((b.target === 'all' || b.target === uid) && !dismissed.includes(b.id)) {
+                    app.showBroadcastPopup(b);
+                }
+            }
+        });
+    });
+};
+
 onAuthStateChanged(auth, u => {
     if (u) {
         state.user = u;
@@ -337,6 +353,8 @@ onAuthStateChanged(auth, u => {
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
+        subBroadcasts(effectiveUid);
+
         setInterval(() => {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -417,6 +435,51 @@ const app = {
         }
     },
     
+    showBroadcastPopup: (b) => {
+        if (document.getElementById('broadcast-' + b.id)) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'broadcast-' + b.id;
+        
+        // Mobile-optimized CSS overlay
+        overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);opacity:0;transition:opacity 0.3s ease;";
+        
+        const themes = {
+            info: { bg: '#18181b', border: '#3b82f6', text: '#3b82f6', icon: 'ph-info' },
+            warning: { bg: '#18181b', border: '#f59e0b', text: '#f59e0b', icon: 'ph-warning' },
+            alert: { bg: '#18181b', border: '#ef4444', text: '#ef4444', icon: 'ph-warning-circle' },
+            success: { bg: '#18181b', border: '#10b981', text: '#10b981', icon: 'ph-check-circle' }
+        };
+        const theme = themes[b.type] || themes.info;
+
+        overlay.innerHTML = `
+            <div style="background:${theme.bg};border:1px solid ${theme.border};border-radius:16px;padding:20px;width:100%;max-width:340px;box-shadow:0 20px 40px rgba(0,0,0,0.5);transform:translateY(20px);transition:transform 0.3s ease;position:relative;">
+                <div style="display:flex;align-items:center;margin-bottom:12px;">
+                    <i class="ph-fill ${theme.icon}" style="color:${theme.text};font-size:22px;margin-right:10px;"></i>
+                    <h3 style="margin:0;color:#fff;font-size:16px;font-weight:600;font-family:'Inter',sans-serif;">System Message</h3>
+                </div>
+                <p style="color:#a1a1aa;font-size:13px;line-height:1.5;margin-bottom:20px;font-family:'Inter',sans-serif;">${b.message}</p>
+                <button id="dismiss-${b.id}" style="width:100%;padding:12px;background:${theme.text}15;color:${theme.text};border:1px solid ${theme.text}40;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;font-family:'Inter',sans-serif;transition:all 0.2s;" ontouchstart="this.style.background='${theme.text}30'" ontouchend="this.style.background='${theme.text}15'">Acknowledge</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            overlay.querySelector('div').style.transform = 'translateY(0)';
+        });
+
+        document.getElementById(`dismiss-${b.id}`).onclick = () => {
+            const dismissed = JSON.parse(localStorage.getItem('dismissed_broadcasts') || '[]');
+            dismissed.push(b.id);
+            localStorage.setItem('dismissed_broadcasts', JSON.stringify(dismissed));
+            
+            overlay.style.opacity = '0';
+            overlay.querySelector('div').style.transform = 'translateY(-20px)';
+            setTimeout(() => overlay.remove(), 300);
+        };
+    },
+
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
     
     unlockAudio: () => {
@@ -659,15 +722,15 @@ const app = {
             el.innerHTML = `
                 <div class="check-area pt-1" onclick="event.stopPropagation(); app.toggleStatus('${t.id}', '${t.status}')">
                     <div class="w-6 h-6 rounded-full border-2 ${isDone ? 'bg-brand border-brand' : 'border-text-muted'} flex items-center justify-center transition-colors">
-                        ${isDone ? '<i class="ph-bold ph-check text-white text-xs"></i>' : ''}
+                        ${isDone ? '<i class=\"ph-bold ph-check text-white text-xs\"></i>' : ''}
                     </div>
                 </div>
                 <div class="flex-1 min-w-0">
                     <h3 class="text-white font-medium truncate ${isDone ? 'line-through text-text-muted':''}">${esc(t.title)}</h3>
-                    ${t.note ? `<p class="text-text-muted text-xs truncate mt-0.5">${esc(t.note)}</p>` : ''}
+                    ${t.note ? `<p class=\"text-text-muted text-xs truncate mt-0.5\">${esc(t.note)}</p>` : ''}
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                         <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand font-medium border border-brand/20">${esc(t.project || 'Inbox')}</span>
-                        ${t.priority === 'high' ? '<span class="text-[10px] text-red-500 font-bold">! Urgent</span>' : ''}
+                        ${t.priority === 'high' ? '<span class=\"text-[10px] text-red-500 font-bold\">! Urgent</span>' : ''}
                         <span class="text-[10px] text-text-muted flex items-center"><i class="ph-fill ph-check-circle mr-1"></i>${completedPomos}/${t.estimatedPomos||1}</span>
                     </div>
                 </div>
