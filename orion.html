@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Orion</title>
+<title>Orion Console</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,12 +15,12 @@
         --brand: #ff5757;
         --brand-hover: #e04848;
         --brand-dim: rgba(255, 87, 87, 0.1);
-        --bg-main: #0f0f0f;
-        --bg-sidebar: #141414;
-        --bg-card: #1e1e1e;
-        --border: #2a2a2a;
-        --hover: #333333;
-        --text-main: #e5e7eb;
+        --bg-main: #000000;
+        --bg-sidebar: #000000;
+        --bg-card: #000000;
+        --border: #333333;
+        --hover: #1a1a1a;
+        --text-main: #ffffff;
         --text-muted: #a3a3a3;
         --text-faint: #525252;
         --success: #10b981;
@@ -34,9 +34,11 @@
     body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
     
     /* Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 4px; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; border: 2px solid var(--bg-main); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+    .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--border) var(--bg-main); }
     
     /* Typography & Utilities */
     .text-brand { color: var(--brand); }
@@ -52,9 +54,9 @@
     .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Buttons */
-    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); }
-    .btn:hover { color: var(--text-main); }
-    .btn-primary { background: var(--brand); color: #fff; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1.25rem; border-radius: 4px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); }
+    .btn:hover { color: #fff; }
+    .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     .btn-primary:hover { background: var(--brand-hover); }
     .btn-outline { border-color: var(--border); background: var(--bg-card); }
     .btn-outline:hover { border-color: var(--text-muted); color: #fff; }
@@ -68,21 +70,21 @@
     .scroll-container { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
 
     /* Header */
-    .header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(8px); z-index: 10; flex-shrink: 0; }
-    .header h1 { font-size: 1.25rem; font-weight: 600; color: #fff; }
+    .header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); z-index: 10; flex-shrink: 0; }
+    .header h1 { font-size: 1.25rem; font-weight: 600; color: #fff; letter-spacing: -0.025em; }
     .mobile-menu-btn { display: none; background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; margin-right: 1rem; }
 
     /* Sidebar */
-    .sidebar { width: 256px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; transition: transform 0.3s ease; }
+    .sidebar { width: 256px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; transition: transform 0.3s ease; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
     .sidebar-brand { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--border); }
     .brand-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
     .mobile-close-btn { display: none; background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
     .mobile-close-btn:hover { color: #fff; }
     
-    .sidebar-nav { flex: 1; padding: 1rem; overflow-y: auto; }
+    .sidebar-nav { flex: 1; padding: 0.75rem; overflow-y: auto; }
     .nav-label { font-size: 0.65rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0.75rem 0.5rem; }
-    .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; }
-    .nav-item i { font-size: 1.125rem; margin-right: 0.75rem; }
+    .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; font-weight: 500; }
+    .nav-item i { font-size: 1.25rem; margin-right: 0.75rem; }
     .nav-item:hover { background: var(--hover); color: #fff; }
     .nav-item.active { background: var(--brand-dim); color: var(--brand); border-color: rgba(255, 87, 87, 0.2); }
     .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
@@ -95,34 +97,56 @@
     .col-span-2 { grid-column: span 2; }
 
     /* Cards */
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-    .card-title { font-size: 1.125rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
-    .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5); }
-    .card-header h3 { font-size: 1.125rem; font-weight: 700; color: #fff; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+    .card-title { font-size: 1.125rem; font-weight: 600; color: #fff; margin-bottom: 1rem; }
+    .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(10, 10, 10, 0.5); }
+    .card-header h3 { font-size: 1.125rem; font-weight: 600; color: #fff; }
     .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
     .card-body.no-pad { padding: 0; }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
     .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
-    .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
+    .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.05; }
 
-    /* Tables */
+    /* Tables & Sortable */
     .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { padding: 1rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    .data-table th { padding: 1rem; font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    .table-sortable th { cursor: pointer; user-select: none; transition: color 0.2s, background 0.2s; }
+    .table-sortable th:hover { color: #fff; background: rgba(255,255,255,0.02); }
+    .table-sortable th .sort-icon { display: inline-block; margin-left: 4px; opacity: 0; transition: opacity 0.2s, transform 0.2s; }
+    .table-sortable th.active-sort { color: var(--brand); }
+    .table-sortable th.active-sort .sort-icon { opacity: 1; }
+    .table-sortable th.active-sort.desc .sort-icon { transform: rotate(180deg); }
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+    .data-table tr:last-child td { border-bottom: none; }
     .data-table tr:hover { background: var(--hover); }
 
     /* Login Modal & Lockdown */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
-    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); transition: opacity 0.3s; }
+    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal-overlay.open { opacity: 1; }
+    .modal-overlay.open .modal-box { transform: scale(1); }
+
     .input-group { margin-bottom: 1rem; }
-    .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; }
+    .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em; }
+    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-size: 0.875rem; height: 40px; }
     .input-control:focus { border-color: var(--brand); }
+
+    /* App-like Modal Specifics */
+    .app-modal { max-width: 500px; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; }
+    .app-modal-header { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .app-modal-body { padding: 0 1.5rem 1.5rem; overflow-y: auto; }
+    .app-modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-card); display: flex; justify-content: flex-end; gap: 0.75rem; }
 
     /* Animations */
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @keyframes slideUpFade {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .stagger-item { opacity: 0; animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
     /* Responsive Adjustments */
     @media (max-width: 1024px) {
@@ -132,25 +156,11 @@
     }
 
     @media (max-width: 768px) {
-        /* Full Screen Mobile Modal Sidebar */
         .sidebar { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            transform: translateY(20px); 
-            opacity: 0;
-            pointer-events: none;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
-            z-index: 999; 
-            border-right: none;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; transform: translateY(20px); opacity: 0;
+            pointer-events: none; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; z-index: 999; border-right: none;
         }
-        .sidebar.open { 
-            transform: translateY(0); 
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .sidebar.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .mobile-close-btn { display: block; }
         .nav-item { padding: 1rem; font-size: 1.125rem; margin-bottom: 0.5rem; }
         .nav-item i { font-size: 1.5rem; margin-right: 1rem; }
@@ -168,6 +178,9 @@
         
         #data-header { flex-direction: column; height: auto; padding: 1rem; gap: 1rem; align-items: flex-start; }
         #data-header .flex { width: 100%; justify-content: space-between; }
+        
+        .app-modal { border-radius: 1rem 1rem 0 0; margin-top: auto; max-height: 85vh; }
+        .modal-overlay { align-items: flex-end; padding: 0; }
     }
 </style>
 </head>
@@ -201,7 +214,7 @@
         </nav>
         <div class="sidebar-footer">
             <div class="flex items-center" style="margin-bottom: 1.5rem; gap: 0.75rem;">
-                 <div style="width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
+                 <div style="width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
                  <div style="min-width: 0;">
                     <div class="truncate text-base font-bold" style="color: #fff;">Orion Console</div>
                     <div class="text-sm text-muted">Connected</div>
@@ -248,25 +261,25 @@
             
             <div id="view-overview" class="view-section fade-in">
                 <div class="dashboard-grid grid-cols-4">
-                    <div class="card">
+                    <div class="card stagger-item" style="animation-delay: 0.05s;">
                         <div class="stat-icon" style="color: var(--brand);"><i class="ph-fill ph-users"></i></div>
                         <div class="stat-label">Total Users</div>
                         <div class="stat-value" id="kpi-users">--</div>
                         <div class="text-xs" style="color: var(--success); display: flex; align-items: center;"><i class="ph-bold ph-trend-up" style="margin-right: 4px;"></i> Lifetime signups</div>
                     </div>
-                    <div class="card">
+                    <div class="card stagger-item" style="animation-delay: 0.1s;">
                         <div class="stat-icon" style="color: var(--info);"><i class="ph-fill ph-clock"></i></div>
                         <div class="stat-label">Total Focus Time</div>
                         <div class="stat-value" id="kpi-focus">--</div>
                         <div class="text-xs text-faint">Aggregated hours</div>
                     </div>
-                    <div class="card">
+                    <div class="card stagger-item" style="animation-delay: 0.15s;">
                         <div class="stat-icon" style="color: var(--success);"><i class="ph-fill ph-check-circle"></i></div>
                         <div class="stat-label">Tasks Created</div>
                         <div class="stat-value" id="kpi-tasks">--</div>
                         <div class="text-xs text-faint">Across all projects</div>
                     </div>
-                    <div class="card">
+                    <div class="card stagger-item" style="animation-delay: 0.2s;">
                         <div class="stat-icon" style="color: var(--warning);"><i class="ph-fill ph-lightning"></i></div>
                         <div class="stat-label">Avg Session</div>
                         <div class="stat-value" id="kpi-avg">--</div>
@@ -275,20 +288,20 @@
                 </div>
                 
                 <div class="dashboard-grid grid-cols-3">
-                    <div class="card col-span-2">
+                    <div class="card col-span-2 stagger-item" style="animation-delay: 0.25s;">
                         <h3 class="card-title">Global Focus Activity</h3>
                         <div style="height: 250px; width: 100%;"><canvas id="activityChart"></canvas></div>
                     </div>
-                    <div class="card">
+                    <div class="card stagger-item" style="animation-delay: 0.3s;">
                         <h3 class="card-title" style="margin-bottom: 0.25rem;">Popular Projects</h3>
                         <p class="text-xs text-muted" style="margin-bottom: 1.5rem;">Top categories users create</p>
                         <div style="height: 180px; width: 100%; display: flex; justify-content: center; margin-bottom: 1rem;"><canvas id="projectDistChart"></canvas></div>
-                        <div id="top-projects-list" style="flex: 1; overflow-y: auto;"></div>
+                        <div id="top-projects-list" style="flex: 1; overflow-y: auto;" class="custom-scrollbar"></div>
                     </div>
                 </div>
                 
                 <div class="dashboard-grid grid-cols-2">
-                    <div class="card" style="padding: 0; height: 400px;">
+                    <div class="card stagger-item" style="padding: 0; height: 400px; animation-delay: 0.35s;">
                         <div class="card-header">
                             <h3>Recent Sessions</h3>
                             <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">Live Feed</span>
@@ -305,9 +318,9 @@
                         </div>
                     </div>
                     
-                    <div class="card" style="padding: 0; height: 400px;">
+                    <div class="card stagger-item" style="padding: 0; height: 400px; animation-delay: 0.4s;">
                         <div class="card-header"><h3>System Health</h3></div>
-                        <div class="card-body">
+                        <div class="card-body custom-scrollbar">
                             <div style="margin-bottom: 1.5rem;">
                                 <div class="flex justify-between text-sm" style="margin-bottom: 0.5rem;"><span class="text-muted">Task Completion Rate</span><span style="font-weight: 700; color: #fff;" id="health-completion">0%</span></div>
                                 <div style="width: 100%; background: var(--bg-main); border-radius: 999px; height: 8px; overflow: hidden;"><div id="bar-completion" style="background: var(--success); height: 100%; border-radius: 999px; transition: width 0.5s; width: 0%;"></div></div>
@@ -318,7 +331,7 @@
                             </div>
                             <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); margin-top: 1.5rem;">
                                 <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Console Logs</div>
-                                <div id="console-log" style="font-size: 10px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
+                                <div id="console-log" class="custom-scrollbar" style="font-size: 10px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
                                     > Initializing Orion Console...<br>
                                 </div>
                             </div>
@@ -338,21 +351,9 @@
                             <i class="ph-bold ph-star" style="margin-right: 0.5rem;"></i> Show Starred Only
                         </button>
                     </div>
-                    <div class="table-wrapper custom-scrollbar">
-                        <table class="data-table">
-                             <thead>
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th style="width: 48px;"></th> 
-                                    <th>User Profile</th>
-                                    <th>Login/Provider</th>
-                                    <th>Engagement</th>
-                                    <th>Last Active</th>
-                                    <th style="text-align: right;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body"></tbody>
-                        </table>
+                    <div class="table-wrapper custom-scrollbar" style="max-height: 70vh;">
+                        <table class="data-table table-sortable" id="users-table-header">
+                             </table>
                     </div>
                 </div>
             </div>
@@ -365,9 +366,14 @@
                                 <h3 id="tasks-header-title">Global Task Master List</h3>
                                 <p class="text-xs text-muted" id="tasks-header-desc" style="margin-top: 4px;">Most recent 500 tasks from all users.</p>
                             </div>
-                            <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden btn text-xs" style="background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">
-                                <i class="ph-bold ph-x-circle" style="margin-right: 4px;"></i> Show All
-                            </button>
+                            <div class="flex gap-2">
+                                <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden btn text-xs" style="background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">
+                                    <i class="ph-bold ph-x-circle" style="margin-right: 4px;"></i> Show All
+                                </button>
+                                <button onclick="app.showAdminTaskModal()" class="btn btn-primary text-xs">
+                                    <i class="ph-bold ph-plus" style="margin-right: 4px;"></i> Create Task
+                                </button>
+                            </div>
                         </div>
                         <div style="position: relative; margin-top: 0.5rem; width: 100%; max-width: 250px;">
                             <i class="ph-bold ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
@@ -375,19 +381,8 @@
                         </div>
                     </div>
                     <div class="table-wrapper custom-scrollbar" style="height: calc(100% - 80px);">
-                        <table class="data-table">
-                             <thead>
-                                <tr>
-                                    <th style="width: 48px;"></th>
-                                    <th>Task Details</th>
-                                    <th>Priority</th>
-                                    <th>Pomos</th>
-                                    <th>Duration</th>
-                                    <th style="text-align: right;">Due Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tasks-table-body"></tbody>
-                        </table>
+                        <table class="data-table table-sortable" id="tasks-table-header">
+                             </table>
                     </div>
                 </div>
             </div>
@@ -395,8 +390,8 @@
             <div id="view-data" class="view-section hidden fade-in">
                 <div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem;">
                     
-                    <div class="flex items-center" style="gap: 1.5rem;">
-                        <div style="width: 56px; height: 56px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
+                    <div class="flex items-center stagger-item" style="gap: 1.5rem; animation-delay: 0.05s;">
+                        <div style="width: 56px; height: 56px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
                              <i class="ph-bold ph-database" style="color: var(--brand); font-size: 1.5rem;"></i>
                         </div>
                         <div>
@@ -406,7 +401,7 @@
                     </div>
 
                     <div class="dashboard-grid grid-cols-2">
-                        <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
+                        <div class="card stagger-item" style="border-color: var(--border); transition: border-color 0.2s; animation-delay: 0.1s;">
                             <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 10px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">STORAGE</span>
                             <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
                                 <i class="ph-bold ph-export" style="font-size: 1.5rem;"></i>
@@ -420,7 +415,7 @@
                             </button>
                         </div>
 
-                         <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
+                         <div class="card stagger-item" style="border-color: var(--border); transition: border-color 0.2s; animation-delay: 0.15s;">
                             <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 10px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">RESTORE</span>
                             <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
                                 <i class="ph-bold ph-upload-simple" style="font-size: 1.5rem;"></i>
@@ -436,7 +431,7 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="stagger-item" style="animation-delay: 0.2s;">
                         <h3 style="font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 1rem;">Local Cache Status</h3>
                         <div class="dashboard-grid grid-cols-3">
                              <div class="card" style="padding: 1.25rem;">
@@ -453,7 +448,7 @@
                              </div>
                         </div>
                     </div>
-                     <div style="display: flex; justify-content: flex-end;">
+                     <div style="display: flex; justify-content: flex-end;" class="stagger-item" style="animation-delay: 0.25s;">
                         <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.75rem; font-weight: 700; color: var(--danger); text-transform: uppercase; cursor: pointer; opacity: 0.7;">
                             Clear Local Cache & Reset
                         </button>
@@ -466,10 +461,81 @@
     </main>
 </div>
 
+<div id="admin-action-modal" class="modal-overlay hidden">
+    <div class="modal-box app-modal">
+        <form id="admin-task-form" style="display: flex; flex-direction: column; max-height: 100%;">
+            
+            <div class="app-modal-header">
+                <h2 style="font-size: 1.125rem; font-weight: 700; color: #fff; margin: 0;">New Admin Task</h2>
+                <button type="button" onclick="app.closeAdminTaskModal()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.25rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'"><i class="ph-bold ph-x"></i></button>
+            </div>
+            
+            <div class="app-modal-body custom-scrollbar">
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Target Profile</label>
+                    <select id="admin-task-user" class="input-control" style="font-weight: 500; cursor: pointer;">
+                        <option value="ALL_USERS">-- Broadcast to ALL Users --</option>
+                        </select>
+                </div>
+
+                <input type="text" id="admin-task-title" placeholder="What needs to be done?" style="width: 100%; background: transparent; border: none; outline: none; font-size: 1.25rem; font-weight: 500; color: #fff; margin-bottom: 1rem;" required autocomplete="off">
+                <textarea id="admin-task-note" placeholder="Description or instructions..." style="width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem; color: #fff; outline: none; resize: none; height: 96px; margin-bottom: 1.5rem; font-family: inherit; font-size: 0.875rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Est. Pomodoros</label>
+                        <div style="display: flex; align-items: center; height: 40px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px;">
+                            <button type="button" onclick="app.adjustAdminEst(-1)" style="width: 32px; height: 100%; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.background='var(--hover)'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-muted)'"><i class="ph-bold ph-minus"></i></button>
+                            <span id="admin-est-display" style="flex: 1; text-align: center; font-family: monospace; font-weight: 700; color: #fff;">1</span>
+                            <button type="button" onclick="app.adjustAdminEst(1)" style="width: 32px; height: 100%; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.background='var(--hover)'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-muted)'"><i class="ph-bold ph-plus"></i></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Duration per Pomo</label>
+                        <div style="display: flex; align-items: center; height: 40px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px;">
+                            <button type="button" onclick="app.adjustAdminPomoDuration(-5)" style="width: 32px; height: 100%; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.background='var(--hover)'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-muted)'"><i class="ph-bold ph-minus"></i></button>
+                            <span id="admin-pomo-display" style="flex: 1; text-align: center; font-family: monospace; font-weight: 700; color: #fff; font-size: 0.875rem;">25</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); margin-right: 8px;">m</span>
+                            <button type="button" onclick="app.adjustAdminPomoDuration(5)" style="width: 32px; height: 100%; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.background='var(--hover)'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-muted)'"><i class="ph-bold ph-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: var(--brand-dim); border: 1px solid rgba(255,87,87,0.1); border-radius: 4px; margin-bottom: 1.5rem;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em;">Total Estimate</span>
+                    <span id="admin-total-calc" style="font-size: 0.875rem; font-weight: 700; color: #fff;">25m</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Due Date</label>
+                        <input type="date" id="admin-task-date" class="input-control" style="cursor: pointer;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Priority</label>
+                        <select id="admin-task-priority" class="input-control" style="cursor: pointer;">
+                            <option value="none">None</option>
+                            <option value="high" style="color: var(--danger);">High Priority (! Urgent)</option>
+                            <option value="med" style="color: var(--warning);">Medium Priority</option>
+                            <option value="low" style="color: var(--info);">Low Priority</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="app-modal-footer">
+                <button type="button" onclick="app.closeAdminTaskModal()" class="btn">Cancel</button>
+                <button type="submit" id="admin-save-btn" class="btn btn-primary" style="font-weight: 600;">Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import{getFirestore,collection,collectionGroup,getDocs,query,orderBy,limit}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import{getFirestore,collection,collectionGroup,getDocs,query,orderBy,limit,deleteDoc,doc,addDoc,serverTimestamp}from'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
@@ -492,7 +558,12 @@ const log=(msg)=>{
 const state={
     sessions:[], tasks:[], usersList:[], charts:{}, view:'overview', usersMap:{}, filterUser:null,
     starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
-    showStarredOnly: false, lastSyncTime: null
+    showStarredOnly: false, lastSyncTime: null,
+    sort: {
+        users: { col: 'lastActive', asc: false },
+        tasks: { col: 'status', asc: true }
+    },
+    adminTask: { est: 1, duration: 25 }
 };
 
 const saveCache = () => {
@@ -551,7 +622,7 @@ const showLoginModal=()=>{
     if(document.getElementById('dev-login-modal'))return;
     const div=document.createElement('div');
     div.id='dev-login-modal';
-    div.className='modal-overlay';
+    div.className='modal-overlay open';
     div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.75rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Dashboard</button></form></div>`;
     document.body.appendChild(div);
     document.getElementById('dev-login-form').onsubmit=async(e)=>{
@@ -573,7 +644,7 @@ const showLoginModal=()=>{
 function showUnauthorizedScreen() {
     document.body.innerHTML = `
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; background-color: var(--bg-main); color: var(--text-main);">
-            <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 8px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="font-size: 48px; color: var(--danger); margin-bottom: 16px;"><i class="ph-bold ph-shield-warning"></i></div>
                 <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff;">Clearance Required</h2>
                 <p style="margin: 0 0 24px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">This console is restricted to authorized administrators. Your account lacks access.</p>
@@ -619,7 +690,7 @@ const app={
         document.getElementById(`nav-${v}`).classList.add('active');
         
         const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'data': 'Data Management'};
-        document.getElementById('page-title').innerText = titles[v] || 'Orion';
+        document.getElementById('page-title').innerText = titles[v] || 'Orion Console';
 
         if(v === 'data'){
             document.getElementById('standard-header').classList.add('hidden');
@@ -637,14 +708,85 @@ const app={
         if(v==='users')renderUsersTable();
         if(v==='tasks')renderTasksTable();
     },
+    
+    sortTable: (view, col) => {
+        const currentSort = state.sort[view];
+        if (currentSort.col === col) {
+            currentSort.asc = !currentSort.asc;
+        } else {
+            currentSort.col = col;
+            currentSort.asc = true;
+        }
+        if (view === 'users') renderUsersTable();
+        if (view === 'tasks') renderTasksTable();
+    },
+
     filterTasksByUser:(uid)=>{ state.filterUser=uid; state.keepFilter=true; app.setView('tasks'); },
     viewAsUser:(uid)=>{ window.open(`application?uid=${uid}`,'_blank'); },
     clearTaskFilter:()=>{ state.filterUser=null; renderTasksTable(); },
     filterTasks:(q)=>{
-        const trs=document.getElementById('tasks-table-body').querySelectorAll('tr');
+        const trs=document.getElementById('tasks-table-header').querySelectorAll('tr.task-row');
         q=q.toLowerCase();
-        trs.forEach(tr=>{ if(tr.classList.contains('task-row')) { tr.style.display=tr.innerText.toLowerCase().includes(q)?'':'none'; } });
+        trs.forEach(tr=>{ tr.style.display=tr.innerText.toLowerCase().includes(q)?'':'none'; });
     },
+    
+    // Moderation Action: Delete Task
+    deleteAdminTask: async (taskId, uid) => {
+        if (!confirm('WARNING: Permanently delete this task from the user database?')) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', uid, 'tasks', taskId));
+            state.tasks = state.tasks.filter(t => t.id !== taskId);
+            renderTasksTable();
+            log(`<span style="color: var(--success);">Task ${taskId} deleted successfully.</span>`);
+        } catch (e) {
+            alert("Error deleting task: " + e.message);
+        }
+    },
+    
+    // Moderation Action: Assign Task (Modal UI)
+    adjustAdminEst: d => {
+        let v = state.adminTask.est + d; if (v < 1) v = 1; if (v > 50) v = 50; 
+        state.adminTask.est = v; 
+        document.getElementById('admin-est-display').innerText = v; 
+        app.updateAdminTotalEst();
+    },
+    adjustAdminPomoDuration: d => {
+        let v = state.adminTask.duration + d; if (v < 5) v = 5; if (v > 60) v = 60; 
+        state.adminTask.duration = v; 
+        document.getElementById('admin-pomo-display').innerText = v; 
+        app.updateAdminTotalEst();
+    },
+    updateAdminTotalEst: () => {
+        const t = state.adminTask.est * state.adminTask.duration;
+        const h = Math.floor(t / 60), m = t % 60; 
+        document.getElementById('admin-total-calc').innerText = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    },
+    showAdminTaskModal: () => {
+        const modal = document.getElementById('admin-action-modal');
+        const sel = document.getElementById('admin-task-user');
+        
+        sel.innerHTML = `<option value="ALL_USERS">-- Broadcast to ALL Users --</option>` + 
+                        Object.values(state.usersMap).map(u => `<option value="${u.uid}">${u.name || u.email} (${u.uid})</option>`).join('');
+        if (state.filterUser) sel.value = state.filterUser;
+
+        state.adminTask = { est: 1, duration: 25 };
+        document.getElementById('admin-est-display').innerText = '1';
+        document.getElementById('admin-pomo-display').innerText = '25';
+        app.updateAdminTotalEst();
+        document.getElementById('admin-task-date').value = new Date().toISOString().split('T')[0];
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.add('open'), 10);
+    },
+    closeAdminTaskModal: () => {
+        const modal = document.getElementById('admin-action-modal');
+        modal.classList.remove('open');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.getElementById('admin-task-form').reset();
+        }, 300);
+    },
+
     toggleStar: (uid) => {
         if (state.starred.includes(uid)) state.starred = state.starred.filter(id => id !== uid);
         else state.starred.push(uid);
@@ -702,7 +844,7 @@ const app={
             
             const qTasks=query(collectionGroup(db,'tasks'),limit(500));
             const snapTasks=await getDocs(qTasks);
-            state.tasks=snapTasks.docs.map(d=>{ const uid=d.ref.parent?.parent?.id||'unknown'; return{...d.data(),_uid:uid}; });
+            state.tasks=snapTasks.docs.map(d=>{ const uid=d.ref.parent?.parent?.id||'unknown'; return{id:d.id, ...d.data(),_uid:uid}; });
             
             const qUsers=query(collection(db,'artifacts',appId,'users'));
             const snapUsers=await getDocs(qUsers);
@@ -712,6 +854,49 @@ const app={
         }catch(e){ log(`ERROR: ${e.message}`); }
     }
 };
+
+// Handle Form Submission for adding Tasks
+document.getElementById('admin-task-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('admin-save-btn');
+    btn.innerText = 'Deploying...'; btn.disabled = true;
+    
+    const targetUid = document.getElementById('admin-task-user').value;
+    const title = document.getElementById('admin-task-title').value;
+    const priority = document.getElementById('admin-task-priority').value;
+    const note = document.getElementById('admin-task-note').value;
+    const dueDate = document.getElementById('admin-task-date').value;
+    
+    const payload = {
+        title, priority, 
+        estimatedPomos: state.adminTask.est, 
+        pomoDuration: state.adminTask.duration, 
+        project: 'Admin Directive', 
+        status: 'todo', 
+        note: note,
+        dueDate: dueDate,
+        createdAt: new Date().toISOString()
+    };
+
+    try {
+        if (targetUid === 'ALL_USERS') {
+            const uids = Object.keys(state.usersMap);
+            for (const uid of uids) {
+                await addDoc(collection(db, 'artifacts', appId, 'users', uid, 'tasks'), payload);
+            }
+            log(`<span style="color: var(--success);">Broadcasted task to ${uids.length} users.</span>`);
+        } else {
+            await addDoc(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'), payload);
+            log(`<span style="color: var(--success);">Assigned task to user ${targetUid}.</span>`);
+        }
+        app.closeAdminTaskModal();
+        app.refreshData(true);
+    } catch (err) {
+        alert("Failed to deploy task: " + err.message);
+    } finally {
+        btn.innerText = 'Save Task'; btn.disabled = false;
+    }
+});
 
 function renderAll(){
     processUsers(); updateKPIs(); updateCharts(); updateFeed();
@@ -735,14 +920,49 @@ function processUsers(){
     state.usersMap=map;
 }
 
+const getSortIcon = (view, col) => {
+    const s = state.sort[view];
+    const c = s.asc ? 'down' : 'up'; 
+    return `<i class="ph-bold ph-caret-${c} sort-icon"></i>`;
+};
+
 function renderUsersTable(){
-    const tbody=document.getElementById('users-table-body');
+    const table=document.getElementById('users-table-header');
     let users=Object.values(state.usersMap);
     if(state.showStarredOnly) users = users.filter(u => state.starred.includes(u.uid));
 
-    if(users.length===0){ tbody.innerHTML=`<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1rem;">No user data found.</td></tr>`; return; }
+    const sort = state.sort.users;
+    users.sort((a, b) => {
+        let valA = a[sort.col];
+        let valB = b[sort.col];
+        if (sort.col === 'name') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
+        if (valA < valB) return sort.asc ? -1 : 1;
+        if (valA > valB) return sort.asc ? 1 : -1;
+        return 0;
+    });
 
-    tbody.innerHTML=users.map(u=>{
+    let html = `
+        <thead>
+            <tr>
+                <th style="width: 40px;"></th>
+                <th style="width: 48px;"></th> 
+                <th onclick="app.sortTable('users', 'name')" class="${sort.col === 'name' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">User Profile ${getSortIcon('users', 'name')}</th>
+                <th onclick="app.sortTable('users', 'provider')" class="${sort.col === 'provider' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Login/Provider ${getSortIcon('users', 'provider')}</th>
+                <th onclick="app.sortTable('users', 'focus')" class="${sort.col === 'focus' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Engagement ${getSortIcon('users', 'focus')}</th>
+                <th onclick="app.sortTable('users', 'lastActive')" class="${sort.col === 'lastActive' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Last Active ${getSortIcon('users', 'lastActive')}</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="users-table-body">
+    `;
+
+    if(users.length===0){ 
+        html += `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1rem;">No user data found.</td></tr></tbody>`; 
+        table.innerHTML = html;
+        return; 
+    }
+
+    html += users.map((u, idx) => {
         const last=u.lastActive?new Date(u.lastActive).toLocaleDateString()+' '+new Date(u.lastActive).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Never';
         const h=Math.floor(u.focus/60);
         const isStarred = state.starred.includes(u.uid);
@@ -752,14 +972,14 @@ function renderUsersTable(){
         let avatarHTML=u.avatar?`<img src="${u.avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`:`<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff;">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>`;
         
         return `
-        <tr>
+        <tr class="stagger-item" style="animation-delay: ${Math.min(idx * 0.03, 0.5)}s">
             <td style="text-align: center;"><button onclick="app.toggleStar('${u.uid}')" style="background:none; border:none; cursor:pointer;"><i class="${starIconClass}" style="font-size: 1.125rem; ${starColor}"></i></button></td>
             <td>${avatarHTML}</td>
             <td>
                 <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${u.name||'No Name'}</div>
                 <div style="font-size: 0.75rem; color: var(--text-muted);">${u.email||'No Email'}</div>
             </td>
-            <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted);">${u.provider}</span></td>
+            <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">${u.provider}</span></td>
             <td>
                 <div class="flex flex-col gap-1">
                     <span style="font-size: 0.75rem; color: var(--text-muted);"><strong style="color: #fff;">${u.tasks}</strong> tasks</span><br>
@@ -775,18 +995,14 @@ function renderUsersTable(){
             </td>
         </tr>`;
     }).join('');
+    html += `</tbody>`;
+    table.innerHTML = html;
 }
 
 const fmtTime=(m)=>{ const h=Math.floor(m/60); const rm=m%60; if(h===0&&rm===0)return'0m'; return h>0?`${h}h ${rm}m`:`${rm}m`; };
-const getDateLabel=(dateStr)=>{
-    if(!dateStr)return'No Due Date';
-    const today=new Date().toISOString().split('T')[0];
-    const tomorrow=new Date(Date.now()+86400000).toISOString().split('T')[0];
-    if(dateStr<today)return'Overdue'; if(dateStr===today)return'Today'; if(dateStr===tomorrow)return'Tomorrow'; return dateStr;
-};
 
 function renderTasksTable(){
-    const tbody=document.getElementById('tasks-table-body');
+    const table=document.getElementById('tasks-table-header');
     let filteredTasks=state.tasks;
     if(state.filterUser){
         filteredTasks=state.tasks.filter(t=>t._uid===state.filterUser);
@@ -797,36 +1013,90 @@ function renderTasksTable(){
         document.getElementById('tasks-header-title').innerText="Global Task Master List";
         document.getElementById('clear-filter-btn').classList.add('hidden');
     }
-    if(filteredTasks.length===0){tbody.innerHTML=`<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1rem;">No tasks found.</td></tr>`;return;}
-    
-    const groups={}; const sortOrder=['Overdue','Today','Tomorrow','No Due Date'];
-    filteredTasks.forEach(t=>{ const l=getDateLabel(t.dueDate); if(!groups[l])groups[l]=[]; groups[l].push(t); });
-    const sortedKeys=Object.keys(groups).sort((a,b)=>{
-        const idxA=sortOrder.indexOf(a), idxB=sortOrder.indexOf(b);
-        if(idxA!==-1&&idxB!==-1)return idxA-idxB; if(idxA!==-1)return-1; if(idxB!==-1)return 1;
-        if(a==='No Due Date')return 1; if(b==='No Due Date')return-1; return a.localeCompare(b);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const getStatValue = (x) => x.status === 'done' ? 2 : (x.dueDate && x.dueDate < todayStr ? 0 : 1);
+
+    const sort = state.sort.tasks;
+    filteredTasks.sort((a, b) => {
+        let valA = a[sort.col];
+        let valB = b[sort.col];
+        
+        if (sort.col === 'title') { valA = (valA||'').toLowerCase(); valB = (valB||'').toLowerCase(); }
+        if (sort.col === 'dueDate') { valA = valA || '9999-12-31'; valB = valB || '9999-12-31'; }
+        if (sort.col === 'priority') {
+            const w = { high: 3, med: 2, low: 1, none: 0 };
+            valA = w[valA || 'none']; valB = w[valB || 'none'];
+        }
+        if (sort.col === 'pomos') { valA = a.completedPomos || 0; valB = b.completedPomos || 0; }
+        if (sort.col === 'duration') { valA = (a.completedPomos||0) * (a.pomoDuration||25); valB = (b.completedPomos||0) * (b.pomoDuration||25); }
+        if (sort.col === 'status') { valA = getStatValue(a); valB = getStatValue(b); }
+
+        if (valA < valB) return sort.asc ? -1 : 1;
+        if (valA > valB) return sort.asc ? 1 : -1;
+        return 0;
     });
+
+    let html = `
+        <thead>
+            <tr>
+                <th style="width: 48px;"></th>
+                <th onclick="app.sortTable('tasks', 'title')" class="${sort.col === 'title' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Task Details ${getSortIcon('tasks', 'title')}</th>
+                <th onclick="app.sortTable('tasks', 'status')" class="${sort.col === 'status' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Status ${getSortIcon('tasks', 'status')}</th>
+                <th onclick="app.sortTable('tasks', 'priority')" class="${sort.col === 'priority' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Priority ${getSortIcon('tasks', 'priority')}</th>
+                <th onclick="app.sortTable('tasks', 'pomos')" class="${sort.col === 'pomos' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Pomos ${getSortIcon('tasks', 'pomos')}</th>
+                <th onclick="app.sortTable('tasks', 'duration')" class="${sort.col === 'duration' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Duration ${getSortIcon('tasks', 'duration')}</th>
+                <th onclick="app.sortTable('tasks', 'dueDate')" style="text-align: right;" class="${sort.col === 'dueDate' ? 'active-sort ' + (sort.asc ? 'asc' : 'desc') : ''}">Due Date ${getSortIcon('tasks', 'dueDate')}</th>
+                <th style="width: 60px;"></th>
+            </tr>
+        </thead>
+        <tbody id="tasks-table-body">
+    `;
+
+    if(filteredTasks.length===0){
+        html += `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1rem;">No tasks found.</td></tr></tbody>`;
+        table.innerHTML = html;
+        return;
+    }
     
-    let html='';
-    sortedKeys.forEach(label=>{
-        html+=`<tr style="background: rgba(20,20,20,0.5);"><td colspan="6" style="padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);">${label}</td></tr>`;
-        html+=groups[label].map(t=>{
-            const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
-            const priBadge={
-                high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
-                med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
-                low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
-                none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
-            }[t.priority||'none'];
-            const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedPomos||0;
-            const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
-            const userTag=!state.filterUser?`<div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
-            const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
-            
-            return `<tr class="task-row"><td style="vertical-align: top; padding-top: 1.25rem;">${icon}</td><td style="vertical-align: top;"><div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${t.title||'Untitled'}</div>${subHtml}<div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;"><span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 10px; color: var(--text-muted);">${t.project||'Inbox'}</span>${userTag}</div></td><td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td><td style="vertical-align: top; padding-top: 1.25rem;"><div style="font-size: 0.75rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div><div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div></td><td style="vertical-align: top; padding-top: 1.25rem;"><div style="font-size: 0.75rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div></td><td style="vertical-align: top; padding-top: 1.25rem; text-align: right; color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${t.dueDate||'-'}</td></tr>`;
-        }).join('');
-    });
-    tbody.innerHTML=html;
+    html += filteredTasks.map((t, idx)=>{
+        const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
+        
+        let stateBadge = '';
+        if (t.status === 'done') {
+            stateBadge = '<span style="color: var(--success); font-size: 0.65rem; font-weight: 700; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.2); letter-spacing: 0.05em;">DONE</span>';
+        } else if (t.dueDate && t.dueDate < todayStr) {
+            stateBadge = '<span style="color: var(--danger); font-size: 0.65rem; font-weight: 700; background: rgba(239, 68, 68, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(239, 68, 68, 0.2); letter-spacing: 0.05em;">OVERDUE</span>';
+        } else {
+            stateBadge = '<span style="color: var(--warning); font-size: 0.65rem; font-weight: 700; background: rgba(245, 158, 11, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.2); letter-spacing: 0.05em;">PENDING</span>';
+        }
+
+        const priBadge={
+            high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
+            med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
+            low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
+            none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
+        }[t.priority||'none'];
+
+        const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedPomos||0;
+        const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
+        const userTag=!state.filterUser?`<div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
+        const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
+        
+        return `<tr class="task-row stagger-item" style="animation-delay: ${Math.min(idx * 0.02, 0.5)}s">
+            <td style="vertical-align: top; padding-top: 1.25rem;">${icon}</td>
+            <td style="vertical-align: top;"><div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${t.title||'Untitled'}</div>${subHtml}<div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;"><span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 10px; color: var(--text-muted);">${t.project||'Inbox'}</span>${userTag}</div></td>
+            <td style="vertical-align: top; padding-top: 1.25rem;">${stateBadge}</td>
+            <td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td>
+            <td style="vertical-align: top; padding-top: 1.25rem;"><div style="font-size: 0.75rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div><div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div></td>
+            <td style="vertical-align: top; padding-top: 1.25rem;"><div style="font-size: 0.75rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div></td>
+            <td style="vertical-align: top; padding-top: 1.25rem; text-align: right; color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${t.dueDate||'-'}</td>
+            <td style="vertical-align: top; padding-top: 1.25rem; text-align: center;"><button onclick="app.deleteAdminTask('${t.id}', '${t._uid}')" class="btn-icon" style="color: var(--danger); background: transparent; border: none; cursor: pointer; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" title="Delete Task"><i class="ph-bold ph-trash"></i></button></td>
+        </tr>`;
+    }).join('');
+
+    html += `</tbody>`;
+    table.innerHTML = html;
 }
 
 function updateKPIs(){
@@ -844,9 +1114,9 @@ function updateKPIs(){
 function updateFeed(){
     const b=document.getElementById('live-feed-body');
     if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem; font-style: italic;">No recent activity.</td></tr>`;return;}
-    b.innerHTML=state.sessions.slice(0,20).map(s=>{
+    b.innerHTML=state.sessions.slice(0,20).map((s, idx)=>{
         const d=new Date(s.completedAt ? (typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000) : new Date().getTime());
-        return `<tr><td style="color: var(--text-muted);">${d.toLocaleDateString()} <span style="color: var(--text-faint);">${d.toLocaleTimeString()}</span></td><td style="color: #fff; font-weight: 500;">${s.taskTitle||'Unknown Task'}</td><td style="color: var(--brand);">${s.duration||25}m</td></tr>`;
+        return `<tr class="stagger-item" style="animation-delay: ${Math.min(idx * 0.02, 0.5)}s"><td style="color: var(--text-muted);">${d.toLocaleDateString()} <span style="color: var(--text-faint);">${d.toLocaleTimeString()}</span></td><td style="color: #fff; font-weight: 500;">${s.taskTitle||'Unknown Task'}</td><td style="color: var(--brand); font-weight: 600;">${s.duration||25}m</td></tr>`;
     }).join('');
 }
 
@@ -860,7 +1130,7 @@ function updateCharts(){
     const sortedProj=Object.entries(projs).sort((a,b)=>b[1]-a[1]).slice(0,5);
     if(state.charts.proj)state.charts.proj.destroy();
     state.charts.proj=new Chart(document.getElementById('projectDistChart').getContext('2d'),{ type:'doughnut', data:{labels:sortedProj.map(x=>x[0]),datasets:[{data:sortedProj.map(x=>x[1]),backgroundColor:['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'} });
-    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; padding: 0.5rem; border-radius: 4px;"><div style="display: flex; align-items: center;"><span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span style="color: #fff;">${p[0]}</span></div><span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span></div>`).join('');
+    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div class="stagger-item" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; padding: 0.5rem; border-radius: 4px; animation-delay: ${i*0.05}s"><div style="display: flex; align-items: center;"><span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span style="color: #fff; font-weight: 500;">${p[0]}</span></div><span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span></div>`).join('');
 }
 </script>
 </body>
