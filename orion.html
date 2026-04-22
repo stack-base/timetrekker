@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Orion</title>
+<title>Orion Console</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,12 +15,12 @@
         --brand: #ff5757;
         --brand-hover: #e04848;
         --brand-dim: rgba(255, 87, 87, 0.1);
-        --bg-main: #000000;
-        --bg-sidebar: #000000;
-        --bg-card: #000000;
-        --border: #333333;
-        --hover: #1a1a1a;
-        --text-main: #ffffff;
+        --bg-main: #0f0f0f;
+        --bg-sidebar: #141414;
+        --bg-card: #1e1e1e;
+        --border: #2a2a2a;
+        --hover: #333333;
+        --text-main: #e5e7eb;
         --text-muted: #a3a3a3;
         --text-faint: #525252;
         --success: #10b981;
@@ -30,18 +30,16 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
     
-    body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; -webkit-font-smoothing: antialiased; }
-    
-    /* Scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 4px; border: 1px solid var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 4px; }
     
-    /* Typography & Utilities */
     .text-brand { color: var(--brand); }
     .text-muted { color: var(--text-muted); }
     .text-faint { color: var(--text-faint); }
+    .text-danger { color: var(--danger); }
     .font-bold { font-weight: 700; }
     .text-sm { font-size: 0.875rem; }
     .text-xs { font-size: 0.75rem; }
@@ -51,28 +49,24 @@
     .justify-between { justify-content: space-between; }
     .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Buttons */
     .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); }
     .btn:hover { color: var(--text-main); }
-    .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .btn-primary { background: var(--brand); color: #fff; }
     .btn-primary:hover { background: var(--brand-hover); }
     .btn-outline { border-color: var(--border); background: var(--bg-card); }
-    .btn-outline:hover { border-color: var(--text-muted); color: #fff; background: var(--hover); }
+    .btn-outline:hover { border-color: var(--text-muted); color: #fff; }
     .btn-danger { border-color: rgba(239, 68, 68, 0.3); color: var(--danger); background: rgba(239, 68, 68, 0.05); }
     .btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
     .btn-icon { padding: 0.5rem; }
 
-    /* Layout */
     .app-layout { display: flex; height: 100%; width: 100%; position: relative; }
     .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
     .scroll-container { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
 
-    /* Header */
-    .header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); background: var(--bg-main); z-index: 10; flex-shrink: 0; }
-    .header h1 { font-size: 1.25rem; font-weight: 600; color: #fff; tracking: -0.025em; }
+    .header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(8px); z-index: 10; flex-shrink: 0; }
+    .header h1 { font-size: 1.25rem; font-weight: 600; color: #fff; }
     .mobile-menu-btn { display: none; background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; margin-right: 1rem; }
 
-    /* Sidebar */
     .sidebar { width: 256px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; transition: transform 0.3s ease; }
     .sidebar-brand { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--border); }
     .brand-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
@@ -87,70 +81,42 @@
     .nav-item.active { background: var(--brand-dim); color: var(--brand); border-color: rgba(255, 87, 87, 0.2); }
     .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
 
-    /* Dashboard Grid */
     .dashboard-grid { display: grid; gap: 1.5rem; margin-bottom: 2rem; }
     .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
     .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
     .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
     .col-span-2 { grid-column: span 2; }
 
-    /* Cards */
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; position: relative; overflow: hidden; display: flex; flex-direction: column; shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .card-title { font-size: 1.125rem; font-weight: 600; color: #fff; margin-bottom: 1rem; }
-    .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); }
-    .card-header h3 { font-size: 1.125rem; font-weight: 600; color: #fff; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    .card-title { font-size: 1.125rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
+    .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5); }
+    .card-header h3 { font-size: 1.125rem; font-weight: 700; color: #fff; }
     .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
     .card-body.no-pad { padding: 0; }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
     .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
-    .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.05; }
+    .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
 
-    /* Tables */
     .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { padding: 1rem; font-size: 0.6875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-main); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    .data-table th { padding: 1rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
     .data-table tr:hover { background: var(--hover); }
-    .data-table tr:last-child td { border-bottom: none; }
 
-    /* Input Controls */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); transition: opacity 0.3s; }
+    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transform: scale(1); transition: transform 0.3s; }
+    .modal-box.large { max-width: 500px; padding: 0; overflow: hidden; }
+    
     .input-group { margin-bottom: 1rem; }
     .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; padding: 0.625rem 0.75rem; color: #fff; font-size: 0.875rem; outline: none; transition: border-color 0.2s; font-family: 'Inter', sans-serif; }
+    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: 'Inter', sans-serif; }
     .input-control:focus { border-color: var(--brand); }
-    select.input-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23a3a3a3' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2.5rem; }
+    .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; }
+    .input-transparent::placeholder { color: var(--text-muted); }
 
-    /* Application.html style Slider Modals */
-    .slide-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-    .slide-modal-overlay.active { opacity: 1; pointer-events: auto; }
-    .slide-modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px 16px 0 0; width: 100%; max-width: 512px; max-height: 90vh; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-    .slide-modal-overlay.active .slide-modal-box { transform: translateY(0); }
-    @media(min-width: 768px) {
-        .slide-modal-overlay { align-items: center; padding: 1rem; }
-        .slide-modal-box { border-radius: 8px; transform: translateY(20px) scale(0.95); }
-        .slide-modal-overlay.active .slide-modal-box { transform: translateY(0) scale(1); }
-    }
-    .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .modal-header h2 { font-size: 1.125rem; font-weight: 700; color: #fff; }
-    .modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
-    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; background: var(--bg-main); border-radius: 0 0 8px 8px; }
-
-    /* Badges */
-    .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid transparent; }
-    .badge-info { background: rgba(59, 130, 246, 0.1); color: var(--info); border-color: rgba(59, 130, 246, 0.2); }
-    .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2); }
-    .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.2); }
-    .badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
-
-    /* Login Modal & Lockdown */
-    .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
-    .auth-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-
-    /* Animations */
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Responsive Adjustments */
     @media (max-width: 1024px) {
         .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
         .grid-cols-3 { grid-template-columns: 1fr; }
@@ -163,8 +129,6 @@
         .mobile-close-btn { display: block; }
         .nav-item { padding: 1rem; font-size: 1.125rem; margin-bottom: 0.5rem; }
         .nav-item i { font-size: 1.5rem; margin-right: 1rem; }
-        .sidebar-footer { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
-
         .mobile-menu-btn { display: block; }
         .header { padding: 0 1rem; }
         .scroll-container { padding: 1rem; }
@@ -173,10 +137,6 @@
         .card-header { padding: 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         .card-header .header-actions { width: 100%; display: flex; justify-content: space-between; }
         .stat-value { font-size: 1.5rem; }
-        .header h1 { font-size: 1.125rem; }
-        
-        #data-header { flex-direction: column; height: auto; padding: 1rem; gap: 1rem; align-items: flex-start; }
-        #data-header .flex { width: 100%; justify-content: space-between; }
     }
 </style>
 </head>
@@ -203,17 +163,17 @@
             <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-item">
                 <i class="ph-bold ph-check-square"></i><span>Tasks Master</span>
             </button>
-            <div class="nav-label">System</div>
             <button onclick="app.setView('broadcasts')" id="nav-broadcasts" class="nav-item">
                 <i class="ph-bold ph-megaphone"></i><span>Broadcasts</span>
             </button>
+            <div class="nav-label">System</div>
             <button onclick="app.setView('data')" id="nav-data" class="nav-item">
                 <i class="ph-bold ph-database"></i><span>Data Management</span>
             </button>
         </nav>
         <div class="sidebar-footer">
             <div class="flex items-center" style="margin-bottom: 1.5rem; gap: 0.75rem;">
-                 <div style="width: 40px; height: 40px; border-radius: 50%; background: #333333; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
+                 <div style="width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
                  <div style="min-width: 0;">
                     <div class="truncate text-base font-bold" style="color: #fff;">Orion Console</div>
                     <div class="text-sm text-muted">Connected</div>
@@ -242,7 +202,7 @@
                 <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
                 <div class="flex items-center" style="gap: 0.75rem;">
                    <h1>Data Management</h1>
-                   <span id="cache-badge" class="badge badge-info">CACHED (0m ago)</span>
+                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: monospace; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">CACHED (0m ago)</span>
                 </div>
             </div>
             <div class="flex items-center" style="gap: 1rem;">
@@ -303,7 +263,7 @@
                     <div class="card" style="padding: 0; height: 400px;">
                         <div class="card-header">
                             <h3>Recent Sessions</h3>
-                            <span class="badge badge-danger" style="color: var(--brand); border-color: rgba(255,87,87,0.2);">Live Feed</span>
+                            <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">Live Feed</span>
                         </div>
                         <div class="table-wrapper custom-scrollbar">
                             <table class="data-table">
@@ -357,7 +317,7 @@
                                     <th style="width: 40px;"></th>
                                     <th style="width: 48px;"></th> 
                                     <th>User Profile</th>
-                                    <th>Provider</th>
+                                    <th>Login/Provider</th>
                                     <th>Engagement</th>
                                     <th>Last Active</th>
                                     <th style="text-align: right;">Actions</th>
@@ -381,13 +341,13 @@
                                 <i class="ph-bold ph-x-circle" style="margin-right: 4px;"></i> Show All
                             </button>
                         </div>
-                        <div class="flex items-center" style="gap: 0.75rem;">
+                        <div class="flex items-center" style="gap: 1rem;">
                             <div style="position: relative; width: 100%; max-width: 250px;">
                                 <i class="ph-bold ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                                <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="input-control" style="padding-left: 36px; border-radius: 999px; font-size: 0.875rem;">
+                                <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="input-control" style="padding-left: 36px; border-radius: 999px; font-size: 0.875rem; margin: 0;">
                             </div>
-                            <button onclick="app.openTaskModal()" class="btn btn-primary text-xs shrink-0">
-                                <i class="ph-bold ph-plus" style="margin-right: 0.5rem;"></i> Inject Task
+                            <button onclick="app.toggleAdminTaskModal()" class="btn btn-primary text-xs flex-shrink-0">
+                                <i class="ph-bold ph-plus" style="margin-right: 0.5rem;"></i> New Task
                             </button>
                         </div>
                     </div>
@@ -413,10 +373,10 @@
                  <div class="card" style="padding: 0; height: 80vh;">
                     <div class="card-header">
                         <div>
-                            <h3>Global Broadcasts</h3>
-                            <p class="text-xs text-muted" style="margin-top: 4px;">Manage system-wide alerts and push messages.</p>
+                            <h3>System Broadcasts</h3>
+                            <p class="text-xs text-muted" style="margin-top: 4px;">Manage global or targeted announcements.</p>
                         </div>
-                        <button onclick="app.openBroadcastModal()" class="btn btn-primary text-xs">
+                        <button onclick="app.toggleBroadcastModal()" class="btn btn-primary text-xs">
                             <i class="ph-bold ph-plus" style="margin-right: 0.5rem;"></i> New Broadcast
                         </button>
                     </div>
@@ -424,9 +384,9 @@
                         <table class="data-table">
                              <thead>
                                 <tr>
-                                    <th>Status</th>
-                                    <th>Type</th>
-                                    <th>Title / Message</th>
+                                    <th style="width: 48px;"></th>
+                                    <th>Message</th>
+                                    <th>Target</th>
                                     <th>Date</th>
                                     <th style="text-align: right;">Actions</th>
                                 </tr>
@@ -511,89 +471,86 @@
     </main>
 </div>
 
-<div id="inject-task-modal" class="slide-modal-overlay">
-    <div class="slide-modal-box">
-        <form id="inject-task-form" onsubmit="app.saveInjectedTask(event)" style="display: flex; flex-direction: column; height: 100%;">
-            <div class="modal-header">
-                <h2>Inject Task</h2>
-                <button type="button" onclick="app.closeTaskModal()" class="btn btn-icon"><i class="ph-bold ph-x"></i></button>
-            </div>
-            <div class="modal-body custom-scrollbar">
+<div id="admin-task-modal" class="modal-overlay hidden">
+    <div class="modal-box large">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="admin-modal-title" style="font-size: 1.125rem; font-weight: 700; color: #fff;">New Task</h2>
+            <button type="button" onclick="app.toggleAdminTaskModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+        </div>
+        <form id="admin-task-form" onsubmit="app.handleAdminSaveTask(event)">
+            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
+                
                 <div class="input-group">
                     <label>Target User</label>
-                    <select id="inject-target-user" class="input-control" required></select>
+                    <select id="admin-task-target" class="input-control">
+                        <option value="all">All Users (Broadcast Task)</option>
+                    </select>
                 </div>
-                <div class="input-group">
-                    <label>Task Title</label>
-                    <input type="text" id="inject-title" class="input-control" placeholder="What needs to be done?" required autocomplete="off">
+                
+                <input type="text" id="admin-task-title" placeholder="What needs to be done?" class="input-transparent" required>
+                <textarea id="admin-task-note" placeholder="Description or notes..." class="input-control" style="resize: none; height: 80px; margin-bottom: 1.5rem;"></textarea>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="input-group"><label>Est. Pomodoros</label><input type="number" id="admin-task-est" class="input-control" value="1" min="1"></div>
+                    <div class="input-group"><label>Duration (m)</label><input type="number" id="admin-task-dur" class="input-control" value="25" min="5"></div>
                 </div>
-                <div class="input-group">
-                    <label>Note / Description</label>
-                    <textarea id="inject-note" class="input-control" placeholder="Additional details..." rows="3" style="resize: none;"></textarea>
-                </div>
-                <div class="dashboard-grid grid-cols-2" style="gap: 1rem; margin-bottom: 0;">
-                    <div class="input-group">
-                        <label>Priority</label>
-                        <select id="inject-priority" class="input-control">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="input-group"><label>Priority</label>
+                        <select id="admin-task-priority" class="input-control">
                             <option value="none">None</option>
-                            <option value="low">Low</option>
-                            <option value="med">Medium</option>
-                            <option value="high">High (!)</option>
+                            <option value="low">Low Priority</option>
+                            <option value="med">Medium Priority</option>
+                            <option value="high">High Priority (! Urgent)</option>
                         </select>
                     </div>
-                    <div class="input-group">
-                        <label>Due Date</label>
-                        <input type="date" id="inject-date" class="input-control">
-                    </div>
+                    <div class="input-group"><label>Due Date</label><input type="date" id="admin-task-date" class="input-control"></div>
                 </div>
+                
+                <input type="hidden" id="admin-task-id">
             </div>
-            <div class="modal-footer">
-                <button type="button" onclick="app.closeTaskModal()" class="btn btn-outline">Cancel</button>
-                <button type="submit" id="btn-save-inject" class="btn btn-primary">Deploy Task</button>
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" onclick="app.toggleAdminTaskModal()" class="btn btn-outline">Cancel</button>
+                <button type="submit" id="admin-save-task-btn" class="btn btn-primary">Save Task</button>
             </div>
         </form>
     </div>
 </div>
 
-<div id="broadcast-modal" class="slide-modal-overlay">
-    <div class="slide-modal-box">
-        <form id="broadcast-form" onsubmit="app.saveBroadcast(event)" style="display: flex; flex-direction: column; height: 100%;">
-            <div class="modal-header">
-                <h2 id="broadcast-modal-title">New Broadcast</h2>
-                <button type="button" onclick="app.closeBroadcastModal()" class="btn btn-icon"><i class="ph-bold ph-x"></i></button>
-            </div>
-            <div class="modal-body custom-scrollbar">
-                <input type="hidden" id="broadcast-id">
+<div id="admin-broadcast-modal" class="modal-overlay hidden">
+    <div class="modal-box large">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="admin-broadcast-title" style="font-size: 1.125rem; font-weight: 700; color: #fff;">New Broadcast</h2>
+            <button type="button" onclick="app.toggleBroadcastModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+        </div>
+        <form id="admin-broadcast-form" onsubmit="app.handleSaveBroadcast(event)">
+            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
+                
                 <div class="input-group">
-                    <label>Title</label>
-                    <input type="text" id="broadcast-title" class="input-control" placeholder="System Maintenance..." required autocomplete="off">
+                    <label>Target User</label>
+                    <select id="admin-broadcast-target" class="input-control">
+                        <option value="all">Global Broadcast (All Users)</option>
+                    </select>
                 </div>
+                
                 <div class="input-group">
-                    <label>Message</label>
-                    <textarea id="broadcast-message" class="input-control" placeholder="Broadcast details..." rows="4" style="resize: none;" required></textarea>
+                    <label>Broadcast Type</label>
+                    <select id="admin-broadcast-type" class="input-control">
+                        <option value="info">Info (Blue)</option>
+                        <option value="warning">Warning (Yellow)</option>
+                        <option value="alert">Alert (Red)</option>
+                        <option value="success">Success (Green)</option>
+                    </select>
                 </div>
-                <div class="dashboard-grid grid-cols-2" style="gap: 1rem; margin-bottom: 0;">
-                    <div class="input-group">
-                        <label>Type</label>
-                        <select id="broadcast-type" class="input-control">
-                            <option value="info">Info (Blue)</option>
-                            <option value="success">Success (Green)</option>
-                            <option value="warning">Warning (Yellow)</option>
-                            <option value="danger">Danger (Red)</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Status</label>
-                        <select id="broadcast-status" class="input-control">
-                            <option value="active">Active (Visible)</option>
-                            <option value="inactive">Inactive (Hidden)</option>
-                        </select>
-                    </div>
+
+                <div class="input-group">
+                    <label>Message Content</label>
+                    <textarea id="admin-broadcast-message" placeholder="Type announcement here..." class="input-control" style="resize: none; height: 120px;" required></textarea>
                 </div>
+                <input type="hidden" id="admin-broadcast-id">
             </div>
-            <div class="modal-footer">
-                <button type="button" onclick="app.closeBroadcastModal()" class="btn btn-outline">Cancel</button>
-                <button type="submit" id="btn-save-broadcast" class="btn btn-primary">Publish Broadcast</button>
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" onclick="app.toggleBroadcastModal()" class="btn btn-outline">Cancel</button>
+                <button type="submit" id="admin-save-broadcast-btn" class="btn btn-primary">Send Broadcast</button>
             </div>
         </form>
     </div>
@@ -602,27 +559,20 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, deleteDoc, addDoc, updateDoc, setDoc, writeBatch, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, setDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-const C = { apiKey: "AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U", authDomain: "timetrekker-app.firebaseapp.com", projectId: "timetrekker-app", storageBucket: "timetrekker-app.firebasestorage.app", messagingSenderId: "83185163190", appId: "1:83185163190:web:e2974c5d0f0274fe5e3f17", measurementId: "G-FLZ02E1Y5L" };
-const appId = 'timetrekker-v1';
+const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
+const appId='timetrekker-v1';
 const fb = initializeApp(C, "OrionConsole");
 const auth = getAuth(fb);
 const db = getFirestore(fb);
-const CACHE_KEY = 'orion_local_cache_v1';
+const CACHE_KEY = 'orion_local_cache_v2';
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; 
 
 Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
-Chart.defaults.borderColor='#333333';
-
-const esc = (str) => {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-};
+Chart.defaults.borderColor='#2a2a2a';
 
 const log=(msg)=>{
     const b=document.getElementById('console-log');
@@ -630,7 +580,7 @@ const log=(msg)=>{
 };
 
 const state={
-    sessions:[], tasks:[], usersList:[], broadcasts:[], charts:{}, view:'overview', usersMap:{}, filterUser:null,
+    sessions:[], tasks:[], usersList:[], broadcasts: [], charts:{}, view:'overview', usersMap:{}, filterUser:null,
     starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
     showStarredOnly: false, lastSyncTime: null
 };
@@ -638,7 +588,7 @@ const state={
 const saveCache = () => {
     try {
         const now = Date.now();
-        localStorage.setItem(CACHE_KEY, JSON.stringify({sessions: state.sessions, tasks: state.tasks, usersList: state.usersList, timestamp: now}));
+        localStorage.setItem(CACHE_KEY, JSON.stringify({sessions: state.sessions, tasks: state.tasks, usersList: state.usersList, broadcasts: state.broadcasts, timestamp: now}));
         state.lastSyncTime = now;
         log('<span style="color: var(--success);">Data cached successfully.</span>');
         updateStorageStats();
@@ -650,7 +600,7 @@ const loadCache = () => {
     if (!raw) return false;
     try {
         const data = JSON.parse(raw);
-        state.sessions = data.sessions || []; state.tasks = data.tasks || []; state.usersList = data.usersList || [];
+        state.sessions = data.sessions || []; state.tasks = data.tasks || []; state.usersList = data.usersList || []; state.broadcasts = data.broadcasts || [];
         state.lastSyncTime = data.timestamp || Date.now();
         const age = Math.round((Date.now() - state.lastSyncTime) / 1000 / 60);
         log(`<span style="color: var(--info);">Loaded from Cache (${age} mins ago).</span>`);
@@ -675,7 +625,7 @@ const updateStorageStats = () => {
         if(elTime) elTime.innerText = timeStr;
     }
 
-    const count = state.sessions.length + state.tasks.length + state.usersList.length;
+    const count = state.sessions.length + state.tasks.length + state.usersList.length + state.broadcasts.length;
     const elSize = document.getElementById('stat-storage-size');
     const elItems = document.getElementById('stat-items-count');
     const elAge = document.getElementById('stat-cache-age');
@@ -691,8 +641,8 @@ const showLoginModal=()=>{
     if(document.getElementById('dev-login-modal'))return;
     const div=document.createElement('div');
     div.id='dev-login-modal';
-    div.className='auth-overlay';
-    div.innerHTML=`<div class="auth-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.75rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Dashboard</button></form></div>`;
+    div.className='modal-overlay';
+    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.75rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Dashboard</button></form></div>`;
     document.body.appendChild(div);
     document.getElementById('dev-login-form').onsubmit=async(e)=>{
         e.preventDefault();
@@ -713,7 +663,7 @@ const showLoginModal=()=>{
 function showUnauthorizedScreen() {
     document.body.innerHTML = `
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; background-color: var(--bg-main); color: var(--text-main);">
-            <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 8px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="font-size: 48px; color: var(--danger); margin-bottom: 16px;"><i class="ph-bold ph-shield-warning"></i></div>
                 <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff;">Clearance Required</h2>
                 <p style="margin: 0 0 24px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">This console is restricted to authorized administrators. Your account lacks access.</p>
@@ -722,9 +672,6 @@ function showUnauthorizedScreen() {
         </div>
     `;
 }
-
-// Live subscription for broadcasts
-let unsubBroadcasts = null;
 
 onAuthStateChanged(auth, async u => {
     const modal = document.getElementById('dev-login-modal');
@@ -735,24 +682,33 @@ onAuthStateChanged(auth, async u => {
             if (orionApp) orionApp.style.display = 'flex';
             log(`Authenticated as ${u.email}`);
             app.refreshData(false);
-            
-            // Sub Broadcasts 
-            unsubBroadcasts = onSnapshot(query(collection(db, 'artifacts', appId, 'broadcasts'), orderBy('createdAt', 'desc')), s => {
-                state.broadcasts = s.docs.map(d => ({id: d.id, ...d.data()}));
-                if(state.view === 'broadcasts') renderBroadcastsTable();
-            });
-            
         } else {
             log(`Unauthorized access attempt by ${u.email}`);
             showUnauthorizedScreen();
         }
     } else {
         if (orionApp) orionApp.style.display = 'none';
-        if(unsubBroadcasts) { unsubBroadcasts(); unsubBroadcasts = null; }
         log('No user detected. Showing login prompt...');
         showLoginModal();
     }
 });
+
+function populateTargetSelectors() {
+    const taskTarget = document.getElementById('admin-task-target');
+    const broadcastTarget = document.getElementById('admin-broadcast-target');
+    
+    const defaultBroadcastOpt = `<option value="all">Global Broadcast (All Users)</option>`;
+    const defaultTaskOpt = `<option value="all">All Users (Broadcast Task)</option>`;
+    
+    let userOptions = '';
+    const users = Object.values(state.usersMap).sort((a,b) => (a.name||a.email).localeCompare(b.name||b.email));
+    users.forEach(u => {
+        userOptions += `<option value="${u.uid}">${u.name||u.email} (${u.uid.slice(0,6)}...)</option>`;
+    });
+
+    if(taskTarget) taskTarget.innerHTML = defaultTaskOpt + userOptions;
+    if(broadcastTarget) broadcastTarget.innerHTML = defaultBroadcastOpt + userOptions;
+}
 
 const app={
     toggleMobileMenu: () => {
@@ -767,9 +723,10 @@ const app={
         document.querySelectorAll('.view-section').forEach(el=>el.classList.add('hidden'));
         document.getElementById(`view-${v}`).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-        document.getElementById(`nav-${v}`).classList.add('active');
+        const navTarget = document.getElementById(`nav-${v}`);
+        if(navTarget) navTarget.classList.add('active');
         
-        const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'broadcasts': 'Broadcast Management', 'data': 'Data Management'};
+        const titles = {'overview': 'Product Analytics', 'users': 'User Directory', 'tasks': 'Tasks Master', 'broadcasts': 'System Broadcasts', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
 
         if(v === 'data'){
@@ -815,130 +772,6 @@ const app={
         }
         renderUsersTable();
     },
-    
-    // Moderation Additions
-    deleteTask: async (uid, taskId) => {
-        if(!confirm('Are you sure you want to permanently delete this task?')) return;
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', uid, 'tasks', taskId));
-            log(`<span style="color: var(--success);">Task ${taskId} deleted for user ${uid}</span>`);
-            app.refreshData(true);
-        } catch(e) { log(`Error deleting task: ${e.message}`); }
-    },
-    openTaskModal: () => {
-        const select = document.getElementById('inject-target-user');
-        select.innerHTML = '<option value="ALL">-- All Users (Broadcast) --</option>';
-        Object.values(state.usersMap).forEach(u => {
-            select.innerHTML += `<option value="${u.uid}">${esc(u.name || u.email)} (${u.uid})</option>`;
-        });
-        if(state.filterUser) select.value = state.filterUser;
-        document.getElementById('inject-date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('inject-task-modal').classList.add('active');
-    },
-    closeTaskModal: () => {
-        document.getElementById('inject-task-modal').classList.remove('active');
-        document.getElementById('inject-task-form').reset();
-    },
-    saveInjectedTask: async (e) => {
-        e.preventDefault();
-        const targetUid = document.getElementById('inject-target-user').value;
-        const taskData = {
-            title: document.getElementById('inject-title').value,
-            note: document.getElementById('inject-note').value,
-            priority: document.getElementById('inject-priority').value,
-            dueDate: document.getElementById('inject-date').value,
-            estimatedPomos: 1, pomoDuration: 25, project: 'Inbox', status: 'todo',
-            createdAt: new Date().toISOString()
-        };
-
-        const btn = document.getElementById('btn-save-inject');
-        btn.innerText = 'Injecting...'; btn.disabled = true;
-
-        try {
-            if (targetUid === 'ALL') {
-                const batch = writeBatch(db);
-                let count = 0;
-                state.usersList.forEach(u => {
-                    const ref = doc(collection(db, 'artifacts', appId, 'users', u.id, 'tasks'));
-                    batch.set(ref, taskData);
-                    count++;
-                });
-                await batch.commit();
-                log(`<span style="color: var(--success);">Injected task to ${count} users.</span>`);
-            } else {
-                await addDoc(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'), taskData);
-                log(`<span style="color: var(--success);">Injected task to user ${targetUid}.</span>`);
-            }
-            app.closeTaskModal();
-            app.refreshData(true);
-        } catch(err) {
-            log(`<span style="color: var(--danger);">Error injecting task: ${err.message}</span>`);
-        }
-        btn.innerText = 'Deploy Task'; btn.disabled = false;
-    },
-
-    // Broadcasts Addition
-    openBroadcastModal: (id = null) => {
-        const titleEl = document.getElementById('broadcast-modal-title');
-        const form = document.getElementById('broadcast-form');
-        form.reset();
-        
-        if(id) {
-            const b = state.broadcasts.find(x => x.id === id);
-            if(b) {
-                titleEl.innerText = "Edit Broadcast";
-                document.getElementById('broadcast-id').value = b.id;
-                document.getElementById('broadcast-title').value = b.title;
-                document.getElementById('broadcast-message').value = b.message;
-                document.getElementById('broadcast-type').value = b.type || 'info';
-                document.getElementById('broadcast-status').value = b.status || 'active';
-            }
-        } else {
-            titleEl.innerText = "New Broadcast";
-            document.getElementById('broadcast-id').value = '';
-        }
-        document.getElementById('broadcast-modal').classList.add('active');
-    },
-    closeBroadcastModal: () => {
-        document.getElementById('broadcast-modal').classList.remove('active');
-    },
-    saveBroadcast: async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('broadcast-id').value;
-        const bData = {
-            title: document.getElementById('broadcast-title').value,
-            message: document.getElementById('broadcast-message').value,
-            type: document.getElementById('broadcast-type').value,
-            status: document.getElementById('broadcast-status').value,
-            updatedAt: serverTimestamp()
-        };
-
-        const btn = document.getElementById('btn-save-broadcast');
-        btn.innerText = 'Saving...'; btn.disabled = true;
-
-        try {
-            if(id) {
-                await updateDoc(doc(db, 'artifacts', appId, 'broadcasts', id), bData);
-                log(`<span style="color: var(--success);">Broadcast updated.</span>`);
-            } else {
-                bData.createdAt = serverTimestamp();
-                await addDoc(collection(db, 'artifacts', appId, 'broadcasts'), bData);
-                log(`<span style="color: var(--success);">Broadcast created.</span>`);
-            }
-            app.closeBroadcastModal();
-        } catch(err) {
-            log(`<span style="color: var(--danger);">Error saving broadcast: ${err.message}</span>`);
-        }
-        btn.innerText = 'Publish Broadcast'; btn.disabled = false;
-    },
-    deleteBroadcast: async (id) => {
-        if(!confirm('Are you sure you want to delete this broadcast?')) return;
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'broadcasts', id));
-            log(`<span style="color: var(--success);">Broadcast deleted.</span>`);
-        } catch(e) { log(`Error deleting broadcast: ${e.message}`); }
-    },
-
     exportData: () => {
         const exportObj = { meta: { version: '1.0', exportDate: new Date().toISOString() }, cache: localStorage.getItem(CACHE_KEY), starred: localStorage.getItem(STAR_KEY) };
         const blob = new Blob([JSON.stringify(exportObj)], { type: 'application/json' });
@@ -968,21 +801,186 @@ const app={
             state.starred = []; window.location.reload();
         }
     },
+    
+    // --- Task Moderation ---
+    toggleAdminTaskModal: (taskId = null, uid = null) => {
+        const modal = document.getElementById('admin-task-modal');
+        const form = document.getElementById('admin-task-form');
+        
+        if (modal.classList.contains('hidden')) {
+            populateTargetSelectors();
+            form.reset();
+            const targetSelect = document.getElementById('admin-task-target');
+            document.getElementById('admin-task-date').value = new Date().toISOString().split('T')[0];
+
+            if (taskId && uid) {
+                const t = state.tasks.find(x => x.id === taskId && x._uid === uid);
+                if (t) {
+                    document.getElementById('admin-modal-title').innerText = "Edit Task";
+                    document.getElementById('admin-save-task-btn').innerText = "Save Changes";
+                    document.getElementById('admin-task-id').value = taskId;
+                    targetSelect.value = uid;
+                    targetSelect.disabled = true; 
+                    document.getElementById('admin-task-title').value = t.title || '';
+                    document.getElementById('admin-task-note').value = t.note || '';
+                    document.getElementById('admin-task-est').value = t.estimatedPomos || 1;
+                    document.getElementById('admin-task-dur').value = t.pomoDuration || 25;
+                    document.getElementById('admin-task-priority').value = t.priority || 'none';
+                    document.getElementById('admin-task-date').value = t.dueDate || '';
+                }
+            } else {
+                document.getElementById('admin-modal-title').innerText = "New Task";
+                document.getElementById('admin-save-task-btn').innerText = "Create Task";
+                document.getElementById('admin-task-id').value = '';
+                targetSelect.disabled = false;
+                if (state.filterUser) targetSelect.value = state.filterUser;
+            }
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.style.opacity = '1', 10);
+        } else {
+            modal.style.opacity = '0';
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    },
+
+    handleAdminSaveTask: async (e) => {
+        e.preventDefault();
+        const taskId = document.getElementById('admin-task-id').value;
+        const target = document.getElementById('admin-task-target').value;
+        const btn = document.getElementById('admin-save-task-btn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Saving...'; btn.disabled = true;
+
+        const data = {
+            title: document.getElementById('admin-task-title').value,
+            note: document.getElementById('admin-task-note').value,
+            estimatedPomos: parseInt(document.getElementById('admin-task-est').value) || 1,
+            pomoDuration: parseInt(document.getElementById('admin-task-dur').value) || 25,
+            priority: document.getElementById('admin-task-priority').value,
+            dueDate: document.getElementById('admin-task-date').value,
+            updatedByAdmin: true,
+            updatedAt: serverTimestamp()
+        };
+
+        try {
+            if (taskId) {
+                // Edit existing task
+                await updateDoc(doc(db, 'artifacts', appId, 'users', target, 'tasks', taskId), data);
+                log(`<span style="color:var(--success)">Task updated for user ${target}</span>`);
+            } else {
+                // New task (Single or Broadcast)
+                data.status = 'todo';
+                data.createdAt = new Date().toISOString();
+                data.project = 'Inbox';
+
+                if (target === 'all') {
+                    if(!confirm(`Deploy this task to ALL ${state.usersList.length} users?`)) {
+                        btn.innerText = originalText; btn.disabled = false; return;
+                    }
+                    const batch = writeBatch(db);
+                    state.usersList.forEach(u => {
+                        const newRef = doc(collection(db, 'artifacts', appId, 'users', u.id, 'tasks'));
+                        batch.set(newRef, data);
+                    });
+                    await batch.commit();
+                    log(`<span style="color:var(--success)">Task broadcasted to all users.</span>`);
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'users', target, 'tasks'), data);
+                    log(`<span style="color:var(--success)">Task created for user ${target}</span>`);
+                }
+            }
+            app.toggleAdminTaskModal();
+            app.refreshData(true);
+        } catch(err) {
+            alert('Failed to save task: ' + err.message);
+        } finally {
+            btn.innerText = originalText; btn.disabled = false;
+        }
+    },
+
+    deleteAdminTask: async (taskId, uid) => {
+        if (!confirm('Are you sure you want to permanently delete this task?')) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', uid, 'tasks', taskId));
+            log(`<span style="color:var(--warning)">Task deleted for user ${uid}</span>`);
+            app.refreshData(true);
+        } catch (e) { alert('Error deleting task.'); }
+    },
+
+    // --- Broadcast Message Moderation ---
+    toggleBroadcastModal: () => {
+        const modal = document.getElementById('admin-broadcast-modal');
+        const form = document.getElementById('admin-broadcast-form');
+        if (modal.classList.contains('hidden')) {
+            populateTargetSelectors();
+            form.reset();
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.style.opacity = '1', 10);
+        } else {
+            modal.style.opacity = '0';
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    },
+
+    handleSaveBroadcast: async (e) => {
+        e.preventDefault();
+        const target = document.getElementById('admin-broadcast-target').value;
+        const type = document.getElementById('admin-broadcast-type').value;
+        const message = document.getElementById('admin-broadcast-message').value;
+        const btn = document.getElementById('admin-save-broadcast-btn');
+        btn.innerText = 'Sending...'; btn.disabled = true;
+
+        try {
+            await addDoc(collection(db, 'artifacts', appId, 'broadcasts'), {
+                target: target,
+                type: type,
+                message: message,
+                createdAt: serverTimestamp(),
+                createdBy: 'admin'
+            });
+            log(`<span style="color:var(--success)">Broadcast sent successfully.</span>`);
+            app.toggleBroadcastModal();
+            app.refreshData(true);
+        } catch(err) {
+            alert('Failed to send broadcast: ' + err.message);
+        } finally {
+            btn.innerText = 'Send Broadcast'; btn.disabled = false;
+        }
+    },
+
+    deleteBroadcast: async (id) => {
+        if (!confirm('Delete this broadcast message?')) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'broadcasts', id));
+            log(`<span style="color:var(--warning)">Broadcast message removed.</span>`);
+            app.refreshData(true);
+        } catch (e) { alert('Error deleting broadcast.'); }
+    },
+
     refreshData:async(forceRefresh = true)=>{
         try{
             if(!forceRefresh && loadCache()){ renderAll(); return; }
             log('Fetching LIVE data from Firestore...');
+            
+            // Fetch Sessions
             const qSessions=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(500));
             const snapSessions=await getDocs(qSessions);
             state.sessions=snapSessions.docs.map(d=>{ const uid=d.ref.parent?.parent?.id||'unknown'; return{...d.data(),_uid:uid}; });
             
+            // Fetch Tasks
             const qTasks=query(collectionGroup(db,'tasks'),limit(500));
             const snapTasks=await getDocs(qTasks);
             state.tasks=snapTasks.docs.map(d=>{ const uid=d.ref.parent?.parent?.id||'unknown'; return{id: d.id, ...d.data(),_uid:uid}; });
             
+            // Fetch Users
             const qUsers=query(collection(db,'artifacts',appId,'users'));
             const snapUsers=await getDocs(qUsers);
             state.usersList=snapUsers.docs.map(d=>({id:d.id,...d.data()}));
+
+            // Fetch Broadcasts
+            const qBroadcasts=query(collection(db,'artifacts',appId,'broadcasts'),orderBy('createdAt','desc'));
+            const snapBroadcasts=await getDocs(qBroadcasts);
+            state.broadcasts=snapBroadcasts.docs.map(d=>({id:d.id,...d.data()}));
             
             saveCache(); renderAll();
         }catch(e){ log(`ERROR: ${e.message}`); }
@@ -1036,7 +1034,7 @@ function renderUsersTable(){
                 <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${u.name||'No Name'}</div>
                 <div style="font-size: 0.75rem; color: var(--text-muted);">${u.email||'No Email'}</div>
             </td>
-            <td><span class="badge badge-info" style="color: var(--text-muted); border-color: var(--border); background: var(--bg-main);">${u.provider}</span></td>
+            <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted);">${u.provider}</span></td>
             <td>
                 <div class="flex flex-col gap-1">
                     <span style="font-size: 0.75rem; color: var(--text-muted);"><strong style="color: #fff;">${u.tasks}</strong> tasks</span><br>
@@ -1090,47 +1088,77 @@ function renderTasksTable(){
         html+=groups[label].map(t=>{
             const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
             const priBadge={
-                high:'<span class="badge badge-danger">HIGH</span>',
-                med:'<span class="badge badge-warning">MED</span>',
-                low:'<span class="badge badge-info">LOW</span>',
-                none:'<span class="badge" style="background: var(--bg-card); color: var(--text-faint); border-color: var(--border);">NONE</span>'
+                high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
+                med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
+                low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
+                none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
             }[t.priority||'none'];
             const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedPomos||0;
             const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
             const userTag=!state.filterUser?`<div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
             const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
             
-            return `<tr class="task-row"><td style="vertical-align: top; padding-top: 1.25rem;">${icon}</td><td style="vertical-align: top;"><div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${esc(t.title)||'Untitled'}</div>${subHtml}<div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;"><span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 10px; color: var(--text-muted);">${esc(t.project)||'Inbox'}</span>${userTag}</div></td><td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td><td style="vertical-align: top; padding-top: 1.25rem;"><div style="font-size: 0.75rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div><div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div></td><td style="vertical-align: top; padding-top: 1.25rem;"><div style="font-size: 0.75rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div></td><td style="vertical-align: top; padding-top: 1.25rem; text-align: right;"><div class="flex items-center justify-end gap-2"><span style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${t.dueDate||'-'}</span><button onclick="app.deleteTask('${t._uid}', '${t.id}')" class="btn btn-icon btn-danger text-xs" title="Delete Task"><i class="ph-bold ph-trash"></i></button></div></td></tr>`;
+            return `
+            <tr class="task-row">
+                <td style="vertical-align: top; padding-top: 1.25rem;">${icon}</td>
+                <td style="vertical-align: top;">
+                    <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${t.title||'Untitled'}</div>${subHtml}
+                    <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+                        <span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 10px; color: var(--text-muted);">${t.project||'Inbox'}</span>
+                        ${userTag}
+                    </div>
+                </td>
+                <td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td>
+                <td style="vertical-align: top; padding-top: 1.25rem;">
+                    <div style="font-size: 0.75rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
+                    <div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div>
+                </td>
+                <td style="vertical-align: top; padding-top: 1.25rem;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div>
+                </td>
+                <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
+                    <div style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace; margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
+                    <div class="flex items-center justify-end gap-1">
+                        <button onclick="app.toggleAdminTaskModal('${t.id}', '${t._uid}')" class="btn btn-icon text-xs"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="app.deleteAdminTask('${t.id}', '${t._uid}')" class="btn btn-icon text-xs text-danger hover:text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </td>
+            </tr>`;
         }).join('');
     });
     tbody.innerHTML=html;
 }
 
-function renderBroadcastsTable() {
-    const tbody = document.getElementById('broadcasts-table-body');
-    if (state.broadcasts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">No active broadcasts found.</td></tr>`;
+function renderBroadcastsTable(){
+    const tbody=document.getElementById('broadcasts-table-body');
+    if(!state.broadcasts || state.broadcasts.length === 0) {
+        tbody.innerHTML=`<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1rem;">No broadcasts found.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = state.broadcasts.map(b => {
-        const d = b.createdAt ? new Date(b.createdAt.seconds ? b.createdAt.seconds * 1000 : b.createdAt) : new Date();
-        const statusBadge = b.status === 'active' ? '<span class="badge badge-success">ACTIVE</span>' : '<span class="badge badge-danger" style="color: var(--text-muted); border-color: var(--border); background: var(--bg-main);">INACTIVE</span>';
-        const typeBadge = `<span class="badge badge-${b.type || 'info'}">${(b.type || 'info').toUpperCase()}</span>`;
+    tbody.innerHTML=state.broadcasts.map(b=>{
+        const d = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleString() : 'Just now';
+        
+        let typeBadge = '';
+        if(b.type === 'info') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">INFO</span>`;
+        else if(b.type === 'warning') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">WARNING</span>`;
+        else if(b.type === 'alert') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">ALERT</span>`;
+        else typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">SUCCESS</span>`;
+
+        let targetLbl = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name || state.usersMap[b.target].email : b.target);
+        const icon = b.type === 'alert' ? 'ph-warning-circle' : 'ph-megaphone';
+
         return `
         <tr>
-            <td>${statusBadge}</td>
-            <td>${typeBadge}</td>
-            <td>
-                <div style="color: #fff; font-weight: 600; font-size: 0.875rem; margin-bottom: 2px;">${esc(b.title)}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); max-width: 300px;" class="truncate">${esc(b.message)}</div>
+            <td style="vertical-align: top;"><i class="ph-fill ${icon}" style="color: var(--text-muted); font-size: 1.25rem;"></i></td>
+            <td style="vertical-align: top;">
+                <div style="color: #fff; font-weight: 500; font-size: 0.875rem; max-width: 400px;">${b.message}</div>
+                <div style="margin-top: 8px;">${typeBadge}</div>
             </td>
-            <td style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${d.toLocaleDateString()}</td>
-            <td style="text-align: right;">
-                <div class="flex items-center justify-end gap-2">
-                    <button onclick="app.openBroadcastModal('${b.id}')" class="btn btn-icon btn-outline text-xs"><i class="ph-bold ph-pencil-simple"></i></button>
-                    <button onclick="app.deleteBroadcast('${b.id}')" class="btn btn-icon btn-danger text-xs"><i class="ph-bold ph-trash"></i></button>
-                </div>
+            <td style="vertical-align: top; padding-top: 1.25rem;"><span style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${targetLbl}</span></td>
+            <td style="vertical-align: top; padding-top: 1.25rem;"><span style="color: var(--text-muted); font-size: 0.75rem;">${d}</span></td>
+            <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
+                <button onclick="app.deleteBroadcast('${b.id}')" class="btn btn-icon text-xs text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
             </td>
         </tr>`;
     }).join('');
@@ -1153,7 +1181,7 @@ function updateFeed(){
     if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem; font-style: italic;">No recent activity.</td></tr>`;return;}
     b.innerHTML=state.sessions.slice(0,20).map(s=>{
         const d=new Date(s.completedAt ? (typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000) : new Date().getTime());
-        return `<tr><td style="color: var(--text-muted);">${d.toLocaleDateString()} <span style="color: var(--text-faint);">${d.toLocaleTimeString()}</span></td><td style="color: #fff; font-weight: 500;">${esc(s.taskTitle)||'Unknown Task'}</td><td style="color: var(--brand);">${s.duration||25}m</td></tr>`;
+        return `<tr><td style="color: var(--text-muted);">${d.toLocaleDateString()} <span style="color: var(--text-faint);">${d.toLocaleTimeString()}</span></td><td style="color: #fff; font-weight: 500;">${s.taskTitle||'Unknown Task'}</td><td style="color: var(--brand);">${s.duration||25}m</td></tr>`;
     }).join('');
 }
 
@@ -1161,13 +1189,13 @@ function updateCharts(){
     const days={}; state.sessions.forEach(s=>{ if(!s.completedAt)return; const d=new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000).toLocaleDateString(); days[d]=(days[d]||0)+(s.duration||25); });
     const sortedDays=Object.keys(days).sort((a,b)=>new Date(a)-new Date(b)).slice(-7);
     if(state.charts.activity)state.charts.activity.destroy();
-    state.charts.activity=new Chart(document.getElementById('activityChart').getContext('2d'),{ type:'line', data:{labels:sortedDays,datasets:[{label:'Global Focus Minutes',data:sortedDays.map(d=>days[d]),borderColor:'#ff5757',backgroundColor:'rgba(255, 87, 87, 0.1)',fill:true,tension:0.4}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#333333'}},x:{grid:{display:false}}}} });
+    state.charts.activity=new Chart(document.getElementById('activityChart').getContext('2d'),{ type:'line', data:{labels:sortedDays,datasets:[{label:'Global Focus Minutes',data:sortedDays.map(d=>days[d]),borderColor:'#ff5757',backgroundColor:'rgba(255, 87, 87, 0.1)',fill:true,tension:0.4}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#2a2a2a'}},x:{grid:{display:false}}}} });
     
     const projs={}; state.sessions.forEach(s=>{const p=s.project||'Inbox';projs[p]=(projs[p]||0)+1;});
     const sortedProj=Object.entries(projs).sort((a,b)=>b[1]-a[1]).slice(0,5);
     if(state.charts.proj)state.charts.proj.destroy();
     state.charts.proj=new Chart(document.getElementById('projectDistChart').getContext('2d'),{ type:'doughnut', data:{labels:sortedProj.map(x=>x[0]),datasets:[{data:sortedProj.map(x=>x[1]),backgroundColor:['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'} });
-    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; padding: 0.5rem; border-radius: 4px;"><div style="display: flex; align-items: center;"><span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span style="color: #fff;">${esc(p[0])}</span></div><span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span></div>`).join('');
+    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; padding: 0.5rem; border-radius: 4px;"><div style="display: flex; align-items: center;"><span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span><span style="color: #fff;">${p[0]}</span></div><span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span></div>`).join('');
 }
 </script>
 </body>
