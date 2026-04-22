@@ -1,47 +1,30 @@
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
-    // Stash the event so it can be triggered later.
     deferredPrompt = e;
-    
-    // TODO: Update your UI here to show your custom "Install App" button.
-    // For example: document.getElementById('install-btn').classList.remove('hidden');
 });
 
-// Create a function to call when the user clicks your custom Install button
 async function installApp() {
     if (deferredPrompt) {
-        // Show the install prompt
         deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
             console.log('User accepted the install prompt');
         } else {
             console.log('User dismissed the install prompt');
         }
-        // We've used the prompt, and can't use it again, throw it away
         deferredPrompt = null;
-        
-        // TODO: Hide your custom install button here
-        // document.getElementById('install-btn').classList.add('hidden');
     }
 }
 
-// Optional: Detect if the app was successfully installed
 window.addEventListener('appinstalled', () => {
-    // Hide the install button
-    // document.getElementById('install-btn').classList.add('hidden');
     console.log('TimeTrekker was installed');
-})
+});
 
-// settings app install button
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    // Show the install button in settings
     const installBtn = document.getElementById('btn-install-desktop');
     if (installBtn) installBtn.classList.remove('hidden');
 });
@@ -51,8 +34,6 @@ window.addEventListener('appinstalled', () => {
     if (installBtn) installBtn.classList.add('hidden');
     app.showToast('TimeTrekker installed successfully!', 'success');
 });
-
-
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -241,7 +222,6 @@ async function syncUserProfile(u) {
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
-            // NEW USER: Save complete profile information
             const newProfileData = {
                 displayName: u.displayName || u.email.split('@')[0],
                 email: u.email,
@@ -253,8 +233,6 @@ async function syncUserProfile(u) {
             };
             await setDoc(userRef, newProfileData);
         } else {
-            // EXISTING USER: Only update the lastLogin timestamp
-            // This prevents overwriting custom names or changed profile pictures
             await updateDoc(userRef, {
                 lastLogin: serverTimestamp()
             });
@@ -272,6 +250,22 @@ function showOrionBanner(uid) {
     D.body.style.height = 'calc(100vh - 24px)';
     D.body.style.marginTop = '24px';
 }
+
+const subBroadcasts = (uid) => {
+    const dismissed = JSON.parse(localStorage.getItem('dismissed_broadcasts') || '[]');
+    const q = query(collection(db, 'artifacts', APP_ID, 'broadcasts'), orderBy('createdAt', 'desc'), limit(10));
+    
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+                const b = { id: change.doc.id, ...change.doc.data() };
+                if ((b.target === 'all' || b.target === uid) && !dismissed.includes(b.id)) {
+                    app.showBroadcastPopup(b);
+                }
+            }
+        });
+    });
+};
 
 onAuthStateChanged(auth, u => {
     if (u) {
@@ -317,6 +311,7 @@ onAuthStateChanged(auth, u => {
         subTasks(effectiveUid);
         subLogs(effectiveUid);
         subTimer(effectiveUid);
+        subBroadcasts(effectiveUid); 
 
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -481,6 +476,50 @@ const _saveSetting = debounce((k, v) => {
 }, 500);
 
 const app = {
+    showBroadcastPopup: (b) => {
+        if (document.getElementById('broadcast-' + b.id)) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'broadcast-' + b.id;
+        
+        overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;transition:opacity 0.3s ease;";
+        
+        const themes = {
+            info: { bg: '#1e1e1e', border: '#3b82f6', text: '#3b82f6', icon: 'ph-info' },
+            warning: { bg: '#1e1e1e', border: '#f59e0b', text: '#f59e0b', icon: 'ph-warning' },
+            alert: { bg: '#1e1e1e', border: '#ef4444', text: '#ef4444', icon: 'ph-warning-circle' },
+            success: { bg: '#1e1e1e', border: '#10b981', text: '#10b981', icon: 'ph-check-circle' }
+        };
+        const theme = themes[b.type] || themes.info;
+
+        overlay.innerHTML = `
+            <div style="background:${theme.bg};border:1px solid ${theme.border};border-radius:12px;padding:24px;width:90%;max-width:400px;box-shadow:0 20px 40px rgba(0,0,0,0.5);transform:translateY(20px);transition:transform 0.3s ease;position:relative;">
+                <div style="display:flex;align-items:center;margin-bottom:16px;">
+                    <i class="ph-fill ${theme.icon}" style="color:${theme.text};font-size:24px;margin-right:12px;"></i>
+                    <h3 style="margin:0;color:#fff;font-size:18px;font-weight:600;font-family:'Inter',sans-serif;">System Message</h3>
+                </div>
+                <p style="color:#e5e7eb;font-size:14px;line-height:1.5;margin-bottom:24px;font-family:'Inter',sans-serif;">${b.message}</p>
+                <button id="dismiss-${b.id}" style="width:100%;padding:10px;background:${theme.text}15;color:${theme.text};border:1px solid ${theme.text}40;border-radius:6px;cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;transition:all 0.2s;" onmouseover="this.style.background='${theme.text}30'" onmouseout="this.style.background='${theme.text}15'">Acknowledge</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            overlay.querySelector('div').style.transform = 'translateY(0)';
+        });
+
+        document.getElementById(`dismiss-${b.id}`).onclick = () => {
+            const dismissed = JSON.parse(localStorage.getItem('dismissed_broadcasts') || '[]');
+            dismissed.push(b.id);
+            localStorage.setItem('dismissed_broadcasts', JSON.stringify(dismissed));
+            
+            overlay.style.opacity = '0';
+            overlay.querySelector('div').style.transform = 'translateY(-20px)';
+            setTimeout(() => overlay.remove(), 300);
+        };
+    },
+
     installApp: async () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
