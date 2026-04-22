@@ -103,6 +103,13 @@
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
     .data-table tr:hover { background: var(--hover); }
 
+    /* Interactive Table Headers */
+    th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
+    th.sortable:hover { color: #fff; }
+    th.sortable i { margin-left: 4px; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
+    th.sortable.active { color: var(--brand); }
+    th.sortable.active i { opacity: 1; }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); transition: opacity 0.3s; }
     .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transform: scale(1); transition: transform 0.3s; }
     .modal-box.large { max-width: 500px; padding: 0; overflow: hidden; }
@@ -316,10 +323,10 @@
                                 <tr>
                                     <th style="width: 40px;"></th>
                                     <th style="width: 48px;"></th> 
-                                    <th>User Profile</th>
-                                    <th>Login/Provider</th>
-                                    <th>Engagement</th>
-                                    <th>Last Active</th>
+                                    <th class="sortable" onclick="app.handleSort('users', 'name')">User Profile <i class="ph-bold ph-caret-up-down" id="sort-users-name"></i></th>
+                                    <th class="sortable" onclick="app.handleSort('users', 'provider')">Login/Provider <i class="ph-bold ph-caret-up-down" id="sort-users-provider"></i></th>
+                                    <th class="sortable" onclick="app.handleSort('users', 'focus')">Engagement <i class="ph-bold ph-caret-up-down" id="sort-users-focus"></i></th>
+                                    <th class="sortable active" onclick="app.handleSort('users', 'lastActive')">Last Active <i class="ph-bold ph-caret-down" id="sort-users-lastActive"></i></th>
                                     <th style="text-align: right;">Actions</th>
                                 </tr>
                             </thead>
@@ -356,11 +363,11 @@
                              <thead>
                                 <tr>
                                     <th style="width: 48px;"></th>
-                                    <th>Task Details</th>
-                                    <th>Priority</th>
+                                    <th class="sortable" onclick="app.handleSort('tasks', 'title')">Task Details <i class="ph-bold ph-caret-up-down" id="sort-tasks-title"></i></th>
+                                    <th class="sortable" onclick="app.handleSort('tasks', 'priority')">Priority <i class="ph-bold ph-caret-up-down" id="sort-tasks-priority"></i></th>
                                     <th>Pomos</th>
-                                    <th>Duration</th>
-                                    <th style="text-align: right;">Due Date / Actions</th>
+                                    <th class="sortable" onclick="app.handleSort('tasks', 'duration')">Duration <i class="ph-bold ph-caret-up-down" id="sort-tasks-duration"></i></th>
+                                    <th class="sortable active" onclick="app.handleSort('tasks', 'dueDate')" style="text-align: right;">Due Date <i class="ph-bold ph-caret-up" id="sort-tasks-dueDate"></i> / Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="tasks-table-body"></tbody>
@@ -386,8 +393,8 @@
                                 <tr>
                                     <th style="width: 48px;"></th>
                                     <th>Message / Details</th>
-                                    <th>Target</th>
-                                    <th>Status / Engagement</th>
+                                    <th class="sortable" onclick="app.handleSort('broadcasts', 'target')">Target <i class="ph-bold ph-caret-up-down" id="sort-broadcasts-target"></i></th>
+                                    <th class="sortable active" onclick="app.handleSort('broadcasts', 'createdAt')">Status / Engagement <i class="ph-bold ph-caret-down" id="sort-broadcasts-createdAt"></i></th>
                                     <th style="text-align: right;">Actions</th>
                                 </tr>
                             </thead>
@@ -599,8 +606,18 @@ const log=(msg)=>{
 const state={
     sessions:[], tasks:[], usersList:[], broadcasts: [], charts:{}, view:'overview', usersMap:{}, filterUser:null,
     starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
-    showStarredOnly: false, lastSyncTime: null
+    showStarredOnly: false, lastSyncTime: null,
+    sort: {
+        users: { col: 'lastActive', dir: 'desc' },
+        tasks: { col: 'dueDate', dir: 'asc' },
+        broadcasts: { col: 'createdAt', dir: 'desc' }
+    }
 };
+
+window.addEventListener('hashchange', () => {
+    const v = window.location.hash.replace('#', '') || 'overview';
+    if (state.view !== v) app.setView(v);
+});
 
 const saveCache = () => {
     try {
@@ -696,6 +713,11 @@ onAuthStateChanged(auth, async u => {
         if (ADMIN_UIDS.includes(u.uid)) {
             if (orionApp) orionApp.style.display = 'flex';
             log(`Authenticated as ${u.email}`);
+            
+            // Read hash on load and navigate
+            const initialView = window.location.hash.replace('#', '') || 'overview';
+            app.setView(initialView);
+            
             app.refreshData(false);
         } else {
             log(`Unauthorized access attempt by ${u.email}`);
@@ -735,6 +757,12 @@ const app={
         state.view=v;
         if(v==='tasks'&&!state.keepFilter)state.filterUser=null;
         state.keepFilter=false;
+        
+        // Update URL quietly without triggering hashchange event loop
+        if (window.location.hash !== `#${v}`) {
+            history.pushState(null, null, `#${v}`);
+        }
+
         document.querySelectorAll('.view-section').forEach(el=>el.classList.add('hidden'));
         document.getElementById(`view-${v}`).classList.remove('hidden');
         document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
@@ -760,6 +788,30 @@ const app={
         if(v==='users')renderUsersTable();
         if(v==='tasks')renderTasksTable();
         if(v==='broadcasts')renderBroadcastsTable();
+    },
+    handleSort: (view, col) => {
+        if (state.sort[view].col === col) {
+            state.sort[view].dir = state.sort[view].dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            state.sort[view].col = col;
+            state.sort[view].dir = 'asc';
+        }
+
+        document.querySelectorAll(`#view-${view} th.sortable`).forEach(th => {
+            th.classList.remove('active');
+            const icon = th.querySelector('i');
+            if (icon) icon.className = 'ph-bold ph-caret-up-down';
+        });
+        
+        const activeTh = document.getElementById(`sort-${view}-${col}`);
+        if (activeTh) {
+            activeTh.parentElement.classList.add('active');
+            activeTh.className = state.sort[view].dir === 'asc' ? 'ph-bold ph-caret-up' : 'ph-bold ph-caret-down';
+        }
+        
+        if(view === 'users') renderUsersTable();
+        if(view === 'tasks') renderTasksTable();
+        if(view === 'broadcasts') renderBroadcastsTable();
     },
     filterTasksByUser:(uid)=>{ state.filterUser=uid; state.keepFilter=true; app.setView('tasks'); },
     viewAsUser:(uid)=>{ window.open(`application?uid=${uid}`,'_blank'); },
@@ -939,23 +991,17 @@ const app={
         const b = state.broadcasts.find(x => x.id === id);
         if (!b) return;
         
-        // 1. Populate the modal with the old broadcast's data
         document.getElementById('admin-broadcast-target').value = b.target || 'all';
         document.getElementById('admin-broadcast-type').value = b.type || 'info';
         document.getElementById('admin-broadcast-message').value = b.message || '';
         document.getElementById('admin-broadcast-btn-text').value = b.btnText || '';
         document.getElementById('admin-broadcast-btn-url').value = b.btnUrl || '';
-        document.getElementById('admin-broadcast-expiry').value = ''; // Leave blank so they can set a new expiry
+        document.getElementById('admin-broadcast-expiry').value = ''; 
         
-        // 2. Clear the hidden ID so Firestore treats this as a brand NEW broadcast 
-        // (This ensures it bypasses the user's local 'dismissed' cache)
         document.getElementById('admin-broadcast-id').value = '';
-        
-        // 3. Update the UI text
         document.getElementById('admin-broadcast-title').innerText = "Resend Broadcast";
         document.getElementById('admin-save-broadcast-btn').innerText = "Send New Broadcast";
         
-        // 4. Open the Modal
         const modal = document.getElementById('admin-broadcast-modal');
         modal.classList.remove('hidden');
         setTimeout(() => modal.style.opacity = '1', 10);
@@ -966,7 +1012,6 @@ const app={
         const target = document.getElementById('admin-broadcast-target').value;
         const type = document.getElementById('admin-broadcast-type').value;
         
-        // Preserve newlines
         const message = document.getElementById('admin-broadcast-message').value.trim();
         const btnText = document.getElementById('admin-broadcast-btn-text').value.trim();
         const btnUrl = document.getElementById('admin-broadcast-btn-url').value.trim();
@@ -1068,6 +1113,16 @@ function renderUsersTable(){
     let users=Object.values(state.usersMap);
     if(state.showStarredOnly) users = users.filter(u => state.starred.includes(u.uid));
 
+    const { col, dir } = state.sort.users;
+    users.sort((a, b) => {
+        let valA = a[col], valB = b[col];
+        if (col === 'name') { valA = (a.name||a.email).toLowerCase(); valB = (b.name||b.email).toLowerCase(); }
+        
+        if (valA < valB) return dir === 'asc' ? -1 : 1;
+        if (valA > valB) return dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
     if(users.length===0){ tbody.innerHTML=`<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1rem;">No user data found.</td></tr>`; return; }
 
     tbody.innerHTML=users.map(u=>{
@@ -1125,61 +1180,88 @@ function renderTasksTable(){
         document.getElementById('tasks-header-title').innerText="Global Task Master List";
         document.getElementById('clear-filter-btn').classList.add('hidden');
     }
+    
     if(filteredTasks.length===0){tbody.innerHTML=`<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1rem;">No tasks found.</td></tr>`;return;}
     
-    const groups={}; const sortOrder=['Overdue','Today','Tomorrow','No Due Date'];
-    filteredTasks.forEach(t=>{ const l=getDateLabel(t.dueDate); if(!groups[l])groups[l]=[]; groups[l].push(t); });
-    const sortedKeys=Object.keys(groups).sort((a,b)=>{
-        const idxA=sortOrder.indexOf(a), idxB=sortOrder.indexOf(b);
-        if(idxA!==-1&&idxB!==-1)return idxA-idxB; if(idxA!==-1)return-1; if(idxB!==-1)return 1;
-        if(a==='No Due Date')return 1; if(b==='No Due Date')return-1; return a.localeCompare(b);
+    const { col, dir } = state.sort.tasks;
+    filteredTasks.sort((a, b) => {
+        let valA = a[col] || '', valB = b[col] || '';
+        
+        if (col === 'priority') {
+            const pMap = { high: 3, med: 2, low: 1, none: 0 };
+            valA = pMap[a.priority || 'none']; valB = pMap[b.priority || 'none'];
+        }
+        if (col === 'dueDate') {
+            valA = a.dueDate || '9999-99-99'; valB = b.dueDate || '9999-99-99';
+        }
+        
+        if (valA < valB) return dir === 'asc' ? -1 : 1;
+        if (valA > valB) return dir === 'asc' ? 1 : -1;
+        return 0;
     });
-    
+
+    const renderFlat = col !== 'dueDate';
     let html='';
-    sortedKeys.forEach(label=>{
-        html+=`<tr style="background: rgba(20,20,20,0.5);"><td colspan="6" style="padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);">${label}</td></tr>`;
-        html+=groups[label].map(t=>{
-            const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
-            const priBadge={
-                high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
-                med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
-                low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
-                none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
-            }[t.priority||'none'];
-            const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedPomos||0;
-            const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
-            const userTag=!state.filterUser?`<div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
-            const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
-            
-            return `
-            <tr class="task-row">
-                <td style="vertical-align: top; padding-top: 1.25rem;">${icon}</td>
-                <td style="vertical-align: top;">
-                    <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${t.title||'Untitled'}</div>${subHtml}
-                    <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
-                        <span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 10px; color: var(--text-muted);">${t.project||'Inbox'}</span>
-                        ${userTag}
-                    </div>
-                </td>
-                <td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td>
-                <td style="vertical-align: top; padding-top: 1.25rem;">
-                    <div style="font-size: 0.75rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
-                    <div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div>
-                </td>
-                <td style="vertical-align: top; padding-top: 1.25rem;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div>
-                </td>
-                <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
-                    <div style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace; margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
-                    <div class="flex items-center justify-end gap-1">
-                        <button onclick="app.toggleAdminTaskModal('${t.id}', '${t._uid}')" class="btn btn-icon text-xs"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
-                        <button onclick="app.deleteAdminTask('${t.id}', '${t._uid}')" class="btn btn-icon text-xs text-danger hover:text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-    });
+
+    if (!renderFlat) {
+        const groups={}; const sortOrder=['Overdue','Today','Tomorrow','No Due Date'];
+        filteredTasks.forEach(t=>{ const l=getDateLabel(t.dueDate); if(!groups[l])groups[l]=[]; groups[l].push(t); });
+        const sortedKeys=Object.keys(groups).sort((a,b)=>{
+            const idxA=sortOrder.indexOf(a), idxB=sortOrder.indexOf(b);
+            if(idxA!==-1&&idxB!==-1)return idxA-idxB; if(idxA!==-1)return-1; if(idxB!==-1)return 1;
+            if(a==='No Due Date')return 1; if(b==='No Due Date')return-1; return a.localeCompare(b);
+        });
+        
+        sortedKeys.forEach(label=>{
+            html+=`<tr style="background: rgba(20,20,20,0.5);"><td colspan="6" style="padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);">${label}</td></tr>`;
+            html+=groups[label].map(t=>generateTaskRowHtml(t)).join('');
+        });
+    } else {
+        html += filteredTasks.map(t=>generateTaskRowHtml(t)).join('');
+    }
+    
     tbody.innerHTML=html;
+}
+
+function generateTaskRowHtml(t) {
+    const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
+    const priBadge={
+        high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
+        med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
+        low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
+        none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
+    }[t.priority||'none'];
+    const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedPomos||0;
+    const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
+    const userTag=!state.filterUser?`<div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
+    const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
+    
+    return `
+    <tr class="task-row">
+        <td style="vertical-align: top; padding-top: 1.25rem;">${icon}</td>
+        <td style="vertical-align: top;">
+            <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${t.title||'Untitled'}</div>${subHtml}
+            <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 10px; color: var(--text-muted);">${t.project||'Inbox'}</span>
+                ${userTag}
+            </div>
+        </td>
+        <td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td>
+        <td style="vertical-align: top; padding-top: 1.25rem;">
+            <div style="font-size: 0.75rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
+            <div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div>
+        </td>
+        <td style="vertical-align: top; padding-top: 1.25rem;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div>
+        </td>
+        <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
+            <div style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace; margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
+            <div class="flex items-center justify-end gap-1">
+                <button onclick="app.toggleAdminTaskModal('${t.id}', '${t._uid}')" class="btn btn-icon text-xs"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                <button onclick="app.deleteAdminTask('${t.id}', '${t._uid}')" class="btn btn-icon text-xs text-danger hover:text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
+            </div>
+        </td>
+    </tr>`;
 }
 
 function renderBroadcastsTable(){
@@ -1189,7 +1271,20 @@ function renderBroadcastsTable(){
         return;
     }
 
-    tbody.innerHTML=state.broadcasts.map(b=>{
+    const { col, dir } = state.sort.broadcasts;
+    let sortedBroadcasts = [...state.broadcasts];
+    sortedBroadcasts.sort((a, b) => {
+        let valA = a[col], valB = b[col];
+        if (col === 'createdAt') { 
+            valA = a.createdAt ? a.createdAt.seconds : 0; 
+            valB = b.createdAt ? b.createdAt.seconds : 0; 
+        }
+        if (valA < valB) return dir === 'asc' ? -1 : 1;
+        if (valA > valB) return dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    tbody.innerHTML=sortedBroadcasts.map(b=>{
         const d = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleString() : 'Just now';
         
         let typeBadge = '';
