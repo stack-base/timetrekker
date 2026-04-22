@@ -604,7 +604,7 @@ const log=(msg)=>{
 };
 
 const state={
-    sessions:[], tasks:[], usersList:[], broadcasts: [], charts:{}, view:'overview', usersMap:{}, filterUser:null,
+    sessions:[], tasks:[], usersList:[], broadcasts: [], charts:{}, view:'overview', usersMap:{}, filterUser:null, editTaskId: null,
     starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
     showStarredOnly: false, lastSyncTime: null,
     sort: {
@@ -614,10 +614,58 @@ const state={
     }
 };
 
-window.addEventListener('hashchange', () => {
-    const v = window.location.hash.replace('#', '') || 'overview';
-    if (state.view !== v) app.setView(v);
-});
+let isInitialLoad = true;
+
+const updateURL = () => {
+    const url = new URL(window.location);
+    url.searchParams.set('view', state.view);
+    
+    if (state.filterUser) url.searchParams.set('uid', state.filterUser);
+    else url.searchParams.delete('uid');
+    
+    if (state.editTaskId) url.searchParams.set('edit', state.editTaskId);
+    else url.searchParams.delete('edit');
+
+    // Remove hash if it still exists
+    url.hash = '';
+
+    if (window.location.search !== url.search || window.location.hash !== '') {
+        window.history.pushState({}, '', url);
+    }
+};
+
+const applyUrlState = () => {
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get('view') || 'overview';
+    const uid = params.get('uid');
+    const edit = params.get('edit');
+
+    if (uid) {
+        state.filterUser = uid;
+        state.keepFilter = true;
+    } else {
+        state.filterUser = null;
+    }
+
+    // Pass true to skip updating URL while applying URL state
+    app.setView(v, true);
+
+    const modal = document.getElementById('admin-task-modal');
+    const isModalOpen = !modal.classList.contains('hidden');
+
+    if (edit) {
+        if (!isModalOpen) {
+            if (edit === 'new') app.toggleAdminTaskModal(null, uid, true);
+            else app.toggleAdminTaskModal(edit, uid, true);
+        }
+    } else {
+        if (isModalOpen) {
+            app.toggleAdminTaskModal(null, null, true);
+        }
+    }
+};
+
+window.addEventListener('popstate', applyUrlState);
 
 const saveCache = () => {
     try {
@@ -713,11 +761,6 @@ onAuthStateChanged(auth, async u => {
         if (ADMIN_UIDS.includes(u.uid)) {
             if (orionApp) orionApp.style.display = 'flex';
             log(`Authenticated as ${u.email}`);
-            
-            // Read hash on load and navigate
-            const initialView = window.location.hash.replace('#', '') || 'overview';
-            app.setView(initialView);
-            
             app.refreshData(false);
         } else {
             log(`Unauthorized access attempt by ${u.email}`);
@@ -753,14 +796,14 @@ const app={
     },
     signOut:async()=>{try{await signOut(auth);window.location.reload();}catch(e){log(e.message);}},
     hardRefresh: () => { if(confirm('Reload app? Unsaved changes may be lost.')) window.location.reload(true); },
-    setView:(v)=>{
+    setView:(v, skipUrlUpdate = false)=>{
         state.view=v;
         if(v==='tasks'&&!state.keepFilter)state.filterUser=null;
         state.keepFilter=false;
         
-        // Update URL quietly without triggering hashchange event loop
-        if (window.location.hash !== `#${v}`) {
-            history.pushState(null, null, `#${v}`);
+        if (!skipUrlUpdate) {
+            state.editTaskId = null; // Close edit modal state on normal view switch
+            updateURL();
         }
 
         document.querySelectorAll('.view-section').forEach(el=>el.classList.add('hidden'));
@@ -813,9 +856,17 @@ const app={
         if(view === 'tasks') renderTasksTable();
         if(view === 'broadcasts') renderBroadcastsTable();
     },
-    filterTasksByUser:(uid)=>{ state.filterUser=uid; state.keepFilter=true; app.setView('tasks'); },
+    filterTasksByUser:(uid)=>{ 
+        state.filterUser=uid; 
+        state.keepFilter=true; 
+        app.setView('tasks'); // updateURL is called within setView
+    },
     viewAsUser:(uid)=>{ window.open(`application?uid=${uid}`,'_blank'); },
-    clearTaskFilter:()=>{ state.filterUser=null; renderTasksTable(); },
+    clearTaskFilter:()=>{ 
+        state.filterUser=null; 
+        updateURL();
+        renderTasksTable(); 
+    },
     filterTasks:(q)=>{
         const trs=document.getElementById('tasks-table-body').querySelectorAll('tr');
         q=q.toLowerCase();
@@ -870,17 +921,21 @@ const app={
     },
     
     // --- Task Moderation ---
-    toggleAdminTaskModal: (taskId = null, uid = null) => {
+    toggleAdminTaskModal: (taskId = null, uid = null, skipUrlUpdate = false) => {
         const modal = document.getElementById('admin-task-modal');
         const form = document.getElementById('admin-task-form');
         
         if (modal.classList.contains('hidden')) {
+            state.editTaskId = taskId || 'new';
+            if (uid) state.filterUser = uid;
+            if (!skipUrlUpdate) updateURL();
+
             populateTargetSelectors();
             form.reset();
             const targetSelect = document.getElementById('admin-task-target');
             document.getElementById('admin-task-date').value = new Date().toISOString().split('T')[0];
 
-            if (taskId && uid) {
+            if (taskId && taskId !== 'new' && uid) {
                 const t = state.tasks.find(x => x.id === taskId && x._uid === uid);
                 if (t) {
                     document.getElementById('admin-modal-title').innerText = "Edit Task";
@@ -905,6 +960,9 @@ const app={
             modal.classList.remove('hidden');
             setTimeout(() => modal.style.opacity = '1', 10);
         } else {
+            state.editTaskId = null;
+            if (!skipUrlUpdate) updateURL();
+
             modal.style.opacity = '0';
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
@@ -1061,7 +1119,11 @@ const app={
 
     refreshData:async(forceRefresh = true)=>{
         try{
-            if(!forceRefresh && loadCache()){ renderAll(); return; }
+            if(!forceRefresh && loadCache()){ 
+                renderAll(); 
+                if (isInitialLoad) { isInitialLoad = false; applyUrlState(); }
+                return; 
+            }
             log('Fetching LIVE data from Firestore...');
             
             const qSessions=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(500));
@@ -1081,6 +1143,11 @@ const app={
             state.broadcasts=snapBroadcasts.docs.map(d=>({id:d.id,...d.data()}));
             
             saveCache(); renderAll();
+            
+            if (isInitialLoad) {
+                isInitialLoad = false;
+                applyUrlState();
+            }
         }catch(e){ log(`ERROR: ${e.message}`); }
     }
 };
