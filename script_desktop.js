@@ -253,12 +253,20 @@ function showOrionBanner(uid) {
 
 const subBroadcasts = (uid) => {
     const dismissed = JSON.parse(localStorage.getItem('dismissed_broadcasts') || '[]');
+    const snoozed = JSON.parse(localStorage.getItem('snoozed_broadcasts') || '{}');
     const q = query(collection(db, 'artifacts', APP_ID, 'broadcasts'), orderBy('createdAt', 'desc'), limit(10));
     
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added') {
+            if (change.type === 'added' || change.type === 'modified') {
                 const b = { id: change.doc.id, ...change.doc.data() };
+                
+                // 1. Expiration check
+                if (b.expiresAt && new Date(b.expiresAt) < new Date()) return;
+                
+                // 2. Snooze check (if time hasn't passed, ignore)
+                if (snoozed[b.id] && new Date(snoozed[b.id]) > new Date()) return;
+
                 if ((b.target === 'all' || b.target === uid) && !dismissed.includes(b.id)) {
                     app.showBroadcastPopup(b);
                 }
@@ -492,14 +500,27 @@ const app = {
         };
         const theme = themes[b.type] || themes.info;
 
+        // Rich Text support (Line breaks and Bold)
+        const formatMsg = (b.message || '').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b style="color:#fff;">$1</b>');
+
+        // Optional CTA Button
+        let ctaHtml = '';
+        if (b.btnText && b.btnUrl) {
+            ctaHtml = `<a href="${b.btnUrl}" target="_blank" style="display:block;text-align:center;width:100%;padding:10px;background:${theme.text};color:#fff;border-radius:6px;text-decoration:none;font-weight:600;margin-bottom:12px;font-family:'Inter',sans-serif;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${b.btnText}</a>`;
+        }
+
         overlay.innerHTML = `
             <div style="background:${theme.bg};border:1px solid ${theme.border};border-radius:12px;padding:24px;width:90%;max-width:400px;box-shadow:0 20px 40px rgba(0,0,0,0.5);transform:translateY(20px);transition:transform 0.3s ease;position:relative;">
                 <div style="display:flex;align-items:center;margin-bottom:16px;">
                     <i class="ph-fill ${theme.icon}" style="color:${theme.text};font-size:24px;margin-right:12px;"></i>
                     <h3 style="margin:0;color:#fff;font-size:18px;font-weight:600;font-family:'Inter',sans-serif;">System Message</h3>
                 </div>
-                <p style="color:#e5e7eb;font-size:14px;line-height:1.5;margin-bottom:24px;font-family:'Inter',sans-serif;">${b.message}</p>
-                <button id="dismiss-${b.id}" style="width:100%;padding:10px;background:${theme.text}15;color:${theme.text};border:1px solid ${theme.text}40;border-radius:6px;cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;transition:all 0.2s;" onmouseover="this.style.background='${theme.text}30'" onmouseout="this.style.background='${theme.text}15'">Acknowledge</button>
+                <p style="color:#e5e7eb;font-size:14px;line-height:1.6;margin-bottom:24px;font-family:'Inter',sans-serif;">${formatMsg}</p>
+                ${ctaHtml}
+                <div style="display:flex;gap:12px;">
+                    <button id="snooze-${b.id}" style="flex:1;padding:10px;background:transparent;color:${theme.text};border:1px solid ${theme.text}40;border-radius:6px;cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;transition:all 0.2s;" onmouseover="this.style.background='${theme.text}15'" onmouseout="this.style.background='transparent'">Snooze</button>
+                    <button id="dismiss-${b.id}" style="flex:1;padding:10px;background:${theme.text}20;color:${theme.text};border:1px solid transparent;border-radius:6px;cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;transition:all 0.2s;" onmouseover="this.style.background='${theme.text}30'" onmouseout="this.style.background='${theme.text}20'">Acknowledge</button>
+                </div>
             </div>
         `;
         document.body.appendChild(overlay);
@@ -509,15 +530,37 @@ const app = {
             overlay.querySelector('div').style.transform = 'translateY(0)';
         });
 
-        document.getElementById(`dismiss-${b.id}`).onclick = () => {
+        // Dismiss updates read receipts
+        document.getElementById(`dismiss-${b.id}`).onclick = async () => {
             const dismissed = JSON.parse(localStorage.getItem('dismissed_broadcasts') || '[]');
             dismissed.push(b.id);
             localStorage.setItem('dismissed_broadcasts', JSON.stringify(dismissed));
             
+            // Push Analytics read receipt
+            if(state.user) {
+                try {
+                    await updateDoc(doc(db, 'artifacts', APP_ID, 'broadcasts', b.id), {
+                        readBy: arrayUnion(state.user.uid)
+                    });
+                } catch(e){}
+            }
+
+            closeOverlay();
+        };
+
+        // Snooze pushes notification back by 4 hours
+        document.getElementById(`snooze-${b.id}`).onclick = () => {
+            const snoozed = JSON.parse(localStorage.getItem('snoozed_broadcasts') || '{}');
+            snoozed[b.id] = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+            localStorage.setItem('snoozed_broadcasts', JSON.stringify(snoozed));
+            closeOverlay();
+        };
+
+        function closeOverlay() {
             overlay.style.opacity = '0';
             overlay.querySelector('div').style.transform = 'translateY(-20px)';
             setTimeout(() => overlay.remove(), 300);
-        };
+        }
     },
 
     installApp: async () => {

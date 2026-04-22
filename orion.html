@@ -385,9 +385,9 @@
                              <thead>
                                 <tr>
                                     <th style="width: 48px;"></th>
-                                    <th>Message</th>
+                                    <th>Message / Details</th>
                                     <th>Target</th>
-                                    <th>Date</th>
+                                    <th>Status / Engagement</th>
                                     <th style="text-align: right;">Actions</th>
                                 </tr>
                             </thead>
@@ -543,9 +543,26 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Message Content</label>
-                    <textarea id="admin-broadcast-message" placeholder="Type announcement here..." class="input-control" style="resize: none; height: 120px;" required></textarea>
+                    <label>Message Content (Use **bold** for emphasis)</label>
+                    <textarea id="admin-broadcast-message" placeholder="Type announcement here. New lines will be preserved." class="input-control" style="resize: none; height: 120px;" required></textarea>
                 </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="input-group">
+                        <label>Button Text (Optional)</label>
+                        <input type="text" id="admin-broadcast-btn-text" class="input-control" placeholder="e.g. View Details">
+                    </div>
+                    <div class="input-group">
+                        <label>Button URL (Optional)</label>
+                        <input type="url" id="admin-broadcast-btn-url" class="input-control" placeholder="https://...">
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label>Expires On (Optional)</label>
+                    <input type="datetime-local" id="admin-broadcast-expiry" class="input-control">
+                </div>
+                
                 <input type="hidden" id="admin-broadcast-id">
             </div>
             <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
@@ -559,14 +576,14 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, setDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
 const fb = initializeApp(C, "OrionConsole");
 const auth = getAuth(fb);
 const db = getFirestore(fb);
-const CACHE_KEY = 'orion_local_cache_v2';
+const CACHE_KEY = 'orion_local_cache_v3';
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; 
 
@@ -602,8 +619,6 @@ const loadCache = () => {
         const data = JSON.parse(raw);
         state.sessions = data.sessions || []; state.tasks = data.tasks || []; state.usersList = data.usersList || []; state.broadcasts = data.broadcasts || [];
         state.lastSyncTime = data.timestamp || Date.now();
-        const age = Math.round((Date.now() - state.lastSyncTime) / 1000 / 60);
-        log(`<span style="color: var(--info);">Loaded from Cache (${age} mins ago).</span>`);
         updateStorageStats();
         return true;
     } catch (e) { return false; }
@@ -864,11 +879,9 @@ const app={
 
         try {
             if (taskId) {
-                // Edit existing task
                 await updateDoc(doc(db, 'artifacts', appId, 'users', target, 'tasks', taskId), data);
                 log(`<span style="color:var(--success)">Task updated for user ${target}</span>`);
             } else {
-                // New task (Single or Broadcast)
                 data.status = 'todo';
                 data.createdAt = new Date().toISOString();
                 data.project = 'Inbox';
@@ -926,18 +939,36 @@ const app={
         e.preventDefault();
         const target = document.getElementById('admin-broadcast-target').value;
         const type = document.getElementById('admin-broadcast-type').value;
-        const message = document.getElementById('admin-broadcast-message').value;
+        
+        // Preserve newlines
+        const message = document.getElementById('admin-broadcast-message').value.trim();
+        const btnText = document.getElementById('admin-broadcast-btn-text').value.trim();
+        const btnUrl = document.getElementById('admin-broadcast-btn-url').value.trim();
+        const expiry = document.getElementById('admin-broadcast-expiry').value;
+
         const btn = document.getElementById('admin-save-broadcast-btn');
         btn.innerText = 'Sending...'; btn.disabled = true;
 
+        const payload = {
+            target: target,
+            type: type,
+            message: message,
+            createdAt: serverTimestamp(),
+            createdBy: 'admin',
+            readBy: []
+        };
+
+        if (btnText && btnUrl) {
+            payload.btnText = btnText;
+            payload.btnUrl = btnUrl;
+        }
+
+        if (expiry) {
+            payload.expiresAt = new Date(expiry).toISOString();
+        }
+
         try {
-            await addDoc(collection(db, 'artifacts', appId, 'broadcasts'), {
-                target: target,
-                type: type,
-                message: message,
-                createdAt: serverTimestamp(),
-                createdBy: 'admin'
-            });
+            await addDoc(collection(db, 'artifacts', appId, 'broadcasts'), payload);
             log(`<span style="color:var(--success)">Broadcast sent successfully.</span>`);
             app.toggleBroadcastModal();
             app.refreshData(true);
@@ -962,22 +993,18 @@ const app={
             if(!forceRefresh && loadCache()){ renderAll(); return; }
             log('Fetching LIVE data from Firestore...');
             
-            // Fetch Sessions
             const qSessions=query(collectionGroup(db,'focus_sessions'),orderBy('completedAt','desc'),limit(500));
             const snapSessions=await getDocs(qSessions);
             state.sessions=snapSessions.docs.map(d=>{ const uid=d.ref.parent?.parent?.id||'unknown'; return{...d.data(),_uid:uid}; });
             
-            // Fetch Tasks
             const qTasks=query(collectionGroup(db,'tasks'),limit(500));
             const snapTasks=await getDocs(qTasks);
             state.tasks=snapTasks.docs.map(d=>{ const uid=d.ref.parent?.parent?.id||'unknown'; return{id: d.id, ...d.data(),_uid:uid}; });
             
-            // Fetch Users
             const qUsers=query(collection(db,'artifacts',appId,'users'));
             const snapUsers=await getDocs(qUsers);
             state.usersList=snapUsers.docs.map(d=>({id:d.id,...d.data()}));
 
-            // Fetch Broadcasts
             const qBroadcasts=query(collection(db,'artifacts',appId,'broadcasts'),orderBy('createdAt','desc'));
             const snapBroadcasts=await getDocs(qBroadcasts);
             state.broadcasts=snapBroadcasts.docs.map(d=>({id:d.id,...d.data()}));
@@ -1148,15 +1175,32 @@ function renderBroadcastsTable(){
         let targetLbl = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name || state.usersMap[b.target].email : b.target);
         const icon = b.type === 'alert' ? 'ph-warning-circle' : 'ph-megaphone';
 
+        const reads = b.readBy ? b.readBy.length : 0;
+        const isExpired = b.expiresAt && new Date(b.expiresAt) < new Date();
+        const statusBadge = isExpired 
+            ? `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">EXPIRED</span>` 
+            : `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">ACTIVE</span>`;
+
+        let btnIndicator = b.btnText ? `<div style="font-size:10px; color:var(--brand); margin-top:4px;"><i class="ph-bold ph-link"></i> ${b.btnText}</div>` : '';
+
         return `
         <tr>
             <td style="vertical-align: top;"><i class="ph-fill ${icon}" style="color: var(--text-muted); font-size: 1.25rem;"></i></td>
             <td style="vertical-align: top;">
-                <div style="color: #fff; font-weight: 500; font-size: 0.875rem; max-width: 400px;">${b.message}</div>
+                <div style="color: #fff; font-weight: 500; font-size: 0.875rem; max-width: 400px; white-space: pre-wrap;">${b.message}</div>
+                ${btnIndicator}
+            </td>
+            <td style="vertical-align: top; padding-top: 1.25rem;">
+                <span style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${targetLbl}</span>
                 <div style="margin-top: 8px;">${typeBadge}</div>
             </td>
-            <td style="vertical-align: top; padding-top: 1.25rem;"><span style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${targetLbl}</span></td>
-            <td style="vertical-align: top; padding-top: 1.25rem;"><span style="color: var(--text-muted); font-size: 0.75rem;">${d}</span></td>
+            <td style="vertical-align: top; padding-top: 1.25rem;">
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+                    ${statusBadge}
+                    <div style="font-size:10px; color:var(--text-muted);"><i class="ph-bold ph-eye"></i> <strong style="color:#fff;">${reads}</strong> views</div>
+                    <span style="color: var(--text-faint); font-size: 0.65rem;">Sent: ${d}</span>
+                </div>
+            </td>
             <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
                 <button onclick="app.deleteBroadcast('${b.id}')" class="btn btn-icon text-xs text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
             </td>
