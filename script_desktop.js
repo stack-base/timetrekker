@@ -165,7 +165,7 @@ const state = {
     },
     newEst: 1,
     sound: localUI.sound,
-    charts: { focusBar: null, taskBar: null, project: null, hourly: null, weekday: null, priority: null },
+    charts: { focusBar: null, taskBar: null, project: null, hourly: null, weekday: null, priority: null, todayTimeline: null },
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
     analytics: { range: 'week', metric: 'time' },
     lastCheckTime: null
@@ -207,7 +207,7 @@ const getEls = () => ({
         completionRate: $('ana-completion-rate'), avgSession: $('ana-avg-session'),
         earlyBird: $('ana-early-bird'), nightOwl: $('ana-night-owl'), streakDays: $('ana-streak-days'),
         projectCount: $('ana-project-count'), insightText: $('insight-text'),
-        timelineGrid: $('pomo-timeline-grid'), focusBarChart: $('focusBarChart'), taskBarChart: $('taskBarChart'),
+        timelineGrid: $('pomo-timeline-grid'), focusBarChart: $('focusBarChart'), taskBarChart: $('taskBarChart'), todayTimelineChart: $('todayTimelineChart'),
         projectChart: $('projectChart'), hourlyChart: $('hourlyChart'), weekdayChart: $('weekdayChart'), priorityChart: $('priorityChart'),
         projList: $('project-rank-list'), tagList: $('tag-rank-list'), sessionLogBody: $('session-log-body')
     },
@@ -917,7 +917,9 @@ const app = {
                             }, 800); 
                         }
 
-                    } catch (e) {}
+                    } catch (e) { 
+                        console.error("Failed to save session:", e); 
+                    }
                 }
             }
 
@@ -1210,6 +1212,21 @@ function updateAnalytics() {
         const ctxT = els.analytics.taskBarChart.getContext('2d');
         state.charts.taskBar = new Chart(ctxT, gC(ctxT, state.chartTypes.task, lbl, dpTask, '#3b82f6', 'Tasks Done'));
     }
+
+    // --- ADD TODAY TIMELINE CHART LOGIC ---
+    const todayHours = Array(24).fill(0);
+    logsToday.forEach(l => { 
+        const d = parseDate(l.completedAt); 
+        if (d) todayHours[d.getHours()] += (l.duration || 25); 
+    });
+
+    if(els.analytics.todayTimelineChart) {
+        if (state.charts.todayTimeline) state.charts.todayTimeline.destroy();
+        const ctxToday = els.analytics.todayTimelineChart.getContext('2d');
+        // Passing 'line' explicitly to force a line graph regardless of other toggles
+        state.charts.todayTimeline = new Chart(ctxToday, gC(ctxToday, 'line', Array.from({ length: 24 }, (_, i) => i + 'h'), todayHours, '#8b5cf6', 'Minutes'));
+    }
+    // ---------------------------------------
 
     if(els.analytics.hourlyChart) {
         if (state.charts.hourly) state.charts.hourly.destroy();

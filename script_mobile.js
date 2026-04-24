@@ -177,7 +177,7 @@ const state = {
     },
     sound: localUI.sound,
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
-    chartInstances: { focusBar: null, taskBar: null, hourly: null, weekday: null, project: null, priority: null },
+    chartInstances: { focusBar: null, taskBar: null, hourly: null, weekday: null, project: null, priority: null, todayTimeline: null },
     analytics: { range: 'week' },
     lastCheckTime: null,
     audioContext: null,
@@ -989,6 +989,34 @@ const app = {
 
         createChart('focusBarChart', 'focus', dpFocus, '#ff5757', 'Hours', 'focusBar');
         createChart('taskBarChart', 'task', dpTask, '#3b82f6', 'Tasks', 'taskBar');
+
+        // --- ADD TODAY TIMELINE CHART LOGIC ---
+        const todayHours = Array(24).fill(0);
+        logsToday.forEach(l => { 
+            const d = parseDate(l.completedAt); 
+            if (d) todayHours[d.getHours()] += (l.duration || 25); 
+        });
+
+        if($('todayTimelineChart')) {
+             if(state.chartInstances.todayTimeline) state.chartInstances.todayTimeline.destroy();
+             const ctx = $('todayTimelineChart').getContext('2d');
+             const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
+             state.chartInstances.todayTimeline = new Chart(ctx, {
+                type: 'line',
+                data: { 
+                    labels: Array.from({length:24},(_,i)=>i), 
+                    datasets: [{ data: todayHours, backgroundColor: getGradient('#8b5cf6'), borderColor: '#8b5cf6', fill: true, borderWidth: 2, pointRadius:0, tension:0.4 }] 
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}, tooltip: { callbacks: { label: c => c.raw + ' mins' } }},
+                    scales: {
+                        x: { display: true, grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 8 } },
+                        y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 }, beginAtZero: true }
+                    }
+                }
+             });
+        }
+        // --------------------------------------
 
         const hours = Array(24).fill(0); logs.forEach(l => { const d = parseDate(l.completedAt); if (d) hours[d.getHours()] += (l.duration || 25) });
         const createHourly = () => {
