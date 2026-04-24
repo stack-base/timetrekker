@@ -1,5 +1,4 @@
-// sw.js
-const CACHE_NAME = 'timetrekker-mobile-v1.1';
+const CACHE_NAME = 'timetrekker-mobile-v1.0.6';
 const ASSETS_TO_CACHE = [
     './',
     './application_mobile.html',
@@ -22,6 +21,8 @@ self.addEventListener('install', event => {
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
+    // Force the waiting service worker to become the active service worker.
+    self.skipWaiting();
 });
 
 // Activate: Clean up old caches
@@ -38,7 +39,7 @@ self.addEventListener('activate', event => {
 
 // Fetch: Serve from Cache first, then Network
 self.addEventListener('fetch', event => {
-    // Ignore Firestore/Firebase requests (let the SDK handle them)
+    // Ignore Firestore/Firebase requests
     if (event.request.url.includes('firestore.googleapis.com') || 
         event.request.url.includes('firebase')) {
         return;
@@ -49,6 +50,42 @@ self.addEventListener('fetch', event => {
             return response || fetch(event.request).then(networkResponse => {
                 return networkResponse;
             });
+        })
+    );
+});
+
+// --- BACKGROUND ALARM LOGIC ---
+let alarmTimeout;
+
+self.addEventListener('message', (event) => {
+    if (event.data.type === 'START_ALARM') {
+        clearTimeout(alarmTimeout);
+        const timeRemaining = event.data.endTime - Date.now();
+        
+        if (timeRemaining > 0) {
+            alarmTimeout = setTimeout(() => {
+                self.registration.showNotification("Time's Up!", {
+                    body: `Your ${event.data.mode} session is complete.`,
+                    icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png',
+                    vibrate: [200, 100, 200, 100, 200],
+                    requireInteraction: true 
+                });
+            }, timeRemaining);
+        }
+    } else if (event.data.type === 'CLEAR_ALARM') {
+        clearTimeout(alarmTimeout);
+    }
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then(windowClients => {
+            if (windowClients.length > 0) {
+                windowClients[0].focus();
+            } else {
+                clients.openWindow('/');
+            }
         })
     );
 });

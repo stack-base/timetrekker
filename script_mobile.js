@@ -71,7 +71,6 @@ function showOrionBanner(uid) {
     banner.innerHTML = `<i class="ph-bold ph-eye mr-2"></i> Orion : ${uid}`;
     document.body.prepend(banner);
     
-    // Adjust top padding to account for fixed banner
     const mainContainer = document.getElementById('main-container');
     if(mainContainer) {
         mainContainer.style.paddingTop = 'calc(env(safe-area-inset-top) + 24px)';
@@ -87,6 +86,30 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw_mobile.js').catch(() => {});
     });
 }
+
+// --- GLOBALS AND SYNC LOGIC ---
+const INSTANCE_ID = Math.random().toString(36).substring(2, 15);
+
+function setBackgroundAlarm(endTimeMs, mode, taskTitle) {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'START_ALARM', endTime: endTimeMs, mode, taskTitle: taskTitle || "Focus Time" });
+    }
+}
+
+function clearBackgroundAlarm() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_ALARM' });
+    }
+}
+
+const parseDate = (val) => {
+    if (!val) return null;
+    if (typeof val === 'number') return new Date(val); // Monthly bucket timestamps
+    if (val.seconds !== undefined) return new Date(val.seconds * 1000);
+    if (typeof val === 'string') return new Date(val);
+    if (val instanceof Date) return val;
+    return null;
+};
 
 const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
@@ -150,7 +173,8 @@ const state = {
         taskId: null, mode: 'focus',
         sessionId: null, 
         pomoCountCurrentSession: 0,
-        settings: localSettings
+        settings: localSettings,
+        initiatorId: null
     },
     sound: localUI.sound,
     chartTypes: { focus: 'bar', task: 'bar', hourly: 'bar', weekday: 'bar' },
@@ -184,7 +208,7 @@ Chart.defaults.plugins.tooltip.displayColors = false;
 
 async function syncUserProfile(u) {
     if (!u) return;
-    if (VIEW_AS_UID && u.uid === ORION_ID) return; // Orion Bailout
+    if (VIEW_AS_UID && u.uid === ORION_ID) return;
 
     try {
         const userRef = doc(db, 'artifacts', APP_ID, 'users', u.uid);
@@ -202,9 +226,7 @@ async function syncUserProfile(u) {
             };
             await setDoc(userRef, newProfileData);
         } else {
-            await updateDoc(userRef, { 
-                lastLogin: serverTimestamp() 
-            });
+            await updateDoc(userRef, { lastLogin: serverTimestamp() });
         }
     } catch (e) { console.error(e); }
 }
@@ -311,7 +333,8 @@ onAuthStateChanged(auth, u => {
                     totalDuration: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
                     taskId: d.taskId || null,
                     sessionId: d.sessionId || null, 
-                    pomoCountCurrentSession: d.sessionCount || 0
+                    pomoCountCurrentSession: d.sessionCount || 0,
+                    initiatorId: d.initiatorId || null
                 };
                 
                 let settingsChanged = false;
@@ -346,14 +369,23 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        const sessionQuery = query(
-            collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'focus_sessions'),
-            orderBy('completedAt', 'desc'),
-            limit(500)
+        // Use Monthly Buckets instead of limits
+        const logsQuery = query(
+            collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'monthly_logs'),
+            orderBy('month', 'desc'),
+            limit(2)
         );
 
-        onSnapshot(sessionQuery, s => {
-            state.logs = s.docs.map(d => ({id: d.id, ...d.data()})); 
+        onSnapshot(logsQuery, s => {
+            let allSessions = [];
+            s.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data.sessions && Array.isArray(data.sessions)) {
+                    allSessions = allSessions.concat(data.sessions);
+                }
+            });
+            allSessions.sort((a, b) => b.completedAt - a.completedAt);
+            state.logs = allSessions;
             if(state.activeTab === 'analytics') app.renderAnalytics();
         });
 
@@ -813,8 +845,8 @@ const app = {
         if (day !== 1) startOfWeek.setDate(now.getDate() - (day - 1)); 
         startOfWeek.setHours(0, 0, 0, 0);
 
-        const logsToday = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === todayStr);
-        const logsWeek = logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000) >= startOfWeek);
+        const logsToday = logs.filter(l => { const d = parseDate(l.completedAt); return d && getDS(d) === todayStr; });
+        const logsWeek = logs.filter(l => { const d = parseDate(l.completedAt); return d && d >= startOfWeek; });
         
         const tasksDone = tasks.filter(t => t.status === 'done');
         const tasksToday = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(todayStr));
@@ -823,37 +855,41 @@ const app = {
         const fmtTime = m => { const h = Math.floor(m/60), rem = Math.round(m%60); return h > 0 ? `${h}h ${rem}m` : `${rem}m` };
         const totalMin = logs.reduce((a, b) => a + (b.duration || 25), 0);
         
-        $('ana-time-total').textContent = fmtTime(totalMin);
-        $('ana-time-week').textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0));
-        $('ana-time-today').textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0));
+        if($('ana-time-total')) $('ana-time-total').textContent = fmtTime(totalMin);
+        if($('ana-time-week')) $('ana-time-week').textContent = fmtTime(logsWeek.reduce((a, b) => a + (b.duration || 25), 0));
+        if($('ana-time-today')) $('ana-time-today').textContent = fmtTime(logsToday.reduce((a, b) => a + (b.duration || 25), 0));
         
-        $('ana-task-total').textContent = tasksDone.length;
-        $('ana-task-week').textContent = tasksWeek.length;
-        $('ana-task-today').textContent = tasksToday.length;
+        if($('ana-task-total')) $('ana-task-total').textContent = tasksDone.length;
+        if($('ana-task-week')) $('ana-task-week').textContent = tasksWeek.length;
+        if($('ana-task-today')) $('ana-task-today').textContent = tasksToday.length;
 
         const activeCount = tasks.filter(t => t.status === 'todo').length + tasksDone.length; 
-        $('ana-completion-rate').textContent = activeCount > 0 ? Math.round((tasksDone.length / activeCount) * 100) + '%' : '0%';
-        $('ana-avg-session').textContent = (logs.length > 0 ? Math.round(totalMin / logs.length) : 0) + 'm';
+        if($('ana-completion-rate')) $('ana-completion-rate').textContent = activeCount > 0 ? Math.round((tasksDone.length / activeCount) * 100) + '%' : '0%';
+        if($('ana-avg-session')) $('ana-avg-session').textContent = (logs.length > 0 ? Math.round(totalMin / logs.length) : 0) + 'm';
 
-        let morning = 0, night = 0; logs.forEach(l => { if (l.completedAt) { const h = new Date(l.completedAt.seconds * 1000).getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); 
-        $('ana-early-bird').textContent = fmtTime(morning); $('ana-night-owl').textContent = fmtTime(night);
-        $('ana-project-count').textContent = state.projects.size;
+        let morning = 0, night = 0; logs.forEach(l => { const d = parseDate(l.completedAt); if (d) { const h = d.getHours(); if (h < 12) morning += (l.duration || 25); if (h >= 20) night += (l.duration || 25) } }); 
+        if($('ana-early-bird')) $('ana-early-bird').textContent = fmtTime(morning); 
+        if($('ana-night-owl')) $('ana-night-owl').textContent = fmtTime(night);
+        if($('ana-project-count')) $('ana-project-count').textContent = state.projects.size;
         
-        let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => l.completedAt && getDS(new Date(l.completedAt.seconds*1000)) === getDS(d))) streak++; else if(i > 0) break; } 
-        $('ana-streak-days').textContent = streak + ' Days';
+        let streak = 0; for(let i=0; i<365; i++) { const d = new Date(); d.setDate(now.getDate() - i); if(logs.some(l => { const ld = parseDate(l.completedAt); return ld && getDS(ld) === getDS(d) })) streak++; else if(i > 0) break; } 
+        if($('ana-streak-days')) $('ana-streak-days').textContent = streak + ' Days';
 
-        const grid = $('pomo-timeline-grid'); grid.innerHTML = ''; 
-        for (let i = 0; i < 7; i++) { 
-            const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
-            const dayLogs = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === dStr); 
-            const row = document.createElement('div'); row.className = "flex items-center h-6 mb-2"; 
-            const lbl = document.createElement('div'); lbl.className = "w-16 text-[10px] text-text-muted font-bold uppercase shrink-0"; lbl.textContent = i === 0 ? "Today" : d.toLocaleDateString('en-US', {weekday:'short'}); 
-            const bars = document.createElement('div'); bars.className = "flex-1 h-full relative bg-dark-bg rounded border border-dark-border overflow-hidden mx-2"; 
-            dayLogs.forEach(l => { 
-                const ld = new Date(l.completedAt.seconds * 1000), sm = (ld.getHours() * 60) + ld.getMinutes(), dur = l.duration || 25, lp = ((sm - dur) / 1440) * 100, wp = (dur / 1440) * 100; 
-                const b = document.createElement('div'); b.className = "absolute top-1 bottom-1 rounded-sm bg-brand opacity-80"; b.style.left = `${lp}%`; b.style.width = `${Math.max(wp, 1)}%`; bars.appendChild(b) 
-            }); 
-            row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
+        const grid = $('pomo-timeline-grid'); 
+        if(grid) {
+            grid.innerHTML = ''; 
+            for (let i = 0; i < 7; i++) { 
+                const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
+                const dayLogs = logs.filter(l => { const ld = parseDate(l.completedAt); return ld && getDS(ld) === dStr }); 
+                const row = document.createElement('div'); row.className = "flex items-center h-6 mb-2"; 
+                const lbl = document.createElement('div'); lbl.className = "w-16 text-[10px] text-text-muted font-bold uppercase shrink-0"; lbl.textContent = i === 0 ? "Today" : d.toLocaleDateString('en-US', {weekday:'short'}); 
+                const bars = document.createElement('div'); bars.className = "flex-1 h-full relative bg-dark-bg rounded border border-dark-border overflow-hidden mx-2"; 
+                dayLogs.forEach(l => { 
+                    const ld = parseDate(l.completedAt), sm = (ld.getHours() * 60) + ld.getMinutes(), dur = l.duration || 25, lp = ((sm - dur) / 1440) * 100, wp = (dur / 1440) * 100; 
+                    const b = document.createElement('div'); b.className = "absolute top-1 bottom-1 rounded-sm bg-brand opacity-80"; b.style.left = `${lp}%`; b.style.width = `${Math.max(wp, 1)}%`; bars.appendChild(b) 
+                }); 
+                row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
+            }
         }
 
         const r = state.analytics.range; 
@@ -861,7 +897,7 @@ const app = {
         if (r === 'year') { 
             for (let i = 11; i >= 0; i--) { 
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1); lbl.push(d.toLocaleString('default', { month: 'short' })); 
-                const mLogs = logs.filter(l => l.completedAt && new Date(l.completedAt.seconds * 1000).getMonth() === d.getMonth()); 
+                const mLogs = logs.filter(l => { const ld = parseDate(l.completedAt); return ld && ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear() }); 
                 dpFocus.push((mLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); 
                 const mTasks = tasksDone.filter(t => t.completedAt && new Date(t.completedAt).getMonth() === d.getMonth()); 
                 dpTask.push(mTasks.length); 
@@ -870,7 +906,7 @@ const app = {
             for (let i = dlb - 1; i >= 0; i--) { 
                 const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
                 lbl.push(d.toLocaleDateString('en-US', { weekday: 'short' })); 
-                const dLogs = logs.filter(l => l.completedAt && getDS(new Date(l.completedAt.seconds * 1000)) === dStr); 
+                const dLogs = logs.filter(l => { const ld = parseDate(l.completedAt); return ld && getDS(ld) === dStr }); 
                 dpFocus.push((dLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); 
                 const dTasks = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(dStr)); 
                 dpTask.push(dTasks.length); 
@@ -919,7 +955,7 @@ const app = {
         createChart('focusBarChart', 'focus', dpFocus, '#ff5757', 'Hours', 'focusBar');
         createChart('taskBarChart', 'task', dpTask, '#3b82f6', 'Tasks', 'taskBar');
 
-        const hours = Array(24).fill(0); logs.forEach(l => { if (l.completedAt) hours[new Date(l.completedAt.seconds * 1000).getHours()] += (l.duration || 25) });
+        const hours = Array(24).fill(0); logs.forEach(l => { const d = parseDate(l.completedAt); if (d) hours[d.getHours()] += (l.duration || 25) });
         const createHourly = () => {
              const type = state.chartTypes.hourly; const isLine = type === 'line'; const color = '#10b981';
              if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
@@ -939,7 +975,7 @@ const app = {
         };
         if($('hourlyChart')) createHourly();
 
-        const weekdays = Array(7).fill(0); logs.forEach(l => { if (l.completedAt) { const d = new Date(l.completedAt.seconds * 1000).getDay(); weekdays[d == 0 ? 6 : d - 1] += (l.duration || 25) } });
+        const weekdays = Array(7).fill(0); logs.forEach(l => { const d = parseDate(l.completedAt); if (d) { weekdays[d.getDay() == 0 ? 6 : d.getDay() - 1] += (l.duration || 25) } });
         const createWeekday = () => {
              const type = state.chartTypes.weekday; const isLine = type === 'line'; const color = '#f59e0b';
              if(state.chartInstances.weekday) state.chartInstances.weekday.destroy();
@@ -960,14 +996,14 @@ const app = {
         if($('weekdayChart')) createWeekday();
 
         const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
-        $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
+        if($('insight-text')) $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
 
         const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
         if($('projectChart')) {
             if (state.chartInstances.project) state.chartInstances.project.destroy();
             state.chartInstances.project = new Chart($('projectChart').getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
-        $('project-legend').innerHTML = sp.map((p,i) => `<div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i%5]}"></div><span class="text-text-muted truncate max-w-[80px]">${p[0]}</span></div><span class="text-white font-mono">${Math.round(p[1])}m</span></div>`).join('');
+        if($('project-legend')) $('project-legend').innerHTML = sp.map((p,i) => `<div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i%5]}"></div><span class="text-text-muted truncate max-w-[80px]">${p[0]}</span></div><span class="text-white font-mono">${Math.round(p[1])}m</span></div>`).join('');
 
         const pri = { high: 0, med: 0, low: 0, none: 0 }; tasksDone.forEach(t => pri[t.priority || 'none']++);
         if($('priorityChart')) {
@@ -979,13 +1015,13 @@ const app = {
         tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
         const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
         if (st.length > 0) {
-            $('tag-rank-list').innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+            if($('tag-rank-list')) $('tag-rank-list').innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-active px-2 py-0.5 rounded border border-dark-border">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
         } else {
-             $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tags data available.</p>';
+             if($('tag-rank-list')) $('tag-rank-list').innerHTML = '<p class="text-xs text-text-muted italic">No tags data available.</p>';
         }
 
-        $('mobile-logs').innerHTML = logs.slice(0, 20).map(l => { 
-            const d = l.completedAt ? new Date(l.completedAt.seconds * 1000) : new Date(); 
+        if($('mobile-logs')) $('mobile-logs').innerHTML = logs.slice(0, 20).map(l => { 
+            const d = parseDate(l.completedAt) || new Date(); 
             const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
             return `<div class="px-4 py-3 flex justify-between items-center text-sm">
@@ -1335,9 +1371,11 @@ const app = {
 
         const durationMin = t.pomoDuration || state.timer.settings.focus;
         const d = durationMin * 60;
-
         const sessionId = `${t.id}_${Date.now()}`;
+        const endTimeMs = Date.now() + d * 1000;
         
+        setBackgroundAlarm(endTimeMs, 'focus', t.title);
+
         await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
             status: 'running', 
             mode: 'focus', 
@@ -1345,7 +1383,8 @@ const app = {
             sessionId: sessionId,
             remaining: d, 
             totalDuration: d, 
-            endTime: new Date(Date.now() + d*1000)
+            endTime: new Date(endTimeMs),
+            initiatorId: INSTANCE_ID
         });
         
         app.updateSetting('focus', durationMin);
@@ -1359,13 +1398,20 @@ const app = {
         
         if(state.timer.status === 'running') {
             if(state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
+            
+            clearBackgroundAlarm();
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
                 status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000))
             });
         } else {
             if(!state.timer.taskId && state.timer.mode === 'focus') { app.showToast('Select a task'); app.switchTab('tasks'); return; }
+            
+            const endTimeMs = Date.now() + state.timer.remaining * 1000;
+            const activeTask = state.timer.taskId ? state.tasks.find(x => x.id === state.timer.taskId) : null;
+            setBackgroundAlarm(endTimeMs, state.timer.mode, activeTask ? activeTask.title : 'Focus');
+
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
-                status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000)
+                status: 'running', endTime: new Date(endTimeMs), initiatorId: INSTANCE_ID
             });
         }
     },
@@ -1373,6 +1419,7 @@ const app = {
     resetTimer: async (r = false) => {
         if (!r) {
             haptic('medium');
+            clearBackgroundAlarm();
             const d = state.timer.settings[state.timer.mode] * 60;
             await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
                 status: 'idle', remaining: d, totalDuration: d, endTime: null, mode: state.timer.mode, taskId: state.timer.taskId || null
@@ -1380,11 +1427,19 @@ const app = {
         }
     },
 
-    skipTimer: () => app.completeTimer(),
+    skipTimer: () => app.completeTimer(true),
 
-    completeTimer: async () => {
+    completeTimer: async (isManual = false) => {
         if(state.timer.status === 'idle') return;
+
+        // THE HANDOFF GATE: Prevent other devices from auto-completing
+        if (!isManual && state.timer.initiatorId && state.timer.initiatorId !== INSTANCE_ID) {
+            stopTimerLoop();
+            return;
+        }
+
         stopTimerLoop();
+        clearBackgroundAlarm();
         haptic('timerDone');
         
         try {
@@ -1410,14 +1465,22 @@ const app = {
                             completedSessionIds: arrayUnion(sessionId)
                         });
 
-                        const durMin = state.timer.totalDuration / 60;
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'focus_sessions', sessionId), { 
-                            taskTitle: t.title, 
-                            taskId: t.id, 
-                            project: t.project || 'Inbox', 
-                            duration: durMin, 
-                            completedAt: serverTimestamp() 
-                        });
+                        // Write to Monthly Bucket instead of flat collection
+                        const d = new Date();
+                        const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const monthlyRef = doc(db, 'artifacts', APP_ID, 'users', getUid(), 'monthly_logs', monthStr);
+
+                        await setDoc(monthlyRef, {
+                            month: monthStr,
+                            sessions: arrayUnion({
+                                id: sessionId,
+                                taskId: t.id,
+                                taskTitle: t.title,
+                                project: t.project || 'Inbox',
+                                duration: state.timer.totalDuration / 60,
+                                completedAt: Date.now() 
+                            })
+                        }, { merge: true });
 
                     } catch(e) { console.error(e); }
                 }

@@ -121,6 +121,30 @@ const localSettings = JSON.parse(localStorage.getItem(APP_ID + '_settings')) || 
 
 const localUI = JSON.parse(localStorage.getItem(APP_ID + '_ui')) || { view: 'today', sound: 'none' };
 
+// --- UNIQUE INSTANCE & ALARMS ---
+const INSTANCE_ID = Math.random().toString(36).substring(2, 15);
+
+function setBackgroundAlarm(endTimeMs, mode) {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'START_ALARM', endTime: endTimeMs, mode });
+    }
+}
+
+function clearBackgroundAlarm() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_ALARM' });
+    }
+}
+
+const parseDate = (val) => {
+    if (!val) return null;
+    if (typeof val === 'number') return new Date(val); // Supports integer timestamps from monthly buckets
+    if (val.seconds !== undefined) return new Date(val.seconds * 1000);
+    if (typeof val === 'string') return new Date(val);
+    if (val instanceof Date) return val;
+    return null;
+};
+
 const state = {
     user: null,
     tasks: [],
@@ -137,7 +161,8 @@ const state = {
         activeTaskId: null, interval: null,
         sessionId: null,
         pomoCountCurrentSession: 0,
-        settings: localSettings
+        settings: localSettings,
+        initiatorId: null
     },
     newEst: 1,
     sound: localUI.sound,
@@ -151,14 +176,6 @@ const getUid = () => {
     if (!state.user) return null;
     if (VIEW_AS_UID && state.user.uid === ORION_ID) return VIEW_AS_UID;
     return state.user.uid;
-};
-
-const parseDate = (val) => {
-    if (!val) return null;
-    if (val.seconds !== undefined) return new Date(val.seconds * 1000);
-    if (typeof val === 'string') return new Date(val);
-    if (val instanceof Date) return val;
-    return null;
 };
 
 const saveLocalState = () => {
@@ -261,10 +278,7 @@ const subBroadcasts = (uid) => {
             if (change.type === 'added' || change.type === 'modified') {
                 const b = { id: change.doc.id, ...change.doc.data() };
                 
-                // 1. Expiration check
                 if (b.expiresAt && new Date(b.expiresAt) < new Date()) return;
-                
-                // 2. Snooze check (if time hasn't passed, ignore)
                 if (snoozed[b.id] && new Date(snoozed[b.id]) > new Date()) return;
 
                 if ((b.target === 'all' || b.target === uid) && !dismissed.includes(b.id)) {
@@ -319,7 +333,7 @@ onAuthStateChanged(auth, u => {
         subTasks(effectiveUid);
         subLogs(effectiveUid);
         subTimer(effectiveUid);
-        subBroadcasts(effectiveUid); // <--- ADD THIS LINE HERE
+        subBroadcasts(effectiveUid); 
 
         if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -388,7 +402,8 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
             totalDuration: d.totalDuration || state.timer.settings[d.mode || 'focus'] * 60,
             activeTaskId: d.taskId || null,
             sessionId: d.sessionId || null,
-            pomoCountCurrentSession: d.sessionCount || 0
+            pomoCountCurrentSession: d.sessionCount || 0,
+            initiatorId: d.initiatorId || null
         };
 
         let settingsChanged = false;
@@ -431,13 +446,28 @@ const subTimer = uid => onSnapshot(doc(db, 'artifacts', APP_ID, 'users', uid, 't
     }
 });
 
-const subLogs = uid => onSnapshot(query(collection(db, 'artifacts', APP_ID, 'users', uid, 'focus_sessions'), orderBy('completedAt', 'desc'), limit(500)), s => {
-    const l = [];
-    s.forEach(d => l.push({ id: d.id, ...d.data() }));
-    state.logs = l;
-    updateCounts();
-    if (state.view === 'analytics') updateAnalytics();
-});
+const subLogs = uid => {
+    const logsQuery = query(
+        collection(db, 'artifacts', APP_ID, 'users', uid, 'monthly_logs'), 
+        orderBy('month', 'desc'), 
+        limit(2)
+    );
+
+    onSnapshot(logsQuery, s => {
+        let allSessions = [];
+        s.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.sessions && Array.isArray(data.sessions)) {
+                allSessions = allSessions.concat(data.sessions);
+            }
+        });
+
+        allSessions.sort((a, b) => b.completedAt - a.completedAt);
+        state.logs = allSessions;
+        updateCounts();
+        if (state.view === 'analytics') updateAnalytics();
+    });
+};
 
 const startLocalInterval = () => {
     const els = getEls();
@@ -500,10 +530,8 @@ const app = {
         };
         const theme = themes[b.type] || themes.info;
 
-        // Rich Text support (Line breaks and Bold)
         const formatMsg = (b.message || '').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b style="color:#fff;">$1</b>');
 
-        // Optional CTA Button
         let ctaHtml = '';
         if (b.btnText && b.btnUrl) {
             ctaHtml = `<a href="${b.btnUrl}" target="_blank" style="display:block;text-align:center;width:100%;padding:10px;background:${theme.text};color:#fff;border-radius:6px;text-decoration:none;font-weight:600;margin-bottom:12px;font-family:'Inter',sans-serif;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${b.btnText}</a>`;
@@ -530,13 +558,11 @@ const app = {
             overlay.querySelector('div').style.transform = 'translateY(0)';
         });
 
-        // Dismiss updates read receipts
         document.getElementById(`dismiss-${b.id}`).onclick = async () => {
             const dismissed = JSON.parse(localStorage.getItem('dismissed_broadcasts') || '[]');
             dismissed.push(b.id);
             localStorage.setItem('dismissed_broadcasts', JSON.stringify(dismissed));
             
-            // Push Analytics read receipt
             if(state.user) {
                 try {
                     await updateDoc(doc(db, 'artifacts', APP_ID, 'broadcasts', b.id), {
@@ -544,11 +570,9 @@ const app = {
                     });
                 } catch(e){}
             }
-
             closeOverlay();
         };
 
-        // Snooze pushes notification back by 4 hours
         document.getElementById(`snooze-${b.id}`).onclick = () => {
             const snoozed = JSON.parse(localStorage.getItem('snoozed_broadcasts') || '{}');
             snoozed[b.id] = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
@@ -728,8 +752,10 @@ const app = {
         if (state.timer.status !== 'running') {
             const d = t.pomoDuration || 25;
             const sessionId = `${id}_${Date.now()}`;
+            const endTimeMs = Date.now() + d * 60000;
 
             try {
+                setBackgroundAlarm(endTimeMs, 'focus');
                 await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
                     status: 'running',
                     mode: 'focus',
@@ -737,7 +763,8 @@ const app = {
                     sessionId: sessionId,
                     remaining: d * 60,
                     totalDuration: d * 60,
-                    endTime: new Date(Date.now() + d * 60000)
+                    endTime: new Date(endTimeMs),
+                    initiatorId: INSTANCE_ID
                 });
                 app.updateSettings('focus', d)
             } catch (e) { app.showToast("Failed to start") }
@@ -761,10 +788,16 @@ const app = {
         haptic('medium');
         if (state.timer.status === 'running') {
             if (state.timer.settings.strictMode && state.timer.mode === 'focus' && !confirm("Strict Mode active! Quit?")) return;
+            
+            clearBackgroundAlarm();
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { status: 'paused', endTime: null, remaining: Math.max(0, Math.ceil((state.timer.endTime - Date.now()) / 1000)) }).catch(() => { })
         } else {
             if (!state.timer.activeTaskId && state.timer.mode === 'focus') { app.showToast("Select task!", "error"); return }
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { status: 'running', endTime: new Date(Date.now() + state.timer.remaining * 1000) }).catch(() => { })
+            
+            const endTimeMs = Date.now() + state.timer.remaining * 1000;
+            setBackgroundAlarm(endTimeMs, state.timer.mode);
+            
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { status: 'running', endTime: new Date(endTimeMs), initiatorId: INSTANCE_ID }).catch(() => { })
         }
     },
 
@@ -775,10 +808,18 @@ const app = {
             await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), { status: 'idle', endTime: null, remaining: d * 60, totalDuration: d * 60, mode: state.timer.mode, taskId: state.timer.activeTaskId || null }).catch(() => { })
         }
     },
-    skipTimer: () => app.completeTimer(),
-    completeTimer: async () => {
+    skipTimer: () => app.completeTimer(true),
+
+    completeTimer: async (isManual = false) => {
         if (state.timer.status === 'idle') return;
+
+        if (!isManual && state.timer.initiatorId && state.timer.initiatorId !== INSTANCE_ID) {
+            stopLocalInterval();
+            return;
+        }
+
         stopLocalInterval();
+        clearBackgroundAlarm();
         haptic('timerDone');
 
         try {
@@ -789,7 +830,7 @@ const app = {
             }
         } catch(e) {}
 
-        try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete"); } catch (e) { }
+        try { if ('Notification' in window && Notification.permission === 'granted') new Notification("Timer Complete", { icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png' }); } catch (e) { }
 
         if (state.timer.mode === 'focus') {
             if (state.timer.activeTaskId) {
@@ -797,19 +838,31 @@ const app = {
                 if (t) {
                     try {
                         const sessionId = state.timer.sessionId || `${t.id}_${Date.now()}`;
+                        
                         await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'tasks', t.id), {
                             completedSessionIds: arrayUnion(sessionId)
                         });
-                        await setDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'focus_sessions', sessionId), {
-                            taskId: t.id,
-                            taskTitle: t.title,
-                            project: t.project || 'Inbox',
-                            duration: state.timer.totalDuration / 60,
-                            completedAt: serverTimestamp()
-                        });
+
+                        const d = new Date();
+                        const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const monthlyRef = doc(db, 'artifacts', APP_ID, 'users', getUid(), 'monthly_logs', monthStr);
+
+                        await setDoc(monthlyRef, {
+                            month: monthStr,
+                            sessions: arrayUnion({
+                                id: sessionId,
+                                taskId: t.id,
+                                taskTitle: t.title,
+                                project: t.project || 'Inbox',
+                                duration: state.timer.totalDuration / 60,
+                                completedAt: Date.now() 
+                            })
+                        }, { merge: true });
+
                     } catch (e) {}
                 }
             }
+
             if (state.timer.settings.disableBreak) {
                 await app.setTimerMode('focus'); if (state.timer.settings.autoStartPomo) app.toggleTimer();
             } else {
