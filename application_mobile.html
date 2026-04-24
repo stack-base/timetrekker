@@ -161,13 +161,6 @@
                     </div>
                 </div>
 
-                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <div class="mb-4">
-                        <h3 class="text-sm font-bold text-white">Today's Timeline</h3>
-                    </div>
-                    <div class="h-32 relative w-full"><canvas id="todayTimelineChart"></canvas></div>
-                </div>
-
                 <div class="flex bg-dark-card rounded-lg p-1 border border-dark-border justify-between shadow-sm">
                     <button onclick="app.setRange('week')" id="btn-range-week" class="flex-1 py-1.5 rounded text-xs font-medium bg-brand text-white shadow-sm transition-all">Week</button>
                     <button onclick="app.setRange('month')" id="btn-range-month" class="flex-1 py-1.5 rounded text-xs font-medium text-text-muted hover:text-white transition-all">Month</button>
@@ -225,6 +218,13 @@
                         <div class="text-[10px] uppercase text-text-muted font-bold">Active Projects</div>
                         <div class="text-xl font-bold text-white mt-1" id="ana-project-count">0</div>
                     </div>
+                </div>
+
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-bold text-white">Today's Timeline</h3>
+                    </div>
+                    <div class="h-32 relative w-full"><canvas id="todayTimelineChart"></canvas></div>
                 </div>
 
                 <div class="bg-dark-card rounded-xl border border-dark-border p-4 shadow-sm overflow-hidden">
