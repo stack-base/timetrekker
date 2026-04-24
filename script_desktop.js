@@ -121,7 +121,6 @@ const localSettings = JSON.parse(localStorage.getItem(APP_ID + '_settings')) || 
 
 const localUI = JSON.parse(localStorage.getItem(APP_ID + '_ui')) || { view: 'today', sound: 'none' };
 
-// --- UNIQUE INSTANCE & ALARMS ---
 const INSTANCE_ID = Math.random().toString(36).substring(2, 15);
 
 function setBackgroundAlarm(endTimeMs, mode) {
@@ -138,7 +137,7 @@ function clearBackgroundAlarm() {
 
 const parseDate = (val) => {
     if (!val) return null;
-    if (typeof val === 'number') return new Date(val); // Supports integer timestamps from monthly buckets
+    if (typeof val === 'number') return new Date(val); 
     if (val.seconds !== undefined) return new Date(val.seconds * 1000);
     if (typeof val === 'string') return new Date(val);
     if (val instanceof Date) return val;
@@ -223,11 +222,13 @@ if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = 'Inter';
     Chart.defaults.color = '#a3a3a3';
     Chart.defaults.borderColor = '#333333';
-    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-    Chart.defaults.plugins.tooltip.titleColor = '#fff';
-    Chart.defaults.plugins.tooltip.bodyColor = '#a3a3a3';
-    Chart.defaults.plugins.tooltip.borderColor = '#333';
-    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+        Chart.defaults.plugins.tooltip.titleColor = '#fff';
+        Chart.defaults.plugins.tooltip.bodyColor = '#a3a3a3';
+        Chart.defaults.plugins.tooltip.borderColor = '#333';
+        Chart.defaults.plugins.tooltip.borderWidth = 1;
+    }
 }
 
 async function syncUserProfile(u) {
@@ -450,7 +451,7 @@ const subLogs = uid => {
     const logsQuery = query(
         collection(db, 'artifacts', APP_ID, 'users', uid, 'monthly_logs'), 
         orderBy('month', 'desc'), 
-        limit(2)
+        limit(12) 
     );
 
     onSnapshot(logsQuery, s => {
@@ -610,7 +611,6 @@ const app = {
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null }, 200)
     },
 
-    // --- NEW PROMISE-BASED CONFIRMATION MODAL ---
     showConfirm: (title, message, confirmText = 'Yes', cancelText = 'Cancel') => new Promise(resolve => {
         const modal = document.getElementById('confirm-modal');
         const titleEl = document.getElementById('confirm-title');
@@ -898,7 +898,6 @@ const app = {
                             })
                         }, { merge: true });
 
-                        // --- NEW CUSTOM MODAL LOGIC ---
                         const newCompletedCount = (t.completedSessionIds ? t.completedSessionIds.length : 0) + 1;
                         const estimated = t.estimatedPomos || 1;
 
@@ -917,7 +916,6 @@ const app = {
                                 }
                             }, 800); 
                         }
-                        // --- END NEW CUSTOM MODAL LOGIC ---
 
                     } catch (e) {}
                 }
@@ -1242,7 +1240,14 @@ function updateAnalytics() {
 
     const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
     const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if(els.analytics.tagList && st.length > 0) els.analytics.tagList.innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+    
+    if(els.analytics.tagList) {
+        if (st.length > 0) {
+            els.analytics.tagList.innerHTML = st.map((x, i) => `<div class="flex items-center justify-between text-xs"><div class="flex items-center"><span class="w-4 text-text-faint mr-2">${i + 1}.</span><span class="text-white bg-dark-hover px-1.5 py-0.5 rounded">${esc(x[0])}</span></div><span class="text-text-muted">${x[1]} tasks</span></div>`).join('');
+        } else {
+            els.analytics.tagList.innerHTML = '<p class="text-xs text-text-muted italic">No tags data available.</p>';
+        }
+    }
 
     if(els.analytics.sessionLogBody) els.analytics.sessionLogBody.innerHTML = state.logs.slice(0, 20).map(l => { const d = parseDate(l.completedAt) || new Date(); return `<tr><td class="text-text-muted">${d.toLocaleDateString()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}</td><td class="font-medium text-white">${esc(l.taskTitle)}</td><td><span class="px-2 py-0.5 rounded-full text-[10px] bg-dark-hover border border-dark-border text-text-muted">${esc(l.project)}</span></td><td class="text-brand font-mono">${l.duration || 25}m</td></tr>` }).join('');
 }
@@ -1303,7 +1308,6 @@ function renderTasks() {
 function updateTimerUI(t) {
     const els = getEls();
     
-    // State 1: Actively focusing on a task
     if (t && state.timer.mode === 'focus') {
         state.timer.activeTaskId = t.id;
         els.focusEmpty.classList.add('hidden');
@@ -1322,7 +1326,6 @@ function updateTimerUI(t) {
             D.title = `${t.title} - TimeTrekker`;
         }
     } 
-    // State 2: User is on a break
     else if (state.timer.mode !== 'focus') {
         state.timer.activeTaskId = t ? t.id : null; 
         els.focusActive.classList.add('hidden');
@@ -1339,7 +1342,6 @@ function updateTimerUI(t) {
             D.title = `Break - TimeTrekker`;
         }
     } 
-    // State 3: Idle, no task selected
     else {
         state.timer.activeTaskId = null;
         els.focusActive.classList.add('hidden');

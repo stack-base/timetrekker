@@ -87,7 +87,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// --- GLOBALS AND SYNC LOGIC ---
 const INSTANCE_ID = Math.random().toString(36).substring(2, 15);
 
 function setBackgroundAlarm(endTimeMs, mode, taskTitle) {
@@ -197,14 +196,15 @@ const saveLocalState = () => {
 Chart.defaults.font.family = 'Inter';
 Chart.defaults.color = '#a1a1aa';
 Chart.defaults.borderColor = '#27272a';
-Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.03)';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(9, 9, 11, 0.95)';
-Chart.defaults.plugins.tooltip.titleColor = '#fff';
-Chart.defaults.plugins.tooltip.bodyColor = '#a1a1aa';
-Chart.defaults.plugins.tooltip.borderColor = '#333';
-Chart.defaults.plugins.tooltip.borderWidth = 1;
-Chart.defaults.plugins.tooltip.padding = 10;
-Chart.defaults.plugins.tooltip.displayColors = false;
+if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(9, 9, 11, 0.95)';
+    Chart.defaults.plugins.tooltip.titleColor = '#fff';
+    Chart.defaults.plugins.tooltip.bodyColor = '#a1a1aa';
+    Chart.defaults.plugins.tooltip.borderColor = '#333';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.displayColors = false;
+}
 
 async function syncUserProfile(u) {
     if (!u) return;
@@ -372,7 +372,7 @@ onAuthStateChanged(auth, u => {
         const logsQuery = query(
             collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'monthly_logs'),
             orderBy('month', 'desc'),
-            limit(2)
+            limit(12) 
         );
 
         onSnapshot(logsQuery, s => {
@@ -569,7 +569,6 @@ const app = {
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null; }, 200);
     },
 
-    // --- NEW PROMISE-BASED CONFIRMATION MODAL ---
     showConfirm: (title, message, confirmText = 'Yes', cancelText = 'Cancel') => new Promise(resolve => {
         const modal = document.getElementById('confirm-modal');
         const titleEl = document.getElementById('confirm-title');
@@ -935,13 +934,13 @@ const app = {
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1); lbl.push(d.toLocaleString('default', { month: 'short' })); 
                 const mLogs = logs.filter(l => { const ld = parseDate(l.completedAt); return ld && ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear() }); 
                 dpFocus.push((mLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); 
-                const mTasks = tasksDone.filter(t => t.completedAt && new Date(t.completedAt).getMonth() === d.getMonth()); 
+                const mTasks = tasksDone.filter(t => t.completedAt && new Date(t.completedAt).getMonth() === d.getMonth() && new Date(t.completedAt).getFullYear() === d.getFullYear()); 
                 dpTask.push(mTasks.length); 
             } 
         } else { 
             for (let i = dlb - 1; i >= 0; i--) { 
                 const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
-                lbl.push(d.toLocaleDateString('en-US', { weekday: 'short' })); 
+                lbl.push(d.toLocaleDateString('en-US', { weekday: 'short', day: r === 'month' ? 'numeric' : undefined })); 
                 const dLogs = logs.filter(l => { const ld = parseDate(l.completedAt); return ld && getDS(ld) === dStr }); 
                 dpFocus.push((dLogs.reduce((a, b) => a + (b.duration || 25), 0) / 60).toFixed(1)); 
                 const dTasks = tasksDone.filter(t => t.completedAt && t.completedAt.startsWith(dStr)); 
@@ -1468,7 +1467,6 @@ const app = {
     completeTimer: async (isManual = false) => {
         if(state.timer.status === 'idle') return;
 
-        // THE HANDOFF GATE: Prevent other devices from auto-completing
         if (!isManual && state.timer.initiatorId && state.timer.initiatorId !== INSTANCE_ID) {
             stopTimerLoop();
             return;
@@ -1501,7 +1499,6 @@ const app = {
                             completedSessionIds: arrayUnion(sessionId)
                         });
 
-                        // Write to Monthly Bucket instead of flat collection
                         const d = new Date();
                         const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                         const monthlyRef = doc(db, 'artifacts', APP_ID, 'users', getUid(), 'monthly_logs', monthStr);
@@ -1518,7 +1515,6 @@ const app = {
                             })
                         }, { merge: true });
 
-                        // --- NEW CUSTOM MODAL LOGIC ---
                         const newCompletedCount = (t.completedSessionIds ? t.completedSessionIds.length : 0) + 1;
                         const estimated = t.estimatedPomos || 1;
 
@@ -1532,12 +1528,11 @@ const app = {
                                 );
                                 
                                 if (isDone) {
-                                    app.toggleStatus(t.id, 'todo'); // Mobile method triggers status to 'done'
+                                    app.toggleStatus(t.id, 'todo'); 
                                     app.showToast("Task marked as done!");
                                 }
                             }, 800); 
                         }
-                        // --- END NEW CUSTOM MODAL LOGIC ---
 
                     } catch(e) { console.error(e); }
                 }
