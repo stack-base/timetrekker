@@ -597,15 +597,54 @@ const app = {
             deferredPrompt = null;
         }
     },
+    
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
+    
     showPrompt: (t, v = '') => new Promise(r => {
         const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v;
         p.el.classList.remove('hidden'); setTimeout(() => p.el.classList.remove('opacity-0'), 10); p.input.focus()
     }),
+    
     closePrompt: v => {
         const p = app.customPrompt; p.el.classList.add('opacity-0');
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null }, 200)
     },
+
+    // --- NEW PROMISE-BASED CONFIRMATION MODAL ---
+    showConfirm: (title, message, confirmText = 'Yes', cancelText = 'Cancel') => new Promise(resolve => {
+        const modal = document.getElementById('confirm-modal');
+        const titleEl = document.getElementById('confirm-title');
+        const msgEl = document.getElementById('confirm-message');
+        let okBtn = document.getElementById('confirm-ok-btn');
+        let cancelBtn = document.getElementById('confirm-cancel-btn');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        okBtn.textContent = confirmText;
+        cancelBtn.textContent = cancelText;
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.children[0].classList.remove('scale-95');
+            modal.children[0].classList.add('scale-100');
+        }, 10);
+
+        const close = (val) => {
+            modal.classList.add('opacity-0');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                okBtn.replaceWith(okBtn.cloneNode(true));
+                cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+                resolve(val);
+            }, 200);
+        };
+
+        okBtn.addEventListener('click', () => close(true));
+        cancelBtn.addEventListener('click', () => close(false));
+    }),
 
     setView: v => {
         const els = getEls();
@@ -858,6 +897,27 @@ const app = {
                                 completedAt: Date.now() 
                             })
                         }, { merge: true });
+
+                        // --- NEW CUSTOM MODAL LOGIC ---
+                        const newCompletedCount = (t.completedSessionIds ? t.completedSessionIds.length : 0) + 1;
+                        const estimated = t.estimatedPomos || 1;
+
+                        if (newCompletedCount >= estimated && t.status !== 'done') {
+                            setTimeout(async () => {
+                                const isDone = await app.showConfirm(
+                                    "Goal Reached! 🎉", 
+                                    `You've completed ${newCompletedCount}/${estimated} pomodoros for "${t.title}". Mark it as done?`,
+                                    "Mark Done",
+                                    "Keep Working"
+                                );
+                                
+                                if (isDone) {
+                                    app.toggleTaskStatus(t.id, 'todo'); 
+                                    app.showToast("Task marked as done!", "success");
+                                }
+                            }, 800); 
+                        }
+                        // --- END NEW CUSTOM MODAL LOGIC ---
 
                     } catch (e) {}
                 }
@@ -1242,7 +1302,9 @@ function renderTasks() {
 
 function updateTimerUI(t) {
     const els = getEls();
-    if (t) {
+    
+    // State 1: Actively focusing on a task
+    if (t && state.timer.mode === 'focus') {
         state.timer.activeTaskId = t.id;
         els.focusEmpty.classList.add('hidden');
         els.focusActive.classList.remove('hidden');
@@ -1252,17 +1314,37 @@ function updateTimerUI(t) {
         els.focusCompleted.textContent = t.completedSessionIds ? t.completedSessionIds.length : 0;
         els.focusTotal.textContent = t.estimatedPomos || 1;
 
-        if(state.timer.status === 'running') {
-            const m = Math.floor(state.timer.remaining/60);
-            const s = state.timer.remaining%60;
-            D.title = `${m}:${s.toString().padStart(2,'0')} - ${t.title}`;
+        if (state.timer.status === 'running') {
+            const m = Math.floor(state.timer.remaining / 60);
+            const s = state.timer.remaining % 60;
+            D.title = `${m}:${s.toString().padStart(2, '0')} - ${t.title}`;
         } else {
-             D.title = `${t.title} - TimeTrekker`;
+            D.title = `${t.title} - TimeTrekker`;
         }
-    } else {
-        state.timer.activeTaskId = null;
-        els.focusEmpty.classList.remove('hidden');
+    } 
+    // State 2: User is on a break
+    else if (state.timer.mode !== 'focus') {
+        state.timer.activeTaskId = t ? t.id : null; 
         els.focusActive.classList.add('hidden');
+        els.focusEmpty.classList.remove('hidden');
+        
+        const breakType = state.timer.mode === 'short' ? 'Short Break' : 'Long Break';
+        els.focusEmpty.innerHTML = `<p class="text-lg font-bold text-blue-400 tracking-wide uppercase">${breakType}</p><p class="text-xs text-text-muted mt-2">Time to step away and rest your mind.</p>`;
+        
+        if (state.timer.status === 'running') {
+            const m = Math.floor(state.timer.remaining / 60);
+            const s = state.timer.remaining % 60;
+            D.title = `${m}:${s.toString().padStart(2, '0')} - Break`;
+        } else {
+            D.title = `Break - TimeTrekker`;
+        }
+    } 
+    // State 3: Idle, no task selected
+    else {
+        state.timer.activeTaskId = null;
+        els.focusActive.classList.add('hidden');
+        els.focusEmpty.classList.remove('hidden');
+        els.focusEmpty.innerHTML = `<p class="text-sm font-medium">Select a task to start focusing</p>`;
         D.title = 'TimeTrekker';
     }
 }

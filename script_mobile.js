@@ -104,7 +104,7 @@ function clearBackgroundAlarm() {
 
 const parseDate = (val) => {
     if (!val) return null;
-    if (typeof val === 'number') return new Date(val); // Monthly bucket timestamps
+    if (typeof val === 'number') return new Date(val); 
     if (val.seconds !== undefined) return new Date(val.seconds * 1000);
     if (typeof val === 'string') return new Date(val);
     if (val instanceof Date) return val;
@@ -369,7 +369,6 @@ onAuthStateChanged(auth, u => {
             }
         });
 
-        // Use Monthly Buckets instead of limits
         const logsQuery = query(
             collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'monthly_logs'),
             orderBy('month', 'desc'),
@@ -564,10 +563,47 @@ const app = {
         const p = app.customPrompt; p.resolve = r; p.title.textContent = t; p.input.value = v;
         p.el.classList.remove('hidden'); setTimeout(() => p.el.classList.remove('opacity-0'), 10); p.input.focus();
     }),
+    
     closePrompt: v => {
         const p = app.customPrompt; p.el.classList.add('opacity-0');
         setTimeout(() => { p.el.classList.add('hidden'); if (p.resolve) p.resolve(v); p.resolve = null; }, 200);
     },
+
+    // --- NEW PROMISE-BASED CONFIRMATION MODAL ---
+    showConfirm: (title, message, confirmText = 'Yes', cancelText = 'Cancel') => new Promise(resolve => {
+        const modal = document.getElementById('confirm-modal');
+        const titleEl = document.getElementById('confirm-title');
+        const msgEl = document.getElementById('confirm-message');
+        let okBtn = document.getElementById('confirm-ok-btn');
+        let cancelBtn = document.getElementById('confirm-cancel-btn');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        okBtn.textContent = confirmText;
+        cancelBtn.textContent = cancelText;
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.children[0].classList.remove('scale-95');
+            modal.children[0].classList.add('scale-100');
+        }, 10);
+
+        const close = (val) => {
+            modal.classList.add('opacity-0');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                okBtn.replaceWith(okBtn.cloneNode(true));
+                cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+                resolve(val);
+            }, 200);
+        };
+
+        okBtn.addEventListener('click', () => close(true));
+        cancelBtn.addEventListener('click', () => close(false));
+    }),
 
     refreshApp: () => {
         haptic('medium');
@@ -1482,6 +1518,27 @@ const app = {
                             })
                         }, { merge: true });
 
+                        // --- NEW CUSTOM MODAL LOGIC ---
+                        const newCompletedCount = (t.completedSessionIds ? t.completedSessionIds.length : 0) + 1;
+                        const estimated = t.estimatedPomos || 1;
+
+                        if (newCompletedCount >= estimated && t.status !== 'done') {
+                            setTimeout(async () => {
+                                const isDone = await app.showConfirm(
+                                    "Goal Reached! 🎉", 
+                                    `You've completed ${newCompletedCount}/${estimated} pomodoros for "${t.title}". Mark it as done?`,
+                                    "Mark Done",
+                                    "Keep Working"
+                                );
+                                
+                                if (isDone) {
+                                    app.toggleStatus(t.id, 'todo'); // Mobile method triggers status to 'done'
+                                    app.showToast("Task marked as done!");
+                                }
+                            }, 800); 
+                        }
+                        // --- END NEW CUSTOM MODAL LOGIC ---
+
                     } catch(e) { console.error(e); }
                 }
             }
@@ -1540,7 +1597,11 @@ const app = {
                 document.title = `${m}:${sc.toString().padStart(2,'0')} - ${t.title}`;
             }
         } else if (mode !== 'focus') {
-            if($('focus-empty')) { $('focus-empty').classList.remove('hidden'); $('focus-empty').textContent = "Rest your mind"; }
+            if($('focus-empty')) { 
+                $('focus-empty').classList.remove('hidden'); 
+                const breakType = mode === 'short' ? 'Short Break' : 'Long Break';
+                $('focus-empty').innerHTML = `<span class="text-blue-400 font-bold tracking-wide uppercase text-sm block mb-1">${breakType}</span><span class="text-xs text-text-muted">Time to rest your mind</span>`; 
+            }
             if($('focus-active')) $('focus-active').classList.add('hidden');
             document.title = `${m}:${sc.toString().padStart(2,'0')} - Break`;
         } else {
