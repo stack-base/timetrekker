@@ -1134,6 +1134,21 @@ function updateAnalytics() {
     if (typeof Chart === 'undefined') return;
     
     const hours = Array(24).fill(0);
+    logs.forEach(l => { 
+        const endD = parseDate(l.completedAt); 
+        if (!endD) return;
+        const dur = l.duration || 25;
+        const startD = new Date(endD.getTime() - dur * 60000);
+        
+        let current = new Date(startD);
+        while(current < endD) {
+            let nextHour = new Date(current);
+            nextHour.setHours(current.getHours() + 1, 0, 0, 0);
+            let endChunk = nextHour < endD ? nextHour : endD;
+            hours[current.getHours()] += (endChunk.getTime() - current.getTime()) / 60000;
+            current = nextHour;
+        }
+    });
     state.logs.forEach(l => { const d = parseDate(l.completedAt); if (d) hours[d.getHours()] += (l.duration || 25) });
 
     const weekdays = Array(7).fill(0);
@@ -1224,17 +1239,47 @@ function updateAnalytics() {
     }
 
     // --- ADD TODAY TIMELINE CHART LOGIC ---
-    const todayHours = Array(24).fill(0);
-    logsToday.forEach(l => { 
-        const d = parseDate(l.completedAt); 
-        if (d) todayHours[d.getHours()] += (l.duration || 25); 
+    const BINS_PER_HOUR = 4; // 15-minute intervals for high accuracy
+    const TOTAL_BINS = 24 * BINS_PER_HOUR;
+    const MINS_PER_BIN = 60 / BINS_PER_HOUR;
+    const todayData = Array(TOTAL_BINS).fill(0);
+    
+    const todayLabels = Array.from({length: TOTAL_BINS}, (_, i) => {
+        const h = Math.floor(i / BINS_PER_HOUR);
+        const m = (i % BINS_PER_HOUR) * MINS_PER_BIN;
+        return `${h}:${m.toString().padStart(2, '0')}`;
+    });
+
+    logsToday.forEach(l => {
+        const endD = parseDate(l.completedAt);
+        if (!endD) return;
+        const dur = l.duration || 25;
+        const startD = new Date(endD.getTime() - dur * 60000);
+
+        let current = new Date(startD);
+        while(current < endD) {
+            // Only plot the portion that falls within today
+            if (current.getDate() === endD.getDate() && current.getMonth() === endD.getMonth()) {
+                const binIdx = current.getHours() * BINS_PER_HOUR + Math.floor(current.getMinutes() / MINS_PER_BIN);
+                let nextBin = new Date(current);
+                nextBin.setMinutes(Math.floor(current.getMinutes() / MINS_PER_BIN) * MINS_PER_BIN + MINS_PER_BIN, 0, 0);
+                
+                let endChunk = nextBin < endD ? nextBin : endD;
+                let mins = (endChunk.getTime() - current.getTime()) / 60000;
+                todayData[binIdx] += mins;
+                current = nextBin;
+            } else {
+                // If the session started yesterday, skip to midnight today
+                current = new Date(endD.getFullYear(), endD.getMonth(), endD.getDate(), 0, 0, 0);
+            }
+        }
     });
 
     if(els.analytics.todayTimelineChart) {
         if (state.charts.todayTimeline) state.charts.todayTimeline.destroy();
         const ctxToday = els.analytics.todayTimelineChart.getContext('2d');
         // Passing 'line' explicitly to force a line graph regardless of other toggles
-        state.charts.todayTimeline = new Chart(ctxToday, gC(ctxToday, 'line', Array.from({ length: 24 }, (_, i) => i + 'h'), todayHours, '#8b5cf6', 'Minutes'));
+        state.charts.todayTimeline = new Chart(ctxToday, gC(ctxToday, 'line', todayLabels, todayData, '#8b5cf6', 'Minutes'));
     }
     // ---------------------------------------
 
