@@ -252,12 +252,12 @@
                  <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Completion %</div>
                     <div class="text-xl font-bold text-green-500" id="ana-completion-rate">0%</div>
-                    <div class="text-[10px] text-text-faint mt-1">Based on active tasks</div>
+                    <div class="text-[10px] text-text-faint mt-1">Completed Tasks / Total Active Tasks</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Avg Session</div>
                     <div class="text-xl font-bold text-white" id="ana-avg-session">0m</div>
-                    <div class="text-[10px] text-text-faint mt-1">Minutes per pomo</div>
+                    <div class="text-[10px] text-text-faint mt-1">Average duration of completed pomodoros</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Morning Focus</div>
@@ -272,7 +272,7 @@
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Best Streak</div>
                     <div class="text-xl font-bold text-purple-500" id="ana-streak-days">0 Days</div>
-                    <div class="text-[10px] text-text-faint mt-1">Consecutive activity</div>
+                    <div class="text-[10px] text-text-faint mt-1">Consecutive days with at least 1 focus session</div>
                 </div>
                  <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Projects</div>
@@ -285,7 +285,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h3 class="text-lg font-semibold text-white">Today's Timeline</h3>
-                        <p class="text-xs text-text-muted mt-0.5">Your focus distribution over today</p>
+                        <p class="text-xs text-text-muted mt-0.5">Minute-by-minute breakdown of your focus sessions today. Helps pinpoint your daily peak flow states.</p>
                     </div>
                 </div>
                 <div class="h-[200px] w-full relative"><canvas id="todayTimelineChart"></canvas></div>
@@ -295,6 +295,7 @@
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-white">Focus Trend</h3>
+                        <p class="text-xs text-text-muted mt-0.5">Total focus duration across the selected time range. Use this to spot consistency and track long-term habits.</p>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="glass-toggle-btn">Line</button>
                             <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="glass-toggle-btn active">Bar</button>
@@ -305,6 +306,7 @@
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-white">Task Completion</h3>
+                        <p class="text-xs text-text-muted mt-0.5">Total number of tasks marked as done. Compare this with your focus trend to gauge your actual execution efficiency.</p>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="glass-toggle-btn">Line</button>
                             <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="glass-toggle-btn active">Bar</button>
@@ -319,7 +321,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <div>
                             <h3 class="text-lg font-semibold text-white">Hourly Productivity</h3>
-                            <p class="text-xs text-text-muted mt-0.5">Which hours of the day you focus the most.</p>
+                            <p class="text-xs text-text-muted mt-0.5">Aggregated focus time per hour of the day. Discover your biological prime time for deep work.</p>
                         </div>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="glass-toggle-btn">Line</button>
@@ -332,7 +334,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <div>
                             <h3 class="text-lg font-semibold text-white">Weekly Performance</h3>
-                             <p class="text-xs text-text-muted mt-0.5">Your best days of the week.</p>
+                             <p class="text-xs text-text-muted mt-0.5">Focus distribution across days of the week. Identifies which days you are historically most productive.</p>
                         </div>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="glass-toggle-btn">Line</button>
@@ -345,12 +347,14 @@
 
              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
-                    <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Projects</h3>
+                    <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Project Distribution</h3>
+                    <p class="text-xs text-text-muted mt-0.5">Breaks down where your time is being invested across your active workflows.</p>
                     <div class="h-[180px] w-full relative flex justify-center mb-4"><canvas id="projectChart"></canvas></div>
                     <div id="project-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2 max-h-[150px]"></div>
                 </div>
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Task Priorities</h3>
+                    <p class="text-xs text-text-muted mt-0.5">Analyzes the urgency levels of completed tasks to ensure you are focusing on high-impact work.</p>
                     <div class="h-[180px] w-full relative flex justify-center mb-4"><canvas id="priorityChart"></canvas></div>
                     <div class="text-center text-xs text-text-muted">High vs Med vs Low</div>
                 </div>
