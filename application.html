@@ -82,6 +82,23 @@
 
     .sheet-handle { width: 32px; height: 4px; background-color: #333333; border-radius: 2px; margin: 8px auto; display: block; }
     @media (min-width: 768px) { .sheet-handle { display: none; } }
+
+    /* Custom styles for analytical insight descriptions */
+    .chart-insight-box {
+        background-color: #0a0a0a;
+        border: 1px solid #333333;
+        border-radius: 6px;
+        padding: 12px;
+        font-size: 12px;
+        color: #a3a3a3;
+        line-height: 1.5;
+        margin-top: auto;
+        text-align: center;
+    }
+    .chart-insight-box strong {
+        color: #ffffff;
+        font-weight: 600;
+    }
 </style>
 </head>
 <body class="h-screen w-full flex bg-dark-bg text-text-main">
@@ -252,7 +269,7 @@
                  <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Completion %</div>
                     <div class="text-xl font-bold text-green-500" id="ana-completion-rate">0%</div>
-                    <div class="text-[10px] text-text-faint mt-1">Completed Tasks / Total Active Tasks</div>
+                    <div class="text-[10px] text-text-faint mt-1">(Completed Tasks / Total Active Tasks)</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Avg Session</div>
@@ -293,9 +310,11 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-white">Focus Trend</h3>
-                        <p class="text-xs text-text-muted mt-0.5">Total focus duration across the selected time range. Use this to spot consistency and track long-term habits.</p>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Focus Trend</h3>
+                            <p class="text-xs text-text-muted mt-0.5 max-w-[80%]">Total focus duration across the selected time range. Use this to spot consistency and track long-term habits.</p>
+                        </div>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="glass-toggle-btn">Line</button>
                             <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="glass-toggle-btn active">Bar</button>
@@ -304,9 +323,11 @@
                     <div class="h-[250px] w-full relative"><canvas id="focusBarChart"></canvas></div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-white">Task Completion</h3>
-                        <p class="text-xs text-text-muted mt-0.5">Total number of tasks marked as done. Compare this with your focus trend to gauge your actual execution efficiency.</p>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Task Completion</h3>
+                            <p class="text-xs text-text-muted mt-0.5 max-w-[80%]">Total number of tasks marked as done. Compare this with your focus trend to gauge your actual execution efficiency.</p>
+                        </div>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="glass-toggle-btn">Line</button>
                             <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="glass-toggle-btn active">Bar</button>
@@ -318,10 +339,10 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-lg font-semibold text-white">Hourly Productivity</h3>
-                            <p class="text-xs text-text-muted mt-0.5">Aggregated focus time per hour of the day. Discover your biological prime time for deep work.</p>
+                            <p class="text-xs text-text-muted mt-0.5 max-w-[80%]">Aggregated focus time per hour of the day. Discover your biological prime time for deep work.</p>
                         </div>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="glass-toggle-btn">Line</button>
@@ -331,10 +352,10 @@
                     <div class="h-[250px] w-full relative"><canvas id="hourlyChart"></canvas></div>
                 </div>
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-lg font-semibold text-white">Weekly Performance</h3>
-                             <p class="text-xs text-text-muted mt-0.5">Focus distribution across days of the week. Identifies which days you are historically most productive.</p>
+                             <p class="text-xs text-text-muted mt-0.5 max-w-[80%]">Focus distribution across days of the week. Identifies which days you are historically most productive.</p>
                         </div>
                         <div class="glass-toggle-group">
                             <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="glass-toggle-btn">Line</button>
@@ -348,21 +369,21 @@
              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Project Distribution</h3>
-                    <p class="text-xs text-text-muted mt-0.5">Breaks down where your time is being invested across your active workflows.</p>
                     <div class="h-[180px] w-full relative flex justify-center mb-4"><canvas id="projectChart"></canvas></div>
-                    <div id="project-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2 max-h-[150px]"></div>
+                    <div id="project-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2 max-h-[150px] mb-4"></div>
+                    <div class="chart-insight-box">Breaks down where your time is being invested across your active workflows.</div>
                 </div>
                  <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Task Priorities</h3>
-                    <p class="text-xs text-text-muted mt-0.5">Analyzes the urgency levels of completed tasks to ensure you are focusing on high-impact work.</p>
                     <div class="h-[180px] w-full relative flex justify-center mb-4"><canvas id="priorityChart"></canvas></div>
-                    <div class="text-center text-xs text-text-muted">High vs Med vs Low</div>
+                    <div class="chart-insight-box mt-4">Tracks <strong>High</strong>, <strong>Medium</strong>, and <strong>Low</strong> urgency tasks to ensure you are focusing on high-impact work.</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
                      <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Top Tags</h3>
-                     <div id="tag-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                     <div id="tag-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 mb-4">
                          <p class="text-sm text-text-muted italic">No tags data available.</p>
                      </div>
+                     <div class="chart-insight-box">Highlights the primary contexts and categories demanding most of your attention.</div>
                 </div>
             </div>
 
