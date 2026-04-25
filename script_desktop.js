@@ -653,10 +653,18 @@ const app = {
         cancelBtn.addEventListener('click', () => close(false));
     }),
 
-    setView: v => {
+    setView: (v, pushHistory = true) => {
         const els = getEls();
         state.view = v; state.filterProject = null;
         saveLocalState();
+
+        // Update the URL without reloading the page
+        if (pushHistory) {
+            const url = new URL(window.location);
+            url.searchParams.set('view', v);
+            window.history.pushState({ view: v }, '', url);
+        }
+
         els.pageTitle.textContent = (v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1));
         updateNavStyles(v); app.toggleSidebar(false);
         if (v === 'analytics') {
@@ -1493,4 +1501,15 @@ function updateTimerUI(t) {
     }
 }
 
-app.setView(localUI.view);
+// Handle browser Back/Forward buttons
+window.addEventListener('popstate', (e) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const view = urlParams.get('view') || localUI.view || 'today';
+    if (app.setView) {
+        app.setView(view, false); // false prevents pushing to history again
+    }
+});
+
+// Initialize view based on URL parameter or local storage
+const initialView = URL_PARAMS.get('view') || localUI.view || 'today';
+app.setView(initialView, false);

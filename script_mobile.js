@@ -622,11 +622,13 @@ const app = {
 
     switchTab: (tab, pushHistory = true) => {
         haptic('light');
-        if (pushHistory && tab !== 'tasks' && state.activeTab !== tab) {
-            history.pushState({ view: tab }, '', `#${tab}`);
+        if (pushHistory && state.activeTab !== tab) {
+            const url = new URL(window.location);
+            url.searchParams.set('view', tab);
+            history.pushState({ view: tab }, '', url);
         }
         state.activeTab = tab;
-        saveLocalState(); 
+        saveLocalState();
 
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         const view = $(`view-${tab}`);
@@ -1803,6 +1805,7 @@ document.addEventListener('click', (e) => { if (document.activeElement && docume
 
 if (!history.state) history.replaceState({ view: 'root' }, '');
 window.addEventListener('popstate', (e) => {
+    // Handle closing bottom sheets on hardware back button
     if (!$('modal-sheet').classList.contains('translate-y-full')) { 
         $('modal-sheet').classList.add('translate-y-full');
         $('modal-overlay').classList.add('opacity-0');
@@ -1822,12 +1825,14 @@ window.addEventListener('popstate', (e) => {
         return; 
     }
     
-    if (e.state && e.state.view) {
-        app.switchTab(e.state.view, false);
-    } else {
-        app.switchTab('tasks', false);
-    }
+    // Check URL for view state
+    const urlParams = new URLSearchParams(window.location.search);
+    const view = urlParams.get('view') || 'tasks';
+    app.switchTab(view, false);
 });
 
 window.app = app;
-app.switchTab(localUI.activeTab, false);
+
+// Initialize tab based on URL parameter or local storage
+const initialTab = URL_PARAMS.get('view') || localUI.activeTab || 'tasks';
+app.switchTab(initialTab, false);
