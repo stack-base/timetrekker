@@ -1020,9 +1020,9 @@ function updateAnalytics() {
     if (!els.analytics.timeTotal) return; 
 
     const getDayStr = (dParam) => {
-    const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-};
+        const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
     const now = getISTNow();
     const todayStr = getDayStr(now);
     const startOfWeek = new Date(now); 
@@ -1182,49 +1182,66 @@ function updateAnalytics() {
     }
 
     const cOpts = {
-    responsive: true, 
-    maintainAspectRatio: false,
-    scales: { 
-        y: { 
-            beginAtZero: true, 
-            grid: { color: 'rgba(255,255,255,0.03)', borderDash: [4, 4] },
-            title: {
-                display: true,
-                text: 'Volume', // Will be overridden per chart (e.g., 'Hours' or 'Tasks')
-                color: '#a3a3a3',
-                font: { family: 'Inter', size: 10 }
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,0.03)', borderDash: [4, 4] },
+                ticks: { color: '#a3a3a3', font: { family: 'Inter', size: 11 } }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: '#a3a3a3', font: { family: 'Inter', size: 11 } }
             }
-        }, 
-        x: { grid: { display: false } } 
-    },
-    plugins: { 
-        legend: { display: false },
-        tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            titleFont: { family: 'Inter', size: 13 },
-            bodyFont: { family: 'Inter', size: 12 },
-            padding: 12,
-            callbacks: {
-                title: (context) => {
-                    return `Timeframe: ${context[0].label}`;
-                },
-                label: (context) => {
-                    const value = context.raw;
-                    const label = context.dataset.label;
-                    if (label.includes('Tasks')) {
-                        return `${value} tasks completed`;
-                    } else if (label.includes('Hours')) {
-                        return `${value} hours of deep focus`;
-                    } else {
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                titleFont: { family: 'Inter', size: 13 },
+                bodyFont: { family: 'Inter', size: 12 },
+                padding: 12,
+                callbacks: {
+                    title: (context) => `Timeframe: ${context[0].label}`,
+                    label: (context) => {
+                        const value = context.raw;
+                        const label = context.dataset.label;
+                        if (label.includes('Tasks')) return `${value} tasks completed`;
+                        if (label.includes('Hours')) return `${value} hours of deep focus`;
                         return `${value} minutes focused`;
                     }
                 }
             }
+        },
+        elements: { bar: { borderRadius: 4, hoverBackgroundColor: '#ffffff' }, line: { tension: 0.4 } },
+        interaction: { mode: 'index', intersect: false }
+    };
+
+    const doughnutOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '75%',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                titleFont: { family: 'Inter', size: 13 },
+                bodyFont: { family: 'Inter', size: 12 },
+                padding: 12,
+                callbacks: {
+                    label: (context) => {
+                        const dataset = context.dataset;
+                        const total = dataset.data.reduce((acc, current) => acc + current, 0);
+                        const value = context.raw;
+                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                        const isTime = context.chart.canvas.id === 'projectChart';
+                        const metric = isTime ? 'm' : ' tasks';
+                        return ` ${context.label}: ${Math.round(value)}${metric} (${percentage}%)`;
+                    }
+                }
+            }
         }
-    },
-    elements: { bar: { borderRadius: 4, hoverBackgroundColor: '#ffffff' }, line: { tension: 0.4 } },
-    interaction: { mode: 'index', intersect: false }
-};
+    };
 
     const gC = (ctx, t, l, d, c, tl) => {
         const i = t === 'line';
@@ -1244,7 +1261,7 @@ function updateAnalytics() {
                     pointHoverRadius: 6
                 }]
             },
-            options: { ...cOpts, plugins: { ...cOpts.plugins, tooltip: { callbacks: { label: x => x.raw + ' ' + (tl.includes('Hours') ? 'hrs' : (tl.includes('Tasks') ? 'tasks' : 'mins')) } } } }
+            options: cOpts
         }
     };
 
@@ -1289,59 +1306,44 @@ function updateAnalytics() {
 
     const pm = {}; state.logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) });
     const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
+    
     if(els.analytics.projectChart) {
         if (state.charts.project) state.charts.project.destroy();
-        state.charts.project = new Chart(els.analytics.projectChart.getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.label + ': ' + Math.round(c.raw) + 'm' } } } } });
+        state.charts.project = new Chart(els.analytics.projectChart.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: sp.map(x => x[0]),
+                datasets: [{
+                    data: sp.map(x => x[1]),
+                    backgroundColor: ['#ff5757', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'],
+                    borderColor: '#000000',
+                    borderWidth: 4,
+                    hoverOffset: 4
+                }]
+            },
+            options: doughnutOptions
+        });
         if(els.analytics.projList) els.analytics.projList.innerHTML = sp.map(x => `<div class="flex justify-between text-xs text-text-muted"><span>${esc(x[0])}</span><span>${Math.round(x[1])}m</span></div>`).join('');
     }
-
-    const doughnutOptions = {
-    responsive: true, 
-    maintainAspectRatio: false, 
-    cutout: '75%', 
-    plugins: { 
-        legend: { display: false }, 
-        tooltip: { 
-            callbacks: { 
-                label: (context) => {
-                    // Calculate total to derive percentage
-                    const dataset = context.dataset;
-                    const total = dataset.data.reduce((acc, current) => acc + current, 0);
-                    const value = context.raw;
-                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                    
-                    // Differentiate between time (Projects) and count (Priorities)
-                    const isTime = context.chart.canvas.id === 'projectChart';
-                    const metric = isTime ? 'mins' : 'tasks';
-                    
-                    return ` ${context.label}: ${Math.round(value)}${metric} (${percentage}%)`;
-                } 
-            } 
-        } 
-    }
-};
-
-// Example initialization for Project Chart using the updated options:
-state.charts.project = new Chart(document.getElementById('projectChart').getContext('2d'), { 
-    type: 'doughnut', 
-    data: { 
-        labels: sp.map(x => x[0]), 
-        datasets: [{ 
-            data: sp.map(x => x[1]), 
-            backgroundColor: ['#ff5757', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'], 
-            borderColor: '#000000', 
-            borderWidth: 4, 
-            hoverOffset: 4 
-        }] 
-    }, 
-    options: doughnutOptions 
-});
     
     const pri = { high: 0, med: 0, low: 0, none: 0 };
     tasksDone.forEach(t => pri[t.priority || 'none']++);
     if(els.analytics.priorityChart) {
         if (state.charts.priority) state.charts.priority.destroy();
-        state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderColor: '#000000', borderWidth: 4, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
+        state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['High', 'Med', 'Low', 'None'],
+                datasets: [{
+                    data: [pri.high, pri.med, pri.low, pri.none],
+                    backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'],
+                    borderColor: '#000000',
+                    borderWidth: 4,
+                    hoverOffset: 4
+                }]
+            },
+            options: doughnutOptions
+        });
     }
 
     const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
