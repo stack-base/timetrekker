@@ -1006,38 +1006,10 @@ const app = {
         createChart('taskBarChart', 'task', dpTask, '#3b82f6', 'Tasks', 'taskBar');
 
         // --- ADD TODAY TIMELINE CHART LOGIC ---
-        const BINS_PER_HOUR = 4; // 15-minute intervals for high accuracy
-        const TOTAL_BINS = 24 * BINS_PER_HOUR;
-        const MINS_PER_BIN = 60 / BINS_PER_HOUR;
-        const todayData = Array(TOTAL_BINS).fill(0);
-        
-        const todayLabels = Array.from({length: TOTAL_BINS}, (_, i) => {
-            const h = Math.floor(i / BINS_PER_HOUR);
-            const m = (i % BINS_PER_HOUR) * MINS_PER_BIN;
-            return `${h}:${m.toString().padStart(2, '0')}`;
-        });
-
-        logsToday.forEach(l => {
-            const endD = parseDate(l.completedAt);
-            if (!endD) return;
-            const dur = l.duration || 25;
-            const startD = new Date(endD.getTime() - dur * 60000);
-
-            let current = new Date(startD);
-            while(current < endD) {
-                if (current.getDate() === endD.getDate() && current.getMonth() === endD.getMonth()) {
-                    const binIdx = current.getHours() * BINS_PER_HOUR + Math.floor(current.getMinutes() / MINS_PER_BIN);
-                    let nextBin = new Date(current);
-                    nextBin.setMinutes(Math.floor(current.getMinutes() / MINS_PER_BIN) * MINS_PER_BIN + MINS_PER_BIN, 0, 0);
-                    
-                    let endChunk = nextBin < endD ? nextBin : endD;
-                    let mins = (endChunk.getTime() - current.getTime()) / 60000;
-                    todayData[binIdx] += mins;
-                    current = nextBin;
-                } else {
-                    current = new Date(endD.getFullYear(), endD.getMonth(), endD.getDate(), 0, 0, 0);
-                }
-            }
+        const todayHours = Array(24).fill(0);
+        logsToday.forEach(l => { 
+            const d = parseDate(l.completedAt); 
+            if (d) todayHours[d.getHours()] += (l.duration || 25); 
         });
 
         if($('todayTimelineChart')) {
@@ -1047,11 +1019,11 @@ const app = {
              state.chartInstances.todayTimeline = new Chart(ctx, {
                 type: 'line',
                 data: { 
-                    labels: todayLabels, 
-                    datasets: [{ data: todayData, backgroundColor: getGradient('#8b5cf6'), borderColor: '#8b5cf6', fill: true, borderWidth: 2, pointRadius:0, tension:0.4 }] 
+                    labels: Array.from({length:24},(_,i)=>i), 
+                    datasets: [{ data: todayHours, backgroundColor: getGradient('#8b5cf6'), borderColor: '#8b5cf6', fill: true, borderWidth: 2, pointRadius:0, tension:0.4 }] 
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}, tooltip: { callbacks: { label: c => Math.round(c.raw) + ' mins' } }},
+                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}, tooltip: { callbacks: { label: c => c.raw + ' mins' } }},
                     scales: {
                         x: { display: true, grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 8 } },
                         y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 }, beginAtZero: true }
@@ -1061,22 +1033,7 @@ const app = {
         }
         // --------------------------------------
 
-        const hours = Array(24).fill(0);
-        logs.forEach(l => { 
-            const endD = parseDate(l.completedAt); 
-            if (!endD) return;
-            const dur = l.duration || 25;
-            const startD = new Date(endD.getTime() - dur * 60000);
-            
-            let current = new Date(startD);
-            while(current < endD) {
-                let nextHour = new Date(current);
-                nextHour.setHours(current.getHours() + 1, 0, 0, 0);
-                let endChunk = nextHour < endD ? nextHour : endD;
-                hours[current.getHours()] += (endChunk.getTime() - current.getTime()) / 60000;
-                current = nextHour;
-            }
-        }); logs.forEach(l => { const d = parseDate(l.completedAt); if (d) hours[d.getHours()] += (l.duration || 25) });
+        const hours = Array(24).fill(0); logs.forEach(l => { const d = parseDate(l.completedAt); if (d) hours[d.getHours()] += (l.duration || 25) });
         const createHourly = () => {
              const type = state.chartTypes.hourly; const isLine = type === 'line'; const color = '#10b981';
              if(state.chartInstances.hourly) state.chartInstances.hourly.destroy();
