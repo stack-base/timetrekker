@@ -928,6 +928,25 @@ const app = {
         const grid = $('pomo-timeline-grid'); 
         if(grid) {
             grid.innerHTML = ''; 
+            
+            const tooltip = $('global-tooltip');
+            let tooltipTimeout;
+
+            const showTooltip = (e, txt, sub) => {
+                clearTimeout(tooltipTimeout);
+                if (!tooltip) return;
+                tooltip.innerHTML = `<strong>${esc(txt)}</strong><span class="sub">${esc(sub)}</span>`;
+                tooltip.style.opacity = '1';
+                
+                const touch = e.touches ? e.touches[0] : e;
+                tooltip.style.left = touch.clientX + 'px';
+                tooltip.style.top = touch.clientY + 'px';
+            };
+
+            const hideTooltip = () => { 
+                if (tooltip) tooltip.style.opacity = '0'; 
+            };
+
             for (let i = 0; i < 7; i++) { 
                 const d = new Date(); d.setDate(now.getDate() - i); const dStr = getDS(d); 
                 const dayLogs = logs.filter(l => { const ld = parseDate(l.completedAt); return ld && getDS(ld) === dStr }); 
@@ -936,7 +955,16 @@ const app = {
                 const bars = document.createElement('div'); bars.className = "flex-1 h-full relative bg-dark-bg rounded border border-dark-border overflow-hidden mx-2"; 
                 dayLogs.forEach(l => { 
                     const ld = parseDate(l.completedAt), sm = (ld.getHours() * 60) + ld.getMinutes(), dur = l.duration || 25, lp = ((sm - dur) / 1440) * 100, wp = (dur / 1440) * 100; 
-                    const b = document.createElement('div'); b.className = "absolute top-1 bottom-1 rounded-sm bg-brand opacity-80"; b.style.left = `${lp}%`; b.style.width = `${Math.max(wp, 1)}%`; bars.appendChild(b) 
+                    const b = document.createElement('div'); b.className = "absolute top-1 bottom-1 rounded-sm bg-brand opacity-80 active:bg-white transition-colors"; b.style.left = `${lp}%`; b.style.width = `${Math.max(wp, 1)}%`; 
+                    
+                    b.addEventListener('touchstart', (e) => {
+                        e.preventDefault(); 
+                        const timeString = `${ld.getHours()}:${ld.getMinutes().toString().padStart(2, '0')} - ${dur} mins`;
+                        showTooltip(e, l.taskTitle || 'Focus Session', timeString);
+                        tooltipTimeout = setTimeout(hideTooltip, 2500);
+                    });
+                    
+                    bars.appendChild(b) 
                 }); 
                 row.appendChild(lbl); row.appendChild(bars); grid.appendChild(row) 
             }
@@ -993,7 +1021,21 @@ const app = {
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + (instanceKey.includes('Focus') ? ' hrs' : '') } } }, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            callbacks: { 
+                                title: (context) => `Timeframe: ${context[0].label}`,
+                                label: (context) => {
+                                    const value = context.raw;
+                                    const lbl = context.dataset.label || '';
+                                    if (lbl.includes('Tasks') || instanceKey.includes('task')) return `${value} tasks completed`;
+                                    if (lbl.includes('Hours') || instanceKey.includes('focus') || instanceKey.includes('Focus')) return `${value} hours of deep focus`;
+                                    return `${value} minutes focused`;
+                                } 
+                            } 
+                        } 
+                    }, 
                     scales: { 
                         y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, display: true, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 6 } }, 
                         x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#71717a' } } 
@@ -1023,7 +1065,16 @@ const app = {
                     datasets: [{ data: todayHours, backgroundColor: getGradient('#8b5cf6'), borderColor: '#8b5cf6', fill: true, borderWidth: 2, pointRadius:0, tension:0.4 }] 
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}, tooltip: { callbacks: { label: c => c.raw + ' mins' } }},
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: {
+                        legend:{display:false}, 
+                        tooltip: { 
+                            callbacks: { 
+                                title: (context) => `Time: ${context[0].label}:00`,
+                                label: c => `${c.raw} minutes focused` 
+                            } 
+                        }
+                    },
                     scales: {
                         x: { display: true, grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 8 } },
                         y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 }, beginAtZero: true }
@@ -1043,7 +1094,16 @@ const app = {
                 type: type, 
                 data: { labels: Array.from({length:24},(_,i)=>i), datasets: [{ data: hours, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 2, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
                 options: { 
-                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: {
+                        legend:{display:false},
+                        tooltip: { 
+                            callbacks: { 
+                                title: (context) => `Hour: ${context[0].label}:00`,
+                                label: c => `${c.raw} minutes focused` 
+                            } 
+                        }
+                    }, 
                     scales: {
                         x: { display: true, grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 8 } },
                         y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } }
@@ -1061,9 +1121,18 @@ const app = {
              const getGradient = (c) => { const g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + '90'); g.addColorStop(1, c + '05'); return g; }
              state.chartInstances.weekday = new Chart(ctx, { 
                 type: type, 
-                data: { labels: ['M','T','W','T','F','S','S'], datasets: [{ data: weekdays, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
+                data: { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets: [{ data: weekdays, backgroundColor: isLine ? getGradient(color) : color, borderColor: color, borderRadius: 3, fill: isLine, borderWidth: isLine?2:0, pointRadius:0, tension:0.4 }] }, 
                 options: { 
-                    responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: {
+                        legend:{display:false},
+                        tooltip: { 
+                            callbacks: { 
+                                title: (context) => `Day: ${context[0].label}`,
+                                label: c => `${c.raw} minutes focused` 
+                            } 
+                        }
+                    }, 
                     scales: {
                         x: { grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 } } },
                         y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#71717a', font: { size: 9 }, maxTicksLimit: 5 } }
@@ -1076,17 +1145,50 @@ const app = {
         const maxHour = hours.indexOf(Math.max(...hours)); const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; const maxDay = weekdays.indexOf(Math.max(...weekdays));
         if($('insight-text')) $('insight-text').textContent = logs.length > 3 ? `You are most productive at ${maxHour}:00 and on ${days[maxDay]}s.` : "Keep tracking to get insights.";
 
+        // --- UNIFIED DOUGHNUT CHART OPTIONS ---
+        const doughnutOptions = {
+            responsive: true, 
+            maintainAspectRatio: false, 
+            cutout: '70%', 
+            plugins: { 
+                legend: { display: false }, 
+                tooltip: { 
+                    callbacks: { 
+                        label: (context) => {
+                            const dataset = context.dataset;
+                            const total = dataset.data.reduce((acc, current) => acc + current, 0);
+                            const value = context.raw;
+                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                            
+                            const isTime = context.chart.canvas.id === 'projectChart';
+                            const metric = isTime ? 'm' : ' tasks';
+                            
+                            return ` ${context.label}: ${Math.round(value)}${metric} (${percentage}%)`;
+                        } 
+                    } 
+                } 
+            }
+        };
+
         const pm = {}; logs.forEach(l => { const p = l.project || 'Inbox'; pm[p] = (pm[p] || 0) + (l.duration || 25) }); const sp = Object.entries(pm).sort((a, b) => b[1] - a[1]);
         if($('projectChart')) {
             if (state.chartInstances.project) state.chartInstances.project.destroy();
-            state.chartInstances.project = new Chart($('projectChart').getContext('2d'), { type: 'doughnut', data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
+            state.chartInstances.project = new Chart($('projectChart').getContext('2d'), { 
+                type: 'doughnut', 
+                data: { labels: sp.map(x => x[0]), datasets: [{ data: sp.map(x => x[1]), backgroundColor: ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'], borderWidth: 0 }] }, 
+                options: doughnutOptions 
+            });
         }
         if($('project-legend')) $('project-legend').innerHTML = sp.map((p,i) => `<div class="flex justify-between items-center"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i%5]}"></div><span class="text-text-muted truncate max-w-[80px]">${p[0]}</span></div><span class="text-white font-mono">${Math.round(p[1])}m</span></div>`).join('');
 
         const pri = { high: 0, med: 0, low: 0, none: 0 }; tasksDone.forEach(t => pri[t.priority || 'none']++);
         if($('priorityChart')) {
             if (state.chartInstances.priority) state.chartInstances.priority.destroy();
-            state.chartInstances.priority = new Chart($('priorityChart').getContext('2d'), { type: 'doughnut', data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
+            state.chartInstances.priority = new Chart($('priorityChart').getContext('2d'), { 
+                type: 'doughnut', 
+                data: { labels: ['High', 'Med', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 0 }] }, 
+                options: doughnutOptions 
+            });
         }
 
         const tc = {}; 
@@ -1102,10 +1204,10 @@ const app = {
             const d = parseDate(l.completedAt) || new Date(); 
             const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-            return `<div class="px-4 py-3 flex justify-between items-center text-sm">
+            return `<div class="px-4 py-3 flex justify-between items-center text-sm border-b border-dark-border/50 last:border-0">
                 <div>
                     <div class="text-white truncate max-w-[150px] font-medium">${esc(l.taskTitle || 'Focus Session')}</div>
-                    <div class="flex items-center gap-2 text-[10px] text-text-muted">
+                    <div class="flex items-center gap-2 text-[10px] text-text-muted mt-1">
                         <span>${dateStr}</span><span>•</span><span>${timeStr}</span><span>•</span><span>${esc(l.project || 'Inbox')}</span>
                     </div>
                 </div>
