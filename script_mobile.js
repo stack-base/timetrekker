@@ -103,16 +103,27 @@ function clearBackgroundAlarm() {
 
 const parseDate = (val) => {
     if (!val) return null;
-    if (typeof val === 'number') return new Date(val); 
-    if (val.seconds !== undefined) return new Date(val.seconds * 1000);
-    if (typeof val === 'string') return new Date(val);
-    if (val instanceof Date) return val;
-    return null;
+    let d;
+    if (typeof val === 'number') d = new Date(val); 
+    else if (val.seconds !== undefined) d = new Date(val.seconds * 1000);
+    else if (typeof val === 'string') d = new Date(val);
+    else if (val instanceof Date) d = val;
+    else return null;
+    
+    // Shift retrieved absolute UTC times to IST for correct hour/day extraction
+    return new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 };
+
+// Global helper to always fetch the current time as IST
+const getISTNow = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 
 const $ = id => document.getElementById(id);
 const esc = (str) => { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; };
-const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const getISTNow = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+const getDayStr = (dParam) => {
+    const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
 
 const debounce = (func, wait) => {
     let timeout;
@@ -302,7 +313,7 @@ onAuthStateChanged(auth, u => {
             });
         }
 
-        if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long', month: 'long', day: 'numeric' });
 
         onSnapshot(collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'tasks'), s => {
             state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
@@ -391,7 +402,7 @@ onAuthStateChanged(auth, u => {
         subBroadcasts(effectiveUid);
 
         setInterval(() => {
-            const now = new Date();
+            const now = getISTNow();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             if (state.lastCheckTime !== currentTime) {
                 state.lastCheckTime = currentTime;
@@ -777,8 +788,10 @@ const app = {
         if(!list) return;
         list.innerHTML = '';
         
-        const today = getDayStr(new Date());
-        const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
+        const todayDate = getISTNow();
+        const today = getDayStr(todayDate);
+        const tmrw = getISTNow(); 
+        tmrw.setDate(tmrw.getDate() + 1);
         const tomorrowStr = getDayStr(tmrw);
         
         let filtered = state.tasks;
@@ -840,7 +853,7 @@ const app = {
     },
     
     renderMiniStats: () => {
-        const today = getDayStr(new Date());
+        const today = getDayStr(getISTNow());
         const todayTasks = state.tasks.filter(t => t.status === 'todo' && t.dueDate === today);
         const estMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (parseInt(b.pomoDuration) || 25)), 0);
         const h = Math.floor(estMin / 60); const m = estMin % 60;
@@ -871,8 +884,11 @@ const app = {
     renderAnalytics: () => {
         if(state.activeTab !== 'analytics') return;
         const logs = state.logs; const tasks = state.tasks;
-        const now = new Date(); 
-        const getDS = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const now = getISTNow(); 
+        const getDS = (dParam) => {
+            const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        };
         const todayStr = getDS(now);
 
         const startOfWeek = new Date(now); 
@@ -1251,8 +1267,8 @@ const app = {
             $('inp-duration').value = 25;
             app.updateDurationDisplay(25);
 
-            $('inp-date').value = getDayStr(new Date());
-            app.highlightDateButton(getDayStr(new Date()));
+            $('inp-date').value = getDayStr(getISTNow());
+            app.highlightDateButton(getDayStr(getISTNow()));
             
             $('inp-project').value = 'Inbox';
             app.setPriority('none');
@@ -1272,7 +1288,7 @@ const app = {
 
     setQuickDate: (type) => {
         haptic('light');
-        const d = new Date();
+        const d = getISTNow();
         if(type === 'tomorrow') d.setDate(d.getDate() + 1);
         const str = getDayStr(d);
         $('inp-date').value = str;
@@ -1280,8 +1296,10 @@ const app = {
     },
 
     highlightDateButton: (dateStr) => {
-        const today = getDayStr(new Date());
-        const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
+        const todayDate = getISTNow();
+        const today = getDayStr(todayDate);
+        const tmrw = getISTNow(); 
+        tmrw.setDate(tmrw.getDate() + 1);
         const tmrwStr = getDayStr(tmrw);
         const setBtn = (id, active) => { $(id).className = active ? "flex-1 py-2 rounded-lg bg-brand text-white border border-brand text-xs font-bold shadow-md transition-all" : "flex-1 py-2 rounded-lg bg-dark-card border border-dark-border text-xs font-medium text-text-muted transition-all active:scale-95"; };
         setBtn('btn-date-today', dateStr === today);

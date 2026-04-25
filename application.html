@@ -7,10 +7,13 @@
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="./manifest_desktop.json">
 <script>
-    // Redirect mobile users to the mobile app
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        window.location.href = './application_mobile' + window.location.search;
+    function handleResizeRedirect() {
+        if (window.innerWidth <= 768) {
+            window.location.href = './application_mobile' + window.location.search;
+        }
     }
+    handleResizeRedirect();
+    window.addEventListener('resize', handleResizeRedirect);
 </script>
 <title>TimeTrekker</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png" type="image/x-icon">

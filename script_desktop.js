@@ -137,12 +137,19 @@ function clearBackgroundAlarm() {
 
 const parseDate = (val) => {
     if (!val) return null;
-    if (typeof val === 'number') return new Date(val); 
-    if (val.seconds !== undefined) return new Date(val.seconds * 1000);
-    if (typeof val === 'string') return new Date(val);
-    if (val instanceof Date) return val;
-    return null;
+    let d;
+    if (typeof val === 'number') d = new Date(val); 
+    else if (val.seconds !== undefined) d = new Date(val.seconds * 1000);
+    else if (typeof val === 'string') d = new Date(val);
+    else if (val instanceof Date) d = val;
+    else return null;
+    
+    // Shift retrieved absolute UTC times to IST for correct hour/day extraction
+    return new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 };
+
+// Global helper to always fetch the current time as IST
+const getISTNow = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 
 const state = {
     user: null,
@@ -336,12 +343,12 @@ onAuthStateChanged(auth, u => {
         subTimer(effectiveUid);
         subBroadcasts(effectiveUid); 
 
-        if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long', month: 'long', day: 'numeric' });
 
         app.setSound(state.sound);
 
         setInterval(() => {
-            const now = new Date();
+            const now = getISTNow();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             if (state.lastCheckTime !== currentTime) {
                 state.lastCheckTime = currentTime;
@@ -1012,8 +1019,11 @@ function updateAnalytics() {
     if (state.view !== 'analytics') return;
     if (!els.analytics.timeTotal) return; 
 
-    const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    const now = new Date();
+    const getDayStr = (dParam) => {
+    const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+    const now = getISTNow();
     const todayStr = getDayStr(now);
     const startOfWeek = new Date(now); 
     const day = startOfWeek.getDay() || 7; 
@@ -1275,8 +1285,14 @@ function updateProjectsUI() { const els = getEls(); els.projectList.innerHTML = 
 
 function updateCounts() {
     const els = getEls();
-    const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    const t = getDayStr(new Date()), tm = getDayStr(new Date(Date.now() + 864e5));
+    const getDayStr = (dParam) => {
+    const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+    const tDate = getISTNow();
+    const tmDate = getISTNow();
+    tmDate.setDate(tmDate.getDate() + 1);
+    const t = getDayStr(tDate), tm = getDayStr(tmDate);
 
     els.navCounts.all.textContent = state.tasks.length;
 
@@ -1304,7 +1320,14 @@ function updateCounts() {
 
 function renderTasks() {
     const els = getEls();
-    const getDayStr = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), t = getDayStr(new Date()), tm = getDayStr(new Date(Date.now() + 864e5));
+    const getDayStr = (dParam) => {
+    const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+    const tDate = getISTNow();
+    const tmDate = getISTNow();
+    tmDate.setDate(tmDate.getDate() + 1);
+    const t = getDayStr(tDate), tm = getDayStr(tmDate);
     let l = [];
     if (state.view === 'all') l = state.tasks; else if (state.view === 'today') l = state.tasks.filter(x => x.dueDate === t && x.status === 'todo'); else if (state.view === 'tomorrow') l = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo'); else if (state.view === 'upcoming') l = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo'); else if (state.view === 'past') l = state.tasks.filter(x => x.dueDate < t && x.status === 'todo'); else if (state.view === 'completed') l = state.tasks.filter(x => x.status === 'done'); else if (state.view === 'project') l = state.tasks.filter(x => x.project === state.filterProject && x.status === 'todo');
     const pm = { high: 3, med: 2, low: 1, none: 0 };
