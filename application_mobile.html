@@ -34,10 +34,19 @@
 <script type="module" src="script_mobile.js" defer></script>
 <style>
     body{background-color:#000;color:#fff;-webkit-tap-highlight-color:transparent;overflow:hidden;user-select:none}.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}.custom-scrollbar::-webkit-scrollbar{height:4px;width:4px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#333;border-radius:2px}@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}.animate-slide-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1) forwards}.sheet-handle{width:36px;height:5px;background:#3f3f46;border-radius:99px;margin:8px auto 16px auto}.toggle-checkbox:checked{right:0;border-color:#ff5757}.toggle-checkbox:checked+.toggle-label{background-color:#ff5757}input[type=range]{-webkit-appearance:none;background:0 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#27272a;border-radius:2px}#content-scroll-area{-webkit-overflow-scrolling:touch}
+
+    /* Tooltip and Insight CSS additions */
+    #global-tooltip { pointer-events: none; position: fixed; z-index: 9999; background: rgba(9, 9, 11, 0.95); border: 1px solid #27272a; padding: 10px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); font-size: 12px; color: white; opacity: 0; transition: opacity 0.15s ease; transform: translate(-50%, -150%); white-space: nowrap; }
+    #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 3px; font-size: 13px; font-weight: 600; }
+    #global-tooltip .sub { color: #a1a1aa; font-size: 11px; }
+
+    .chart-insight-box { background-color: #000000; border: 1px solid #27272a; border-radius: 8px; padding: 12px; font-size: 11px; color: #a1a1aa; line-height: 1.5; margin-top: auto; text-align: center; }
+    .chart-insight-box strong { color: #ffffff; font-weight: 600; }
 </style>
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
 
+    <div id="global-tooltip"></div>
     <div id="toast-container" class="fixed top-safe-t pt-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xs flex flex-col gap-2 pointer-events-none px-4"></div>
 
     <div id="custom-prompt-modal" class="fixed inset-0 bg-black/80 z-[110] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-200 backdrop-blur-sm">
@@ -186,6 +195,7 @@
                      <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                         <div class="text-[10px] uppercase text-text-muted font-bold">Avg Session</div>
                         <div class="text-xl font-bold text-white mt-1" id="ana-avg-session">0m</div>
+                        <div class="text-[8px] text-text-muted mt-0.5">Minutes per pomo</div>
                     </div>
 
                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
@@ -203,6 +213,7 @@
                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                         <div class="text-[10px] uppercase text-text-muted font-bold">Completion %</div>
                         <div class="text-xl font-bold text-green-500 mt-1" id="ana-completion-rate">0%</div>
+                        <div class="text-[8px] text-text-muted mt-0.5">(Completed / Active)</div>
                     </div>
 
                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
@@ -216,6 +227,7 @@
                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                         <div class="text-[10px] uppercase text-text-muted font-bold">Best Streak</div>
                         <div class="text-xl font-bold text-purple-500 mt-1" id="ana-streak-days">0 Days</div>
+                        <div class="text-[8px] text-text-muted mt-0.5">Consecutive days</div>
                     </div>
                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                         <div class="text-[10px] uppercase text-text-muted font-bold">Active Projects</div>
@@ -226,13 +238,17 @@
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                     <div class="mb-4">
                         <h3 class="text-sm font-bold text-white">Today's Timeline</h3>
+                        <p class="text-[10px] text-text-muted mt-0.5">Minute-by-minute focus breakdown.</p>
                     </div>
                     <div class="h-32 relative w-full"><canvas id="todayTimelineChart"></canvas></div>
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold">Focus Trend</h3>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Focus Trend</h3>
+                            <p class="text-[10px] text-text-muted mt-0.5">Total duration over time.</p>
+                        </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
                             <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
                             <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
@@ -242,8 +258,11 @@
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold">Task Completion</h3>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Task Completion</h3>
+                            <p class="text-[10px] text-text-muted mt-0.5">Number of tasks marked done.</p>
+                        </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
                             <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
                             <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
@@ -253,8 +272,11 @@
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold">Hourly Productivity</h3>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Hourly Productivity</h3>
+                            <p class="text-[10px] text-text-muted mt-0.5">When you focus the most.</p>
+                        </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
                             <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
                             <button onclick="app.toggleChartType('hourly', 'bar')" id="btn-hourly-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
@@ -264,8 +286,11 @@
                 </div>
                 
                  <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold">Weekly Performance</h3>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Weekly Performance</h3>
+                            <p class="text-[10px] text-text-muted mt-0.5">Your best days of the week.</p>
+                        </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
                             <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
                             <button onclick="app.toggleChartType('weekday', 'bar')" id="btn-weekday-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
@@ -274,17 +299,18 @@
                     <div class="h-48 relative w-full"><canvas id="weekdayChart"></canvas></div>
                 </div>
 
-                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold mb-4">Project Distribution</h3>
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4 mb-2">
                             <div class="h-32 w-32 relative shrink-0"><canvas id="projectChart"></canvas></div>
                             <div id="project-legend" class="flex-1 space-y-2 text-xs overflow-y-auto max-h-32 pr-2 custom-scrollbar"></div>
                     </div>
+                    <div class="chart-insight-box mt-2">Breaks down where your time is invested.</div>
                 </div>
 
-                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold mb-4">Task Priorities</h3>
-                     <div class="flex items-center gap-4">
+                     <div class="flex items-center gap-4 mb-2">
                         <div class="h-32 w-32 relative shrink-0"><canvas id="priorityChart"></canvas></div>
                         <div class="flex-1 flex flex-col justify-center text-xs space-y-2">
                              <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-text-muted">High Priority</span></div>
@@ -293,13 +319,15 @@
                              <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-[#525252]"></div><span class="text-text-muted">None</span></div>
                         </div>
                      </div>
+                     <div class="chart-insight-box mt-2">Tracks High, Medium, and Low urgency tasks.</div>
                 </div>
 
-                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
+                <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold mb-4">Top Tags</h3>
-                    <div id="tag-rank-list" class="space-y-3">
+                    <div id="tag-rank-list" class="space-y-3 mb-2">
                         <p class="text-xs text-text-muted italic">No tag data available.</p>
                     </div>
+                    <div class="chart-insight-box mt-2">Primary contexts demanding your attention.</div>
                 </div>
 
                 <div class="bg-dark-card rounded-xl border border-dark-border p-4 shadow-sm overflow-hidden">
