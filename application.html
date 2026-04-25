@@ -7,13 +7,18 @@
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="./manifest_desktop.json">
 <script>
+    // Force default view into URL if missing
+    if (!window.location.search) {
+        window.history.replaceState(null, '', '?view=today');
+    }
+    
     function handleResizeRedirect() {
         if (window.innerWidth <= 768) {
             window.location.href = './application_mobile' + window.location.search;
         }
     }
-    handleResizeRedirect();
     window.addEventListener('resize', handleResizeRedirect);
+    handleResizeRedirect();
 </script>
 <title>TimeTrekker</title>
 <link rel="icon" href="https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png" type="image/x-icon">

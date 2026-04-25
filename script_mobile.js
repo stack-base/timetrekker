@@ -1834,5 +1834,25 @@ window.addEventListener('popstate', (e) => {
 window.app = app;
 
 // Initialize tab based on URL parameter or local storage
-const initialTab = URL_PARAMS.get('view') || localUI.activeTab || 'tasks';
+// Initialize based on URL parameter
+const validTabs = ['tasks', 'timer', 'analytics', 'settings'];
+const urlParams = new URLSearchParams(window.location.search);
+const viewParam = urlParams.get('view') || 'today';
+
+let initialTab = 'tasks';
+let initialFilter = 'today';
+
+// Determine if the URL parameter is a tab or a desktop task filter
+if (validTabs.includes(viewParam)) {
+    initialTab = viewParam;
+} else {
+    // If it's a desktop view like 'today', 'upcoming', 'past', etc.
+    initialTab = 'tasks';
+    initialFilter = viewParam;
+}
+
+// Apply the tab and filter
 app.switchTab(initialTab, false);
+if (initialTab === 'tasks') {
+    app.setFilter(initialFilter);
+}

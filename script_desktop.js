@@ -1503,13 +1503,24 @@ function updateTimerUI(t) {
 
 // Handle browser Back/Forward buttons
 window.addEventListener('popstate', (e) => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const view = urlParams.get('view') || localUI.view || 'today';
-    if (app.setView) {
-        app.setView(view, false); // false prevents pushing to history again
-    }
+    // It's safe to declare this inside the event listener since it's block-scoped
+    const currentParams = new URLSearchParams(window.location.search);
+    const view = currentParams.get('view') || 'today';
+    if (app.setView) app.setView(view, false);
 });
 
-// Initialize view based on URL parameter or local storage
-const initialView = URL_PARAMS.get('view') || localUI.view || 'today';
+// Initialize view based on URL parameter (using the globally defined URL_PARAMS)
+let initialView = URL_PARAMS.get('view') || 'today';
+
+// Handle translation from Mobile Tabs to Desktop Views/Overlays
+if (initialView === 'tasks') {
+    initialView = 'today';
+} else if (initialView === 'timer') {
+    initialView = 'today';
+    setTimeout(() => app.toggleFocusPanel(true), 100);
+} else if (initialView === 'settings') {
+    initialView = 'today';
+    setTimeout(() => app.toggleGlobalSettings(), 100);
+}
+
 app.setView(initialView, false);
