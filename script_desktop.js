@@ -1327,24 +1327,45 @@ function updateAnalytics() {
     }
     
     const pri = { high: 0, med: 0, low: 0, none: 0 };
-    tasksDone.forEach(t => pri[t.priority || 'none']++);
-    if(els.analytics.priorityChart) {
-        if (state.charts.priority) state.charts.priority.destroy();
-        state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: ['High', 'Med', 'Low', 'None'],
-                datasets: [{
-                    data: [pri.high, pri.med, pri.low, pri.none],
-                    backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'],
-                    borderColor: '#000000',
-                    borderWidth: 4,
-                    hoverOffset: 4
-                }]
-            },
-            options: doughnutOptions
-        });
+tasksDone.forEach(t => pri[t.priority || 'none']++);
+if(els.analytics.priorityChart) {
+    if (state.charts.priority) state.charts.priority.destroy();
+    state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['High', 'Med', 'Low', 'None'],
+            datasets: [{
+                data: [pri.high, pri.med, pri.low, pri.none],
+                backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'],
+                borderColor: '#000000',
+                borderWidth: 4,
+                hoverOffset: 4
+            }]
+        },
+        options: doughnutOptions
+    });
+
+    // Populate the text-based distribution list
+    const priList = document.getElementById('priority-rank-list');
+    if(priList) {
+        const priData = [
+            { label: 'High', count: pri.high, color: '#ef4444' },
+            { label: 'Medium', count: pri.med, color: '#eab308' },
+            { label: 'Low', count: pri.low, color: '#3b82f6' },
+            { label: 'None', count: pri.none, color: '#525252' }
+        ];
+        
+        priList.innerHTML = priData.map(p => `
+            <div class="priority-row">
+                <div class="priority-label-group">
+                    <div class="priority-dot" style="background-color: ${p.color};"></div>
+                    <span class="priority-name">${p.label}</span>
+                </div>
+                <span class="priority-count">${p.count} tasks</span>
+            </div>
+        `).join('');
     }
+}
 
     const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
     const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);

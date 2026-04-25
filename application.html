@@ -99,6 +99,37 @@
         color: #ffffff;
         font-weight: 600;
     }
+    .priority-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+.priority-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+.priority-label-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.priority-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.priority-name {
+    color: #a3a3a3;
+}
+.priority-count {
+    color: #ffffff;
+    font-family: monospace;
+}
 </style>
 </head>
 <body class="h-screen w-full flex bg-dark-bg text-text-main">
@@ -373,10 +404,13 @@
                     <div id="project-rank-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2 max-h-[150px] mb-4"></div>
                     <div class="chart-insight-box">Breaks down where your time is being invested across your active workflows.</div>
                 </div>
-                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Task Priorities</h3>
                     <div class="h-[180px] w-full relative flex justify-center mb-4"><canvas id="priorityChart"></canvas></div>
-                    <div class="chart-insight-box mt-4">Tracks <strong>High</strong>, <strong>Medium</strong>, and <strong>Low</strong> urgency tasks to ensure you are focusing on high-impact work.</div>
+                    
+                    <div id="priority-rank-list" class="priority-list-container"></div>
+                    
+                    <div class="chart-insight-box mt-auto">Tracks <strong>High</strong>, <strong>Medium</strong>, and <strong>Low</strong> urgency tasks to ensure you are focusing on high-impact work.</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-6 shadow-sm flex flex-col">
                      <h3 class="text-sm font-bold uppercase text-text-muted mb-4">Top Tags</h3>
