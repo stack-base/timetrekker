@@ -83,7 +83,6 @@
     .sheet-handle { width: 32px; height: 4px; background-color: #333333; border-radius: 2px; margin: 8px auto; display: block; }
     @media (min-width: 768px) { .sheet-handle { display: none; } }
 
-    /* Custom styles for analytical insight descriptions */
     .chart-insight-box {
         font-size: 12px;
         color: #a3a3a3;
@@ -98,35 +97,35 @@
         font-weight: 600;
     }
     .priority-list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 150px;
-    overflow-y: auto;
-}
-.priority-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-}
-.priority-label-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.priority-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-.priority-name {
-    color: #a3a3a3;
-}
-.priority-count {
-    color: #ffffff;
-    font-family: monospace;
-}
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .priority-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+    }
+    .priority-label-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .priority-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    .priority-name {
+        color: #a3a3a3;
+    }
+    .priority-count {
+        color: #ffffff;
+        font-family: monospace;
+    }
 </style>
 </head>
 <body class="h-screen w-full flex bg-dark-bg text-text-main">
@@ -151,7 +150,7 @@
             <i class="ph-fill ph-check-circle text-brand text-2xl"></i>
         </div>
         <h3 id="confirm-title" class="text-lg font-semibold text-white text-center mb-2">Task Complete?</h3>
-        <p id="confirm-message" class="text-sm text-text-muted text-center mb-6">Message goes here.</p>
+        <p id="confirm-message" class="text-sm text-text-muted text-center mb-6"></p>
         <div class="flex justify-center space-x-3">
             <button id="confirm-cancel-btn" class="flex-1 text-text-muted hover:text-white bg-dark-bg border border-dark-border py-2 rounded text-sm font-medium transition-colors">Not Yet</button>
             <button id="confirm-ok-btn" class="flex-1 bg-brand hover:bg-brand-hover text-white py-2 rounded text-sm font-medium transition-colors shadow-sm">Mark Done</button>
