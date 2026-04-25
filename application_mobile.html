@@ -40,7 +40,7 @@
     #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 3px; font-size: 13px; font-weight: 600; }
     #global-tooltip .sub { color: #a1a1aa; font-size: 11px; }
 
-    .chart-insight-box { background-color: #000000; border: 1px solid #27272a; border-radius: 8px; padding: 12px; font-size: 11px; color: #a1a1aa; line-height: 1.5; margin-top: auto; text-align: center; }
+    .chart-insight-box { background-color: transparent; padding: 12px; font-size: 11px; color: #a1a1aa; line-height: 1.5; margin-top: auto; text-align: left; }
     .chart-insight-box strong { color: #ffffff; font-weight: 600; }
 </style>
 </head>
@@ -301,15 +301,16 @@
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold mb-4">Project Distribution</h3>
+                    <div class="chart-insight-box mt-2">Breaks down where your time is invested.</div>
                     <div class="flex items-center gap-4 mb-2">
                             <div class="h-32 w-32 relative shrink-0"><canvas id="projectChart"></canvas></div>
                             <div id="project-legend" class="flex-1 space-y-2 text-xs overflow-y-auto max-h-32 pr-2 custom-scrollbar"></div>
                     </div>
-                    <div class="chart-insight-box mt-2">Breaks down where your time is invested.</div>
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold mb-4">Task Priorities</h3>
+                     <div class="chart-insight-box mt-2">Tracks High, Medium, and Low urgency tasks.</div>
                      <div class="flex items-center gap-4 mb-2">
                         <div class="h-32 w-32 relative shrink-0"><canvas id="priorityChart"></canvas></div>
                         <div class="flex-1 flex flex-col justify-center text-xs space-y-2">
@@ -319,15 +320,14 @@
                              <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-[#525252]"></div><span class="text-text-muted">None</span></div>
                         </div>
                      </div>
-                     <div class="chart-insight-box mt-2">Tracks High, Medium, and Low urgency tasks.</div>
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col">
                     <h3 class="text-sm font-bold mb-4">Top Tags</h3>
+                    <div class="chart-insight-box mt-2">Primary contexts demanding your attention.</div>
                     <div id="tag-rank-list" class="space-y-3 mb-2">
                         <p class="text-xs text-text-muted italic">No tag data available.</p>
                     </div>
-                    <div class="chart-insight-box mt-2">Primary contexts demanding your attention.</div>
                 </div>
 
                 <div class="bg-dark-card rounded-xl border border-dark-border p-4 shadow-sm overflow-hidden">
