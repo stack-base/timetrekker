@@ -34,18 +34,48 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-    tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:{brand:{DEFAULT:'#ff5757',hover:'#e04848'},dark:{bg:'#000000',card:'#09090b',border:'#27272a',active:'#27272a'},text:{main:'#ffffff',muted:'#a1a1aa'}},spacing:{'safe-b':'env(safe-area-inset-bottom)','safe-t':'env(safe-area-inset-top)'}}}};
+    tailwind.config={
+        darkMode:'class',
+        theme:{
+            extend:{
+                fontFamily:{sans:['Inter','sans-serif']},
+                colors:{
+                    brand:{DEFAULT:'#ff5757',hover:'#e04848'},
+                    dark:{bg:'#000000',card:'#09090b',border:'#27272a',active:'#27272a'},
+                    /* Visibility Boosts */
+                    text:{main:'#ffffff',muted:'#a1a1aa',faint:'#71717a'} 
+                },
+                fontSize: {
+                    /* Establish a higher baseline for the smallest text */
+                    'tiny': ['0.75rem', { lineHeight: '1.125rem' }], // 12px
+                    'xs': ['0.8125rem', { lineHeight: '1.25rem' }], // 13px
+                },
+                spacing:{'safe-b':'env(safe-area-inset-bottom)','safe-t':'env(safe-area-inset-top)'}
+            }
+        }
+    };
 </script>
 <script type="module" src="script_mobile.js" defer></script>
 <style>
-    body{background-color:#000;color:#fff;-webkit-tap-highlight-color:transparent;overflow:hidden;user-select:none}.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}.custom-scrollbar::-webkit-scrollbar{height:4px;width:4px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#333;border-radius:2px}@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}.animate-slide-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1) forwards}.sheet-handle{width:36px;height:5px;background:#3f3f46;border-radius:99px;margin:8px auto 16px auto}.toggle-checkbox:checked{right:0;border-color:#ff5757}.toggle-checkbox:checked+.toggle-label{background-color:#ff5757}input[type=range]{-webkit-appearance:none;background:0 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#27272a;border-radius:2px}#content-scroll-area{-webkit-overflow-scrolling:touch}
+    body{background-color:#000;color:#fff;-webkit-tap-highlight-color:transparent;overflow:hidden;user-select:none; -webkit-font-smoothing: antialiased;}
+    .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+    .custom-scrollbar::-webkit-scrollbar{height:4px;width:4px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+    @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+    .animate-slide-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1) forwards}
+    .sheet-handle{width:36px;height:5px;background:#3f3f46;border-radius:99px;margin:8px auto 16px auto}
+    .toggle-checkbox:checked{right:0;border-color:#ff5757}
+    .toggle-checkbox:checked+.toggle-label{background-color:#ff5757}
+    input[type=range]{-webkit-appearance:none;background:0 0}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#27272a;border-radius:2px}
+    #content-scroll-area{-webkit-overflow-scrolling:touch}
 
-    /* Tooltip and Insight CSS additions */
-    #global-tooltip { pointer-events: none; position: fixed; z-index: 9999; background: rgba(9, 9, 11, 0.95); border: 1px solid #27272a; padding: 10px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); font-size: 12px; color: white; opacity: 0; transition: opacity 0.15s ease; transform: translate(-50%, -150%); white-space: nowrap; }
-    #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 3px; font-size: 13px; font-weight: 600; }
-    #global-tooltip .sub { color: #a1a1aa; font-size: 11px; }
+    /* Tooltip and Insight CSS additions bumped for legibility */
+    #global-tooltip { pointer-events: none; position: fixed; z-index: 9999; background: rgba(9, 9, 11, 0.95); border: 1px solid #27272a; padding: 12px 16px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); font-size: 13px; color: white; opacity: 0; transition: opacity 0.15s ease; transform: translate(-50%, -150%); white-space: nowrap; }
+    #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 3px; font-size: 14px; font-weight: 600; }
+    #global-tooltip .sub { color: #a1a1aa; font-size: 12px; }
 
-    .chart-insight-box { background-color: transparent; padding-bottom: 12px; font-size: 11px; color: #a1a1aa; line-height: 1.5; text-align: left; }
+    .chart-insight-box { background-color: transparent; padding-bottom: 12px; font-size: 13px; color: #a1a1aa; line-height: 1.5; text-align: left; }
     .chart-insight-box strong { color: #ffffff; font-weight: 600; }
 </style>
 </head>
@@ -107,11 +137,11 @@
             <div id="view-tasks" class="view-section min-h-full pt-4">
                 <div class="grid grid-cols-2 gap-3 mb-6" id="mini-stats">
                     <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col shadow-sm">
-                        <span class="text-[10px] text-text-muted uppercase font-bold">Est. Duration</span>
+                        <span class="text-tiny text-text-muted uppercase font-bold tracking-wider">Est. Duration</span>
                         <span class="text-lg font-bold text-white mt-1" id="mini-est-time">0m</span>
                     </div>
                     <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col shadow-sm">
-                        <span class="text-[10px] text-text-muted uppercase font-bold">Tasks Left</span>
+                        <span class="text-tiny text-text-muted uppercase font-bold tracking-wider">Tasks Left</span>
                         <span class="text-lg font-bold text-brand mt-1" id="mini-tasks-left">0</span>
                     </div>
                 </div>
@@ -127,7 +157,7 @@
                 <div id="focus-meta" class="text-center mb-8 w-full px-4 min-h-[100px] flex items-end justify-center">
                     <div id="focus-empty" class="text-text-muted text-sm animate-pulse mb-6">Select a task to focus</div>
                     <div id="focus-active" class="hidden animate-slide-up w-full">
-                        <span id="timer-badge" class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-dark-active text-text-muted mb-3 inline-block truncate max-w-[200px]">Inbox</span>
+                        <span id="timer-badge" class="px-2 py-0.5 rounded text-tiny uppercase font-bold tracking-wider bg-dark-active text-text-muted mb-3 inline-block truncate max-w-[200px]">Inbox</span>
                         <h2 id="timer-task-title" class="text-xl font-bold leading-tight line-clamp-2 mb-2">Task Title</h2>
                         <div class="text-xs text-text-muted flex justify-center gap-1">
                             <span class="text-brand font-bold" id="timer-completed">0</span>/<span id="timer-total">4</span> Pomos
@@ -185,65 +215,66 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Total Focus</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Total Focus</div>
                         <div class="text-xl font-bold text-brand mt-1" id="ana-time-total">0h</div>
                     </div>
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Focus (Week)</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Focus (Week)</div>
                         <div class="text-xl font-bold text-brand mt-1" id="ana-time-week">0m</div>
                     </div>
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Focus (Today)</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Focus (Today)</div>
                         <div class="text-xl font-bold text-brand mt-1" id="ana-time-today">0m</div>
                     </div>
-                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Avg Session</div>
+                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Avg Session</div>
                         <div class="text-xl font-bold text-white mt-1" id="ana-avg-session">0m</div>
-                        <div class="text-[8px] text-text-muted mt-0.5">Minutes per pomo</div>
+                        <div class="text-[11px] text-text-muted mt-1 leading-tight">Minutes per pomo</div>
                     </div>
 
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks Done</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Tasks Done</div>
                         <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-total">0</div>
                     </div>
-                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks (Week)</div>
+                     <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Tasks (Week)</div>
                         <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-week">0</div>
                     </div>
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Tasks (Today)</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Tasks (Today)</div>
                         <div class="text-xl font-bold text-blue-500 mt-1" id="ana-task-today">0</div>
                     </div>
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Completion %</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Completion %</div>
                         <div class="text-xl font-bold text-green-500 mt-1" id="ana-completion-rate">0%</div>
-                        <div class="text-[8px] text-text-muted mt-0.5">(Completed / Active)</div>
+                        <div class="text-[11px] text-text-muted mt-1 leading-tight">Completed vs Active</div>
                     </div>
 
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Morning Focus</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Morning Focus</div>
                         <div class="text-xl font-bold text-yellow-500 mt-1" id="ana-early-bird">0h</div>
                     </div>
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Night Focus</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Night Focus</div>
                         <div class="text-xl font-bold text-indigo-400 mt-1" id="ana-night-owl">0h</div>
                     </div>
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Best Streak</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Best Streak</div>
                         <div class="text-xl font-bold text-purple-500 mt-1" id="ana-streak-days">0 Days</div>
-                        <div class="text-[8px] text-text-muted mt-0.5">Consecutive days</div>
+                        <div class="text-[11px] text-text-muted mt-1 leading-tight">Consecutive days</div>
                     </div>
-                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
-                        <div class="text-[10px] uppercase text-text-muted font-bold">Active Projects</div>
+                    <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm flex flex-col justify-between">
+                        <div class="text-tiny uppercase tracking-wider text-text-muted font-bold">Projects</div>
                         <div class="text-xl font-bold text-white mt-1" id="ana-project-count">0</div>
+                        <div class="text-[11px] text-text-muted mt-1 leading-tight">Total active projects</div>
                     </div>
                 </div>
 
                 <div class="bg-dark-card p-4 rounded-xl border border-dark-border shadow-sm">
                     <div class="mb-4">
                         <h3 class="text-sm font-bold text-white">Today's Timeline</h3>
-                        <p class="text-[10px] text-text-muted mt-0.5">Minute-by-minute focus breakdown.</p>
+                        <p class="text-xs text-text-muted mt-0.5">Minute-by-minute focus breakdown.</p>
                     </div>
                     <div class="h-32 relative w-full"><canvas id="todayTimelineChart"></canvas></div>
                 </div>
@@ -252,11 +283,11 @@
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-sm font-bold text-white">Focus Trend</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5">Total duration over time.</p>
+                            <p class="text-xs text-text-muted mt-0.5">Total duration over time.</p>
                         </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
-                            <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
-                            <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                            <button onclick="app.toggleChartType('focus', 'line')" id="btn-focus-line" class="px-3 py-1 text-tiny font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('focus', 'bar')" id="btn-focus-bar" class="px-3 py-1 text-tiny font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
                         </div>
                     </div>
                     <div class="h-48 relative w-full"><canvas id="focusBarChart"></canvas></div>
@@ -266,11 +297,11 @@
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-sm font-bold text-white">Task Completion</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5">Number of tasks marked done.</p>
+                            <p class="text-xs text-text-muted mt-0.5">Number of tasks marked done.</p>
                         </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
-                            <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
-                            <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                            <button onclick="app.toggleChartType('task', 'line')" id="btn-task-line" class="px-3 py-1 text-tiny font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('task', 'bar')" id="btn-task-bar" class="px-3 py-1 text-tiny font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
                         </div>
                     </div>
                     <div class="h-48 relative w-full"><canvas id="taskBarChart"></canvas></div>
@@ -280,11 +311,11 @@
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-sm font-bold text-white">Hourly Productivity</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5">When you focus the most.</p>
+                            <p class="text-xs text-text-muted mt-0.5">When you focus the most.</p>
                         </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
-                            <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
-                            <button onclick="app.toggleChartType('hourly', 'bar')" id="btn-hourly-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                            <button onclick="app.toggleChartType('hourly', 'line')" id="btn-hourly-line" class="px-3 py-1 text-tiny font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('hourly', 'bar')" id="btn-hourly-bar" class="px-3 py-1 text-tiny font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
                         </div>
                     </div>
                     <div class="h-48 relative w-full"><canvas id="hourlyChart"></canvas></div>
@@ -294,11 +325,11 @@
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-sm font-bold text-white">Weekly Performance</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5">Your best days of the week.</p>
+                            <p class="text-xs text-text-muted mt-0.5">Your best days of the week.</p>
                         </div>
                         <div class="flex bg-dark-active rounded-lg p-0.5 border border-dark-border">
-                            <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="px-3 py-1 text-[10px] font-bold rounded-md text-text-muted transition-colors">Line</button>
-                            <button onclick="app.toggleChartType('weekday', 'bar')" id="btn-weekday-bar" class="px-3 py-1 text-[10px] font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
+                            <button onclick="app.toggleChartType('weekday', 'line')" id="btn-weekday-line" class="px-3 py-1 text-tiny font-bold rounded-md text-text-muted transition-colors">Line</button>
+                            <button onclick="app.toggleChartType('weekday', 'bar')" id="btn-weekday-bar" class="px-3 py-1 text-tiny font-bold rounded-md bg-dark-card text-white shadow-sm transition-colors">Bar</button>
                         </div>
                     </div>
                     <div class="h-48 relative w-full"><canvas id="weekdayChart"></canvas></div>
@@ -322,7 +353,7 @@
                              <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-text-muted">High Priority</span></div>
                              <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-yellow-500"></div><span class="text-text-muted">Medium Priority</span></div>
                              <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span class="text-text-muted">Low Priority</span></div>
-                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-[#525252]"></div><span class="text-text-muted">None</span></div>
+                             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-[#71717a]"></div><span class="text-text-muted">None</span></div>
                         </div>
                      </div>
                 </div>
@@ -339,13 +370,14 @@
                     <h3 class="text-sm font-bold mb-3 text-white">Pomodoro Records</h3>
                     <div class="overflow-x-auto custom-scrollbar">
                         <div class="min-w-[500px]">
+                             <div class="flex text-tiny text-text-muted font-mono mb-2 pl-16"><span class="flex-1 border-l border-dark-border pl-1">00:00</span><span class="flex-1 border-l border-dark-border pl-1">04:00</span><span class="flex-1 border-l border-dark-border pl-1">08:00</span><span class="flex-1 border-l border-dark-border pl-1">12:00</span><span class="flex-1 border-l border-dark-border pl-1">16:00</span><span class="flex-1 border-l border-dark-border pl-1">20:00</span></div>
                              <div id="pomo-timeline-grid" class="space-y-1"></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
-                    <div class="px-4 py-3 border-b border-dark-border text-xs font-bold uppercase text-text-muted bg-dark-card">Recent Sessions Log</div>
+                    <div class="px-4 py-3 border-b border-dark-border text-xs font-bold uppercase tracking-wider text-text-muted bg-dark-card">Recent Sessions Log</div>
                     <div id="mobile-logs" class="divide-y divide-dark-border"></div>
                 </div>
             </div>
@@ -364,7 +396,7 @@
                      <a href="https://stack-base.github.io/workspace/page?view=account-center" target="_blank" class="px-4 py-2 bg-dark-active hover:bg-dark-border rounded-lg border border-dark-border text-xs font-bold text-white active:scale-95 transition-transform text-center whitespace-nowrap">Manage</a>
                 </div>
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
-                    <div class="px-4 py-3 bg-dark-active/30 border-b border-dark-border text-xs font-bold uppercase text-text-muted">Timer Configuration</div>
+                    <div class="px-4 py-3 bg-dark-active/30 border-b border-dark-border text-xs font-bold uppercase tracking-wider text-text-muted">Timer Configuration</div>
                     <div class="p-4 space-y-6">
                         <div>
                             <div class="flex justify-between text-sm mb-2"><span class="text-text-muted">Focus Duration</span><span class="font-bold text-white" id="set-focus-display">25m</span></div>
@@ -388,29 +420,29 @@
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
                     <div class="divide-y divide-dark-border">
                         <div class="p-4 flex items-center justify-between">
-                            <div><div class="text-sm font-bold text-white">Auto-Start Focus</div><div class="text-[10px] text-text-muted">Start focus automatically after break</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                            <div><div class="text-sm font-bold text-white">Auto-Start Focus</div><div class="text-[11px] leading-tight mt-1 text-text-muted">Start focus automatically after break</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in shrink-0 ml-4">
                                 <input type="checkbox" id="toggle-auto-pomo" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartPomo', this.checked)"/>
                                 <label for="toggle-auto-pomo" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-between">
-                            <div><div class="text-sm font-bold text-white">Auto-Start Break</div><div class="text-[10px] text-text-muted">Start break automatically after focus</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                            <div><div class="text-sm font-bold text-white">Auto-Start Break</div><div class="text-[11px] leading-tight mt-1 text-text-muted">Start break automatically after focus</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in shrink-0 ml-4">
                                 <input type="checkbox" id="toggle-auto-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartBreak', this.checked)"/>
                                 <label for="toggle-auto-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-between">
-                            <div><div class="text-sm font-bold text-white">Disable Break</div><div class="text-[10px] text-text-muted">Skip breaks entirely</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                            <div><div class="text-sm font-bold text-white">Disable Break</div><div class="text-[11px] leading-tight mt-1 text-text-muted">Skip breaks entirely</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in shrink-0 ml-4">
                                 <input type="checkbox" id="toggle-disable-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('disableBreak', this.checked)"/>
                                 <label for="toggle-disable-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
                             </div>
                         </div>
                         <div class="p-4 flex items-center justify-between">
-                            <div><div class="text-sm font-bold text-white">Strict Mode</div><div class="text-[10px] text-text-muted">Prevents pausing the timer</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                            <div><div class="text-sm font-bold text-white">Strict Mode</div><div class="text-[11px] leading-tight mt-1 text-text-muted">Prevents pausing the timer</div></div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in shrink-0 ml-4">
                                 <input type="checkbox" id="toggle-strict" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('strictMode', this.checked)"/>
                                 <label for="toggle-strict" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
                             </div>
@@ -430,18 +462,15 @@
                                 <i class="ph-fill ph-mountains text-brand text-4xl relative z-10"></i>
                             </div>
                             <h2 class="text-xl font-bold text-white tracking-tight">TimeTrekker</h2>
-                            <div class="flex items-center gap-2 mt-2">
-                                 <span class="text-xs text-text-muted font-medium">From StackBase</span>
-                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 divide-x divide-dark-border border-b border-dark-border bg-dark-card">
                             <div class="p-4 flex flex-col items-center justify-center text-center hover:bg-dark-active/30 transition-colors">
-                                <span class="text-[10px] text-text-muted uppercase font-bold mb-1">Version</span>
+                                <span class="text-tiny text-text-muted uppercase font-bold tracking-wider mb-1">Version</span>
                                 <span class="text-lg font-bold text-white">1.0.6</span>
                             </div>
                              <div class="p-4 flex flex-col items-center justify-center text-center hover:bg-dark-active/30 transition-colors">
-                                <span class="text-[10px] text-text-muted uppercase font-bold mb-1">Build</span>
+                                <span class="text-tiny text-text-muted uppercase font-bold tracking-wider mb-1">Build</span>
                                 <span class="text-lg font-bold text-white font-mono">Stable</span>
                             </div>
                         </div>
@@ -450,14 +479,14 @@
                             <button id="btn-install-mobile" onclick="app.installApp()" class="hidden w-full p-4 flex items-center justify-between hover:bg-dark-active transition-colors active:bg-dark-active/80">
                                 <div class="flex flex-col items-start">
                                     <span class="text-sm font-medium text-brand">Install App</span>
-                                    <span class="text-[10px] text-text-muted">Add to your home screen</span>
+                                    <span class="text-tiny text-text-muted">Add to your home screen</span>
                                 </div>
                                 <i class="ph-bold ph-download-simple text-brand text-xl"></i>
                             </button>
                             <button onclick="app.refreshApp()" class="w-full p-4 flex items-center justify-between hover:bg-dark-active transition-colors active:bg-dark-active/80">
                                  <div class="flex flex-col items-start">
                                     <span class="text-sm font-medium text-white">Refresh</span>
-                                    <span class="text-[10px] text-text-muted">Refresh application for changes</span>
+                                    <span class="text-tiny text-text-muted">Refresh application for changes</span>
                                  </div>
                                  <div class="flex items-center gap-2">
                                      <span class="w-2 h-2 rounded-full bg-green-500"></span>
@@ -472,7 +501,7 @@
                     </div>
                     
                     <div class="text-center mt-6 pb-8">
-                        <p class="text-[10px] text-text-muted tracking-[0.2em] opacity-80">Powered by StackBase</p>
+                        <p class="text-tiny text-text-muted tracking-[0.15em] opacity-80 uppercase font-bold">Powered by StackBase</p>
                     </div>
                 </div>
 
@@ -489,16 +518,16 @@
     <nav class="fixed bottom-0 left-0 w-full bg-dark-bg/95 backdrop-blur border-t border-dark-border pb-safe-b z-40">
         <div class="flex justify-around items-center h-16">
             <button onclick="app.switchTab('tasks')" id="tab-tasks" aria-label="Tasks Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-transform">
-                <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Tasks</span>
+                <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-tiny mt-0.5 font-medium">Tasks</span>
             </button>
             <button onclick="app.switchTab('timer')" id="tab-timer" aria-label="Timer Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
-                <i class="ph-bold ph-timer text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Focus</span>
+                <i class="ph-bold ph-timer text-2xl mb-0.5"></i><span class="text-tiny mt-0.5 font-medium">Focus</span>
             </button>
             <button onclick="app.switchTab('analytics')" id="tab-analytics" aria-label="Analytics Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
-                <i class="ph-bold ph-chart-bar text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Analytics</span>
+                <i class="ph-bold ph-chart-bar text-2xl mb-0.5"></i><span class="text-tiny mt-0.5 font-medium">Analytics</span>
             </button>
             <button onclick="app.switchTab('settings')" id="tab-settings" aria-label="Settings Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
-                <i class="ph-bold ph-gear text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Settings</span>
+                <i class="ph-bold ph-gear text-2xl mb-0.5"></i><span class="text-tiny mt-0.5 font-medium">Settings</span>
             </button>
         </div>
     </nav>
@@ -529,8 +558,8 @@
 
             <div class="space-y-4">
                 <div class="flex items-center gap-2 flex-wrap">
-                    <span id="dt-project" class="bg-brand/10 text-brand px-2 py-0.5 rounded text-[10px] font-bold border border-brand/20 uppercase tracking-wide">Project</span>
-                    <span id="dt-priority" class="hidden bg-dark-active text-text-muted px-2 py-0.5 rounded text-[10px] font-bold border border-dark-border uppercase tracking-wide">Priority</span>
+                    <span id="dt-project" class="bg-brand/10 text-brand px-2 py-0.5 rounded text-tiny font-bold border border-brand/20 uppercase tracking-wide">Project</span>
+                    <span id="dt-priority" class="hidden bg-dark-active text-text-muted px-2 py-0.5 rounded text-tiny font-bold border border-dark-border uppercase tracking-wide">Priority</span>
                 </div>
                 
                 <h2 id="dt-title" class="text-2xl font-bold text-white leading-tight">Task Title</h2>
@@ -539,37 +568,37 @@
                 
                 <div class="grid grid-cols-2 gap-3 py-2">
                     <div class="bg-dark-active rounded p-3 border border-dark-border">
-                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Pomos (Done/Est)</div>
+                         <div class="text-tiny tracking-wider text-text-muted uppercase font-bold mb-1">Pomos (Done/Est)</div>
                          <div class="text-sm font-medium text-white">
                             <span class="text-brand" id="dt-pomo-done">0</span> / <span id="dt-pomo-total">1</span>
                          </div>
                     </div>
                     <div class="bg-dark-active rounded p-3 border border-dark-border">
-                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Pomos Left</div>
+                         <div class="text-tiny tracking-wider text-text-muted uppercase font-bold mb-1">Pomos Left</div>
                          <div class="text-sm font-medium text-white" id="dt-pomo-left">1</div>
                     </div>
 
                     <div class="bg-dark-active rounded p-3 border border-dark-border">
-                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Time Spent</div>
+                         <div class="text-tiny tracking-wider text-text-muted uppercase font-bold mb-1">Time Spent</div>
                          <div class="text-sm font-medium text-white" id="dt-time-spent">0m</div>
                     </div>
                     <div class="bg-dark-active rounded p-3 border border-dark-border">
-                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Time Left</div>
+                         <div class="text-tiny tracking-wider text-text-muted uppercase font-bold mb-1">Time Left</div>
                          <div class="text-sm font-medium text-white" id="dt-time-left">25m</div>
                     </div>
 
                     <div class="bg-dark-active rounded p-3 border border-dark-border">
-                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Total Time</div>
+                         <div class="text-tiny tracking-wider text-text-muted uppercase font-bold mb-1">Total Time</div>
                          <div class="text-sm font-medium text-white" id="dt-time-total">25m</div>
                     </div>
                     <div class="bg-dark-active rounded p-3 border border-dark-border">
-                         <div class="text-[10px] text-text-muted uppercase font-bold mb-1">Due Date</div>
+                         <div class="text-tiny tracking-wider text-text-muted uppercase font-bold mb-1">Due Date</div>
                          <div class="text-sm font-medium text-white" id="dt-date">None</div>
                     </div>
                 </div>
 
                 <div id="dt-subtasks-container" class="hidden">
-                    <h3 class="text-xs font-bold text-text-muted uppercase mb-2">Subtasks</h3>
+                    <h3 class="text-xs font-bold text-text-muted uppercase mb-2 tracking-wider">Subtasks</h3>
                     <div id="dt-subtasks-list" class="space-y-2"></div>
                 </div>
                 
@@ -606,7 +635,7 @@
             
             <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-calendar mr-1"></i>Schedule</span>
+                    <span class="text-tiny font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-calendar mr-1"></i>Schedule</span>
                 </div>
                 
                 <div class="flex gap-2 mb-3">
@@ -628,7 +657,7 @@
                          </div>
                     </div>
                     <div class="bg-dark-card rounded-lg px-3 py-2 border border-dark-border relative flex flex-col justify-center">
-                        <div class="text-[9px] uppercase font-bold text-text-muted mb-0.5 ml-1">Repeat</div>
+                        <div class="text-tiny uppercase font-bold text-text-muted mb-1 ml-1 tracking-wider">Repeat</div>
                         <div class="flex items-center relative w-full">
                             <select id="inp-repeat" class="bg-transparent text-xs text-white outline-none w-full appearance-none font-medium z-10 relative pl-1">
                                 <option value="none">None</option>
@@ -637,7 +666,7 @@
                                 <option value="weekdays">Mon-Fri</option>
                                 <option value="monthly">Monthly</option>
                             </select>
-                            <i class="ph-fill ph-caret-down text-text-muted absolute right-0 text-[10px]"></i>
+                            <i class="ph-fill ph-caret-down text-text-muted absolute right-0 text-tiny"></i>
                         </div>
                     </div>
                 </div>
@@ -645,7 +674,7 @@
 
             <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-tag mr-1"></i>Context</span>
+                    <span class="text-tiny font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-tag mr-1"></i>Context</span>
                 </div>
                 
                 <div class="flex gap-3 mb-4">
@@ -672,8 +701,8 @@
 
             <div class="bg-dark-active/30 rounded-2xl p-4 mb-4 border border-dark-border/50">
                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-timer mr-1"></i>Effort</span>
-                    <span class="text-[10px] font-bold text-white" id="total-calc-display">25m Total</span>
+                    <span class="text-tiny font-bold text-text-muted uppercase tracking-wider"><i class="ph-bold ph-timer mr-1"></i>Effort</span>
+                    <span class="text-tiny font-bold text-white" id="total-calc-display">25m Total</span>
                 </div>
                 
                 <div class="flex items-center gap-4">
@@ -685,7 +714,7 @@
                     </div>
                     
                     <div class="flex-1 bg-dark-card rounded-lg border border-dark-border px-3 py-2 flex flex-col justify-center">
-                        <div class="flex justify-between text-[10px] font-bold mb-1.5"><span class="text-text-muted">Per Pomo</span><span class="text-white" id="disp-duration">25m</span></div>
+                        <div class="flex justify-between text-tiny font-bold mb-1.5 tracking-wider"><span class="text-text-muted">Per Pomo</span><span class="text-white" id="disp-duration">25m</span></div>
                         <input type="range" id="inp-duration" min="5" max="60" step="5" value="25" class="w-full h-1 bg-dark-bg rounded-lg appearance-none cursor-pointer" oninput="app.updateDurationDisplay(this.value)">
                     </div>
                 </div>
