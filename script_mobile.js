@@ -653,28 +653,15 @@ const app = {
         }
         
         document.querySelectorAll('.nav-item').forEach(el => {
-            el.className = `nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
+            el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
             el.querySelector('i').classList.remove('ph-fill');
             el.querySelector('i').classList.add('ph-bold');
         });
-        
         const activeBtn = $(`tab-${tab}`);
         if(activeBtn) {
-            activeBtn.className = `nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-white transition-colors`;
+            activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors`;
             activeBtn.querySelector('i').classList.remove('ph-bold');
             activeBtn.querySelector('i').classList.add('ph-fill');
-        }
-
-        const tabPositions = {
-            'tasks': 12.5,
-            'timer': 37.5,
-            'analytics': 62.5,
-            'settings': 87.5
-        };
-        
-        const indicator = $('liquid-indicator');
-        if (indicator && tabPositions[tab]) {
-            indicator.style.left = `calc(${tabPositions[tab]}% - 24px)`;
         }
 
         const isTask = tab === 'tasks';
@@ -1773,6 +1760,7 @@ const app = {
                 $('focus-empty').classList.remove('hidden'); 
                 const breakType = mode === 'short' ? 'Short Break' : 'Long Break';
                 
+                // Clear button properties to display normal break text
                 $('focus-empty').className = "text-center mb-6 block w-full"; 
                 $('focus-empty').onclick = null;
                 $('focus-empty').innerHTML = `<span class="text-blue-400 font-bold tracking-wide uppercase text-sm block mb-1">${breakType}</span><span class="text-xs text-text-muted">Time to rest your mind</span>`; 
@@ -1783,6 +1771,7 @@ const app = {
              if($('focus-empty')) { 
                  $('focus-empty').classList.remove('hidden'); 
                  
+                 // Re-apply button styling for the actionable select prompt
                  $('focus-empty').className = "flex items-center justify-center gap-2 mx-auto px-5 py-2.5 bg-dark-card border border-dark-border rounded-full text-text-muted text-sm hover:text-white transition-colors animate-pulse mb-6 active:scale-95 shadow-sm";
                  $('focus-empty').onclick = app.openTaskSelectSheet;
                  $('focus-empty').innerHTML = `<i class="ph-bold ph-list-dashes text-lg"></i> Select a Task to Focus <i class="ph-bold ph-caret-down text-xs ml-1"></i>`; 
@@ -1831,16 +1820,6 @@ const app = {
         if(state.user) app._saveSetting(getUid(), k, val);
     },
 
-    showToast: (msg) => {
-        const t = document.createElement('div');
-        t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl text-center animate-slide-up backdrop-blur";
-        t.textContent = msg;
-        $('toast-container').appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-    },
-
-    signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href)),
-
     openTaskSelectSheet: () => {
         haptic('light');
         history.pushState({ modal: 'taskSelect' }, '');
@@ -1882,7 +1861,7 @@ const app = {
 
     selectTimerTask: async (taskId) => {
         haptic('medium');
-        history.back(); 
+        history.back(); // close the sheet
         
         try {
             await updateDoc(doc(db, 'artifacts', APP_ID, 'users', getUid(), 'timer', 'active'), {
@@ -1892,7 +1871,17 @@ const app = {
         } catch(e) {
             app.showToast('Error selecting task');
         }
-    }
+    },
+
+    showToast: (msg) => {
+        const t = document.createElement('div');
+        t.className = "bg-dark-active border border-dark-border text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl text-center animate-slide-up backdrop-blur";
+        t.textContent = msg;
+        $('toast-container').appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    },
+
+    signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null));
@@ -1902,12 +1891,7 @@ document.addEventListener('click', (e) => { if (document.activeElement && docume
 
 if (!history.state) history.replaceState({ view: 'root' }, '');
 window.addEventListener('popstate', (e) => {
-    if (!$('task-select-sheet').classList.contains('translate-y-full')) { 
-        $('task-select-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
-        return; 
-    }
+    // Handle closing bottom sheets on hardware back button
     if (!$('modal-sheet').classList.contains('translate-y-full')) { 
         $('modal-sheet').classList.add('translate-y-full');
         $('modal-overlay').classList.add('opacity-0');
@@ -1926,7 +1910,14 @@ window.addEventListener('popstate', (e) => {
         setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
         return; 
     }
+    if (!$('task-select-sheet').classList.contains('translate-y-full')) { 
+        $('task-select-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+        return; 
+    }
     
+    // Check URL for view state
     const urlParams = new URLSearchParams(window.location.search);
     const view = urlParams.get('view') || 'tasks';
     app.switchTab(view, false);
@@ -1934,6 +1925,8 @@ window.addEventListener('popstate', (e) => {
 
 window.app = app;
 
+// Initialize tab based on URL parameter or local storage
+// Initialize based on URL parameter
 const validTabs = ['tasks', 'timer', 'analytics', 'settings'];
 const urlParams = new URLSearchParams(window.location.search);
 const viewParam = urlParams.get('view') || 'today';
@@ -1941,13 +1934,16 @@ const viewParam = urlParams.get('view') || 'today';
 let initialTab = 'tasks';
 let initialFilter = 'today';
 
+// Determine if the URL parameter is a tab or a desktop task filter
 if (validTabs.includes(viewParam)) {
     initialTab = viewParam;
 } else {
+    // If it's a desktop view like 'today', 'upcoming', 'past', etc.
     initialTab = 'tasks';
     initialFilter = viewParam;
 }
 
+// Apply the tab and filter
 app.switchTab(initialTab, false);
 if (initialTab === 'tasks') {
     app.setFilter(initialFilter);

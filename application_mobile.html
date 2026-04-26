@@ -132,7 +132,7 @@
 
             <div id="view-timer" class="view-section hidden flex flex-col items-center justify-center min-h-[70vh]">
                 <div id="focus-meta" class="text-center mb-8 w-full px-4 min-h-[100px] flex items-end justify-center relative">
-                    <button id="focus-empty" onclick="app.openTaskSelectSheet()" class="flex items-center justify-center gap-2 mx-auto px-5 py-2.5 bg-dark-card border border-dark-border rounded-full text-text-muted text-sm hover:text-white transition-colors animate-pulse mb-6 active:scale-95 shadow-sm">
+                    <button id="focus-empty" onclick="app.openTaskSelectSheet()" class="flex items-center gap-2 mx-auto px-5 py-2.5 bg-dark-card border border-dark-border rounded-full text-text-muted text-sm hover:text-white transition-colors animate-pulse mb-6 active:scale-95 shadow-sm">
                         <i class="ph-bold ph-list-dashes text-lg"></i> Select a Task to Focus <i class="ph-bold ph-caret-down text-xs ml-1"></i>
                     </button>
                     <div id="focus-active" class="hidden animate-slide-up w-full active:scale-95 transition-transform" role="button" tabindex="0" onclick="app.openTaskSelectSheet()">
@@ -483,23 +483,18 @@
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 w-full bg-dark-bg border-t border-dark-border pb-safe-b z-40">
-        <div class="relative flex justify-around items-center h-16 w-full">
-            
-            <div id="liquid-indicator" class="absolute top-1/2 -translate-y-1/2 w-12 h-12 rounded-full pointer-events-none transition-all duration-500 z-0"
-                 style="left: calc(12.5% - 24px); background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 100%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px inset rgba(255,255,255,0.15); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3); transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);">
-            </div>
-
-            <button onclick="app.switchTab('tasks')" id="tab-tasks" aria-label="Tasks Tab" class="nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-white transition-colors">
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-bg/95 backdrop-blur border-t border-dark-border pb-safe-b z-40">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="app.switchTab('tasks')" id="tab-tasks" aria-label="Tasks Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-transform">
                 <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Tasks</span>
             </button>
-            <button onclick="app.switchTab('timer')" id="tab-timer" aria-label="Timer Tab" class="nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors">
+            <button onclick="app.switchTab('timer')" id="tab-timer" aria-label="Timer Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-timer text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Focus</span>
             </button>
-            <button onclick="app.switchTab('analytics')" id="tab-analytics" aria-label="Analytics Tab" class="nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors">
+            <button onclick="app.switchTab('analytics')" id="tab-analytics" aria-label="Analytics Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-chart-bar text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Analytics</span>
             </button>
-            <button onclick="app.switchTab('settings')" id="tab-settings" aria-label="Settings Tab" class="nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors">
+            <button onclick="app.switchTab('settings')" id="tab-settings" aria-label="Settings Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-gear text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Settings</span>
             </button>
         </div>
@@ -714,17 +709,17 @@
             <button onclick="app.saveTask()" id="btn-save-task" class="w-full py-4 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/20 active:scale-95 transition-transform text-sm mb-safe-b">Save Task</button>
         </div>
     </div>
-    
+
     <div id="task-select-sheet" class="spring-sheet fixed bottom-0 left-0 right-0 bg-dark-bg rounded-t-3xl z-50 transform translate-y-full max-h-[85vh] flex flex-col border-t border-dark-border shadow-2xl pb-safe-b">
         <div class="w-full flex justify-center pt-3 pb-1" onclick="app.closeTaskSelectSheet()">
-             <span class="w-12 h-1.5 bg-dark-border rounded-full opacity-50"></span>
+            <span class="w-12 h-1.5 bg-dark-border rounded-full opacity-50"></span>
         </div>
         <div class="px-5 pb-4 border-b border-dark-border flex justify-between items-center mt-2">
             <div>
                 <h2 class="text-lg font-bold text-white">Select Task</h2>
                 <p class="text-[10px] text-text-muted uppercase tracking-wider font-bold">Choose a focus target</p>
             </div>
-             <button onclick="app.switchTab('tasks'); app.closeTaskSelectSheet();" class="text-brand hover:text-white px-3 py-1.5 bg-brand/10 rounded-lg text-xs font-bold transition-colors">View All</button>
+            <button onclick="app.switchTab('tasks'); app.closeTaskSelectSheet();" class="text-brand hover:text-white px-3 py-1.5 bg-brand/10 rounded-lg text-xs font-bold transition-colors">View All</button>
         </div>
         <div id="task-select-list" class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
             </div>
