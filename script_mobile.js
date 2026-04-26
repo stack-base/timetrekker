@@ -363,10 +363,10 @@ onAuthStateChanged(auth, u => {
                 };
                 
                 let settingsChanged = false;
-                if(d.strictMode !== undefined) { state.timer.settings.strictMode = d.strictMode; settingsChanged = true; }
-                if(d.autoStartPomo !== undefined) { state.timer.settings.autoStartPomo = d.autoStartPomo; settingsChanged = true; }
-                if(d.autoStartBreak !== undefined) { state.timer.settings.autoStartBreak = d.autoStartBreak; settingsChanged = true; }
-                if(d.disableBreak !== undefined) { state.timer.settings.disableBreak = d.disableBreak; settingsChanged = true; }
+                if(d.strictMode !== undefined) { state.timer.settings.strictMode = d.strictMode; settingsChanged = true; if($('toggle-strict')) $('toggle-strict').setAttribute('aria-pressed', d.strictMode); }
+                if(d.autoStartPomo !== undefined) { state.timer.settings.autoStartPomo = d.autoStartPomo; settingsChanged = true; if($('toggle-auto-pomo')) $('toggle-auto-pomo').setAttribute('aria-pressed', d.autoStartPomo); }
+                if(d.autoStartBreak !== undefined) { state.timer.settings.autoStartBreak = d.autoStartBreak; settingsChanged = true; if($('toggle-auto-break')) $('toggle-auto-break').setAttribute('aria-pressed', d.autoStartBreak); }
+                if(d.disableBreak !== undefined) { state.timer.settings.disableBreak = d.disableBreak; settingsChanged = true; if($('toggle-disable-break')) $('toggle-disable-break').setAttribute('aria-pressed', d.disableBreak); }
                 if(d.focus !== undefined) { state.timer.settings.focus = d.focus; settingsChanged = true; }
                 if(d.short !== undefined) { state.timer.settings.short = d.short; settingsChanged = true; }
                 if(d.long !== undefined) { state.timer.settings.long = d.long; settingsChanged = true; }
@@ -672,10 +672,10 @@ const app = {
         if(tab === 'analytics') app.renderAnalytics();
         if(tab === 'settings') {
             const s = state.timer.settings;
-            if($('toggle-strict')) $('toggle-strict').checked = s.strictMode;
-            if($('toggle-auto-pomo')) $('toggle-auto-pomo').checked = s.autoStartPomo;
-            if($('toggle-auto-break')) $('toggle-auto-break').checked = s.autoStartBreak;
-            if($('toggle-disable-break')) $('toggle-disable-break').checked = s.disableBreak;
+            if($('toggle-strict')) $('toggle-strict').setAttribute('aria-pressed', s.strictMode);
+            if($('toggle-auto-pomo')) $('toggle-auto-pomo').setAttribute('aria-pressed', s.autoStartPomo);
+            if($('toggle-auto-break')) $('toggle-auto-break').setAttribute('aria-pressed', s.autoStartBreak);
+            if($('toggle-disable-break')) $('toggle-disable-break').setAttribute('aria-pressed', s.disableBreak);
             if($('set-focus-display')) $('set-focus-display').innerText = s.focus + 'm';
             if($('set-short-display')) $('set-short-display').innerText = s.short + 'm';
             if($('set-long-display')) $('set-long-display').innerText = s.long + 'm';
@@ -1783,6 +1783,13 @@ const app = {
             audio.play().catch(()=>{});
         }
         else audio.pause();
+    },
+
+    toggleSettingBtn: (key, btn) => {
+        haptic('light');
+        const newState = btn.getAttribute('aria-pressed') !== 'true';
+        btn.setAttribute('aria-pressed', newState);
+        app.updateSetting(key, newState);
     },
 
     _saveSetting: debounce((uid, k, v) => {

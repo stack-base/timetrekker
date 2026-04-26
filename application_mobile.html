@@ -13,11 +13,9 @@
 <link rel="apple-touch-icon" href="https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png">
 
 <script>
-    // Force default view into URL if missing
     if (!window.location.search) {
         window.history.replaceState(null, '', '?view=today');
     }
-
     function handleResizeRedirect() {
         if (window.innerWidth > 768) {
             window.location.href = './application' + window.location.search;
@@ -38,15 +36,27 @@
 </script>
 <script type="module" src="script_mobile.js" defer></script>
 <style>
-    body{background-color:#000;color:#fff;-webkit-tap-highlight-color:transparent;overflow:hidden;user-select:none}.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}.custom-scrollbar::-webkit-scrollbar{height:4px;width:4px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#333;border-radius:2px}@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}.animate-slide-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1) forwards}.sheet-handle{width:36px;height:5px;background:#3f3f46;border-radius:99px;margin:8px auto 16px auto}.toggle-checkbox:checked{right:0;border-color:#ff5757}.toggle-checkbox:checked+.toggle-label{background-color:#ff5757}input[type=range]{-webkit-appearance:none;background:0 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#27272a;border-radius:2px}#content-scroll-area{-webkit-overflow-scrolling:touch}
+    body{background-color:#000;color:#fff;-webkit-tap-highlight-color:transparent;overflow:hidden;user-select:none}.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}.custom-scrollbar::-webkit-scrollbar{height:4px;width:4px}.custom-scrollbar::-webkit-scrollbar-thumb{background:#333;border-radius:2px}@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}.animate-slide-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1) forwards}.sheet-handle{width:36px;height:5px;background:#3f3f46;border-radius:99px;margin:8px auto 16px auto}input[type=range]{-webkit-appearance:none;background:0 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:16px;width:16px;border-radius:50%;background:#ff5757;cursor:pointer;margin-top:-6px;box-shadow:0 1px 3px rgba(0,0,0,.3)}input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:#27272a;border-radius:2px}#content-scroll-area{-webkit-overflow-scrolling:touch}
 
-    /* Tooltip and Insight CSS additions */
+    /* Tooltip and Insight CSS */
     #global-tooltip { pointer-events: none; position: fixed; z-index: 9999; background: rgba(9, 9, 11, 0.95); border: 1px solid #27272a; padding: 10px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); font-size: 12px; color: white; opacity: 0; transition: opacity 0.15s ease; transform: translate(-50%, -150%); white-space: nowrap; }
     #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 3px; font-size: 13px; font-weight: 600; }
     #global-tooltip .sub { color: #a1a1aa; font-size: 11px; }
-
     .chart-insight-box { background-color: transparent; padding-bottom: 12px; font-size: 11px; color: #a1a1aa; line-height: 1.5; text-align: left; }
     .chart-insight-box strong { color: #ffffff; font-weight: 600; }
+
+    /* Custom UI Elements & Physics */
+    .custom-toggle { width: 44px; height: 24px; border-radius: 99px; background-color: #27272a; border: 1px solid #3f3f46; position: relative; cursor: pointer; transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), border-color 0.3s ease; outline: none; }
+    .custom-toggle[aria-pressed="true"] { background-color: #ff5757; border-color: #ff5757; }
+    .toggle-thumb { width: 20px; height: 20px; background: #ffffff; border-radius: 50%; position: absolute; top: 1px; left: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+    .custom-toggle[aria-pressed="true"] .toggle-thumb { transform: translateX(20px); }
+    
+    .nav-glass { background: rgba(9, 9, 11, 0.65) !important; backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); }
+    .header-glass { background: rgba(9, 9, 11, 0.65) !important; backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    
+    .spring-sheet { transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) !important; }
+    
+    #timer-progress { filter: drop-shadow(0 0 8px rgba(255, 87, 87, 0.4)); transition: stroke-dashoffset 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
 </style>
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
@@ -81,7 +91,7 @@
 
     <main id="main-container" class="flex-1 relative overflow-hidden flex flex-col pt-safe-t">
         
-        <header id="view-header" class="px-5 py-4 flex items-center justify-between shrink-0 bg-dark-bg/95 backdrop-blur z-20 border-b border-dark-border/50 transition-all duration-200">
+        <header id="view-header" class="px-5 py-4 flex items-center justify-between shrink-0 header-glass z-20 transition-all duration-200">
             <div>
                 <h1 id="page-title" class="text-2xl font-bold tracking-tight">Today</h1>
                 <p id="current-date" class="text-xs text-text-muted font-medium mt-0.5">Loading...</p>
@@ -138,7 +148,7 @@
                 <div class="relative w-72 h-72 flex items-center justify-center mb-10">
                     <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r="45" fill="none" stroke="#27272a" stroke-width="2"/>
-                        <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
+                        <circle id="timer-progress" cx="50" cy="50" r="45" fill="none" stroke="#ff5757" stroke-width="2" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0"/>
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center active:scale-95 transition-transform" onclick="app.toggleTimer()" role="button" tabindex="0">
                         <div id="timer-display" class="text-6xl font-light tracking-tighter tabular-nums text-white">25:00</div>
@@ -389,31 +399,19 @@
                     <div class="divide-y divide-dark-border">
                         <div class="p-4 flex items-center justify-between">
                             <div><div class="text-sm font-bold text-white">Auto-Start Focus</div><div class="text-[10px] text-text-muted">Start focus automatically after break</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" id="toggle-auto-pomo" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartPomo', this.checked)"/>
-                                <label for="toggle-auto-pomo" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
-                            </div>
+                            <button id="toggle-auto-pomo" class="custom-toggle" aria-pressed="false" onclick="app.toggleSettingBtn('autoStartPomo', this)"><span class="toggle-thumb"></span></button>
                         </div>
                         <div class="p-4 flex items-center justify-between">
                             <div><div class="text-sm font-bold text-white">Auto-Start Break</div><div class="text-[10px] text-text-muted">Start break automatically after focus</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" id="toggle-auto-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('autoStartBreak', this.checked)"/>
-                                <label for="toggle-auto-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
-                            </div>
+                            <button id="toggle-auto-break" class="custom-toggle" aria-pressed="false" onclick="app.toggleSettingBtn('autoStartBreak', this)"><span class="toggle-thumb"></span></button>
                         </div>
                         <div class="p-4 flex items-center justify-between">
                             <div><div class="text-sm font-bold text-white">Disable Break</div><div class="text-[10px] text-text-muted">Skip breaks entirely</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" id="toggle-disable-break" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('disableBreak', this.checked)"/>
-                                <label for="toggle-disable-break" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
-                            </div>
+                            <button id="toggle-disable-break" class="custom-toggle" aria-pressed="false" onclick="app.toggleSettingBtn('disableBreak', this)"><span class="toggle-thumb"></span></button>
                         </div>
                         <div class="p-4 flex items-center justify-between">
                             <div><div class="text-sm font-bold text-white">Strict Mode</div><div class="text-[10px] text-text-muted">Prevents pausing the timer</div></div>
-                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" id="toggle-strict" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-dark-active appearance-none cursor-pointer transition-all duration-300 left-0" onclick="app.updateSetting('strictMode', this.checked)"/>
-                                <label for="toggle-strict" class="toggle-label block overflow-hidden h-6 rounded-full bg-dark-active cursor-pointer border border-dark-border"></label>
-                            </div>
+                            <button id="toggle-strict" class="custom-toggle" aria-pressed="false" onclick="app.toggleSettingBtn('strictMode', this)"><span class="toggle-thumb"></span></button>
                         </div>
                     </div>
                 </div>
@@ -486,7 +484,7 @@
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 w-full bg-dark-bg/95 backdrop-blur border-t border-dark-border pb-safe-b z-40">
+    <nav class="fixed bottom-0 left-0 w-full nav-glass border-t border-dark-border pb-safe-b z-40">
         <div class="flex justify-around items-center h-16">
             <button onclick="app.switchTab('tasks')" id="tab-tasks" aria-label="Tasks Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-transform">
                 <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Tasks</span>
@@ -504,7 +502,7 @@
     </nav>
     <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden opacity-0 transition-opacity backdrop-blur-sm" onclick="app.closeAllSheets()"></div>
 
-    <div id="project-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[80vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
+    <div id="project-sheet" class="spring-sheet fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full max-h-[80vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
         <span class="sheet-handle flex-shrink-0" onclick="app.closeProjectSheet()"></span>
         <div class="px-5 pb-4 border-b border-dark-border flex justify-between items-center">
             <div>
@@ -517,7 +515,7 @@
             </div>
     </div>
 
-    <div id="detail-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
+    <div id="detail-sheet" class="spring-sheet fixed bottom-0 left-0 right-0 bg-dark-card rounded-t-2xl z-50 transform translate-y-full max-h-[90vh] flex flex-col border-t border-dark-border pb-safe-b shadow-2xl">
         <span class="sheet-handle flex-shrink-0" onclick="app.closeDetailSheet()"></span>
         <div class="px-5 pb-5 flex-1 overflow-y-auto">
             
@@ -582,7 +580,7 @@
         </div>
     </div>
 
-    <div id="modal-sheet" class="fixed bottom-0 left-0 right-0 bg-dark-bg rounded-t-3xl z-50 transform translate-y-full transition-transform duration-300 max-h-[92vh] flex flex-col border-t border-dark-border shadow-2xl pb-safe-b">
+    <div id="modal-sheet" class="spring-sheet fixed bottom-0 left-0 right-0 bg-dark-bg rounded-t-3xl z-50 transform translate-y-full max-h-[92vh] flex flex-col border-t border-dark-border shadow-2xl pb-safe-b">
         <div class="w-full flex justify-center pt-3 pb-1" onclick="app.closeTaskModal()">
              <span class="w-12 h-1.5 bg-dark-border rounded-full opacity-50"></span>
         </div>
