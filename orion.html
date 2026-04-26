@@ -103,6 +103,7 @@
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
     .data-table tr:hover { background: var(--hover); }
 
+    /* Interactive Table Headers */
     th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
     th.sortable:hover { color: #fff; }
     th.sortable i { margin-left: 4px; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
@@ -625,6 +626,7 @@ const updateURL = () => {
     if (state.editTaskId) url.searchParams.set('edit', state.editTaskId);
     else url.searchParams.delete('edit');
 
+    // Remove hash if it still exists
     url.hash = '';
 
     if (window.location.search !== url.search || window.location.hash !== '') {
@@ -645,6 +647,7 @@ const applyUrlState = () => {
         state.filterUser = null;
     }
 
+    // Pass true to skip updating URL while applying URL state
     app.setView(v, true);
 
     const modal = document.getElementById('admin-task-modal');
@@ -719,7 +722,7 @@ const showLoginModal=()=>{
     const div=document.createElement('div');
     div.id='dev-login-modal';
     div.className='modal-overlay';
-    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.75rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn primary" style="width: 100%;">Access Orion</button></form></div>`;
+    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.75rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Orion</button></form></div>`;
     document.body.appendChild(div);
     document.getElementById('dev-login-form').onsubmit=async(e)=>{
         e.preventDefault();
@@ -799,7 +802,7 @@ const app={
         state.keepFilter=false;
         
         if (!skipUrlUpdate) {
-            state.editTaskId = null; 
+            state.editTaskId = null; // Close edit modal state on normal view switch
             updateURL();
         }
 
@@ -856,7 +859,7 @@ const app={
     filterTasksByUser:(uid)=>{ 
         state.filterUser=uid; 
         state.keepFilter=true; 
-        app.setView('tasks'); 
+        app.setView('tasks'); // updateURL is called within setView
     },
     viewAsUser:(uid)=>{ window.open(`application?uid=${uid}`,'_blank'); },
     clearTaskFilter:()=>{ 
@@ -917,6 +920,7 @@ const app={
         }
     },
     
+    // --- Task Moderation ---
     toggleAdminTaskModal: (taskId = null, uid = null, skipUrlUpdate = false) => {
         const modal = document.getElementById('admin-task-modal');
         const form = document.getElementById('admin-task-form');
@@ -991,7 +995,7 @@ const app={
                 data.status = 'todo';
                 data.createdAt = new Date().toISOString();
                 data.project = 'Inbox';
-                data.completedSessionIds = []; // Added constraint for new unified logs schema
+                data.completedSessionIds = [];
 
                 if (target === 'all') {
                     if(!confirm(`Deploy this task to ALL ${state.usersList.length} users?`)) {
@@ -1027,6 +1031,7 @@ const app={
         } catch (e) { alert('Error deleting task.'); }
     },
 
+    // --- Broadcast Message Moderation ---
     toggleBroadcastModal: () => {
         const modal = document.getElementById('admin-broadcast-modal');
         const form = document.getElementById('admin-broadcast-form');
@@ -1113,18 +1118,19 @@ const app={
         } catch (e) { alert('Error deleting broadcast.'); }
     },
 
-    refreshData:async(forceRefresh = true)=>{
-        try{
-            if(!forceRefresh && loadCache()){ 
-                renderAll(); 
+    refreshData: async (forceRefresh = true) => {
+        try {
+            if (!forceRefresh && loadCache()) {
+                renderAll();
                 if (isInitialLoad) { isInitialLoad = false; applyUrlState(); }
-                return; 
+                return;
             }
             log('Fetching LIVE data from Firestore...');
-            
-            const qLogs = query(collectionGroup(db, 'monthly_logs'), orderBy('month', 'desc'), limit(100));
+
+            const qLogs = query(collectionGroup(db, 'monthly_logs'));
             const snapLogs = await getDocs(qLogs);
             let allSessions = [];
+            
             snapLogs.docs.forEach(d => {
                 const uid = d.ref.parent?.parent?.id || 'unknown';
                 const data = d.data();
@@ -1134,28 +1140,34 @@ const app={
                     });
                 }
             });
-            allSessions.sort((a, b) => b.completedAt - a.completedAt);
+            
+            allSessions.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
             state.sessions = allSessions.slice(0, 500);
-            
-            const qTasks=query(collectionGroup(db,'tasks'),limit(500));
-            const snapTasks=await getDocs(qTasks);
-            state.tasks=snapTasks.docs.map(d=>{ const uid=d.ref.parent?.parent?.id||'unknown'; return{id: d.id, ...d.data(),_uid:uid}; });
-            
-            const qUsers=query(collection(db,'artifacts',appId,'users'));
-            const snapUsers=await getDocs(qUsers);
-            state.usersList=snapUsers.docs.map(d=>({id:d.id,...d.data()}));
 
-            const qBroadcasts=query(collection(db,'artifacts',appId,'broadcasts'),orderBy('createdAt','desc'));
-            const snapBroadcasts=await getDocs(qBroadcasts);
-            state.broadcasts=snapBroadcasts.docs.map(d=>({id:d.id,...d.data()}));
-            
+            const qTasks = query(collectionGroup(db, 'tasks'), limit(500));
+            const snapTasks = await getDocs(qTasks);
+            state.tasks = snapTasks.docs.map(d => { 
+                const uid = d.ref.parent?.parent?.id || 'unknown'; 
+                return { id: d.id, ...d.data(), _uid: uid }; 
+            });
+
+            const qUsers = query(collection(db, 'artifacts', appId, 'users'));
+            const snapUsers = await getDocs(qUsers);
+            state.usersList = snapUsers.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            const qBroadcasts = query(collection(db, 'artifacts', appId, 'broadcasts'), orderBy('createdAt', 'desc'));
+            const snapBroadcasts = await getDocs(qBroadcasts);
+            state.broadcasts = snapBroadcasts.docs.map(d => ({ id: d.id, ...d.data() }));
+
             saveCache(); renderAll();
-            
+
             if (isInitialLoad) {
                 isInitialLoad = false;
                 applyUrlState();
             }
-        }catch(e){ log(`ERROR: ${e.message}`); }
+        } catch (e) { 
+            log(`ERROR: ${e.message}`); 
+        }
     }
 };
 
@@ -1305,9 +1317,7 @@ function generateTaskRowHtml(t) {
         low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
         none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
     }[t.priority||'none'];
-    const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1;
-    // Map the new completedSessionIds property
-    const donePomos=t.completedSessionIds ? t.completedSessionIds.length : (t.completedPomos||0);
+    const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedSessionIds?t.completedSessionIds.length:0;
     const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
     const userTag=!state.filterUser?`<div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
     const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
@@ -1450,11 +1460,11 @@ function updateCharts(){
                 borderColor: '#ff5757',
                 backgroundColor: 'rgba(255, 87, 87, 0.1)',
                 borderWidth: 2,
-                pointBackgroundColor: '#1e1e1e',
+                pointBackgroundColor: '#1e1e1e', // Match card background
                 pointBorderColor: '#ff5757',
                 pointBorderWidth: 2,
                 pointRadius: 4,
-                pointHoverRadius: 6,
+                pointHoverRadius: 6, // Expands on hover
                 fill: true,
                 tension: 0.4
             }]
@@ -1463,7 +1473,7 @@ function updateCharts(){
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
-                mode: 'index',
+                mode: 'index', // Tooltip appears when hovering the vertical slice
                 intersect: false,
             },
             plugins: {
@@ -1475,7 +1485,7 @@ function updateCharts(){
                     borderColor: '#2a2a2a',
                     borderWidth: 1,
                     padding: 12,
-                    displayColors: false,
+                    displayColors: false, // Hides the little color square
                     callbacks: {
                         label: function(context) {
                             return context.parsed.y + ' minutes';
@@ -1513,8 +1523,8 @@ function updateCharts(){
                 data: sortedProj.map(x=>x[1]),
                 backgroundColor: ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],
                 borderWidth: 2,
-                borderColor: '#1e1e1e',
-                hoverOffset: 5
+                borderColor: '#1e1e1e', // Creates gaps between slices
+                hoverOffset: 5 // Slices pop out slightly on hover
             }]
         }, 
         options: {
