@@ -36,8 +36,14 @@
                 colors: {
                     brand: { DEFAULT: '#ff5757', hover: '#e04848', dim: '#4a1a1a' },
                     dark: { bg: '#000000', sidebar: '#000000', card: '#000000', border: '#333333', hover: '#1a1a1a' },
-                    text: { main: '#ffffff', muted: '#a3a3a3', faint: '#525252' },
-                    priority: { high: '#ef4444', med: '#eab308', low: '#3b82f6', none: '#525252' }
+                    /* Visibility Boosts */
+                    text: { main: '#ffffff', muted: '#a1a1aa', faint: '#71717a' }, 
+                    priority: { high: '#ef4444', med: '#eab308', low: '#3b82f6', none: '#71717a' }
+                },
+                fontSize: {
+                    /* Establish a higher baseline for the smallest text */
+                    'tiny': ['0.75rem', { lineHeight: '1.125rem' }], // 12px
+                    'xs': ['0.8125rem', { lineHeight: '1.25rem' }], // 13px (bumped from 12px)
                 },
                 screens: {
                     'safe-h': { 'raw': '(min-height: 700px)' }
@@ -60,7 +66,14 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
-    body { background-color: #000000; color: #ffffff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+    body { 
+        background-color: #000000; 
+        color: #ffffff; 
+        font-family: 'Inter', sans-serif; 
+        -webkit-font-smoothing: antialiased; 
+        -moz-osx-font-smoothing: grayscale; /* Added for crisper firefox rendering */
+        overflow: hidden; 
+    }
     
     .custom-checkbox input:checked + div { background-color: #ff5757; border-color: #ff5757; }
     .custom-checkbox input:checked + div svg { display: block; }
@@ -72,25 +85,27 @@
     input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ff5757; cursor: pointer; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
     input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333333; border-radius: 2px; }
     
-    .analysis-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #a3a3a3; padding: 12px; border-bottom: 1px solid #333333; }
-    .analysis-table td { font-size: 13px; color: #ffffff; padding: 12px; border-bottom: 1px solid #333333; }
+    /* Bumped table font sizes for readability */
+    .analysis-table th { text-align: left; font-size: 12px; text-transform: uppercase; color: #a1a1aa; padding: 12px; border-bottom: 1px solid #333333; letter-spacing: 0.025em; }
+    .analysis-table td { font-size: 14px; color: #ffffff; padding: 12px; border-bottom: 1px solid #333333; }
     .analysis-table tr:last-child td { border-bottom: none; }
     
-    #global-tooltip { pointer-events: none; position: fixed; z-index: 9999; background: #000000; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8); font-size: 12px; color: white; opacity: 0; transition: opacity 0.1s ease; transform: translate(-50%, -100%) translateY(-10px); white-space: nowrap; }
-    #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 2px; font-size: 13px; }
-    #global-tooltip .sub { color: #a3a3a3; font-size: 11px; }
+    #global-tooltip { pointer-events: none; position: fixed; z-index: 9999; background: #000000; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8); font-size: 13px; color: white; opacity: 0; transition: opacity 0.1s ease; transform: translate(-50%, -100%) translateY(-10px); white-space: nowrap; }
+    #global-tooltip strong { display: block; color: #ff5757; margin-bottom: 2px; font-size: 14px; }
+    #global-tooltip .sub { color: #a1a1aa; font-size: 12px; } /* Bumped from 11px */
     
     .glass-toggle-group { display: inline-flex; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 4px; border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.15); }
-    .glass-toggle-btn { padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 600; color: #a3a3a3; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; }
+    .glass-toggle-btn { padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; color: #a1a1aa; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; } /* Bumped from 11px */
     .glass-toggle-btn:hover { color: #ffffff; }
     .glass-toggle-btn.active { background: rgba(255, 255, 255, 0.15); color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.2); border-color: rgba(255, 255, 255, 0.1); }
 
     .sheet-handle { width: 32px; height: 4px; background-color: #333333; border-radius: 2px; margin: 8px auto; display: block; }
     @media (min-width: 768px) { .sheet-handle { display: none; } }
 
+    /* Bumped from 12px to 13px */
     .chart-insight-box {
-        font-size: 12px;
-        color: #a3a3a3;
+        font-size: 13px;
+        color: #a1a1aa;
         line-height: 1.5;
         margin-top: auto;
         text-align: left;
@@ -108,11 +123,12 @@
         max-height: 150px;
         overflow-y: auto;
     }
+    /* Bumped from 12px to 13px */
     .priority-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 12px;
+        font-size: 13px;
     }
     .priority-label-group {
         display: flex;
@@ -125,7 +141,7 @@
         border-radius: 50%;
     }
     .priority-name {
-        color: #a3a3a3;
+        color: #a1a1aa;
     }
     .priority-count {
         color: #ffffff;
@@ -217,7 +233,7 @@
                 <div id="user-avatar-initials" class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-xs font-bold text-white shrink-0">U</div>
                 <div class="flex md:hidden lg:flex flex-col ml-3 overflow-hidden"><span id="user-name-text" class="text-sm font-medium text-white truncate">User</span><span id="user-email-text" class="text-xs text-text-muted truncate">email@example.com</span></div>
             </div>
-            <div class="mt-3 text-[10px] text-text-faint text-center md:hidden lg:block tracking-wide uppercase font-bold opacity-60">Powered by StackBase</div>
+            <div class="mt-3 text-tiny text-text-faint text-center md:hidden lg:block tracking-wide uppercase font-bold opacity-60">Powered by StackBase</div>
         </div>
     </div>
 </nav>
@@ -301,32 +317,32 @@
                  <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Completion %</div>
                     <div class="text-xl font-bold text-green-500" id="ana-completion-rate">0%</div>
-                    <div class="text-[10px] text-text-faint mt-1">(Completed Tasks / Total Active Tasks)</div>
+                    <div class="text-tiny text-text-faint mt-1">(Completed Tasks / Total Active Tasks)</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Avg Session</div>
                     <div class="text-xl font-bold text-white" id="ana-avg-session">0m</div>
-                    <div class="text-[10px] text-text-faint mt-1">Average duration of completed pomodoros</div>
+                    <div class="text-tiny text-text-faint mt-1">Average duration of completed pomodoros</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Morning Focus</div>
                     <div class="text-xl font-bold text-yellow-500" id="ana-early-bird">0h</div>
-                    <div class="text-[10px] text-text-faint mt-1">Before 12 PM</div>
+                    <div class="text-tiny text-text-faint mt-1">Before 12 PM</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Night Focus</div>
                     <div class="text-xl font-bold text-indigo-400" id="ana-night-owl">0h</div>
-                    <div class="text-[10px] text-text-faint mt-1">After 8 PM</div>
+                    <div class="text-tiny text-text-faint mt-1">After 8 PM</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Best Streak</div>
                     <div class="text-xl font-bold text-purple-500" id="ana-streak-days">0 Days</div>
-                    <div class="text-[10px] text-text-faint mt-1">Consecutive days with at least 1 focus session</div>
+                    <div class="text-tiny text-text-faint mt-1">Consecutive days with at least 1 focus session</div>
                 </div>
                  <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Projects</div>
                     <div class="text-xl font-bold text-white" id="ana-project-count">0</div>
-                    <div class="text-[10px] text-text-faint mt-1">Active projects</div>
+                    <div class="text-tiny text-text-faint mt-1">Active projects</div>
                 </div>
             </div>
 
@@ -426,7 +442,7 @@
                  <h3 class="text-lg font-semibold text-white mb-6">Pomodoro Records</h3>
                  <div class="overflow-x-auto custom-scrollbar pb-2">
                     <div class="min-w-[600px] w-full">
-                        <div class="flex text-[10px] text-text-muted font-mono mb-2 pl-24"><span class="flex-1 border-l border-dark-border pl-1">00:00</span><span class="flex-1 border-l border-dark-border pl-1">04:00</span><span class="flex-1 border-l border-dark-border pl-1">08:00</span><span class="flex-1 border-l border-dark-border pl-1">12:00</span><span class="flex-1 border-l border-dark-border pl-1">16:00</span><span class="flex-1 border-l border-dark-border pl-1">20:00</span></div>
+                        <div class="flex text-tiny text-text-muted font-mono mb-2 pl-24"><span class="flex-1 border-l border-dark-border pl-1">00:00</span><span class="flex-1 border-l border-dark-border pl-1">04:00</span><span class="flex-1 border-l border-dark-border pl-1">08:00</span><span class="flex-1 border-l border-dark-border pl-1">12:00</span><span class="flex-1 border-l border-dark-border pl-1">16:00</span><span class="flex-1 border-l border-dark-border pl-1">20:00</span></div>
                         <div id="pomo-timeline-grid" class="space-y-1"></div>
                     </div>
                  </div>
@@ -465,7 +481,7 @@
         <div class="mb-12 w-full text-center min-h-[80px]">
             <div id="focus-empty" class="flex flex-col items-center text-text-muted animate-pulse"><p class="text-sm font-medium">Select a task to start focusing</p></div>
             <div id="focus-active" class="hidden animate-fade-in w-full flex flex-col items-center">
-                <div class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-dark-bg text-text-muted border border-dark-border mb-3"><span id="focus-project-badge" class="truncate max-w-[150px]">Project</span></div>
+                <div class="inline-flex items-center justify-center px-2 py-0.5 rounded text-tiny font-bold uppercase tracking-wider bg-dark-bg text-text-muted border border-dark-border mb-3"><span id="focus-project-badge" class="truncate max-w-[150px]">Project</span></div>
                 <h2 id="focus-task-title" class="text-xl font-bold text-white leading-snug mb-2 line-clamp-2 px-2">Task Title</h2>
                 <div class="flex items-center space-x-1 text-xs text-text-muted"><span class="text-brand font-bold" id="focus-completed">0</span><span>/</span><span id="focus-total">4</span><span>Pomos</span></div>
             </div>
