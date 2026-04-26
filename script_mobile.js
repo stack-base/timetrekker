@@ -303,7 +303,7 @@ onAuthStateChanged(auth, u => {
                     if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
                     if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
                     if($('settings-name')) $('settings-name').textContent = name;
-                    if($('settings-email')) $('settings-email').textContent = u.email;
+                    if($('settings-email')) $('settings-email').textContent = d.email || u.email;
                     if (pic) {
                         if($('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
                         if($('settings-avatar-img')) { $('settings-avatar-img').src = pic; $('settings-avatar-img').classList.remove('hidden'); }

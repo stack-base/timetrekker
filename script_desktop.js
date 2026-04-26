@@ -329,12 +329,32 @@ onAuthStateChanged(auth, u => {
                     }
                 });
             } else {
-                $('user-name-text').textContent = u.displayName || u.email.split('@')[0];
-                $('user-email-text').textContent = u.email;
-                $('user-avatar-initials').textContent = (u.displayName || u.email).charAt(0).toUpperCase();
-                els.settingsName.textContent = u.displayName || u.email.split('@')[0];
-                els.settingsEmail.textContent = u.email;
-                els.settingsAvatar.textContent = (u.displayName || u.email).charAt(0).toUpperCase();
+                onSnapshot(doc(db, 'artifacts', APP_ID, 'users', effectiveUid), s => {
+                    if (s.exists()) {
+                        const d = s.data();
+                        const name = d.displayName || u.displayName || u.email.split('@')[0];
+                        const email = d.email || u.email;
+                        const pic = d.photoURL;
+
+                        // Update Text Elements
+                        $('user-name-text').textContent = name;
+                        $('user-email-text').textContent = email;
+                        els.settingsName.textContent = name;
+                        els.settingsEmail.textContent = email;
+
+                        // Update Profile Pictures
+                        if (pic) {
+                            // Inject images with object-cover to fit your existing containers beautifully
+                            $('user-avatar-initials').innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded">`;
+                            els.settingsAvatar.innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+                        } else {
+                            // Fallback to text initials if the photo URL is cleared via Orion
+                            const initial = name.charAt(0).toUpperCase();
+                            $('user-avatar-initials').innerHTML = initial;
+                            els.settingsAvatar.innerHTML = initial;
+                        }
+                    }
+                });
             }
         }
 
