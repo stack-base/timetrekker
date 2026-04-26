@@ -1370,9 +1370,9 @@ function renderUsersTable(){
             <td style="color: var(--text-muted); font-size: 0.75rem;">${last}</td>
             <td style="text-align: right;">
                 <div class="flex items-center justify-end" style="gap: 0.5rem;">
-                    <button onclick="app.toggleUserProfileModal('${u.uid}')" class="btn text-xs" style="background: var(--bg-card); color: #fff; border: 1px solid var(--border);"><i class="ph-bold ph-user-gear" style="margin-right: 4px;"></i> Manage</button>
-                    <button onclick="app.viewAsUser('${u.uid}')" class="btn btn-icon text-xs text-brand hover:text-brand" style="background: var(--brand-dim); border: 1px solid rgba(255,87,87,0.2);" title="Simulate User View"><i class="ph-bold ph-app-window text-sm"></i></button>
-                    <button onclick="app.filterTasksByUser('${u.uid}')" class="btn btn-icon btn-outline text-xs" title="View Tasks"><i class="ph-bold ph-list-magnifying text-sm"></i></button>
+                    <button onclick="app.toggleUserProfileModal('${u.uid}')" class="btn btn-outline text-xs" title="Manage Profile"><i class="ph-bold ph-user-gear" style="margin-right: 4px;"></i> Manage</button>
+                    <button onclick="app.viewAsUser('${u.uid}')" class="btn text-xs" style="background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);" title="Simulate User View"><i class="ph-bold ph-app-window" style="margin-right: 4px;"></i> App</button>
+                    <button onclick="app.filterTasksByUser('${u.uid}')" class="btn btn-outline text-xs" title="View User Tasks"><i class="ph-bold ph-list-magnifying" style="margin-right: 4px;"></i> Tasks</button>
                 </div>
             </td>
         </tr>`;
