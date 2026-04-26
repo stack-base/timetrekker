@@ -206,17 +206,13 @@ const saveLocalState = () => {
 Chart.defaults.font.family = 'Inter';
 Chart.defaults.color = '#a1a1aa';
 Chart.defaults.borderColor = '#27272a';
-Chart.defaults.font.size = 12; // Forced base size bump
-
 if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
     Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(9, 9, 11, 0.95)';
     Chart.defaults.plugins.tooltip.titleColor = '#fff';
     Chart.defaults.plugins.tooltip.bodyColor = '#a1a1aa';
     Chart.defaults.plugins.tooltip.borderColor = '#333';
     Chart.defaults.plugins.tooltip.borderWidth = 1;
-    Chart.defaults.plugins.tooltip.padding = 12;
-    Chart.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold', family: 'Inter' };
-    Chart.defaults.plugins.tooltip.bodyFont = { size: 12, family: 'Inter' };
+    Chart.defaults.plugins.tooltip.padding = 10;
     Chart.defaults.plugins.tooltip.displayColors = false;
 }
 
