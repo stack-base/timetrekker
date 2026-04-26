@@ -580,9 +580,68 @@
     </div>
 </div>
 
+<div id="user-profile-modal" class="modal-overlay hidden">
+    <div class="modal-box large">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5);">
+            <h2 style="font-size: 1.125rem; font-weight: 700; color: #fff;">User Profile Management</h2>
+            <button type="button" onclick="app.toggleUserProfileModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+        </div>
+        
+        <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
+            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
+                
+                <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 2rem;">
+                    <div id="modal-user-avatar" style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-main); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: #fff; overflow: hidden;">
+                        </div>
+                    <div>
+                        <div id="modal-user-name-display" style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 4px;">User Name</div>
+                        <div id="modal-user-email-display" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 8px;">user@example.com</div>
+                        <span id="modal-user-provider" style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="input-group">
+                        <label>Display Name (Firestore)</label>
+                        <input type="text" id="modal-input-name" class="input-control" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Contact Email (Firestore)</label>
+                        <input type="email" id="modal-input-email" class="input-control" required>
+                        <div style="font-size: 10px; color: var(--warning); margin-top: 4px;"><i class="ph-fill ph-warning-circle"></i> Does not change login email.</div>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 2rem;">
+                    <label>Profile Picture URL</label>
+                    <input type="url" id="modal-input-photo" class="input-control" placeholder="https://...">
+                </div>
+
+                <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">Administrative Actions</div>
+                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Send a secure Firebase password reset link.</div>
+                    </div>
+                    <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3);">
+                        <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Email
+                    </button>
+                </div>
+
+                <input type="hidden" id="modal-user-uid">
+            </div>
+            
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" onclick="app.toggleUserProfileModal()" class="btn btn-outline">Cancel</button>
+                <button type="submit" id="modal-save-profile-btn" class="btn btn-primary">Save Profile Data</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
@@ -626,7 +685,6 @@ const updateURL = () => {
     if (state.editTaskId) url.searchParams.set('edit', state.editTaskId);
     else url.searchParams.delete('edit');
 
-    // Remove hash if it still exists
     url.hash = '';
 
     if (window.location.search !== url.search || window.location.hash !== '') {
@@ -647,7 +705,6 @@ const applyUrlState = () => {
         state.filterUser = null;
     }
 
-    // Pass true to skip updating URL while applying URL state
     app.setView(v, true);
 
     const modal = document.getElementById('admin-task-modal');
@@ -802,7 +859,7 @@ const app={
         state.keepFilter=false;
         
         if (!skipUrlUpdate) {
-            state.editTaskId = null; // Close edit modal state on normal view switch
+            state.editTaskId = null;
             updateURL();
         }
 
@@ -859,7 +916,7 @@ const app={
     filterTasksByUser:(uid)=>{ 
         state.filterUser=uid; 
         state.keepFilter=true; 
-        app.setView('tasks'); // updateURL is called within setView
+        app.setView('tasks');
     },
     viewAsUser:(uid)=>{ window.open(`application?uid=${uid}`,'_blank'); },
     clearTaskFilter:()=>{ 
@@ -920,6 +977,81 @@ const app={
         }
     },
     
+    // --- Profile Management ---
+    toggleUserProfileModal: (uid = null) => {
+        const modal = document.getElementById('user-profile-modal');
+        if (modal.classList.contains('hidden')) {
+            const u = state.usersMap[uid];
+            if (!u) return;
+
+            document.getElementById('modal-user-uid').value = uid;
+            document.getElementById('modal-input-name').value = u.name || '';
+            document.getElementById('modal-input-email').value = u.email || '';
+            document.getElementById('modal-input-photo').value = u.avatar || '';
+            
+            document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
+            document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
+            document.getElementById('modal-user-provider').innerText = u.provider.toUpperCase();
+
+            const avatarContainer = document.getElementById('modal-user-avatar');
+            if (u.avatar) {
+                avatarContainer.innerHTML = `<img src="${u.avatar}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                avatarContainer.innerHTML = (u.name || u.email || '?').charAt(0).toUpperCase();
+                avatarContainer.style.background = 'linear-gradient(to bottom right, var(--info), #8b5cf6)';
+            }
+
+            // Setup Reset Password button event
+            const resetBtn = document.getElementById('btn-reset-password');
+            resetBtn.onclick = () => app.triggerPasswordReset(u.email);
+
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.style.opacity = '1', 10);
+        } else {
+            modal.style.opacity = '0';
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    },
+
+    handleSaveUserProfile: async (e) => {
+        e.preventDefault();
+        const uid = document.getElementById('modal-user-uid').value;
+        const btn = document.getElementById('modal-save-profile-btn');
+        btn.innerText = 'Saving...'; btn.disabled = true;
+
+        const updatedData = {
+            displayName: document.getElementById('modal-input-name').value,
+            email: document.getElementById('modal-input-email').value,
+            photoURL: document.getElementById('modal-input-photo').value,
+            updatedAt: serverTimestamp()
+        };
+
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', uid), updatedData);
+            log(`<span style="color:var(--success)">Profile updated for user ${uid}</span>`);
+            app.toggleUserProfileModal();
+            app.refreshData(true);
+        } catch (err) {
+            alert('Failed to update profile: ' + err.message);
+        } finally {
+            btn.innerText = 'Save Profile Data'; btn.disabled = false;
+        }
+    },
+
+    triggerPasswordReset: async (email) => {
+        if (!email) return alert("User has no email address on file.");
+        if (!confirm(`Send password reset email to ${email}?`)) return;
+        
+        try {
+            await sendPasswordResetEmail(auth, email);
+            log(`<span style="color:var(--info)">Password reset email sent to ${email}</span>`);
+            alert(`Password reset link sent to ${email}`);
+        } catch (error) {
+            alert('Error sending reset email: ' + error.message);
+            log(`<span style="color:var(--danger)">Reset Error: ${error.message}</span>`);
+        }
+    },
+
     // --- Task Moderation ---
     toggleAdminTaskModal: (taskId = null, uid = null, skipUrlUpdate = false) => {
         const modal = document.getElementById('admin-task-modal');
@@ -1238,8 +1370,9 @@ function renderUsersTable(){
             <td style="color: var(--text-muted); font-size: 0.75rem;">${last}</td>
             <td style="text-align: right;">
                 <div class="flex items-center justify-end" style="gap: 0.5rem;">
-                    <button onclick="app.viewAsUser('${u.uid}')" class="btn text-xs" style="background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);" title="Simulate User View"><i class="ph-bold ph-app-window" style="margin-right: 4px;"></i> View App</button>
-                    <button onclick="app.filterTasksByUser('${u.uid}')" class="btn btn-outline text-xs"><i class="ph-bold ph-list-magnifying" style="margin-right: 4px;"></i> View Tasks</button>
+                    <button onclick="app.toggleUserProfileModal('${u.uid}')" class="btn text-xs" style="background: var(--bg-card); color: #fff; border: 1px solid var(--border);"><i class="ph-bold ph-user-gear" style="margin-right: 4px;"></i> Manage</button>
+                    <button onclick="app.viewAsUser('${u.uid}')" class="btn btn-icon text-xs text-brand hover:text-brand" style="background: var(--brand-dim); border: 1px solid rgba(255,87,87,0.2);" title="Simulate User View"><i class="ph-bold ph-app-window text-sm"></i></button>
+                    <button onclick="app.filterTasksByUser('${u.uid}')" class="btn btn-icon btn-outline text-xs" title="View Tasks"><i class="ph-bold ph-list-magnifying text-sm"></i></button>
                 </div>
             </td>
         </tr>`;
