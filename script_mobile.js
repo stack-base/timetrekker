@@ -652,45 +652,16 @@ const app = {
             if(tab === 'analytics') view.classList.add('animate-slide-up');
         }
         
-        // Liquid Glide Logic
-        const tabs = ['tasks', 'timer', 'analytics', 'settings'];
-        const index = tabs.indexOf(tab);
-        const indicator = document.getElementById('nav-indicator');
-        
-        if (indicator) {
-            // Apply fluid stretch effect
-            indicator.classList.add('stretch');
-            // Calculate center position (25% per tab width)
-            indicator.style.left = `calc(${12.5 + (index * 25)}% - 24px)`;
-            // Remove stretch as it settles into place
-            setTimeout(() => indicator.classList.remove('stretch'), 200);
-        }
-
-        // Animate inactive tabs down & hide text
         document.querySelectorAll('.nav-item').forEach(el => {
-            el.className = `nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors duration-300`;
-            const icon = el.querySelector('i');
-            const text = el.querySelector('span');
-            if (icon) {
-                icon.classList.remove('ph-fill');
-                icon.classList.add('ph-bold');
-                icon.style.transform = 'translateY(0)';
-            }
-            if (text) text.style.opacity = '0';
+            el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
+            el.querySelector('i').classList.remove('ph-fill');
+            el.querySelector('i').classList.add('ph-bold');
         });
-
-        // Animate active tab up & reveal text
-        const activeBtn = document.getElementById(`tab-${tab}`);
+        const activeBtn = $(`tab-${tab}`);
         if(activeBtn) {
-            activeBtn.className = `nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-white transition-colors duration-300`;
-            const icon = activeBtn.querySelector('i');
-            const text = activeBtn.querySelector('span');
-            if (icon) {
-                icon.classList.remove('ph-bold');
-                icon.classList.add('ph-fill');
-                icon.style.transform = 'translateY(-4px)';
-            }
-            if (text) text.style.opacity = '1';
+            activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors`;
+            activeBtn.querySelector('i').classList.remove('ph-bold');
+            activeBtn.querySelector('i').classList.add('ph-fill');
         }
 
         const isTask = tab === 'tasks';
@@ -1764,30 +1735,13 @@ const app = {
         if($('timer-display')) $('timer-display').textContent = `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}`;
         if($('timer-mode')) {
             $('timer-mode').textContent = mode === 'focus' ? 'FOCUS' : mode === 'short' ? 'SHORT BREAK' : 'LONG BREAK';
-            $('timer-mode').className = `text-[10px] font-bold tracking-[0.2em] uppercase mt-2 ${mode==='focus'?'text-brand':'text-blue-500'}`;
+            $('timer-mode').className = `text-xs font-bold tracking-widest uppercase mt-3 ${mode==='focus'?'text-brand':'text-blue-500'}`;
         }
         
-        // Note: Multiplier changed to 289 to match the new r="46" SVG path length
-        const offset = 289 * (1 - (s / (totalDuration || 1)));
+        const offset = 283 * (1 - (s / (totalDuration || 1)));
         if($('timer-progress')) {
             $('timer-progress').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
             $('timer-progress').style.stroke = mode === 'focus' ? '#ff5757' : '#3b82f6';
-        }
-
-        // Handle Background Glow State
-        const tGlow = $('timer-glow');
-        const tGlow2 = $('timer-glow-2');
-        if (tGlow && tGlow2) {
-            const glowColor = mode === 'focus' ? 'bg-brand/5' : 'bg-blue-500/5';
-            const glowColor2 = mode === 'focus' ? 'bg-brand/10' : 'bg-blue-500/10';
-            
-            if (status === 'running') {
-                tGlow.className = `absolute inset-0 rounded-full scale-[1.15] blur-xl transition-all duration-1000 animate-pulse-slow opacity-100 ${glowColor}`;
-                tGlow2.className = `absolute inset-0 rounded-full scale-[1.05] blur-md transition-all duration-1000 opacity-100 ${glowColor2}`;
-            } else {
-                tGlow.className = `absolute inset-0 rounded-full scale-[1.15] blur-xl transition-all duration-1000 opacity-0 ${glowColor}`;
-                tGlow2.className = `absolute inset-0 rounded-full scale-[1.05] blur-md transition-all duration-1000 opacity-0 ${glowColor2}`;
-            }
         }
 
         if(taskId && mode === 'focus') {
@@ -1805,17 +1759,12 @@ const app = {
             if($('focus-empty')) { 
                 $('focus-empty').classList.remove('hidden'); 
                 const breakType = mode === 'short' ? 'Short Break' : 'Long Break';
-                $('focus-empty').innerHTML = `<span class="text-blue-500 font-bold tracking-[0.2em] uppercase text-sm block mb-2">${breakType}</span><span class="text-xs text-text-muted font-medium">Time to rest your mind</span>`; 
-                $('focus-empty').className = "flex flex-col items-center justify-center w-full max-w-xs mx-auto"; // Reset box styling
+                $('focus-empty').innerHTML = `<span class="text-blue-400 font-bold tracking-wide uppercase text-sm block mb-1">${breakType}</span><span class="text-xs text-text-muted">Time to rest your mind</span>`; 
             }
             if($('focus-active')) $('focus-active').classList.add('hidden');
             document.title = `${m}:${sc.toString().padStart(2,'0')} - Break`;
         } else {
-             if($('focus-empty')) { 
-                 $('focus-empty').classList.remove('hidden'); 
-                 $('focus-empty').innerHTML = `<i class="ph-bold ph-plus-circle text-2xl mb-2 group-active:scale-90 transition-transform"></i><span class="text-sm font-medium">Select a task to focus</span>`; 
-                 $('focus-empty').className = "flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-dark-border text-text-muted hover:border-brand hover:text-brand transition-colors w-full max-w-xs mx-auto group";
-             }
+             if($('focus-empty')) { $('focus-empty').classList.remove('hidden'); $('focus-empty').textContent = "Select a task to focus"; }
              if($('focus-active')) $('focus-active').classList.add('hidden');
              document.title = "TimeTrekker";
         }
@@ -1826,16 +1775,9 @@ const app = {
         saveLocalState(); 
         const audio = $('audio-player');
         if(audio) audio.src = ASSETS.sounds[t];
-        
         ['none','rain','cafe','forest'].forEach(x => {
-            const btn = $(`btn-sound-${x}`);
-            if (btn) {
-                btn.className = x === t 
-                    ? 'w-10 h-10 flex items-center justify-center rounded-xl text-brand bg-brand/10 transition-all' 
-                    : 'w-10 h-10 flex items-center justify-center rounded-xl text-text-muted hover:text-white hover:bg-dark-active transition-all';
-            }
+            if($(`btn-sound-${x}`)) $(`btn-sound-${x}`).className = x===t ? 'text-brand p-1' : 'text-text-muted hover:text-white transition-colors p-1';
         });
-        
         if(state.timer.status === 'running' && t !== 'none') {
             app.unlockAudio(); 
             audio.play().catch(()=>{});
