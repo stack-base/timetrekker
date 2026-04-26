@@ -313,6 +313,7 @@ onAuthStateChanged(auth, u => {
 
         const effectiveUid = getUid();
         const p = $('user-profile-display');
+        
         if (p) {
             p.classList.remove('hidden'); p.classList.add('flex');
             
@@ -320,16 +321,34 @@ onAuthStateChanged(auth, u => {
                 $('user-name-text').textContent = "Simulated User";
                 $('user-email-text').textContent = VIEW_AS_UID;
                 $('user-avatar-initials').textContent = "?";
+                
+                // Use getDoc for a single read to conserve Firebase quota
                 getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
                     if(snap.exists()) {
                         const d = snap.data();
-                        $('user-name-text').textContent = d.displayName || d.name || 'User';
-                        $('user-email-text').textContent = d.email;
-                        if(d.displayName) $('user-avatar-initials').textContent = d.displayName.charAt(0).toUpperCase();
+                        const name = d.displayName || d.name || 'User';
+                        
+                        // Update Text
+                        $('user-name-text').textContent = name;
+                        $('user-email-text').textContent = d.email || VIEW_AS_UID;
+                        if(els.settingsName) els.settingsName.textContent = name;
+                        if(els.settingsEmail) els.settingsEmail.textContent = d.email || VIEW_AS_UID;
+                        
+                        // Inject the profile picture if it exists
+                        if (d.photoURL) {
+                            $('user-avatar-initials').innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded">`;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+                        } else {
+                            // Fallback to initial
+                            const initial = name.charAt(0).toUpperCase();
+                            $('user-avatar-initials').innerHTML = initial;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
+                        }
                     }
                 });
             } else {
-                onSnapshot(doc(db, 'artifacts', APP_ID, 'users', effectiveUid), s => {
+                // Standard User - Also using getDoc to save reads
+                getDoc(doc(db, 'artifacts', APP_ID, 'users', effectiveUid)).then(s => {
                     if (s.exists()) {
                         const d = s.data();
                         const name = d.displayName || u.displayName || u.email.split('@')[0];
@@ -339,24 +358,24 @@ onAuthStateChanged(auth, u => {
                         // Update Text Elements
                         $('user-name-text').textContent = name;
                         $('user-email-text').textContent = email;
-                        els.settingsName.textContent = name;
-                        els.settingsEmail.textContent = email;
+                        if(els.settingsName) els.settingsName.textContent = name;
+                        if(els.settingsEmail) els.settingsEmail.textContent = email;
 
                         // Update Profile Pictures
                         if (pic) {
                             // Inject images with object-cover to fit your existing containers beautifully
                             $('user-avatar-initials').innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded">`;
-                            els.settingsAvatar.innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
                         } else {
-                            // Fallback to text initials if the photo URL is cleared via Orion
+                            // Fallback to text initials
                             const initial = name.charAt(0).toUpperCase();
                             $('user-avatar-initials').innerHTML = initial;
-                            els.settingsAvatar.innerHTML = initial;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
                         }
                     }
                 });
             }
-        }
+        } // <--- This was the missing closing bracket causing the error!
 
         subTasks(effectiveUid);
         subLogs(effectiveUid);

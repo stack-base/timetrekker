@@ -280,33 +280,48 @@ onAuthStateChanged(auth, u => {
             if($('settings-name')) $('settings-name').textContent = "Simulated User";
             if($('settings-email')) $('settings-email').textContent = VIEW_AS_UID;
             
+            // Use getDoc for a single read to conserve Firebase quota
             getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
                 if(snap.exists()) {
                     const d = snap.data();
                     const name = d.displayName || d.name || 'User';
+                    
                     if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
                     if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
                     if($('settings-name')) $('settings-name').textContent = name;
                     if($('settings-email')) $('settings-email').textContent = d.email || VIEW_AS_UID;
+                    
                     if (d.photoURL) {
                         if($('header-avatar-img')) { $('header-avatar-img').src = d.photoURL; $('header-avatar-img').classList.remove('hidden'); }
                         if($('settings-avatar-img')) { $('settings-avatar-img').src = d.photoURL; $('settings-avatar-img').classList.remove('hidden'); }
+                    } else {
+                        // Hide image if reverted or empty
+                        if($('header-avatar-img')) { $('header-avatar-img').src = ''; $('header-avatar-img').classList.add('hidden'); }
+                        if($('settings-avatar-img')) { $('settings-avatar-img').src = ''; $('settings-avatar-img').classList.add('hidden'); }
                     }
                 }
             });
         } else {
-            onSnapshot(doc(db, 'artifacts', APP_ID, 'users', effectiveUid), s => {
+            // Standard User - Also using getDoc to save reads
+            getDoc(doc(db, 'artifacts', APP_ID, 'users', effectiveUid)).then(s => {
                 if(s.exists()) {
                     const d = s.data();
-                    const name = d.displayName || u.email.split('@')[0];
+                    const name = d.displayName || u.displayName || u.email.split('@')[0];
                     const pic = d.photoURL;
+                    const email = d.email || u.email; // Uses d.email to pull edited emails correctly
+                    
                     if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
                     if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
                     if($('settings-name')) $('settings-name').textContent = name;
-                    if($('settings-email')) $('settings-email').textContent = d.email || u.email;
+                    if($('settings-email')) $('settings-email').textContent = email;
+                    
                     if (pic) {
                         if($('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
                         if($('settings-avatar-img')) { $('settings-avatar-img').src = pic; $('settings-avatar-img').classList.remove('hidden'); }
+                    } else {
+                        // Hide image if reverted or empty
+                        if($('header-avatar-img')) { $('header-avatar-img').src = ''; $('header-avatar-img').classList.add('hidden'); }
+                        if($('settings-avatar-img')) { $('settings-avatar-img').src = ''; $('settings-avatar-img').classList.add('hidden'); }
                     }
                 }
             });
