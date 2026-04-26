@@ -14,15 +14,18 @@
     :root {
         --brand: #ff5757;
         --brand-hover: #e04848;
-        --brand-dim: rgba(255, 87, 87, 0.1);
+        --brand-dim: rgba(255, 87, 87, 0.15); /* Boosted for better active state visibility */
         --bg-main: #0f0f0f;
         --bg-sidebar: #141414;
         --bg-card: #1e1e1e;
         --border: #2a2a2a;
         --hover: #333333;
-        --text-main: #e5e7eb;
-        --text-muted: #a3a3a3;
-        --text-faint: #525252;
+        
+        /* Typography Visibility Updates */
+        --text-main: #f3f4f6; /* Brighter neutral white */
+        --text-muted: #a1a1aa; /* Warmer, clearer gray */
+        --text-faint: #71717a; /* Lifted significantly to pass contrast checks */
+        
         --success: #10b981;
         --warning: #f59e0b;
         --danger: #ef4444;
@@ -30,7 +33,18 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
+    
+    body { 
+        background-color: var(--bg-main); 
+        color: var(--text-main); 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+        overflow: hidden; 
+        height: 100vh; 
+        width: 100vw; 
+        line-height: 1.5; /* Improved reading rhythm */
+        -webkit-font-smoothing: antialiased; /* Crisp rendering */
+        -moz-osx-font-smoothing: grayscale; 
+    }
     
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -41,8 +55,11 @@
     .text-faint { color: var(--text-faint); }
     .text-danger { color: var(--danger); }
     .font-bold { font-weight: 700; }
-    .text-sm { font-size: 0.875rem; }
-    .text-xs { font-size: 0.75rem; }
+    
+    /* Typography Bumps */
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; } /* Lifted from 0.75rem */
+    
     .hidden { display: none !important; }
     .flex { display: flex; }
     .items-center { align-items: center; }
@@ -74,7 +91,10 @@
     .mobile-close-btn:hover { color: #fff; }
     
     .sidebar-nav { flex: 1; padding: 1rem; overflow-y: auto; }
-    .nav-label { font-size: 0.65rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0.75rem 0.5rem; }
+    
+    /* Adjusted Nav Label for Readability */
+    .nav-label { font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0.75rem 0.5rem; }
+    
     .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; }
     .nav-item i { font-size: 1.125rem; margin-right: 0.75rem; }
     .nav-item:hover { background: var(--hover); color: #fff; }
@@ -93,13 +113,19 @@
     .card-header h3 { font-size: 1.125rem; font-weight: 700; color: #fff; }
     .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
     .card-body.no-pad { padding: 0; }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    
+    /* Adjusted Stat Label */
+    .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    
     .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
     .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
 
     .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { padding: 1rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    
+    /* Improved Table Header Typography */
+    .data-table th { padding: 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
     .data-table tr:hover { background: var(--hover); }
 
@@ -115,7 +141,7 @@
     .modal-box.large { max-width: 500px; padding: 0; overflow: hidden; }
     
     .input-group { margin-bottom: 1rem; }
-    .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
     .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: 'Inter', sans-serif; }
     .input-control:focus { border-color: var(--brand); }
     .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; }
@@ -209,12 +235,12 @@
                 <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
                 <div class="flex items-center" style="gap: 0.75rem;">
                    <h1>Data Management</h1>
-                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: monospace; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">CACHED (0m ago)</span>
+                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">CACHED (0m ago)</span>
                 </div>
             </div>
             <div class="flex items-center" style="gap: 1rem;">
                 <div style="text-align: right;">
-                    <div style="font-size: 10px; font-weight: 700; color: var(--text-faint); text-transform: uppercase;">Last Sync</div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase;">Last Sync</div>
                     <div id="last-sync-time" style="font-family: monospace; color: #fff; font-size: 12px;">--:--:--</div>
                 </div>
                 <button onclick="app.hardRefresh()" class="btn btn-outline text-xs">
@@ -297,7 +323,7 @@
                             </div>
                             <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); margin-top: 1.5rem;">
                                 <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Console Logs</div>
-                                <div id="console-log" style="font-size: 10px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
+                                <div id="console-log" style="font-size: 11px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
                                     > Initializing Orion Console...<br>
                                 </div>
                             </div>
@@ -419,7 +445,7 @@
 
                     <div class="dashboard-grid grid-cols-2">
                         <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
-                            <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 10px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">STORAGE</span>
+                            <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">STORAGE</span>
                             <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
                                 <i class="ph-bold ph-export" style="font-size: 1.5rem;"></i>
                             </div>
@@ -433,7 +459,7 @@
                         </div>
 
                          <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
-                            <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 10px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">RESTORE</span>
+                            <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">RESTORE</span>
                             <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
                                 <i class="ph-bold ph-upload-simple" style="font-size: 1.5rem;"></i>
                             </div>
@@ -466,7 +492,7 @@
                         </div>
                     </div>
                      <div style="display: flex; justify-content: flex-end;">
-                        <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.75rem; font-weight: 700; color: var(--danger); text-transform: uppercase; cursor: pointer; opacity: 0.7;">
+                        <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.8125rem; font-weight: 700; color: var(--danger); text-transform: uppercase; cursor: pointer; opacity: 0.7;">
                             Clear Local Cache & Reset
                         </button>
                     </div>
@@ -596,8 +622,8 @@
                     <div style="min-width: 0;">
                         <div id="modal-user-name-display" class="truncate" style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 4px;">User Name</div>
                         <div id="modal-user-email-display" class="truncate" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 4px;">user@example.com</div>
-                        <div id="modal-user-uid-display" style="font-size: 0.75rem; color: var(--text-faint); margin-bottom: 8px; font-family: monospace;">UID: </div>
-                        <span id="modal-user-provider" style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
+                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 8px; font-family: monospace;">UID: </div>
+                        <span id="modal-user-provider" style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
                     </div>
                 </div>
 
@@ -609,7 +635,7 @@
                     <div class="input-group">
                         <label>Contact Email (Auth Bound)</label>
                         <input type="email" id="modal-input-email" class="input-control" disabled style="opacity: 0.5; cursor: not-allowed;" title="Email is tied to Auth and cannot be edited here.">
-                        <div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;">Email editing is locked to preserve Auth.</div>
+                        <div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;">Email editing is locked to preserve Auth.</div>
                     </div>
                 </div>
 
@@ -622,7 +648,7 @@
                 <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Send a secure Firebase password reset link.</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Send a secure Firebase password reset link.</div>
                     </div>
                     <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3);">
                         <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Email
@@ -632,7 +658,7 @@
                 <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                     <div>
                         <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Restore original display name and photo.</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Restore original display name and photo.</div>
                     </div>
                     <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3);">
                         <i class="ph-bold ph-arrow-counter-clockwise" style="margin-right: 0.5rem;"></i> Revert
@@ -790,7 +816,7 @@ const showLoginModal=()=>{
     const div=document.createElement('div');
     div.id='dev-login-modal';
     div.className='modal-overlay';
-    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.75rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Orion</button></form></div>`;
+    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.8125rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Orion</button></form></div>`;
     document.body.appendChild(div);
     document.getElementById('dev-login-form').onsubmit=async(e)=>{
         e.preventDefault();
@@ -1430,16 +1456,16 @@ function renderUsersTable(){
             <td>${avatarHTML}</td>
             <td>
                 <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${u.name||'No Name'}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">${u.email||'No Email'}</div>
+                <div style="font-size: 0.8125rem; color: var(--text-muted);">${u.email||'No Email'}</div>
             </td>
-            <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted);">${u.provider}</span></td>
+            <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-muted);">${u.provider}</span></td>
             <td>
                 <div class="flex flex-col gap-1">
-                    <span style="font-size: 0.75rem; color: var(--text-muted);"><strong style="color: #fff;">${u.tasks}</strong> tasks</span><br>
-                    <span style="font-size: 0.75rem; color: var(--brand);"><strong style="color: var(--brand);">${h}h ${u.focus%60}m</strong> focus</span>
+                    <span style="font-size: 0.8125rem; color: var(--text-muted);"><strong style="color: #fff;">${u.tasks}</strong> tasks</span><br>
+                    <span style="font-size: 0.8125rem; color: var(--brand);"><strong style="color: var(--brand);">${h}h ${u.focus%60}m</strong> focus</span>
                 </div>
             </td>
-            <td style="color: var(--text-muted); font-size: 0.75rem;">${last}</td>
+            <td style="color: var(--text-muted); font-size: 0.8125rem;">${last}</td>
             <td style="text-align: right;">
                 <div class="flex items-center justify-end" style="gap: 0.5rem;">
                     <button onclick="app.toggleUserProfileModal('${u.uid}')" class="btn btn-outline text-xs" title="Manage Profile"><i class="ph-bold ph-user-gear" style="margin-right: 4px;"></i> Manage</button>
@@ -1504,7 +1530,7 @@ function renderTasksTable(){
         });
         
         sortedKeys.forEach(label=>{
-            html+=`<tr style="background: rgba(20,20,20,0.5);"><td colspan="6" style="padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);">${label}</td></tr>`;
+            html+=`<tr style="background: rgba(20,20,20,0.5);"><td colspan="6" style="padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);">${label}</td></tr>`;
             html+=groups[label].map(t=>generateTaskRowHtml(t)).join('');
         });
     } else {
@@ -1516,16 +1542,19 @@ function renderTasksTable(){
 
 function generateTaskRowHtml(t) {
     const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
+    /* Replaced 10px with 11px */
     const priBadge={
-        high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
-        med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
-        low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
-        none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
+        high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
+        med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
+        low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
+        none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
     }[t.priority||'none'];
     const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedSessionIds?t.completedSessionIds.length:0;
     const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
-    const userTag=!state.filterUser?`<div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
-    const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
+    /* Replaced 10px with 11px */
+    const userTag=!state.filterUser?`<div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
+    /* Replaced 10px with 11px */
+    const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
     
     return `
     <tr class="task-row">
@@ -1533,20 +1562,20 @@ function generateTaskRowHtml(t) {
         <td style="vertical-align: top;">
             <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${t.title||'Untitled'}</div>${subHtml}
             <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
-                <span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 10px; color: var(--text-muted);">${t.project||'Inbox'}</span>
+                <span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 11px; color: var(--text-muted);">${t.project||'Inbox'}</span>
                 ${userTag}
             </div>
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td>
         <td style="vertical-align: top; padding-top: 1.25rem;">
-            <div style="font-size: 0.75rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
+            <div style="font-size: 0.8125rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
             <div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div>
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div>
+            <div style="font-size: 0.8125rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div>
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
-            <div style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace; margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
+            <div style="color: var(--text-muted); font-size: 0.8125rem; font-family: monospace; margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
             <div class="flex items-center justify-end gap-1">
                 <button onclick="app.toggleAdminTaskModal('${t.id}', '${t._uid}')" class="btn btn-icon text-xs"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                 <button onclick="app.deleteAdminTask('${t.id}', '${t._uid}')" class="btn btn-icon text-xs text-danger hover:text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
@@ -1578,22 +1607,25 @@ function renderBroadcastsTable(){
     tbody.innerHTML=sortedBroadcasts.map(b=>{
         const d = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleString() : 'Just now';
         
+        /* Replaced 10px with 11px */
         let typeBadge = '';
-        if(b.type === 'info') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">INFO</span>`;
-        else if(b.type === 'warning') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">WARNING</span>`;
-        else if(b.type === 'alert') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">ALERT</span>`;
-        else typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">SUCCESS</span>`;
+        if(b.type === 'info') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">INFO</span>`;
+        else if(b.type === 'warning') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">WARNING</span>`;
+        else if(b.type === 'alert') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">ALERT</span>`;
+        else typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">SUCCESS</span>`;
 
         let targetLbl = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name || state.usersMap[b.target].email : b.target);
         const icon = b.type === 'alert' ? 'ph-warning-circle' : 'ph-megaphone';
 
         const reads = b.readBy ? b.readBy.length : 0;
         const isExpired = b.expiresAt && new Date(b.expiresAt) < new Date();
+        /* Replaced 10px with 11px */
         const statusBadge = isExpired 
-            ? `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">EXPIRED</span>` 
-            : `<span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">ACTIVE</span>`;
+            ? `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">EXPIRED</span>` 
+            : `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">ACTIVE</span>`;
 
-        let btnIndicator = b.btnText ? `<div style="font-size:10px; color:var(--brand); margin-top:4px;"><i class="ph-bold ph-link"></i> ${b.btnText}</div>` : '';
+        /* Replaced 10px with 11px */
+        let btnIndicator = b.btnText ? `<div style="font-size:11px; color:var(--brand); margin-top:4px;"><i class="ph-bold ph-link"></i> ${b.btnText}</div>` : '';
 
         return `
         <tr>
@@ -1603,14 +1635,14 @@ function renderBroadcastsTable(){
                 ${btnIndicator}
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem;">
-                <span style="color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">${targetLbl}</span>
+                <span style="color: var(--text-muted); font-size: 0.8125rem; font-family: monospace;">${targetLbl}</span>
                 <div style="margin-top: 8px;">${typeBadge}</div>
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem;">
                 <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
                     ${statusBadge}
-                    <div style="font-size:10px; color:var(--text-muted);"><i class="ph-bold ph-eye"></i> <strong style="color:#fff;">${reads}</strong> views</div>
-                    <span style="color: var(--text-faint); font-size: 0.65rem;">Sent: ${d}</span>
+                    <div style="font-size:11px; color:var(--text-muted);"><i class="ph-bold ph-eye"></i> <strong style="color:#fff;">${reads}</strong> views</div>
+                    <span style="color: var(--text-faint); font-size: 0.75rem;">Sent: ${d}</span>
                 </div>
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
