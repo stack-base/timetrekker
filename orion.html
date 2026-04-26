@@ -591,11 +591,12 @@
             <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
                 
                 <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 2rem;">
-                    <div id="modal-user-avatar" style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-main); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: #fff; overflow: hidden;">
-                        </div>
-                    <div>
-                        <div id="modal-user-name-display" style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 4px;">User Name</div>
-                        <div id="modal-user-email-display" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 8px;">user@example.com</div>
+                    <div id="modal-user-avatar" style="width: 120px; height: 120px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; color: #fff; overflow: hidden;">
+                    </div>
+                    <div style="min-width: 0;">
+                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 4px;">User Name</div>
+                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 4px;">user@example.com</div>
+                        <div id="modal-user-uid-display" style="font-size: 0.75rem; color: var(--text-faint); margin-bottom: 8px; font-family: monospace;">UID: </div>
                         <span id="modal-user-provider" style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
                     </div>
                 </div>
@@ -606,9 +607,9 @@
                         <input type="text" id="modal-input-name" class="input-control" required>
                     </div>
                     <div class="input-group">
-                        <label>Contact Email (Firestore)</label>
-                        <input type="email" id="modal-input-email" class="input-control" required>
-                        <div style="font-size: 10px; color: var(--warning); margin-top: 4px;"><i class="ph-fill ph-warning-circle"></i> Does not change login email.</div>
+                        <label>Contact Email (Auth Bound)</label>
+                        <input type="email" id="modal-input-email" class="input-control" disabled style="opacity: 0.5; cursor: not-allowed;" title="Email is tied to Auth and cannot be edited here.">
+                        <div style="font-size: 10px; color: var(--text-faint); margin-top: 4px;">Email editing is locked to preserve Auth.</div>
                     </div>
                 </div>
 
@@ -991,6 +992,7 @@ const app={
             
             document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
             document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
+            document.getElementById('modal-user-uid-display').innerText = `UID: ${uid}`;
             document.getElementById('modal-user-provider').innerText = u.provider.toUpperCase();
 
             const avatarContainer = document.getElementById('modal-user-avatar');
@@ -1021,7 +1023,6 @@ const app={
 
         const updatedData = {
             displayName: document.getElementById('modal-input-name').value,
-            email: document.getElementById('modal-input-email').value,
             photoURL: document.getElementById('modal-input-photo').value,
             updatedAt: serverTimestamp()
         };
