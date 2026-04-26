@@ -652,16 +652,45 @@ const app = {
             if(tab === 'analytics') view.classList.add('animate-slide-up');
         }
         
+        // Liquid Glide Logic
+        const tabs = ['tasks', 'timer', 'analytics', 'settings'];
+        const index = tabs.indexOf(tab);
+        const indicator = document.getElementById('nav-indicator');
+        
+        if (indicator) {
+            // Apply fluid stretch effect
+            indicator.classList.add('stretch');
+            // Calculate center position (25% per tab width)
+            indicator.style.left = `calc(${12.5 + (index * 25)}% - 24px)`;
+            // Remove stretch as it settles into place
+            setTimeout(() => indicator.classList.remove('stretch'), 200);
+        }
+
+        // Animate inactive tabs down & hide text
         document.querySelectorAll('.nav-item').forEach(el => {
-            el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
-            el.querySelector('i').classList.remove('ph-fill');
-            el.querySelector('i').classList.add('ph-bold');
+            el.className = `nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors duration-300`;
+            const icon = el.querySelector('i');
+            const text = el.querySelector('span');
+            if (icon) {
+                icon.classList.remove('ph-fill');
+                icon.classList.add('ph-bold');
+                icon.style.transform = 'translateY(0)';
+            }
+            if (text) text.style.opacity = '0';
         });
-        const activeBtn = $(`tab-${tab}`);
+
+        // Animate active tab up & reveal text
+        const activeBtn = document.getElementById(`tab-${tab}`);
         if(activeBtn) {
-            activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors`;
-            activeBtn.querySelector('i').classList.remove('ph-bold');
-            activeBtn.querySelector('i').classList.add('ph-fill');
+            activeBtn.className = `nav-item relative z-10 flex flex-col items-center justify-center w-full h-full text-white transition-colors duration-300`;
+            const icon = activeBtn.querySelector('i');
+            const text = activeBtn.querySelector('span');
+            if (icon) {
+                icon.classList.remove('ph-bold');
+                icon.classList.add('ph-fill');
+                icon.style.transform = 'translateY(-4px)';
+            }
+            if (text) text.style.opacity = '1';
         }
 
         const isTask = tab === 'tasks';
