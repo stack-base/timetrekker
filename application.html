@@ -56,6 +56,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+<script>
+    // Global Chart.js Typography & Contrast Fixes
+    Chart.defaults.color = '#a1a1aa'; // Matches your var(--text-muted)
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 13; // Bumped baseline size
+    
+    // Tooltip readability
+    Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold', family: 'Inter' };
+    Chart.defaults.plugins.tooltip.bodyFont = { size: 13, family: 'Inter' };
+    Chart.defaults.plugins.tooltip.padding = 12;
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(26, 26, 26, 0.95)'; // dark-hover background
+    
+    // Gridline contrast
+    Chart.defaults.scale.grid.color = '#333333'; // Matches your var(--dark-border)
+</script>
 <script type="module" src="script_desktop.js" defer></script>
 
 <style>
@@ -290,59 +305,59 @@
             </div>
             
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex flex-col justify-between">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Total Focus</div>
                     <div class="text-2xl font-bold text-brand" id="ana-time-total">0h</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex flex-col justify-between">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">This Week</div>
                     <div class="text-2xl font-bold text-brand" id="ana-time-week">0m</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex flex-col justify-between">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Today</div>
                     <div class="text-2xl font-bold text-brand" id="ana-time-today">0m</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex flex-col justify-between">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Total Tasks</div>
                     <div class="text-2xl font-bold text-blue-500" id="ana-task-total">0</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex flex-col justify-between">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Week Tasks</div>
                     <div class="text-2xl font-bold text-blue-500" id="ana-task-week">0</div>
                 </div>
-                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5 flex flex-col justify-between">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Today Tasks</div>
                     <div class="text-2xl font-bold text-blue-500" id="ana-task-today">0</div>
                 </div>
-                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Completion %</div>
                     <div class="text-xl font-bold text-green-500" id="ana-completion-rate">0%</div>
-                    <div class="text-tiny text-text-faint mt-1">(Completed Tasks / Total Active Tasks)</div>
+                    <div class="text-xs text-text-faint mt-1.5 leading-snug">Completed vs Active Tasks</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Avg Session</div>
                     <div class="text-xl font-bold text-white" id="ana-avg-session">0m</div>
-                    <div class="text-tiny text-text-faint mt-1">Average duration of completed pomodoros</div>
+                    <div class="text-xs text-text-faint mt-1.5 leading-snug">Avg. duration of completed pomos</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Morning Focus</div>
                     <div class="text-xl font-bold text-yellow-500" id="ana-early-bird">0h</div>
-                    <div class="text-tiny text-text-faint mt-1">Before 12 PM</div>
+                    <div class="text-xs text-text-faint mt-1.5 leading-snug">Focus logged before 12 PM</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Night Focus</div>
                     <div class="text-xl font-bold text-indigo-400" id="ana-night-owl">0h</div>
-                    <div class="text-tiny text-text-faint mt-1">After 8 PM</div>
+                    <div class="text-xs text-text-faint mt-1.5 leading-snug">Focus logged after 8 PM</div>
                 </div>
                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Best Streak</div>
                     <div class="text-xl font-bold text-purple-500" id="ana-streak-days">0 Days</div>
-                    <div class="text-tiny text-text-faint mt-1">Consecutive days with at least 1 focus session</div>
+                    <div class="text-xs text-text-faint mt-1.5 leading-snug">Consecutive days with focus</div>
                 </div>
-                 <div class="bg-dark-card border border-dark-border rounded-lg p-5">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-5">
                     <div class="text-xs text-text-muted font-bold uppercase tracking-wider mb-2">Projects</div>
                     <div class="text-xl font-bold text-white" id="ana-project-count">0</div>
-                    <div class="text-tiny text-text-faint mt-1">Active projects</div>
+                    <div class="text-xs text-text-faint mt-1.5 leading-snug">Total active projects</div>
                 </div>
             </div>
 
