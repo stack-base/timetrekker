@@ -628,6 +628,16 @@
                         <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Email
                     </button>
                 </div>
+                
+                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                    <div>
+                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Restore original display name and photo.</div>
+                    </div>
+                    <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3);">
+                        <i class="ph-bold ph-arrow-counter-clockwise" style="margin-right: 0.5rem;"></i> Revert
+                    </button>
+                </div>
 
                 <input type="hidden" id="modal-user-uid">
             </div>
@@ -643,7 +653,7 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
@@ -1007,6 +1017,18 @@ const app={
             const resetBtn = document.getElementById('btn-reset-password');
             resetBtn.onclick = () => app.triggerPasswordReset(u.email);
 
+            // Setup Revert Profile button state
+            const revertBtn = document.getElementById('btn-revert-profile');
+            if (u.originalProfile) {
+                revertBtn.disabled = false;
+                revertBtn.style.opacity = '1';
+                revertBtn.style.cursor = 'pointer';
+            } else {
+                revertBtn.disabled = true;
+                revertBtn.style.opacity = '0.5';
+                revertBtn.style.cursor = 'not-allowed';
+            }
+
             modal.classList.remove('hidden');
             setTimeout(() => modal.style.opacity = '1', 10);
         } else {
@@ -1018,6 +1040,7 @@ const app={
     handleSaveUserProfile: async (e) => {
         e.preventDefault();
         const uid = document.getElementById('modal-user-uid').value;
+        const u = state.usersMap[uid];
         const btn = document.getElementById('modal-save-profile-btn');
         btn.innerText = 'Saving...'; btn.disabled = true;
 
@@ -1026,6 +1049,13 @@ const app={
             photoURL: document.getElementById('modal-input-photo').value,
             updatedAt: serverTimestamp()
         };
+
+        if (!u.originalProfile) {
+            updatedData.originalProfile = {
+                displayName: u.name || '',
+                photoURL: u.avatar || ''
+            };
+        }
 
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'users', uid), updatedData);
@@ -1036,6 +1066,35 @@ const app={
             alert('Failed to update profile: ' + err.message);
         } finally {
             btn.innerText = 'Save Profile Data'; btn.disabled = false;
+        }
+    },
+
+    handleRevertProfile: async () => {
+        const uid = document.getElementById('modal-user-uid').value;
+        const u = state.usersMap[uid];
+        
+        if (!u || !u.originalProfile) return;
+        if (!confirm('Are you sure you want to revert this user to their original profile?')) return;
+
+        const btn = document.getElementById('btn-revert-profile');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Reverting...'; btn.disabled = true;
+
+        const revertData = {
+            displayName: u.originalProfile.displayName || '',
+            photoURL: u.originalProfile.photoURL || '',
+            originalProfile: deleteField(),
+            updatedAt: serverTimestamp()
+        };
+
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', uid), revertData);
+            log(`<span style="color:var(--success)">Profile reverted to original for user ${uid}</span>`);
+            app.toggleUserProfileModal();
+            app.refreshData(true);
+        } catch (err) {
+            alert('Failed to revert profile: ' + err.message);
+            btn.innerHTML = originalText; btn.disabled = false;
         }
     },
 
@@ -1316,7 +1375,19 @@ window.app=app;
 
 function processUsers(){
     const map={};
-    state.usersList.forEach(u=>{ map[u.id]={ uid:u.id, name:u.displayName||u.name||u.email.split('@')[0], email:u.email, avatar:u.photoURL, provider:u.providerId||'Unknown', tasks:0, focus:0, lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0, profileLoaded:true }; });
+    state.usersList.forEach(u=>{ 
+        map[u.id]={ 
+            uid:u.id, 
+            name:u.displayName||u.name||u.email.split('@')[0], 
+            email:u.email, 
+            avatar:u.photoURL, 
+            provider:u.providerId||'Unknown', 
+            tasks:0, focus:0, 
+            lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0, 
+            profileLoaded:true,
+            originalProfile: u.originalProfile || null
+        }; 
+    });
     state.tasks.forEach(t=>{ if(!map[t._uid])map[t._uid]={uid:t._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:t._uid}; map[t._uid].tasks++; });
     state.sessions.forEach(s=>{
         if(!map[s._uid])map[s._uid]={uid:s._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:s._uid};
