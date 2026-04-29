@@ -461,12 +461,14 @@ const startTimerLoop = () => {
         app.updateTimerUI();
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
-    if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-3xl ml-1";
+    // Updated: Changed from text-3xl to text-2xl and adjusted margin for the pause icon
+    if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-2xl ml-0.5";
 };
 
 const stopTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
-    if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-3xl ml-1";
+    // Updated: Changed from text-3xl to text-2xl
+    if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-2xl ml-1";
 };
 
 document.addEventListener("visibilitychange", () => {
