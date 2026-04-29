@@ -222,10 +222,7 @@ const getEls = () => ({
     currentDate: $('current-date-display'), sidebarOverlay: $('sidebar-overlay'), sidebar: $('sidebar'), headerActions: $('header-actions'),
     settingsModal: $('global-settings-modal'), settingsPanel: $('settings-panel'), settingsTitle: $('settings-view-title'),
     strictToggle: $('strict-mode-toggle'), settingsAvatar: $('settings-avatar'), settingsName: $('settings-name'), settingsEmail: $('settings-email'),
-    taskPomoDisplay: $('task-pomo-display'), totalTimeCalc: $('total-time-calc'), taskRepeat: $('task-repeat'), taskReminder: $('task-reminder'),
-    aiSummaryContainer: $('ai-summary-container'),
-    aiGreeting: $('ai-greeting'),
-    aiSummaryText: $('ai-summary-text')
+    taskPomoDisplay: $('task-pomo-display'), totalTimeCalc: $('total-time-calc'), taskRepeat: $('task-repeat'), taskReminder: $('task-reminder')
 });
 
 if (typeof Chart !== 'undefined') {
@@ -1435,65 +1432,6 @@ $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null)); $
 function updateNavStyles(v, p) { D.querySelectorAll('.nav-btn').forEach(b => { const i = b.id === `nav-${v}`; b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-brand', i); b.classList.toggle('text-text-muted', !i); if (i) b.classList.remove('hover:text-white'); else b.classList.add('hover:text-white') }); D.querySelectorAll('.project-btn').forEach(b => { const i = v === 'project' && b.dataset.proj === p; b.classList.toggle('text-brand', i); b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-text-muted', !i) }) }
 function updateProjectsUI() { const els = getEls(); els.projectList.innerHTML = ''; state.projects.forEach(p => { const d = D.createElement('div'); d.innerHTML = `<div class="group relative flex items-center"><button onclick="app.setProjectView('${esc(p)}')" data-proj="${esc(p)}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${esc(p)}</span></div></button><div class="absolute right-2 flex opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${esc(p)}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${esc(p)}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`; els.projectList.appendChild(d) }) }
 
-function updateAISummary() {
-    const els = getEls();
-    if (!els.aiSummaryContainer) return;
-
-    if (state.view !== 'today') {
-        els.aiSummaryContainer.classList.add('hidden');
-        return;
-    }
-    
-    // Only show if we have successfully fetched tasks/user data
-    els.aiSummaryContainer.classList.remove('hidden');
-
-    const now = getISTNow();
-    const hr = now.getHours();
-    let greeting = 'Good Evening';
-    if (hr < 12) greeting = 'Good Morning';
-    else if (hr < 17) greeting = 'Good Afternoon';
-
-    // Extract first name for a personalized touch
-    const nameText = $('user-name-text').textContent || 'User';
-    const name = (nameText === 'Simulated User' || nameText === 'User') ? '' : nameText.split(' ')[0];
-    
-    els.aiGreeting.textContent = `${greeting}${name ? ', ' + name : ''}!`;
-
-    const getDayStr = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    const t = getDayStr(now);
-
-    const todayTasks = state.tasks.filter(x => x.dueDate === t && x.status === 'todo');
-    const pastTasks = state.tasks.filter(x => x.dueDate < t && x.status === 'todo');
-
-    let totalMin = 0;
-    todayTasks.forEach(x => { 
-        totalMin += (parseInt(x.estimatedPomos) || 1) * (parseInt(x.pomoDuration) || 25); 
-    });
-    
-    const fmt = m => { 
-        const h = Math.floor(m / 60), rm = m % 60; 
-        return h > 0 ? `${h}h ${rm}m` : `${rm}m`; 
-    };
-
-    let text = '';
-    
-    if (todayTasks.length === 0) {
-        text += `Your schedule is completely clear for today. `;
-    } else {
-        text += `You have <strong class="text-white font-bold">${todayTasks.length} task${todayTasks.length > 1 ? 's' : ''}</strong> on your plate today, requiring about <strong class="text-white font-bold">${fmt(totalMin)}</strong> of focus. `;
-    }
-
-    if (pastTasks.length > 0) {
-        text += `You also have <strong class="text-red-400 font-bold">${pastTasks.length} leftover task${pastTasks.length > 1 ? 's' : ''}</strong> from previous days to catch up on.`;
-    } else if (todayTasks.length > 0) {
-        text += `You're all caught up on past tasks. Let's crush today's goals!`;
-    } else {
-        text += `Take some time to rest or plan ahead.`;
-    }
-
-    els.aiSummaryText.innerHTML = text;
-}
-
 function updateCounts() {
     const els = getEls();
     const getDayStr = (dParam) => {
@@ -1527,8 +1465,6 @@ function updateCounts() {
 
     const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
     els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
-
-    updateAISummary();
 }
 
 function renderTasks() {
