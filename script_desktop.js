@@ -1496,10 +1496,10 @@ function renderTasks() {
             none: 'text-text-muted bg-white/10 border-white/10'
         };
         
-        // Lighter Backgrounds: 8% white default, 12% on hover/selected
+        // Refined Glassmorphism: 6% white default, 10% on hover/selected
         const sty = isSel 
-            ? 'bg-white/[0.12] border-brand/60 shadow-[0_0_20px_rgba(255,87,87,0.2)] ring-1 ring-brand/50' 
-            : 'bg-white/[0.08] border-white/[0.15] hover:bg-white/[0.12] hover:border-white/30 hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md';
+            ? 'bg-white/[0.10] border-brand/60 shadow-[0_0_20px_rgba(255,87,87,0.2)] ring-1 ring-brand/50' 
+            : 'bg-white/[0.06] border-white/[0.15] hover:bg-white/[0.10] hover:border-white/30 hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md';
         
         const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
         const fmt = m => { const h = Math.floor(m / 60), rm = m % 60; return h > 0 ? `${h}h ${rm}m` : `${rm}m` };
