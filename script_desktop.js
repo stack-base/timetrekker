@@ -1488,24 +1488,23 @@ function renderTasks() {
         const isSel = x.id === state.selectedTaskId;
         const pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100);
         
-        // Priority styling with soft, luminous backgrounds
+        // Boosted priority colors for higher visibility
         const prioColors = {
-            high: 'text-red-400 bg-red-500/10 border-red-500/20',
-            med: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-            low: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-            none: 'text-text-faint bg-dark-hover border-dark-border'
+            high: 'text-red-400 bg-red-500/10 border-red-500/30',
+            med: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
+            low: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+            none: 'text-text-muted bg-white/5 border-white/10'
         };
         
-        // Liquid glass interaction states
+        // Increased base background opacity and border strength to distinguish cards from the main background
         const sty = isSel 
-            ? 'bg-white/[0.06] border-white/20 shadow-[0_0_20px_rgba(255,87,87,0.1)] ring-1 ring-brand/40' 
-            : 'bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.04] hover:border-white/[0.1] hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md';
+            ? 'bg-white/[0.08] border-brand/50 shadow-[0_0_20px_rgba(255,87,87,0.15)] ring-1 ring-brand/50' 
+            : 'bg-white/[0.04] border-white/10 hover:bg-white/[0.08] hover:border-white/20 hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md';
         
         const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
         const fmt = m => { const h = Math.floor(m / 60), rm = m % 60; return h > 0 ? `${h}h ${rm}m` : `${rm}m` };
         
         const el = D.createElement('div');
-        // Custom easing curve for that system-native smooth spring feel
         el.className = `group flex flex-col p-5 rounded-2xl border transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer relative overflow-hidden ${sty}`; 
         el.onclick = () => app.selectTask(x.id);
         
@@ -1514,60 +1513,62 @@ function renderTasks() {
                 
                 <label class="flex-shrink-0 mt-0.5 cursor-pointer relative z-10" onclick="event.stopPropagation()">
                     <input type="checkbox" class="peer sr-only" ${x.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')">
-                    <div class="w-[22px] h-[22px] rounded-full border-2 border-text-faint peer-checked:border-brand peer-checked:bg-brand flex items-center justify-center transition-all duration-300 hover:border-white">
-                        <svg class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-300 scale-50 peer-checked:scale-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    <div class="w-6 h-6 rounded-full border-2 border-text-muted peer-checked:border-brand peer-checked:bg-brand flex items-center justify-center transition-all duration-300 hover:border-white hover:bg-white/5 peer-checked:hover:bg-brand-hover shadow-sm">
+                        <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-300 scale-50 peer-checked:scale-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                 </label>
                 
                 <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1 min-w-0">
-                            <h3 class="text-[15px] font-semibold text-white tracking-tight truncate transition-colors duration-300 ${x.status === 'done' ? 'line-through text-text-faint' : ''}">${esc(x.title)}</h3>
+                            <h3 class="text-base font-bold text-white tracking-tight truncate transition-colors duration-300 ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3>
                         </div>
                         
-                        <div class="flex-shrink-0 flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 z-20 translate-x-2 lg:group-hover:translate-x-0 bg-black/60 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-lg">
-                            <button onclick="app.startTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white bg-brand rounded-full hover:scale-105 hover:shadow-[0_0_12px_rgba(255,87,87,0.5)] transition-all" title="Focus"><i class="ph-fill ph-play text-xs"></i></button>
-                            <button onclick="app.editTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-text-muted hover:text-white hover:bg-white/10 rounded-full transition-all" title="Edit"><i class="ph-bold ph-pencil-simple text-xs"></i></button>
-                            <button onclick="app.deleteTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all" title="Delete"><i class="ph-bold ph-trash text-xs"></i></button>
+                        <div class="flex-shrink-0 flex items-center gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 z-20 translate-x-2 lg:group-hover:translate-x-0 bg-dark-bg/90 backdrop-blur-xl rounded-full p-1.5 border border-white/20 shadow-lg">
+                            <button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-white bg-brand rounded-full hover:scale-105 hover:shadow-[0_0_15px_rgba(255,87,87,0.5)] transition-all" title="Focus"><i class="ph-fill ph-play text-sm"></i></button>
+                            <button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-all" title="Edit"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                            <button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-full transition-all" title="Delete"><i class="ph-bold ph-trash text-sm"></i></button>
                         </div>
                     </div>
                     
-                    ${x.note ? `<p class="text-[13px] text-text-muted mt-1 line-clamp-2 leading-relaxed font-light pr-4">${esc(x.note)}</p>` : ''}
+                    ${x.note ? `<p class="text-sm text-text-muted mt-1.5 line-clamp-2 leading-relaxed font-normal pr-4">${esc(x.note)}</p>` : ''}
                 </div>
             </div>
             
-            <div class="flex flex-wrap items-center mt-3 ml-[38px] gap-2">
-                <span class="px-2 py-1 rounded-md border border-white/5 bg-white/5 text-[11px] font-medium tracking-wide text-text-muted flex items-center">
-                    <i class="ph-fill ph-folder mr-1.5 text-text-faint"></i>${esc(x.project)}
+            <div class="flex flex-wrap items-center mt-4 ml-[40px] gap-2.5">
+                <span class="px-2.5 py-1 rounded-md border border-white/20 bg-white/10 text-xs font-semibold tracking-wide text-white flex items-center shadow-sm">
+                    <i class="ph-fill ph-folder mr-1.5 text-text-muted"></i>${esc(x.project)}
                 </span>
                 
-                ${x.priority !== 'none' ? `<span class="px-2 py-1 rounded-md border ${prioColors[x.priority]} text-[11px] font-medium tracking-wide flex items-center"><i class="ph-fill ph-warning-circle mr-1.5"></i>${x.priority.charAt(0).toUpperCase() + x.priority.slice(1)}</span>` : ''}
+                ${x.priority !== 'none' ? `<span class="px-2.5 py-1 rounded-md border ${prioColors[x.priority]} text-xs font-semibold tracking-wide flex items-center shadow-sm"><i class="ph-fill ph-warning-circle mr-1.5"></i>${x.priority.charAt(0).toUpperCase() + x.priority.slice(1)}</span>` : ''}
                 
-                ${x.tags && x.tags.length ? x.tags.map(t => `<span class="px-2 py-1 rounded-md text-[11px] font-medium bg-brand/10 text-brand border border-brand/20">${esc(t)}</span>`).join('') : ''}
-                ${x.repeat && x.repeat !== 'none' ? `<span class="flex items-center text-[11px] font-medium text-text-muted"><i class="ph-bold ph-arrows-clockwise mr-1.5 text-text-faint"></i>${x.repeat.charAt(0).toUpperCase() + x.repeat.slice(1)}</span>` : ''}
-                ${x.reminder ? `<span class="flex items-center text-[11px] font-medium text-text-muted"><i class="ph-bold ph-bell mr-1.5 text-text-faint"></i>${x.reminder}</span>` : ''}
+                ${x.tags && x.tags.length ? x.tags.map(t => `<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-brand/15 text-brand border border-brand/30 shadow-sm">${esc(t)}</span>`).join('') : ''}
+                ${x.repeat && x.repeat !== 'none' ? `<span class="flex items-center text-xs font-medium text-text-muted"><i class="ph-bold ph-arrows-clockwise mr-1.5 text-text-muted"></i>${x.repeat.charAt(0).toUpperCase() + x.repeat.slice(1)}</span>` : ''}
+                ${x.reminder ? `<span class="flex items-center text-xs font-medium text-text-muted"><i class="ph-bold ph-bell mr-1.5 text-text-muted"></i>${x.reminder}</span>` : ''}
             </div>
             
             ${x.subtasks && x.subtasks.length > 0 ? `
-            <div class="mt-4 ml-[38px] pl-3 border-l-2 border-white/5 space-y-2">
+            <div class="mt-4 ml-[40px] pl-3.5 border-l-2 border-white/20 space-y-2.5">
                 ${x.subtasks.map(s => `
-                <div class="flex items-start text-[13px] text-text-muted group/sub">
-                    <div class="w-1.5 h-1.5 rounded-full bg-dark-border mt-[7px] mr-2.5 flex-shrink-0 transition-colors group-hover/sub:bg-brand"></div>
-                    <span class="leading-relaxed font-light">${esc(s)}</span>
+                <div class="flex items-start text-sm text-text-muted group/sub font-medium">
+                    <div class="w-1.5 h-1.5 rounded-full bg-text-muted mt-[7px] mr-3 flex-shrink-0 transition-colors group-hover/sub:bg-brand"></div>
+                    <span class="leading-relaxed text-white/90">${esc(s)}</span>
                 </div>`).join('')}
             </div>` : ''}
             
-            <div class="mt-4 pt-3 ml-[38px] border-t border-white/5 flex flex-col gap-2.5">
-                <div class="flex items-center justify-between text-[11px] font-medium text-text-muted">
-                    <div class="flex items-center gap-4">
-                        <span title="Pomodoros" class="flex items-center gap-1.5"><i class="ph-fill ph-check-circle text-brand opacity-80 text-sm"></i> <span class="text-white">${cP}</span><span class="opacity-40">/</span>${eP}</span>
-                        <span title="Duration" class="flex items-center gap-1.5"><i class="ph-fill ph-clock text-brand opacity-80 text-sm"></i> <span class="${pc >= 100 ? 'text-brand' : 'text-white'}">${fmt(cMin)}</span><span class="opacity-40">/</span>${fmt(eP * dur)}</span>
+            <div class="mt-5 pt-3.5 ml-[40px] border-t border-white/10 flex flex-col gap-3">
+                <div class="flex items-center justify-between text-xs font-semibold text-text-muted">
+                    <div class="flex items-center gap-5">
+                        <span title="Pomodoros" class="flex items-center gap-2"><i class="ph-fill ph-check-circle text-brand text-[15px]"></i> <span class="text-white">${cP}</span><span class="opacity-40">/</span>${eP}</span>
+                        <span title="Duration" class="flex items-center gap-2"><i class="ph-fill ph-clock text-brand text-[15px]"></i> <span class="${pc >= 100 ? 'text-brand' : 'text-white'}">${fmt(cMin)}</span><span class="opacity-40">/</span>${fmt(eP * dur)}</span>
                     </div>
-                    <span class="text-[10px] uppercase tracking-widest text-text-faint font-semibold">${Math.round(pc)}%</span>
+                    <span class="text-[11px] uppercase tracking-widest text-text-muted font-bold">${Math.round(pc)}%</span>
                 </div>
                 
-                <div class="h-1 w-full bg-black/40 rounded-full overflow-hidden shadow-inner">
-                    <div class="h-full bg-gradient-to-r from-brand to-red-400 rounded-full transition-all duration-500 ease-out" style="width: ${pc}%"></div>
+                <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden shadow-inner border border-white/5">
+                    <div class="h-full bg-gradient-to-r from-brand to-red-400 rounded-full transition-all duration-500 ease-out relative" style="width: ${pc}%">
+                        <div class="absolute inset-0 bg-white/20 w-full h-full animate-pulse"></div>
+                    </div>
                 </div>
             </div>
         `;
