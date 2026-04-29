@@ -461,14 +461,14 @@ const startTimerLoop = () => {
         app.updateTimerUI();
         if(state.timer.status === 'running' && state.timer.endTime && Date.now() >= state.timer.endTime) app.completeTimer();
     }, 100);
-    // Updated: Changed from text-3xl to text-2xl and adjusted margin for the pause icon
-    if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-2xl ml-0.5";
+    // REMOVED the margin class, RESTORED the z-10 relative positioning
+    if($('play-icon')) $('play-icon').className = "ph-fill ph-pause text-2xl relative z-10 transition-transform";
 };
 
 const stopTimerLoop = () => {
     if(timerInterval) clearInterval(timerInterval);
-    // Updated: Changed from text-3xl to text-2xl
-    if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-2xl ml-1";
+    // KEPT the ml-1 for optical alignment, RESTORED the z-10 relative positioning
+    if($('play-icon')) $('play-icon').className = "ph-fill ph-play text-2xl ml-1 relative z-10 transition-transform";
 };
 
 document.addEventListener("visibilitychange", () => {
