@@ -1488,18 +1488,18 @@ function renderTasks() {
         const isSel = x.id === state.selectedTaskId;
         const pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100);
         
-        // Boosted priority colors for higher visibility
+        // Slightly boosted pill backgrounds to maintain contrast against the newly lightened card
         const prioColors = {
-            high: 'text-red-400 bg-red-500/10 border-red-500/30',
-            med: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
-            low: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
-            none: 'text-text-muted bg-white/5 border-white/10'
+            high: 'text-red-400 bg-red-500/15 border-red-500/30',
+            med: 'text-yellow-400 bg-yellow-500/15 border-yellow-500/30',
+            low: 'text-blue-400 bg-blue-500/15 border-blue-500/30',
+            none: 'text-text-muted bg-white/10 border-white/10'
         };
         
-        // Increased base background opacity and border strength to distinguish cards from the main background
+        // Lighter Backgrounds: 8% white default, 12% on hover/selected
         const sty = isSel 
-            ? 'bg-white/[0.08] border-brand/50 shadow-[0_0_20px_rgba(255,87,87,0.15)] ring-1 ring-brand/50' 
-            : 'bg-white/[0.04] border-white/10 hover:bg-white/[0.08] hover:border-white/20 hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md';
+            ? 'bg-white/[0.12] border-brand/60 shadow-[0_0_20px_rgba(255,87,87,0.2)] ring-1 ring-brand/50' 
+            : 'bg-white/[0.08] border-white/[0.15] hover:bg-white/[0.12] hover:border-white/30 hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md';
         
         const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
         const fmt = m => { const h = Math.floor(m / 60), rm = m % 60; return h > 0 ? `${h}h ${rm}m` : `${rm}m` };
@@ -1513,7 +1513,7 @@ function renderTasks() {
                 
                 <label class="flex-shrink-0 mt-0.5 cursor-pointer relative z-10" onclick="event.stopPropagation()">
                     <input type="checkbox" class="peer sr-only" ${x.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')">
-                    <div class="w-6 h-6 rounded-full border-2 border-text-muted peer-checked:border-brand peer-checked:bg-brand flex items-center justify-center transition-all duration-300 hover:border-white hover:bg-white/5 peer-checked:hover:bg-brand-hover shadow-sm">
+                    <div class="w-6 h-6 rounded-full border-2 border-text-muted peer-checked:border-brand peer-checked:bg-brand flex items-center justify-center transition-all duration-300 hover:border-white hover:bg-white/10 peer-checked:hover:bg-brand-hover shadow-sm">
                         <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-300 scale-50 peer-checked:scale-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                 </label>
@@ -1556,7 +1556,7 @@ function renderTasks() {
                 </div>`).join('')}
             </div>` : ''}
             
-            <div class="mt-5 pt-3.5 ml-[40px] border-t border-white/10 flex flex-col gap-3">
+            <div class="mt-5 pt-3.5 ml-[40px] border-t border-white/15 flex flex-col gap-3">
                 <div class="flex items-center justify-between text-xs font-semibold text-text-muted">
                     <div class="flex items-center gap-5">
                         <span title="Pomodoros" class="flex items-center gap-2"><i class="ph-fill ph-check-circle text-brand text-[15px]"></i> <span class="text-white">${cP}</span><span class="opacity-40">/</span>${eP}</span>
@@ -1565,7 +1565,7 @@ function renderTasks() {
                     <span class="text-[11px] uppercase tracking-widest text-text-muted font-bold">${Math.round(pc)}%</span>
                 </div>
                 
-                <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden shadow-inner border border-white/5">
+                <div class="h-1.5 w-full bg-black/40 rounded-full overflow-hidden shadow-inner border border-white/10">
                     <div class="h-full bg-gradient-to-r from-brand to-red-400 rounded-full transition-all duration-500 ease-out relative" style="width: ${pc}%">
                         <div class="absolute inset-0 bg-white/20 w-full h-full animate-pulse"></div>
                     </div>
