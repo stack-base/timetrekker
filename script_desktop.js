@@ -1485,12 +1485,81 @@ function renderTasks() {
     if (l.length === 0) els.emptyState.classList.remove('hidden'); else els.emptyState.classList.add('hidden');
     l.forEach(x => {
         const cP = x.completedSessionIds ? x.completedSessionIds.length : 0;
-        const isSel = x.id === state.selectedTaskId, pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100), sty = isSel ? { high: 'bg-dark-card border-red-500 shadow-sm z-10', med: 'bg-dark-card border-yellow-500 shadow-sm z-10', low: 'bg-dark-card border-blue-500 shadow-sm z-10', none: 'bg-dark-card border-brand shadow-sm z-10' }[x.priority || 'none'] : 'bg-dark-card border-dark-border hover:border-text-faint';
+        const isSel = x.id === state.selectedTaskId;
+        const pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100);
+        
+        // Slightly updated selection hover states for a cleaner background feel
+        const sty = isSel 
+            ? { high: 'bg-dark-hover border-red-500 shadow-sm z-10', med: 'bg-dark-hover border-yellow-500 shadow-sm z-10', low: 'bg-dark-hover border-blue-500 shadow-sm z-10', none: 'bg-dark-hover border-brand shadow-sm z-10' }[x.priority || 'none'] 
+            : 'bg-dark-card border-dark-border hover:border-text-faint hover:bg-dark-hover/30 hover:shadow-md';
+        
         const dur = x.pomoDuration || 25, eP = x.estimatedPomos || 1, rP = Math.max(0, eP - cP), cMin = cP * dur, rMin = rP * dur;
         const fmt = m => { const h = Math.floor(m / 60), rm = m % 60; return h > 0 ? `${h}h ${rm}m` : `${rm}m` };
-        const el = D.createElement('div'); el.className = `group flex items-start p-4 rounded-lg border transition-all duration-200 ease-out cursor-pointer relative ${sty}`; el.onclick = () => app.selectTask(x.id);
-        el.innerHTML = `<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${x.priority === 'high' ? 'bg-red-500' : x.priority === 'med' ? 'bg-yellow-500' : 'bg-transparent'}"></div><label class="custom-checkbox flex-shrink-0 mt-0.5 w-5 h-5 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()"><input type="checkbox" class="hidden" ${x.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')"><div class="w-5 h-5 border-2 border-text-faint rounded-full flex items-center justify-center transition-all hover:border-brand bg-dark-bg"><svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div></label><div class="flex-1 min-w-0 pr-20"><div class="flex items-center justify-between"><h3 class="text-base font-medium text-white truncate ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3></div>${x.note ? `<p class="text-xs text-text-muted line-clamp-1 mt-0.5 truncate">${esc(x.note)}</p>` : ''}${x.subtasks && x.subtasks.length > 0 ? `<div class="mt-3 space-y-1 border-t border-dashed border-dark-border pt-2">${x.subtasks.map(s => `<div class="flex items-start text-xs text-text-muted"><i class="ph-bold ph-caret-right text-[10px] mt-0.5 mr-1.5 text-text-faint"></i><span>${esc(s)}</span></div>`).join('')}</div>` : ''}<div class="flex flex-wrap items-center mt-2 gap-y-2 gap-x-4"><div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-folder mr-1.5 text-text-faint"></i><span>${esc(x.project)}</span></div><div class="flex items-center text-xs text-text-muted" title="Pomos: Completed / Remaining"><i class="ph-fill ph-check-circle text-brand mr-1.5 text-[10px]"></i><span>${cP} / ${rP} rem</span></div><div class="flex items-center text-xs text-text-muted" title="Time: Completed / Remaining"><i class="ph-fill ph-clock text-brand mr-1.5 text-[10px]"></i><span class="${pc >= 100 ? 'text-brand' : ''}">${fmt(cMin)} / ${fmt(rMin)} left</span></div>${x.repeat && x.repeat !== 'none' ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-arrows-clockwise mr-1.5 text-text-faint"></i><span>${x.repeat.charAt(0).toUpperCase() + x.repeat.slice(1)}</span></div>` : ''}${x.reminder ? `<div class="flex items-center text-xs text-text-muted"><i class="ph-bold ph-bell mr-1.5 text-text-faint"></i><span>${x.reminder}</span></div>` : ''}${x.tags && x.tags.length ? `<div class="flex gap-1 ml-auto">${x.tags.map(t => `<span class="px-1.5 py-0.5 rounded text-[10px] bg-brand/10 text-brand border border-brand/20">${esc(t)}</span>`).join('')}</div>` : ''}</div></div><div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20"><button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors rounded"><i class="ph-fill ph-play"></i></button><button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-dark-hover transition-colors rounded"><i class="ph-bold ph-trash"></i></button></div>`;
-        els.taskList.appendChild(el)
+        
+        const el = D.createElement('div');
+        // Added overflow-hidden to contain the priority border strip cleanly
+        el.className = `group flex items-start p-5 rounded-xl border transition-all duration-200 ease-out cursor-pointer relative overflow-hidden ${sty}`; 
+        el.onclick = () => app.selectTask(x.id);
+        
+        const priorityLineColor = x.priority === 'high' ? 'bg-red-500' : x.priority === 'med' ? 'bg-yellow-500' : x.priority === 'low' ? 'bg-blue-500' : 'bg-transparent';
+
+        el.innerHTML = `
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${priorityLineColor}"></div>
+            
+            <label class="custom-checkbox flex-shrink-0 mt-0.5 w-5 h-5 mr-4 cursor-pointer relative z-10" onclick="event.stopPropagation()">
+                <input type="checkbox" class="hidden" ${x.status === 'done' ? 'checked' : ''} onchange="app.toggleTaskStatus('${x.id}','${x.status}')">
+                <div class="w-5 h-5 border-2 border-text-faint rounded-md flex items-center justify-center transition-all hover:border-brand bg-dark-bg">
+                    <svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+            </label>
+            
+            <div class="flex-1 min-w-0">
+                
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-base font-semibold text-white truncate ${x.status === 'done' ? 'line-through text-text-faint' : ''}">${esc(x.title)}</h3>
+                        ${x.note ? `<p class="text-xs text-text-muted mt-1.5 line-clamp-2 leading-relaxed pr-2">${esc(x.note)}</p>` : ''}
+                    </div>
+                    
+                    <div class="flex-shrink-0 flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-20">
+                        <button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-brand hover:bg-brand hover:text-white transition-colors rounded bg-dark-bg border border-dark-border shadow-sm" title="Focus"><i class="ph-fill ph-play text-sm"></i></button>
+                        <button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-dark-hover transition-colors rounded" title="Edit"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors rounded" title="Delete"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap items-center mt-3 gap-2">
+                    <span class="px-2 py-1 rounded border border-dark-border bg-dark-bg text-[10px] font-bold tracking-wide uppercase text-text-muted flex items-center shadow-sm">
+                        <i class="ph-bold ph-folder mr-1.5 text-text-faint"></i>${esc(x.project)}
+                    </span>
+                    ${x.tags && x.tags.length ? x.tags.map(t => `<span class="px-2 py-1 rounded text-[10px] font-semibold bg-brand/10 text-brand border border-brand/20">${esc(t)}</span>`).join('') : ''}
+                    ${x.repeat && x.repeat !== 'none' ? `<span class="flex items-center text-[11px] font-medium text-text-muted bg-dark-bg px-2 py-1 rounded border border-dark-border"><i class="ph-bold ph-arrows-clockwise mr-1.5 text-text-faint"></i>${x.repeat.charAt(0).toUpperCase() + x.repeat.slice(1)}</span>` : ''}
+                    ${x.reminder ? `<span class="flex items-center text-[11px] font-medium text-text-muted bg-dark-bg px-2 py-1 rounded border border-dark-border"><i class="ph-bold ph-bell mr-1.5 text-text-faint"></i>${x.reminder}</span>` : ''}
+                </div>
+                
+                ${x.subtasks && x.subtasks.length > 0 ? `
+                <div class="mt-4 pl-3 border-l-2 border-dark-border space-y-2">
+                    ${x.subtasks.map(s => `
+                    <div class="flex items-start text-xs text-text-muted">
+                        <div class="w-1 h-1 rounded-full bg-text-faint mt-[6px] mr-2.5 flex-shrink-0"></div>
+                        <span class="leading-relaxed font-medium">${esc(s)}</span>
+                    </div>`).join('')}
+                </div>` : ''}
+                
+                <div class="flex flex-wrap items-center gap-6 mt-4 pt-3 border-t border-dark-border border-opacity-50">
+                    <div class="flex items-center text-xs font-medium text-text-muted" title="Pomodoros">
+                        <i class="ph-fill ph-check-circle text-brand mr-2 text-sm"></i>
+                        <span class="text-white">${cP}</span> <span class="text-text-faint mx-1.5">/</span> ${eP} <span class="ml-1 text-text-faint text-[9px] uppercase tracking-wider">Pomos</span>
+                    </div>
+                    <div class="flex items-center text-xs font-medium text-text-muted" title="Duration">
+                        <i class="ph-fill ph-clock text-brand mr-2 text-sm"></i>
+                        <span class="${pc >= 100 ? 'text-brand' : 'text-white'}">${fmt(cMin)}</span> <span class="text-text-faint mx-1.5">/</span> ${fmt(eP * dur)} <span class="ml-1 text-text-faint text-[9px] uppercase tracking-wider">Est</span>
+                    </div>
+                </div>
+                
+            </div>
+        `;
+        els.taskList.appendChild(el);
     })
 }
 
