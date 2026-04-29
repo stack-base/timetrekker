@@ -162,10 +162,21 @@
                     <button onclick="app.setSound('forest')" class="text-text-muted hover:text-white transition-colors p-1.5" id="btn-sound-forest" aria-label="Forest Sound"><i class="ph-fill ph-tree text-lg"></i></button>
                 </div>
 
-                <div class="flex items-center gap-6">
-                    <button onclick="app.resetTimer()" class="p-3 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border active:scale-90 transition-transform" aria-label="Reset Timer"><i class="ph-bold ph-arrow-counter-clockwise text-lg"></i></button>
-                    <button onclick="app.toggleTimer()" class="w-16 h-16 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/20 active:scale-90 transition-transform" aria-label="Play or Pause Timer"><i id="play-icon" class="ph-fill ph-play text-2xl ml-1"></i></button>
-                    <button onclick="app.skipTimer()" class="p-3 rounded-full bg-dark-active text-text-muted hover:text-white border border-dark-border active:scale-90 transition-transform" aria-label="Skip Timer"><i class="ph-bold ph-skip-forward text-lg"></i></button>
+                <div class="flex items-center gap-2 p-2 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] mb-6">
+    
+                    <button onclick="app.resetTimer()" class="w-12 h-12 rounded-full flex items-center justify-center text-text-muted hover:text-white hover:bg-white/10 active:scale-90 transition-all duration-300 ease-out" aria-label="Reset Timer">
+                        <i class="ph-bold ph-arrow-counter-clockwise text-lg"></i>
+                    </button>
+
+                    <button onclick="app.toggleTimer()" class="w-16 h-16 rounded-[2rem] bg-brand text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,87,87,0.3)] hover:shadow-[0_0_32px_rgba(255,87,87,0.5)] active:scale-90 transition-all duration-300 relative overflow-hidden group" aria-label="Play or Pause Timer">
+                        <div class="absolute inset-0 bg-white/20 translate-y-full group-active:translate-y-0 transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) rounded-[2rem]"></div>
+                        <i id="play-icon" class="ph-fill ph-play text-2xl ml-1 relative z-10 transition-transform"></i>
+                    </button>
+
+                    <button onclick="app.skipTimer()" class="w-12 h-12 rounded-full flex items-center justify-center text-text-muted hover:text-white hover:bg-white/10 active:scale-90 transition-all duration-300 ease-out" aria-label="Skip Timer">
+                        <i class="ph-bold ph-skip-forward text-lg"></i>
+                    </button>
+
                 </div>
             </div>
 
