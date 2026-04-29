@@ -35,15 +35,20 @@
                 fontFamily: { sans: ['Inter', 'sans-serif'] },
                 colors: {
                     brand: { DEFAULT: '#ff5757', hover: '#e04848', dim: '#4a1a1a' },
-                    dark: { bg: '#000000', sidebar: '#000000', card: '#000000', border: '#333333', hover: '#1a1a1a' },
+                    dark: { 
+                        bg: '#09090b',       /* Zinc 950: A very rich, deep gray base */
+                        sidebar: '#121214',  /* Elevated slightly from the background */
+                        card: '#18181b',     /* Zinc 900: Elevated further to make text pop */
+                        border: '#27272a',   /* Zinc 800: Lighter borders for clear structural definition */
+                        hover: '#27272a'     /* Distinct hover state */
+                    },
                     /* Visibility Boosts */
                     text: { main: '#ffffff', muted: '#a1a1aa', faint: '#71717a' }, 
                     priority: { high: '#ef4444', med: '#eab308', low: '#3b82f6', none: '#71717a' }
                 },
                 fontSize: {
-                    /* Establish a higher baseline for the smallest text */
-                    'tiny': ['0.75rem', { lineHeight: '1.125rem' }], // 12px
-                    'xs': ['0.8125rem', { lineHeight: '1.25rem' }], // 13px (bumped from 12px)
+                    'tiny': ['0.75rem', { lineHeight: '1.125rem' }], 
+                    'xs': ['0.8125rem', { lineHeight: '1.25rem' }], 
                 },
                 screens: {
                     'safe-h': { 'raw': '(min-height: 700px)' }
