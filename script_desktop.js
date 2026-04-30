@@ -584,7 +584,7 @@ const app = {
         else if (hour < 18) timeGreeting = 'Good afternoon';
 
         const userNameElement = $('user-name-text');
-        const userName = userNameElement && userNameElement.textContent !== 'User' ? userNameElement.textContent : '';
+        const userName = userNameElement && userNameElement.textContent !== 'User' ? userNameElement.textContent.split(' ')[0] : '';
 
         if($('ai-greeting')) {
             $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''}!`;
