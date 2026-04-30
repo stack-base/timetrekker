@@ -549,33 +549,31 @@ const _saveSetting = debounce((k, v) => {
 
 const app = {
     toggleAISummary: () => {
+        const wrapper = $('ai-summary-wrapper');
         const content = $('ai-summary-content');
-        const loadingState = $('ai-loading-state');
-        const loadedState = $('ai-loaded-state');
-        if (!content || !loadingState || !loadedState) return;
+        if (!wrapper || !content) return;
 
-        if (content.classList.contains('hidden')) {
+        if (wrapper.classList.contains('grid-rows-[0fr]')) {
             haptic('light');
-            content.classList.remove('hidden');
-            content.classList.add('flex', 'animate-fade-in');
-
-            loadingState.classList.remove('hidden');
-            loadingState.classList.add('flex');
-            loadedState.classList.add('hidden');
-            loadedState.classList.remove('flex');
-
-            setTimeout(() => {
-                app.generateAISummaryData();
-                loadingState.classList.add('hidden');
-                loadingState.classList.remove('flex');
-                loadedState.classList.remove('hidden');
-                loadedState.classList.add('flex', 'animate-fade-in');
-            }, 600);
+            
+            // Instantly generate and inject the data
+            app.generateAISummaryData(); 
+            
+            // Trigger smooth roll down
+            wrapper.classList.remove('grid-rows-[0fr]');
+            wrapper.classList.add('grid-rows-[1fr]');
+            
+            // Fade in the text smoothly as it expands
+            content.classList.remove('opacity-0');
+            content.classList.add('opacity-100');
         } else {
-            content.classList.add('hidden');
-            content.classList.remove('flex', 'animate-fade-in');
-            loadedState.classList.add('hidden');
-            loadedState.classList.remove('flex');
+            // Trigger smooth roll up
+            wrapper.classList.remove('grid-rows-[1fr]');
+            wrapper.classList.add('grid-rows-[0fr]');
+            
+            // Fade text out
+            content.classList.remove('opacity-100');
+            content.classList.add('opacity-0');
         }
     },
 
@@ -1522,9 +1520,9 @@ function updateProjectsUI() { const els = getEls(); els.projectList.innerHTML = 
 function updateCounts() {
     const els = getEls();
     const getDayStr = (dParam) => {
-    const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-};
+        const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
     const tDate = getISTNow();
     const tmDate = getISTNow();
     tmDate.setDate(tmDate.getDate() + 1);
@@ -1534,9 +1532,18 @@ function updateCounts() {
 
     const tasksTodo = state.tasks.filter(x => x.status === 'todo');
     let tasksViewTodo;
-    if (state.view === 'all') tasksViewTodo = state.tasks; else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
+    
+    if (state.view === 'all') tasksViewTodo = state.tasks; 
+    else if (state.view === 'today') tasksViewTodo = tasksTodo.filter(x => x.dueDate === t); 
+    else if (state.view === 'tomorrow') tasksViewTodo = tasksTodo.filter(x => x.dueDate === tm); 
+    else if (state.view === 'upcoming') tasksViewTodo = tasksTodo.filter(x => x.dueDate > tm); 
+    else if (state.view === 'project') tasksViewTodo = tasksTodo.filter(x => x.project === state.filterProject); 
+    else tasksViewTodo = tasksTodo.filter(x => x.dueDate === t);
 
-    els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
+    els.navCounts.today.textContent = state.tasks.filter(x => x.dueDate === t && x.status === 'todo').length; 
+    els.navCounts.tomorrow.textContent = state.tasks.filter(x => x.dueDate === tm && x.status === 'todo').length; 
+    els.navCounts.upcoming.textContent = state.tasks.filter(x => x.dueDate > tm && x.status === 'todo').length; 
+    els.navCounts.past.textContent = state.tasks.filter(x => x.dueDate < t && x.status === 'todo').length;
 
     const tp = state.tasks.reduce((a, b) => a + (b.completedSessionIds ? b.completedSessionIds.length : 0), 0);
 
@@ -1553,13 +1560,10 @@ function updateCounts() {
     const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
     els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
 
-    const aiPanel = $('ai-summary-content');
-    const aiLoadedState = $('ai-loaded-state');
-    
-    if (aiPanel && !aiPanel.classList.contains('hidden')) {
-        if (aiLoadedState && !aiLoadedState.classList.contains('hidden')) {
-            app.generateAISummaryData();
-        }
+    // --- Updated AI Summary Visibility Check ---
+    const aiWrapper = $('ai-summary-wrapper');
+    if (aiWrapper && aiWrapper.classList.contains('grid-rows-[1fr]')) {
+        app.generateAISummaryData();
     }
 }
 
