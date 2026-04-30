@@ -1432,6 +1432,71 @@ $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null)); $
 function updateNavStyles(v, p) { D.querySelectorAll('.nav-btn').forEach(b => { const i = b.id === `nav-${v}`; b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-brand', i); b.classList.toggle('text-text-muted', !i); if (i) b.classList.remove('hover:text-white'); else b.classList.add('hover:text-white') }); D.querySelectorAll('.project-btn').forEach(b => { const i = v === 'project' && b.dataset.proj === p; b.classList.toggle('text-brand', i); b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-text-muted', !i) }) }
 function updateProjectsUI() { const els = getEls(); els.projectList.innerHTML = ''; state.projects.forEach(p => { const d = D.createElement('div'); d.innerHTML = `<div class="group relative flex items-center"><button onclick="app.setProjectView('${esc(p)}')" data-proj="${esc(p)}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${esc(p)}</span></div></button><div class="absolute right-2 flex opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${esc(p)}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${esc(p)}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`; els.projectList.appendChild(d) }) }
 
+function updateDailyAssistantSummary() {
+    const els = getEls();
+    const assistantContainer = $('ai-assistant-summary');
+    
+    // Only show this detailed summary on the 'Today' view
+    if (state.view !== 'today') {
+        if(assistantContainer) assistantContainer.classList.add('hidden');
+        return;
+    } else {
+        if(assistantContainer) assistantContainer.classList.remove('hidden');
+    }
+
+    // 1. Time-Based Greeting
+    const hour = new Date().getHours();
+    let timeGreeting = 'Good evening';
+    if (hour < 12) timeGreeting = 'Good morning';
+    else if (hour < 18) timeGreeting = 'Good afternoon';
+
+    // The username is already populated in the DOM during auth state change
+    const userNameElement = $('user-name-text');
+    const userName = userNameElement ? (userNameElement.textContent !== 'User' ? userNameElement.textContent : 'there') : 'there';
+    
+    if($('assistant-greeting')) {
+        $('assistant-greeting').textContent = `${timeGreeting}, ${userName}!`;
+    }
+
+    // 2. Fetch Task Data
+    const getDayStr = (dParam) => {
+        const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+    const todayStr = getDayStr();
+
+    const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
+    const pastTasks = state.tasks.filter(x => x.dueDate < todayStr && x.status === 'todo');
+    
+    // Calculate total estimated time for today's tasks
+    const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
+    const estTimeStr = Math.floor(totalEstMin / 60) > 0 
+        ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
+        : `${totalEstMin}m`;
+
+    // 3. Construct the "AI" Summary Text
+    let summaryText = "";
+
+    if (todayTasks.length > 0) {
+        summaryText += `You have **${todayTasks.length} tasks** on your plate for today, requiring approximately **${estTimeStr}** of focus time. `;
+    }
+
+    if (pastTasks.length > 0) {
+        summaryText += `You also have **${pastTasks.length} leftover tasks** from the past. You might want to reschedule or tackle those first. `;
+    }
+
+    if (todayTasks.length === 0 && pastTasks.length === 0) {
+        summaryText = "Your schedule is completely clear right now. It's a great time to plan ahead, review your projects, or just take a breather!";
+    } else {
+        summaryText += "Let's lock in and get into flow state.";
+    }
+
+    // 4. Inject into UI with emphasis on metrics
+    if($('assistant-text')) {
+        $('assistant-text').innerHTML = summaryText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+    }
+}
+
 function updateCounts() {
     const els = getEls();
     const getDayStr = (dParam) => {
@@ -1465,6 +1530,8 @@ function updateCounts() {
 
     const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
     els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
+
+    updateDailyAssistantSummary();
 }
 
 function renderTasks() {
