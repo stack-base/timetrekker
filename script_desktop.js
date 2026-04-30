@@ -577,78 +577,108 @@ const app = {
     },
 
     generateAISummaryData: () => {
-        const hour = new Date().getHours();
-        let timeGreeting = 'Good evening';
-        if (hour < 12) timeGreeting = 'Good morning';
-        else if (hour < 18) timeGreeting = 'Good afternoon';
+        const loadingState = $('ai-loading-state');
+        const loadedContent = $('ai-loaded-content');
 
-        const userNameElement = $('user-name-text');
-        const userName = userNameElement && userNameElement.textContent !== 'User' ? userNameElement.textContent : '';
-        
-        if($('ai-greeting')) {
-            // FIXED: Removed the waving hand emoji here
-            $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''}!`;
+        // 1. Show Loading UI, Hide Content
+        if (loadingState) {
+            loadingState.classList.remove('hidden');
+            loadingState.classList.add('flex');
+        }
+        if (loadedContent) {
+            loadedContent.classList.add('hidden');
+            loadedContent.classList.remove('flex');
         }
 
-        const getDayStr = (dParam) => {
-            const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
-            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        };
-        const todayStr = getDayStr();
-
-        const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
-        const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
-        const highPriorityTasks = todayTasks.filter(t => t.priority === 'high');
-        
-        const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
-        const estTimeStr = Math.floor(totalEstMin / 60) > 0 
-            ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
-            : `${totalEstMin}m`;
-
-        let workloadTone = "light and manageable";
-        if (totalEstMin > 240) workloadTone = "quite demanding";
-        else if (totalEstMin > 120) workloadTone = "steady and balanced";
-
-        let summaryHtml = "";
-
-        if (todayTasks.length === 0 && pastTasks.length === 0) {
-            summaryHtml = `Your schedule is completely clear! It's the perfect moment to review your active workflows, organize your <strong>Inbox</strong>, or simply take a well-deserved breather.`;
-        } else {
-            summaryHtml += `You're looking at a <strong>${workloadTone}</strong> day with <strong class="text-white">${todayTasks.length} tasks</strong> requiring roughly <strong class="text-white">${estTimeStr}</strong> of deep focus. `;
+        // 2. Simulate AI Processing Delay (1.2 seconds)
+        clearTimeout(app._aiTimeout); // Clear previous timeout if user clicks rapidly
+        app._aiTimeout = setTimeout(() => {
             
-            if (highPriorityTasks.length > 0) {
-                summaryHtml += `I highly recommend tackling <span class="text-red-400 font-semibold cursor-pointer hover:underline" onclick="app.selectTask('${highPriorityTasks[0].id}')">"${esc(highPriorityTasks[0].title)}"</span> first to knock out your high-impact work early. `;
-            } else if (todayTasks.length > 0) {
-                summaryHtml += `Consider starting with <span class="text-brand font-semibold cursor-pointer hover:underline" onclick="app.selectTask('${todayTasks[0].id}')">"${esc(todayTasks[0].title)}"</span> to build some early momentum. `;
+            // --- DATA CALCULATION START ---
+            const hour = new Date().getHours();
+            let timeGreeting = 'Good evening';
+            if (hour < 12) timeGreeting = 'Good morning';
+            else if (hour < 18) timeGreeting = 'Good afternoon';
+
+            const userNameElement = $('user-name-text');
+            const userName = userNameElement && userNameElement.textContent !== 'User' ? userNameElement.textContent : '';
+            
+            if($('ai-greeting')) {
+                $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''}!`;
             }
 
-            if (pastTasks.length > 0) {
-                summaryHtml += `Also, keep an eye on the <strong>${pastTasks.length} leftover tasks</strong> lingering from the past. Let's clear them out today.`;
+            const getDayStr = (dParam) => {
+                const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            };
+            const todayStr = getDayStr();
+
+            const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
+            const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
+            const highPriorityTasks = todayTasks.filter(t => t.priority === 'high');
+            
+            const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
+            const estTimeStr = Math.floor(totalEstMin / 60) > 0 
+                ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
+                : `${totalEstMin}m`;
+
+            let workloadTone = "light and manageable";
+            if (totalEstMin > 240) workloadTone = "quite demanding";
+            else if (totalEstMin > 120) workloadTone = "steady and balanced";
+
+            let summaryHtml = "";
+
+            if (todayTasks.length === 0 && pastTasks.length === 0) {
+                summaryHtml = `Your schedule is completely clear! It's the perfect moment to review your active workflows, organize your <strong>Inbox</strong>, or simply take a well-deserved breather.`;
+            } else {
+                summaryHtml += `You're looking at a <strong>${workloadTone}</strong> day with <strong class="text-white">${todayTasks.length} tasks</strong> requiring roughly <strong class="text-white">${estTimeStr}</strong> of deep focus. `;
+                
+                if (highPriorityTasks.length > 0) {
+                    summaryHtml += `I highly recommend tackling <span class="text-red-400 font-semibold cursor-pointer hover:underline" onclick="app.selectTask('${highPriorityTasks[0].id}')">"${esc(highPriorityTasks[0].title)}"</span> first to knock out your high-impact work early. `;
+                } else if (todayTasks.length > 0) {
+                    summaryHtml += `Consider starting with <span class="text-brand font-semibold cursor-pointer hover:underline" onclick="app.selectTask('${todayTasks[0].id}')">"${esc(todayTasks[0].title)}"</span> to build some early momentum. `;
+                }
+
+                if (pastTasks.length > 0) {
+                    summaryHtml += `Also, keep an eye on the <strong>${pastTasks.length} leftover tasks</strong> lingering from the past. Let's clear them out today.`;
+                }
             }
-        }
 
-        if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
+            if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
 
-        const renderList = (tasks, emptyMsg, highlightColorClass) => {
-            return tasks.length > 0 
-                ? tasks.map(t => `
-                    <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group" onclick="app.selectTask('${t.id}')">
-                        <div class="flex items-start gap-2">
-                            <i class="ph-bold ph-caret-right ${highlightColorClass} mt-0.5 shrink-0 group-hover:translate-x-1 transition-transform"></i>
-                            <span class="truncate font-medium text-white/90 group-hover:text-white">${esc(t.title)}</span>
-                        </div>
-                        <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider">
-                            ${t.priority === 'high' ? '<span class="text-red-400 flex items-center"><i class="ph-bold ph-warning-circle mr-1"></i> High</span>' : ''}
-                            <span class="flex items-center"><i class="ph-bold ph-clock mr-1"></i> ${(t.estimatedPomos || 1) * (t.pomoDuration || 25)}m</span>
-                            <span class="flex items-center"><i class="ph-bold ph-folder mr-1"></i> ${esc(t.project || 'Inbox')}</span>
-                        </div>
-                    </li>
-                `).join('')
-                : `<li class="text-text-faint italic p-4 text-center border border-dark-border border-dashed rounded-lg bg-dark-bg/20">${emptyMsg}</li>`;
-        };
+            const renderList = (tasks, emptyMsg, highlightColorClass) => {
+                return tasks.length > 0 
+                    ? tasks.map(t => `
+                        <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group" onclick="app.selectTask('${t.id}')">
+                            <div class="flex items-start gap-2">
+                                <i class="ph-bold ph-caret-right ${highlightColorClass} mt-0.5 shrink-0 group-hover:translate-x-1 transition-transform"></i>
+                                <span class="truncate font-medium text-white/90 group-hover:text-white">${esc(t.title)}</span>
+                            </div>
+                            <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider">
+                                ${t.priority === 'high' ? '<span class="text-red-400 flex items-center"><i class="ph-bold ph-warning-circle mr-1"></i> High</span>' : ''}
+                                <span class="flex items-center"><i class="ph-bold ph-clock mr-1"></i> ${(t.estimatedPomos || 1) * (t.pomoDuration || 25)}m</span>
+                                <span class="flex items-center"><i class="ph-bold ph-folder mr-1"></i> ${esc(t.project || 'Inbox')}</span>
+                            </div>
+                        </li>
+                    `).join('')
+                    : `<li class="text-text-faint italic p-4 text-center border border-dark-border border-dashed rounded-lg bg-dark-bg/20">${emptyMsg}</li>`;
+            };
 
-        if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
-        if($('ai-past-list')) $('ai-past-list').innerHTML = renderList(pastTasks, "All caught up! No overdue tasks.", "text-red-400");
+            if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
+            if($('ai-past-list')) $('ai-past-list').innerHTML = renderList(pastTasks, "All caught up! No overdue tasks.", "text-red-400");
+            // --- DATA CALCULATION END ---
+
+            // 3. Hide Loading UI, Show Content smoothly
+            if (loadingState) {
+                loadingState.classList.add('hidden');
+                loadingState.classList.remove('flex');
+            }
+            if (loadedContent) {
+                loadedContent.classList.remove('hidden');
+                loadedContent.classList.add('flex', 'animate-fade-in');
+            }
+
+        }, 1200); // 1.2 second delay
     },
 
     showBroadcastPopup: (b) => {
