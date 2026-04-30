@@ -877,6 +877,106 @@ const app = {
         const h = Math.floor(estMin / 60); const m = estMin % 60;
         if($('mini-est-time')) $('mini-est-time').textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
+        // --- NEW: Update AI Summary if it's currently rolled down ---
+        const aiWrapper = $('ai-summary-wrapper');
+        if (aiWrapper && aiWrapper.classList.contains('grid-rows-[1fr]')) {
+            app.generateAISummaryData();
+        }
+    },
+
+    toggleAISummary: () => {
+        const wrapper = $('ai-summary-wrapper');
+        const content = $('ai-summary-content');
+        if (!wrapper || !content) return;
+
+        if (wrapper.classList.contains('grid-rows-[0fr]')) {
+            haptic('light');
+            
+            // Instantly generate and inject the data
+            app.generateAISummaryData(); 
+            
+            // Trigger smooth roll down
+            wrapper.classList.remove('grid-rows-[0fr]');
+            wrapper.classList.add('grid-rows-[1fr]');
+            
+            // Fade in the text smoothly
+            content.classList.remove('opacity-0');
+            content.classList.add('opacity-100');
+        } else {
+            // Trigger smooth roll up
+            wrapper.classList.remove('grid-rows-[1fr]');
+            wrapper.classList.add('grid-rows-[0fr]');
+            
+            // Fade text out
+            content.classList.remove('opacity-100');
+            content.classList.add('opacity-0');
+        }
+    },
+
+    generateAISummaryData: () => {
+        const hour = new Date().getHours();
+        let timeGreeting = 'Good evening';
+        if (hour < 12) timeGreeting = 'Good morning';
+        else if (hour < 18) timeGreeting = 'Good afternoon';
+
+        // Mobile uses 'settings-name' for the user's display name
+        const userNameElement = $('settings-name'); 
+        const userName = userNameElement && userNameElement.textContent !== 'User Account' ? userNameElement.textContent.split(' ')[0] : '';
+
+        if($('ai-greeting')) {
+            $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''}!`;
+        }
+
+        const todayStr = getDayStr(); // Uses global helper in mobile
+
+        const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
+        const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
+        const highPriorityTasks = todayTasks.filter(t => t.priority === 'high');
+
+        const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (parseInt(b.pomoDuration) || 25)), 0);
+        const estTimeStr = Math.floor(totalEstMin / 60) > 0
+            ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m`
+            : `${totalEstMin}m`;
+
+        let workloadTone = "light and manageable";
+        if (totalEstMin > 240) workloadTone = "quite demanding";
+        else if (totalEstMin > 120) workloadTone = "steady and balanced";
+
+        let summaryHtml = "";
+
+        if (todayTasks.length === 0 && pastTasks.length === 0) {
+            summaryHtml = `Your schedule is completely clear! It's the perfect moment to review your active workflows or take a breather.`;
+        } else {
+            summaryHtml += `You have a <strong>${workloadTone}</strong> day with <strong class="text-white">${todayTasks.length} tasks</strong> requiring roughly <strong class="text-white">${estTimeStr}</strong> of deep focus. `;
+
+            if (highPriorityTasks.length > 0) {
+                summaryHtml += `Start with <span class="text-red-400 font-bold cursor-pointer" onclick="app.openTaskDetail(state.tasks.find(t => t.id === '${highPriorityTasks[0].id}'))">"${esc(highPriorityTasks[0].title)}"</span>. `;
+            } else if (todayTasks.length > 0) {
+                summaryHtml += `Start with <span class="text-brand font-bold cursor-pointer" onclick="app.openTaskDetail(state.tasks.find(t => t.id === '${todayTasks[0].id}'))">"${esc(todayTasks[0].title)}"</span>. `;
+            }
+
+            if (pastTasks.length > 0) {
+                summaryHtml += `<br>Also, keep an eye on the <strong>${pastTasks.length} overdue tasks</strong>.`;
+            }
+        }
+
+        if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
+
+        const renderList = (tasks, emptyMsg, highlightColorClass) => {
+            return tasks.length > 0
+                ? tasks.map(t => `
+                    <li class="flex flex-col gap-1 bg-dark-bg/50 p-2.5 rounded-lg border border-dark-border active:scale-95 transition-transform" onclick="app.openTaskDetail(state.tasks.find(x => x.id === '${t.id}'))">
+                        <div class="flex items-center gap-2">
+                            <i class="ph-bold ph-caret-right ${highlightColorClass} text-[10px]"></i>
+                            <span class="truncate font-medium text-white text-xs">${esc(t.title)}</span>
+                        </div>
+                    </li>
+                `).join('')
+                : `<li class="text-text-faint text-[10px] italic p-3 text-center border border-dark-border border-dashed rounded-lg bg-dark-bg/20">${emptyMsg}</li>`;
+        };
+
+        if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
+        if($('ai-past-list')) $('ai-past-list').innerHTML = renderList(pastTasks, "All caught up!", "text-red-400");
     },
 
     setRange: (r) => {
