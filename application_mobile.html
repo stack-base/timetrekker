@@ -748,17 +748,17 @@
             </div>
     </div>
 
-    <!-- Full-Screen Daily Brief Modal -->
-    <div id="brief-modal" class="fixed inset-0 z-[100] bg-dark-bg flex flex-col transform translate-y-full transition-transform duration-300 ease-out pb-safe-b">
+    <div id="brief-modal" class="fixed inset-0 z-[100] bg-dark-bg flex flex-col transform translate-y-full transition-transform duration-300 ease-out pt-safe-t pb-safe-b">
         
-        <!-- Edge-to-edge Header -->
-        <div class="px-5 py-4 pt-safe-t flex items-center justify-between border-b border-dark-border/50 bg-dark-bg/95 backdrop-blur shrink-0">
+        <!-- Edge-to-edge Header (Padding now perfectly matches home screen) -->
+        <div class="px-5 py-4 flex items-center justify-between border-b border-dark-border/50 bg-dark-bg/95 backdrop-blur shrink-0">
             <div>
                 <h2 class="text-2xl font-bold text-white tracking-tight">Daily Brief</h2>
                 <p class="text-[10px] text-brand font-bold uppercase tracking-wider mt-0.5">Your Schedule</p>
             </div>
-            <button onclick="app.closeBriefModal()" class="w-10 h-10 flex items-center justify-center rounded-full bg-dark-active text-text-muted hover:text-white transition-colors active:scale-90 shadow-sm">
-                <i class="ph-bold ph-x text-xl"></i>
+            <!-- Close button sized exactly to match the w-9 h-9 home avatar -->
+            <button onclick="app.closeBriefModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-dark-active text-text-muted hover:text-white transition-colors active:scale-90 shadow-sm">
+                <i class="ph-bold ph-x text-lg"></i>
             </button>
         </div>
         
