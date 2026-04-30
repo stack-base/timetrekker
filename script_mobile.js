@@ -877,40 +877,28 @@ const app = {
         const h = Math.floor(estMin / 60); const m = estMin % 60;
         if($('mini-est-time')) $('mini-est-time').textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
-        // --- NEW: Update AI Summary if it's currently rolled down ---
-        const aiWrapper = $('ai-summary-wrapper');
-        if (aiWrapper && aiWrapper.classList.contains('grid-rows-[1fr]')) {
+        const briefSheet = $('brief-sheet');
+        if (briefSheet && !briefSheet.classList.contains('translate-y-full')) {
             app.generateAISummaryData();
         }
     },
 
-    toggleAISummary: () => {
-        const wrapper = $('ai-summary-wrapper');
-        const content = $('ai-summary-content');
-        if (!wrapper || !content) return;
+    openBriefSheet: () => {
+        haptic('light');
+        history.pushState({ modal: 'brief' }, '');
+        
+        // Generate the data right before opening
+        app.generateAISummaryData(); 
+        
+        $('modal-overlay').classList.remove('hidden');
+        setTimeout(() => {
+            $('modal-overlay').classList.remove('opacity-0');
+            $('brief-sheet').classList.remove('translate-y-full');
+        }, 10);
+    },
 
-        if (wrapper.classList.contains('grid-rows-[0fr]')) {
-            haptic('light');
-            
-            // Instantly generate and inject the data
-            app.generateAISummaryData(); 
-            
-            // Trigger smooth roll down
-            wrapper.classList.remove('grid-rows-[0fr]');
-            wrapper.classList.add('grid-rows-[1fr]');
-            
-            // Fade in the text smoothly
-            content.classList.remove('opacity-0');
-            content.classList.add('opacity-100');
-        } else {
-            // Trigger smooth roll up
-            wrapper.classList.remove('grid-rows-[1fr]');
-            wrapper.classList.add('grid-rows-[0fr]');
-            
-            // Fade text out
-            content.classList.remove('opacity-100');
-            content.classList.add('opacity-0');
-        }
+    closeBriefSheet: () => { 
+        history.back(); 
     },
 
     generateAISummaryData: () => {
@@ -2014,6 +2002,12 @@ window.addEventListener('popstate', (e) => {
     }
     if (!$('task-select-sheet').classList.contains('translate-y-full')) { 
         $('task-select-sheet').classList.add('translate-y-full');
+        $('modal-overlay').classList.add('opacity-0');
+        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+        return; 
+    }
+    if (!$('brief-sheet').classList.contains('translate-y-full')) { 
+        $('brief-sheet').classList.add('translate-y-full');
         $('modal-overlay').classList.add('opacity-0');
         setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
         return; 

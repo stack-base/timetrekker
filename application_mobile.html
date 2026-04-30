@@ -126,35 +126,10 @@
                 </div> <!-- The grid MUST safely close here! -->
 
                 <!-- 2. AI Summary Toggle Button -->
-                <button onclick="app.toggleAISummary()" class="w-full mb-4 flex items-center justify-center gap-2 bg-dark-card border border-dark-border py-3 rounded-xl shadow-sm text-text-muted hover:text-white transition-colors active:scale-95">
+                <button onclick="app.openBriefSheet()" class="w-full mb-6 flex items-center justify-center gap-2 bg-dark-card border border-dark-border py-3 rounded-xl shadow-sm text-text-muted hover:text-white transition-colors active:scale-95">
                     <i class="ph-fill ph-sparkle text-brand text-lg"></i>
-                    <span class="text-sm font-bold">AI Daily Brief</span>
+                    <span class="text-sm font-bold">Daily Brief</span>
                 </button>
-
-                <!-- 3. Expandable AI Summary Section -->
-                <div id="ai-summary-wrapper" class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out">
-                    <div class="overflow-hidden">
-                        <div id="ai-summary-content" class="flex flex-col bg-dark-card border border-dark-border rounded-xl p-4 opacity-0 transition-opacity duration-300 delay-75 mb-6 shadow-sm">
-                            
-                            <div class="pb-3 border-b border-dark-border/50 mb-3">
-                                <h3 id="ai-greeting" class="text-lg font-bold text-white mb-1.5 flex items-center"></h3>
-                                <p id="ai-overview" class="text-xs text-text-muted leading-relaxed"></p>
-                            </div>
-                            
-                            <div class="flex flex-col gap-4">
-                                <div>
-                                    <h4 class="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 flex items-center"><i class="ph-bold ph-sun mr-1.5 text-brand"></i> Tasks for Today</h4>
-                                    <ul id="ai-today-list" class="space-y-2 text-white overflow-y-auto max-h-[150px] custom-scrollbar pr-1"></ul>
-                                </div>
-                                <div>
-                                    <h4 class="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center"><i class="ph-bold ph-warning-circle mr-1.5"></i> Needs Attention</h4>
-                                    <ul id="ai-past-list" class="space-y-2 text-white overflow-y-auto max-h-[150px] custom-scrollbar pr-1"></ul>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
-                </div>
 
                 <!-- 4. Empty State -->
                 <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
@@ -771,6 +746,41 @@
         </div>
         <div id="task-select-list" class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
             </div>
+    </div>
+
+    <!-- Daily Brief Sheet -->
+    <div id="brief-sheet" class="spring-sheet fixed bottom-0 left-0 right-0 bg-dark-bg rounded-t-3xl z-50 transform translate-y-full max-h-[90vh] flex flex-col border-t border-dark-border shadow-2xl pb-safe-b">
+        <div class="w-full flex justify-center pt-3 pb-1" onclick="app.closeBriefSheet()">
+            <span class="w-12 h-1.5 bg-dark-border rounded-full opacity-50"></span>
+        </div>
+        <div class="px-5 pb-4 border-b border-dark-border flex justify-between items-center mt-2">
+            <div>
+                <h2 class="text-lg font-bold text-white">Daily Brief</h2>
+                <p class="text-[10px] text-text-muted uppercase tracking-wider font-bold">Your schedule at a glance</p>
+            </div>
+            <button onclick="app.closeBriefSheet()" class="w-8 h-8 flex items-center justify-center rounded-full bg-dark-active text-text-muted hover:text-white transition-colors active:scale-90">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
+            
+            <div class="pb-2 border-b border-dark-border/50">
+                <h3 id="ai-greeting" class="text-xl font-bold text-white mb-2 flex items-center"></h3>
+                <p id="ai-overview" class="text-sm text-text-muted leading-relaxed"></p>
+            </div>
+            
+            <div class="flex flex-col gap-6">
+                <div>
+                    <h4 class="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center"><i class="ph-bold ph-sun mr-1.5 text-brand"></i> Tasks for Today</h4>
+                    <ul id="ai-today-list" class="space-y-2 text-white"></ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-3 flex items-center"><i class="ph-bold ph-warning-circle mr-1.5"></i> Needs Attention</h4>
+                    <ul id="ai-past-list" class="space-y-2 text-white"></ul>
+                </div>
+            </div>
+
+        </div>
     </div>
     
     <audio id="audio-player" playsinline loop></audio>
