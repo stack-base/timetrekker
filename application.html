@@ -275,61 +275,76 @@
     <div class="flex-1 overflow-y-auto relative custom-scrollbar bg-dark-bg">
         <div id="task-view-container" class="p-4 lg:p-10 max-w-5xl mx-auto">
             <div id="stats-summary" class="hidden md:flex flex-col bg-dark-card border border-dark-border rounded-lg mb-8 shadow-sm transition-all duration-300">
-            <div class="flex flex-col lg:flex-row p-5 gap-4 items-start lg:items-center">
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-3 lg:grid-cols-6 gap-4 w-full flex-1">
-                    <div><div class="text-2xl font-bold text-white" id="stat-pomos-today">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Pomos Completed</div></div>
-                    <div><div class="text-2xl font-bold text-white" id="stat-tasks-today">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Tasks Done</div></div>
-                    <div><div class="text-2xl font-bold text-white" id="stat-tasks-remaining">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Active Tasks</div></div>
-                    <div><div class="text-2xl font-bold text-white" id="stat-est-remaining">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Est. Pomos</div></div>
-                    <div><div class="text-2xl font-bold text-white" id="stat-est-time">0m</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Est. Duration</div></div>
-                    <div><div class="text-2xl font-bold text-brand" id="stat-focus-time">0h 0m</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Time Spent</div></div>
-                </div>
-                
-                <!-- Refined Circular Liquid Glass AI Button -->
-                <div class="shrink-0 lg:border-l lg:border-dark-border lg:pl-5 flex justify-end w-full lg:w-auto mt-2 lg:mt-0">
-                    <button onclick="app.toggleAISummary()" class="relative w-12 h-12 flex items-center justify-center rounded-full bg-dark-bg/60 backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.3)] hover:border-brand/50 hover:shadow-[0_0_20px_rgba(255,87,87,0.3),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all duration-300 group overflow-hidden" title="AI Summary & Insights">
-                        <!-- Liquid Base -->
-                        <div class="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none group-hover:from-brand/10 transition-colors duration-300"></div>
-                        <!-- Glass Highlight -->
-                        <div class="absolute top-[1px] left-[15%] right-[15%] h-[30%] bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-full mix-blend-overlay"></div>
-                        <!-- Icon -->
-                        <i class="ph-fill ph-sparkle text-xl text-text-muted group-hover:text-brand relative z-10 transition-colors duration-300 group-hover:animate-pulse"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Expandable AI Summary Section -->
-            <div id="ai-summary-content" class="hidden flex-col px-5 pb-5 border-t border-dark-border pt-5">
-                
-                <!-- NEW: Loading State -->
-                <div id="ai-loading-state" class="flex flex-col items-center justify-center py-10 gap-3">
-                    <div class="relative flex items-center justify-center">
-                        <div class="absolute w-12 h-12 rounded-full border-2 border-brand/20 border-t-brand animate-spin"></div>
-                        <i class="ph-fill ph-sparkle text-2xl text-brand animate-pulse drop-shadow-[0_0_8px_rgba(255,87,87,0.6)]"></i>
+                <div class="flex flex-col lg:flex-row p-5 gap-4 items-start lg:items-center">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-3 lg:grid-cols-6 gap-4 w-full flex-1">
+                        <div><div class="text-2xl font-bold text-white" id="stat-pomos-today">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Pomos Completed</div></div>
+                        <div><div class="text-2xl font-bold text-white" id="stat-tasks-today">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Tasks Done</div></div>
+                        <div><div class="text-2xl font-bold text-white" id="stat-tasks-remaining">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Active Tasks</div></div>
+                        <div><div class="text-2xl font-bold text-white" id="stat-est-remaining">0</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Est. Pomos</div></div>
+                        <div><div class="text-2xl font-bold text-white" id="stat-est-time">0m</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Est. Duration</div></div>
+                        <div><div class="text-2xl font-bold text-brand" id="stat-focus-time">0h 0m</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Time Spent</div></div>
                     </div>
-                    <p class="text-sm font-medium text-text-muted animate-pulse mt-2">Synthesizing your schedule...</p>
+                    
+                    <!-- NEW: Floating Liquid Glass Button inside the stats row -->
+                    <div class="shrink-0 lg:border-l lg:border-dark-border lg:pl-5 flex justify-end w-full lg:w-auto mt-2 lg:mt-0 flex items-center h-full">
+                        <button onclick="app.toggleAISummary()" class="relative w-12 h-12 flex items-center justify-center rounded-full bg-dark-bg/60 backdrop-blur-md border border-brand/40 shadow-[0_0_15px_rgba(255,87,87,0.2),inset_0_2px_8px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,87,87,0.5),inset_0_2px_12px_rgba(255,255,255,0.25)] hover:border-brand/80 hover:scale-105 transition-all duration-300 group overflow-hidden" title="Generate AI Summary">
+                            <!-- Inner liquid gradients -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-brand/20 via-transparent to-black/40 pointer-events-none group-hover:from-brand/30 transition-colors"></div>
+                            <div class="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-brand/30 to-transparent pointer-events-none"></div>
+                            <!-- Crisp top glass highlight -->
+                            <div class="absolute top-[2px] left-[15%] right-[15%] h-[30%] bg-gradient-to-b from-white/40 to-transparent rounded-full pointer-events-none mix-blend-overlay"></div>
+                            
+                            <i class="ph-fill ph-sparkle text-xl text-brand relative z-10 group-hover:text-white transition-colors duration-300 group-hover:animate-pulse drop-shadow-[0_0_5px_rgba(255,87,87,0.8)]"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Content State (Hidden Initially) -->
-                <div id="ai-loaded-content" class="hidden flex-col gap-6">
-                    <div class="bg-brand/5 border border-brand/20 p-5 rounded-lg backdrop-blur-md">
-                        <h3 id="ai-greeting" class="text-lg font-semibold text-white mb-2 flex items-center"></h3>
-                        <p id="ai-overview" class="text-sm text-text-muted leading-relaxed"></p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="flex flex-col h-full">
-                            <h4 class="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center"><i class="ph-bold ph-sun mr-1.5 text-brand"></i> Today's Strategy</h4>
-                            <ul id="ai-today-list" class="space-y-2 text-sm text-white flex-1 overflow-y-auto max-h-[250px] custom-scrollbar pr-2"></ul>
+                <!-- Expandable AI Summary Section -->
+                <div id="ai-summary-content" class="hidden flex-col px-5 pb-5 border-t border-dark-border pt-1">
+                    
+                    <!-- NEW: Fast Skeleton Loading State -->
+                    <div id="ai-loading-state" class="hidden flex-col gap-6 pt-4 animate-pulse">
+                        <div class="bg-brand/5 border border-brand/10 p-5 rounded-lg flex items-center gap-4">
+                            <i class="ph-fill ph-sparkle text-brand text-3xl animate-[spin_3s_linear_infinite] opacity-60"></i>
+                            <div class="flex-1 space-y-2.5">
+                                <div class="h-4 bg-dark-border rounded w-1/4"></div>
+                                <div class="h-3 bg-dark-border/60 rounded w-3/4"></div>
+                            </div>
                         </div>
-                        <div class="flex flex-col h-full">
-                            <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-3 flex items-center"><i class="ph-bold ph-warning-circle mr-1.5"></i> Needs Attention</h4>
-                            <ul id="ai-past-list" class="space-y-2 text-sm text-white flex-1 overflow-y-auto max-h-[250px] custom-scrollbar pr-2"></ul>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-3">
+                                <div class="h-3 bg-dark-border rounded w-1/3 mb-4"></div>
+                                <div class="h-12 bg-dark-bg border border-dark-border rounded-lg"></div>
+                                <div class="h-12 bg-dark-bg border border-dark-border rounded-lg"></div>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="h-3 bg-dark-border rounded w-1/3 mb-4"></div>
+                                <div class="h-12 bg-dark-bg border border-dark-border rounded-lg"></div>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Loaded State (Your existing content layout) -->
+                    <div id="ai-loaded-state" class="hidden flex-col gap-6 pt-4">
+                        <div class="bg-brand/5 border border-brand/20 p-5 rounded-lg backdrop-blur-md">
+                            <h3 id="ai-greeting" class="text-lg font-semibold text-white mb-2 flex items-center"></h3>
+                            <p id="ai-overview" class="text-sm text-text-muted leading-relaxed"></p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex flex-col h-full">
+                                <h4 class="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center"><i class="ph-bold ph-sun mr-1.5 text-brand"></i> Today's Strategy</h4>
+                                <ul id="ai-today-list" class="space-y-2 text-sm text-white flex-1 overflow-y-auto max-h-[250px] custom-scrollbar pr-2"></ul>
+                            </div>
+                            <div class="flex flex-col h-full">
+                                <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-3 flex items-center"><i class="ph-bold ph-warning-circle mr-1.5"></i> Needs Attention</h4>
+                                <ul id="ai-past-list" class="space-y-2 text-sm text-white flex-1 overflow-y-auto max-h-[250px] custom-scrollbar pr-2"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
-        </div>
 
             <!-- FIXED: Changed from 'absolute inset-0' to 'relative' so it flows naturally below the AI panel -->
             <div id="empty-state" class="hidden relative flex flex-col items-center justify-center text-text-faint py-24 pointer-events-none w-full">
