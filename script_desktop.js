@@ -1604,6 +1604,8 @@ function renderTasks() {
         
         const el = D.createElement('div');
         el.className = `group flex flex-col p-5 rounded-2xl border transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer relative overflow-hidden ${sty}`; 
+        
+        // --- UPDATED: Click the card to select it for focus ---
         el.onclick = () => app.selectTask(x.id);
         
         el.innerHTML = `
@@ -1622,10 +1624,14 @@ function renderTasks() {
                             <h3 class="text-base font-bold text-white tracking-tight truncate transition-colors duration-300 ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3>
                         </div>
                         
-                        <div class="flex-shrink-0 flex items-center gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 z-20 translate-x-2 lg:group-hover:translate-x-0 bg-dark-bg/90 backdrop-blur-xl rounded-full p-1.5 border border-white/20 shadow-lg">
-                            <button onclick="app.startTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-white bg-brand rounded-full hover:scale-105 hover:shadow-[0_0_15px_rgba(255,87,87,0.5)] transition-all" title="Focus"><i class="ph-fill ph-play text-sm"></i></button>
-                            <button onclick="app.editTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-all" title="Edit"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
-                            <button onclick="app.deleteTask('${x.id}',event)" class="w-8 h-8 flex items-center justify-center text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-full transition-all" title="Delete"><i class="ph-bold ph-trash text-sm"></i></button>
+                        <!-- --- UPDATED: Always visible action buttons --- -->
+                        <div class="flex-shrink-0 flex items-center gap-1.5 z-20 bg-dark-bg/50 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-sm">
+                            <!-- Play button now acts as a secondary start button -->
+                            <button onclick="app.startTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white hover:bg-brand hover:text-white rounded-full transition-all" title="Focus"><i class="ph-fill ph-play text-xs"></i></button>
+                            <!-- Dedicated Edit button -->
+                            <button onclick="app.editTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 rounded-full transition-all" title="Edit Task"><i class="ph-bold ph-pencil-simple text-xs"></i></button>
+                            <!-- Delete button -->
+                            <button onclick="app.deleteTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-full transition-all" title="Delete"><i class="ph-bold ph-trash text-xs"></i></button>
                         </div>
                     </div>
                     
