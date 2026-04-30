@@ -112,6 +112,8 @@
         <div class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-24 px-5 relative" id="content-scroll-area">
             
             <div id="view-tasks" class="view-section min-h-full pt-4">
+                
+                <!-- 1. Stats Grid -->
                 <div class="grid grid-cols-2 gap-3 mb-6" id="mini-stats">
                     <div class="bg-dark-card p-3 rounded-lg border border-dark-border flex flex-col shadow-sm">
                         <span class="text-[10px] text-text-muted uppercase font-bold">Est. Duration</span>
@@ -121,46 +123,48 @@
                         <span class="text-[10px] text-text-muted uppercase font-bold">Tasks Left</span>
                         <span class="text-lg font-bold text-brand mt-1" id="mini-tasks-left">0</span>
                     </div>
-                    <!-- NEW: AI Summary Toggle Button -->
-                    <button onclick="app.toggleAISummary()" class="w-full mb-4 flex items-center justify-center gap-2 bg-dark-card border border-dark-border py-3 rounded-xl shadow-sm text-text-muted hover:text-white transition-colors active:scale-95">
-                        <i class="ph-fill ph-sparkle text-brand text-lg"></i>
-                        <span class="text-sm font-bold">AI Daily Brief</span>
-                    </button>
+                </div> <!-- The grid MUST safely close here! -->
 
-                    <!-- NEW: Expandable AI Summary Section -->
-                    <div id="ai-summary-wrapper" class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out">
-                        <div class="overflow-hidden">
-                            <div id="ai-summary-content" class="flex flex-col bg-dark-card border border-dark-border rounded-xl p-4 opacity-0 transition-opacity duration-300 delay-75 mb-6 shadow-sm">
-                                
-                                <!-- Box-free greeting area -->
-                                <div class="pb-3 border-b border-dark-border/50 mb-3">
-                                    <h3 id="ai-greeting" class="text-lg font-bold text-white mb-1.5 flex items-center"></h3>
-                                    <p id="ai-overview" class="text-xs text-text-muted leading-relaxed"></p>
-                                </div>
-                                
-                                <div class="flex flex-col gap-4">
-                                    <div>
-                                        <h4 class="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 flex items-center"><i class="ph-bold ph-sun mr-1.5 text-brand"></i> Tasks for Today</h4>
-                                        <ul id="ai-today-list" class="space-y-2 text-white overflow-y-auto max-h-[150px] custom-scrollbar pr-1"></ul>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center"><i class="ph-bold ph-warning-circle mr-1.5"></i> Needs Attention</h4>
-                                        <ul id="ai-past-list" class="space-y-2 text-white overflow-y-auto max-h-[150px] custom-scrollbar pr-1"></ul>
-                                    </div>
-                                </div>
-                                
+                <!-- 2. AI Summary Toggle Button -->
+                <button onclick="app.toggleAISummary()" class="w-full mb-4 flex items-center justify-center gap-2 bg-dark-card border border-dark-border py-3 rounded-xl shadow-sm text-text-muted hover:text-white transition-colors active:scale-95">
+                    <i class="ph-fill ph-sparkle text-brand text-lg"></i>
+                    <span class="text-sm font-bold">AI Daily Brief</span>
+                </button>
+
+                <!-- 3. Expandable AI Summary Section -->
+                <div id="ai-summary-wrapper" class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out">
+                    <div class="overflow-hidden">
+                        <div id="ai-summary-content" class="flex flex-col bg-dark-card border border-dark-border rounded-xl p-4 opacity-0 transition-opacity duration-300 delay-75 mb-6 shadow-sm">
+                            
+                            <div class="pb-3 border-b border-dark-border/50 mb-3">
+                                <h3 id="ai-greeting" class="text-lg font-bold text-white mb-1.5 flex items-center"></h3>
+                                <p id="ai-overview" class="text-xs text-text-muted leading-relaxed"></p>
                             </div>
+                            
+                            <div class="flex flex-col gap-4">
+                                <div>
+                                    <h4 class="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 flex items-center"><i class="ph-bold ph-sun mr-1.5 text-brand"></i> Tasks for Today</h4>
+                                    <ul id="ai-today-list" class="space-y-2 text-white overflow-y-auto max-h-[150px] custom-scrollbar pr-1"></ul>
+                                </div>
+                                <div>
+                                    <h4 class="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center"><i class="ph-bold ph-warning-circle mr-1.5"></i> Needs Attention</h4>
+                                    <ul id="ai-past-list" class="space-y-2 text-white overflow-y-auto max-h-[150px] custom-scrollbar pr-1"></ul>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
-
-                    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
                 </div>
 
+                <!-- 4. Empty State -->
                 <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
                     <i class="ph ph-check-circle text-4xl mb-3 text-brand/50"></i>
                     <p class="text-sm font-medium">No tasks found</p>
                 </div>
+                
+                <!-- 5. Task List -->
                 <div id="task-list" class="space-y-3 pb-8"></div>
+                
             </div>
 
             <div id="view-timer" class="view-section hidden flex flex-col items-center justify-center min-h-[calc(100dvh-8rem)]">
