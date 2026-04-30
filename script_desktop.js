@@ -143,9 +143,12 @@ const parseDate = (val) => {
     else if (typeof val === 'string') d = new Date(val);
     else if (val instanceof Date) d = val;
     else return null;
+    
+    // Shift retrieved absolute UTC times to IST for correct hour/day extraction
     return new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 };
 
+// Global helper to always fetch the current time as IST
 const getISTNow = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 
 const state = {
@@ -319,19 +322,24 @@ onAuthStateChanged(auth, u => {
                 $('user-email-text').textContent = VIEW_AS_UID;
                 $('user-avatar-initials').textContent = "?";
                 
+                // Use getDoc for a single read to conserve Firebase quota
                 getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
                     if(snap.exists()) {
                         const d = snap.data();
                         const name = d.displayName || d.name || 'User';
+                        
+                        // Update Text
                         $('user-name-text').textContent = name;
                         $('user-email-text').textContent = d.email || VIEW_AS_UID;
                         if(els.settingsName) els.settingsName.textContent = name;
                         if(els.settingsEmail) els.settingsEmail.textContent = d.email || VIEW_AS_UID;
                         
+                        // Inject the profile picture if it exists
                         if (d.photoURL) {
                             $('user-avatar-initials').innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded">`;
                             if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
                         } else {
+                            // Fallback to initial
                             const initial = name.charAt(0).toUpperCase();
                             $('user-avatar-initials').innerHTML = initial;
                             if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
@@ -339,6 +347,7 @@ onAuthStateChanged(auth, u => {
                     }
                 });
             } else {
+                // Standard User - Also using getDoc to save reads
                 getDoc(doc(db, 'artifacts', APP_ID, 'users', effectiveUid)).then(s => {
                     if (s.exists()) {
                         const d = s.data();
@@ -346,15 +355,19 @@ onAuthStateChanged(auth, u => {
                         const email = d.email || u.email;
                         const pic = d.photoURL;
 
+                        // Update Text Elements
                         $('user-name-text').textContent = name;
                         $('user-email-text').textContent = email;
                         if(els.settingsName) els.settingsName.textContent = name;
                         if(els.settingsEmail) els.settingsEmail.textContent = email;
 
+                        // Update Profile Pictures
                         if (pic) {
+                            // Inject images with object-cover to fit your existing containers beautifully
                             $('user-avatar-initials').innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded">`;
                             if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
                         } else {
+                            // Fallback to text initials
                             const initial = name.charAt(0).toUpperCase();
                             $('user-avatar-initials').innerHTML = initial;
                             if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
@@ -553,27 +566,34 @@ const app = {
         const loadingState = $('ai-loading-state');
         const loadedState = $('ai-loaded-state');
         if (!content || !loadingState || !loadedState) return;
-
+        
         if (content.classList.contains('hidden')) {
             haptic('light');
             content.classList.remove('hidden');
             content.classList.add('flex', 'animate-fade-in');
 
+            // 1. Show the skeleton loader
             loadingState.classList.remove('hidden');
             loadingState.classList.add('flex');
             loadedState.classList.add('hidden');
             loadedState.classList.remove('flex');
 
+            // 2. Simulate rapid AI generation (600ms)
             setTimeout(() => {
                 app.generateAISummaryData();
+                
+                // Swap states
                 loadingState.classList.add('hidden');
                 loadingState.classList.remove('flex');
+                
                 loadedState.classList.remove('hidden');
                 loadedState.classList.add('flex', 'animate-fade-in');
             }, 600);
+
         } else {
             content.classList.add('hidden');
             content.classList.remove('flex', 'animate-fade-in');
+            // Reset states for next open
             loadedState.classList.add('hidden');
             loadedState.classList.remove('flex');
         }
@@ -587,9 +607,9 @@ const app = {
 
         const userNameElement = $('user-name-text');
         const userName = userNameElement && userNameElement.textContent !== 'User' ? userNameElement.textContent : '';
-
+        
         if($('ai-greeting')) {
-            $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''}!`;
+            $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''} <i class="ph-fill ph-hand-waving text-yellow-500 ml-2"></i>`;
         }
 
         const getDayStr = (dParam) => {
@@ -601,10 +621,10 @@ const app = {
         const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
         const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
         const highPriorityTasks = todayTasks.filter(t => t.priority === 'high');
-
+        
         const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
-        const estTimeStr = Math.floor(totalEstMin / 60) > 0
-            ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m`
+        const estTimeStr = Math.floor(totalEstMin / 60) > 0 
+            ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
             : `${totalEstMin}m`;
 
         let workloadTone = "light and manageable";
@@ -617,7 +637,7 @@ const app = {
             summaryHtml = `Your schedule is completely clear! It's the perfect moment to review your active workflows, organize your <strong>Inbox</strong>, or simply take a well-deserved breather.`;
         } else {
             summaryHtml += `You're looking at a <strong>${workloadTone}</strong> day with <strong class="text-white">${todayTasks.length} tasks</strong> requiring roughly <strong class="text-white">${estTimeStr}</strong> of deep focus. `;
-
+            
             if (highPriorityTasks.length > 0) {
                 summaryHtml += `I highly recommend tackling <span class="text-red-400 font-semibold cursor-pointer hover:underline" onclick="app.selectTask('${highPriorityTasks[0].id}')">"${esc(highPriorityTasks[0].title)}"</span> first to knock out your high-impact work early. `;
             } else if (todayTasks.length > 0) {
@@ -632,7 +652,7 @@ const app = {
         if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
 
         const renderList = (tasks, emptyMsg, highlightColorClass) => {
-            return tasks.length > 0
+            return tasks.length > 0 
                 ? tasks.map(t => `
                     <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group" onclick="app.selectTask('${t.id}')">
                         <div class="flex items-start gap-2">
@@ -1556,6 +1576,8 @@ function updateCounts() {
     const aiPanel = $('ai-summary-content');
     const aiLoadedState = $('ai-loaded-state');
     
+    // Silently update the data if the panel is already open and loaded, 
+    // so checking off a task doesn't cause annoying flashes
     if (aiPanel && !aiPanel.classList.contains('hidden')) {
         if (aiLoadedState && !aiLoadedState.classList.contains('hidden')) {
             app.generateAISummaryData();
@@ -1716,6 +1738,7 @@ function updateTimerUI(t) {
     }
 }
 
+// Handle browser Back/Forward buttons
 window.addEventListener('popstate', (e) => {
     const currentParams = new URLSearchParams(window.location.search);
     const view = currentParams.get('view') || 'today';
