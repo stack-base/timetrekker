@@ -586,7 +586,8 @@ const app = {
         const userName = userNameElement && userNameElement.textContent !== 'User' ? userNameElement.textContent : '';
         
         if($('ai-greeting')) {
-            $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''} <i class="ph-fill ph-hand-waving text-yellow-500 ml-2"></i>`;
+            // FIXED: Removed the waving hand emoji here
+            $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''}!`;
         }
 
         const getDayStr = (dParam) => {
