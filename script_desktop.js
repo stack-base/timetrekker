@@ -1054,6 +1054,85 @@ const app = {
         saveLocalState();
         _saveSetting(k, v);
     },
+
+    toggleAISummary: () => {
+    const content = $('ai-summary-content');
+    if (!content) return;
+    
+    const isHidden = content.classList.contains('hidden');
+    if (isHidden) {
+        haptic('light'); // Reusing your existing haptic helper
+        content.classList.remove('hidden');
+        content.classList.add('flex', 'animate-fade-in');
+        app.generateAISummaryData();
+    } else {
+        content.classList.add('hidden');
+        content.classList.remove('flex', 'animate-fade-in');
+    }
+},
+
+generateAISummaryData: () => {
+    // 1. Time-Based Greeting
+    const hour = new Date().getHours();
+    let timeGreeting = 'Good evening';
+    if (hour < 12) timeGreeting = 'Good morning';
+    else if (hour < 18) timeGreeting = 'Good afternoon';
+
+    const userNameElement = $('user-name-text');
+    const userName = userNameElement ? (userNameElement.textContent !== 'User' ? userNameElement.textContent : 'there') : 'there';
+    
+    if($('ai-greeting')) $('ai-greeting').textContent = `${timeGreeting}, ${userName}!`;
+
+    // 2. Fetch Task Data (Using existing getISTNow helper)
+    const getDayStr = (dParam) => {
+        const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+    const todayStr = getDayStr();
+
+    // Filter tasks
+    const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
+    const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
+    
+    const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
+    const estTimeStr = Math.floor(totalEstMin / 60) > 0 
+        ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
+        : `${totalEstMin}m`;
+
+    // 3. Construct the Overview Text
+    let summaryText = "";
+    if (todayTasks.length > 0) {
+        summaryText += `You have <strong class="text-white">${todayTasks.length} tasks</strong> scheduled for today, requiring about <strong class="text-white">${estTimeStr}</strong> of focus. `;
+    }
+    if (pastTasks.length > 0) {
+        summaryText += `There are <strong class="text-red-400">${pastTasks.length} leftover tasks</strong> from previous days demanding your attention. `;
+    }
+    if (todayTasks.length === 0 && pastTasks.length === 0) {
+        summaryText = "Your schedule is completely clear! Great time to relax, review your projects, or plan ahead.";
+    } else {
+        summaryText += "Let's review your priorities and get into flow state.";
+    }
+
+    if($('ai-overview')) $('ai-overview').innerHTML = summaryText;
+
+    // 4. Populate the Interactive Lists
+    const todayList = $('ai-today-list');
+    const pastList = $('ai-past-list');
+
+    // Reusing the global 'esc' function for security
+    if(todayList) {
+        todayList.innerHTML = todayTasks.length > 0 
+            ? todayTasks.map(t => `<li class="flex items-start gap-2 bg-white/5 p-2 rounded border border-white/10 hover:bg-white/10 transition-colors cursor-pointer" onclick="app.selectTask('${t.id}')"><i class="ph-bold ph-caret-right text-brand mt-0.5 shrink-0"></i><span class="truncate">${esc(t.title)}</span></li>`).join('')
+            : `<li class="text-text-faint italic p-2 border border-transparent">No tasks scheduled for today.</li>`;
+    }
+
+    if(pastList) {
+        pastList.innerHTML = pastTasks.length > 0
+            ? pastTasks.map(t => `<li class="flex items-start gap-2 bg-red-500/5 p-2 rounded border border-red-500/10 hover:bg-red-500/10 transition-colors cursor-pointer" onclick="app.selectTask('${t.id}')"><i class="ph-bold ph-caret-right text-red-400 mt-0.5 shrink-0"></i><span class="truncate">${esc(t.title)}</span></li>`).join('')
+            : `<li class="text-text-faint italic p-2 border border-transparent">All caught up! No overdue tasks.</li>`;
+    }
+},
+
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
@@ -1532,6 +1611,11 @@ function updateCounts() {
     els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
 
     updateDailyAssistantSummary();
+    // --> ADD THIS LINE AT THE BOTTOM <--
+    const aiPanel = $('ai-summary-content');
+    if (aiPanel && !aiPanel.classList.contains('hidden')) {
+        app.generateAISummaryData();
+    }
 }
 
 function renderTasks() {
