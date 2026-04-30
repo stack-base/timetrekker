@@ -952,14 +952,14 @@ const app = {
         const renderList = (tasks, emptyMsg, highlightColorClass) => {
             return tasks.length > 0
                 ? tasks.map(t => `
-                    <li class="flex flex-col gap-1 bg-dark-bg/50 p-2.5 rounded-lg border border-dark-border active:scale-95 transition-transform" onclick="app.openTaskDetail(state.tasks.find(x => x.id === '${t.id}'))">
-                        <div class="flex items-center gap-2">
-                            <i class="ph-bold ph-caret-right ${highlightColorClass} text-[10px]"></i>
-                            <span class="truncate font-medium text-white text-xs">${esc(t.title)}</span>
+                    <li class="flex flex-col gap-1 bg-dark-bg/50 p-3.5 rounded-xl border border-dark-border active:scale-95 transition-transform shadow-sm" onclick="app.openTaskDetail(state.tasks.find(x => x.id === '${t.id}'))">
+                        <div class="flex items-center gap-3">
+                            <i class="ph-bold ph-caret-right ${highlightColorClass} text-sm shrink-0"></i>
+                            <span class="truncate font-medium text-white text-sm">${esc(t.title)}</span>
                         </div>
                     </li>
                 `).join('')
-                : `<li class="text-text-faint text-[10px] italic p-3 text-center border border-dark-border border-dashed rounded-lg bg-dark-bg/20">${emptyMsg}</li>`;
+                : `<li class="text-text-muted text-xs italic p-4 text-center border border-dark-border border-dashed rounded-xl bg-dark-bg/20">${emptyMsg}</li>`;
         };
 
         if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
