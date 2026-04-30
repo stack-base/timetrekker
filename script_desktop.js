@@ -1624,14 +1624,14 @@ function renderTasks() {
                             <h3 class="text-base font-bold text-white tracking-tight truncate transition-colors duration-300 ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3>
                         </div>
                         
-                        <!-- --- UPDATED: Always visible action buttons --- -->
+                        <!-- Always-visible action button group -->
                         <div class="flex-shrink-0 flex items-center gap-1.5 z-20 bg-dark-bg/50 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-sm">
-                            <!-- Play button now acts as a secondary start button -->
-                            <button onclick="app.startTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white hover:bg-brand hover:text-white rounded-full transition-all" title="Focus"><i class="ph-fill ph-play text-xs"></i></button>
-                            <!-- Dedicated Edit button -->
-                            <button onclick="app.editTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 rounded-full transition-all" title="Edit Task"><i class="ph-bold ph-pencil-simple text-xs"></i></button>
-                            <!-- Delete button -->
-                            <button onclick="app.deleteTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-full transition-all" title="Delete"><i class="ph-bold ph-trash text-xs"></i></button>
+                            <button onclick="app.startTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-brand hover:text-white hover:bg-brand rounded-full transition-colors" title="Start Focus"><i class="ph-fill ph-play text-xs"></i></button>
+                            
+                            <!-- Dedicated Edit Button -->
+                            <button onclick="app.editTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors" title="Edit Task"><i class="ph-bold ph-pencil-simple text-xs"></i></button>
+                            
+                            <button onclick="app.deleteTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors" title="Delete Task"><i class="ph-bold ph-trash text-xs"></i></button>
                         </div>
                     </div>
                     
