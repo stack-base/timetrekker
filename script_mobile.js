@@ -936,10 +936,11 @@ const app = {
         } else {
             summaryHtml += `You have a <strong>${workloadTone}</strong> day with <strong class="text-white">${todayTasks.length} tasks</strong> requiring roughly <strong class="text-white">${estTimeStr}</strong> of deep focus. `;
 
+            // --- UPDATED: Passing just the ID string ---
             if (highPriorityTasks.length > 0) {
-                summaryHtml += `Start with <span class="text-red-400 font-bold cursor-pointer" onclick="app.openTaskDetail(state.tasks.find(t => t.id === '${highPriorityTasks[0].id}'))">"${esc(highPriorityTasks[0].title)}"</span>. `;
+                summaryHtml += `Start with <span class="text-red-400 font-bold cursor-pointer" onclick="app.openTaskDetail('${highPriorityTasks[0].id}')">"${esc(highPriorityTasks[0].title)}"</span>. `;
             } else if (todayTasks.length > 0) {
-                summaryHtml += `Start with <span class="text-brand font-bold cursor-pointer" onclick="app.openTaskDetail(state.tasks.find(t => t.id === '${todayTasks[0].id}'))">"${esc(todayTasks[0].title)}"</span>. `;
+                summaryHtml += `Start with <span class="text-brand font-bold cursor-pointer" onclick="app.openTaskDetail('${todayTasks[0].id}')">"${esc(todayTasks[0].title)}"</span>. `;
             }
 
             if (pastTasks.length > 0) {
@@ -952,14 +953,17 @@ const app = {
         const renderList = (tasks, emptyMsg, highlightColorClass) => {
             return tasks.length > 0
                 ? tasks.map(t => `
-                    <li class="flex flex-col gap-1 bg-dark-bg/50 p-3.5 rounded-xl border border-dark-border active:scale-95 transition-transform shadow-sm" onclick="app.openTaskDetail(state.tasks.find(x => x.id === '${t.id}'))">
+                    <!-- --- UPDATED: Passing just the ID string --- -->
+                    <li class="flex flex-col gap-1 bg-dark-active/40 p-3.5 rounded-xl border border-dark-border/80 active:bg-dark-active/60 active:scale-95 transition-all shadow-sm" onclick="app.openTaskDetail('${t.id}')">
                         <div class="flex items-center gap-3">
-                            <i class="ph-bold ph-caret-right ${highlightColorClass} text-sm shrink-0"></i>
-                            <span class="truncate font-medium text-white text-sm">${esc(t.title)}</span>
+                            <div class="flex items-center justify-center w-7 h-7 rounded-full bg-dark-bg border border-dark-border/50 shrink-0 shadow-inner">
+                                <i class="ph-bold ph-caret-right ${highlightColorClass} text-xs"></i>
+                            </div>
+                            <span class="truncate font-medium text-white text-sm tracking-wide">${esc(t.title)}</span>
                         </div>
                     </li>
                 `).join('')
-                : `<li class="text-text-muted text-xs italic p-4 text-center border border-dark-border border-dashed rounded-xl bg-dark-bg/20">${emptyMsg}</li>`;
+                : `<li class="text-text-muted text-xs italic p-4 text-center border border-dark-border/50 border-dashed rounded-xl bg-dark-active/10">${emptyMsg}</li>`;
         };
 
         if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
@@ -1323,6 +1327,12 @@ const app = {
     },
     
     openTaskDetail: (t) => {
+        // --- NEW: Convert string ID to the task object ---
+        if (typeof t === 'string') {
+            t = state.tasks.find(x => x.id === t);
+        }
+        if (!t) return; // Failsafe if task isn't found
+
         haptic('light');
         history.pushState({ modal: 'detail' }, '');
 
