@@ -286,16 +286,9 @@
                         <div><div class="text-2xl font-bold text-brand" id="stat-focus-time">0h 0m</div><div class="text-xs text-text-muted uppercase font-semibold tracking-wide mt-1">Time Spent</div></div>
                     </div>
                     
-                    <!-- NEW: Floating Liquid Glass Button inside the stats row -->
                     <div class="shrink-0 lg:border-l lg:border-dark-border lg:pl-5 flex justify-end w-full lg:w-auto mt-2 lg:mt-0 flex items-center h-full">
-                        <button onclick="app.toggleAISummary()" class="relative w-12 h-12 flex items-center justify-center rounded-full bg-dark-bg/60 backdrop-blur-md border border-brand/40 shadow-[0_0_15px_rgba(255,87,87,0.2),inset_0_2px_8px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,87,87,0.5),inset_0_2px_12px_rgba(255,255,255,0.25)] hover:border-brand/80 hover:scale-105 transition-all duration-300 group overflow-hidden" title="Generate AI Summary">
-                            <!-- Inner liquid gradients -->
-                            <div class="absolute inset-0 bg-gradient-to-br from-brand/20 via-transparent to-black/40 pointer-events-none group-hover:from-brand/30 transition-colors"></div>
-                            <div class="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-brand/30 to-transparent pointer-events-none"></div>
-                            <!-- Crisp top glass highlight -->
-                            <div class="absolute top-[2px] left-[15%] right-[15%] h-[30%] bg-gradient-to-b from-white/40 to-transparent rounded-full pointer-events-none mix-blend-overlay"></div>
-                            
-                            <i class="ph-fill ph-sparkle text-xl text-brand relative z-10 group-hover:text-white transition-colors duration-300 group-hover:animate-pulse drop-shadow-[0_0_5px_rgba(255,87,87,0.8)]"></i>
+                        <button onclick="app.toggleAISummary()" class="relative w-12 h-12 flex items-center justify-center rounded-full bg-dark-bg border border-dark-border hover:bg-dark-hover transition-all duration-300 group overflow-hidden" title="Generate AI Summary">
+                            <i class="ph-fill ph-sparkle text-xl text-text-muted group-hover:text-white transition-colors duration-300"></i>
                         </button>
                     </div>
                 </div>
