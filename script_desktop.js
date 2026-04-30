@@ -375,7 +375,7 @@ onAuthStateChanged(auth, u => {
                     }
                 });
             }
-        } // <--- This was the missing closing bracket causing the error!
+        } 
 
         subTasks(effectiveUid);
         subLogs(effectiveUid);
@@ -561,6 +561,95 @@ const _saveSetting = debounce((k, v) => {
 }, 500);
 
 const app = {
+    toggleAISummary: () => {
+        const content = $('ai-summary-content');
+        if (!content) return;
+        
+        if (content.classList.contains('hidden')) {
+            haptic('light');
+            content.classList.remove('hidden');
+            content.classList.add('flex', 'animate-fade-in');
+            app.generateAISummaryData();
+        } else {
+            content.classList.add('hidden');
+            content.classList.remove('flex', 'animate-fade-in');
+        }
+    },
+
+    generateAISummaryData: () => {
+        const hour = new Date().getHours();
+        let timeGreeting = 'Good evening';
+        if (hour < 12) timeGreeting = 'Good morning';
+        else if (hour < 18) timeGreeting = 'Good afternoon';
+
+        const userNameElement = $('user-name-text');
+        const userName = userNameElement && userNameElement.textContent !== 'User' ? userNameElement.textContent : '';
+        
+        if($('ai-greeting')) {
+            $('ai-greeting').innerHTML = `${timeGreeting}${userName ? ', ' + userName : ''} <i class="ph-fill ph-hand-waving text-yellow-500 ml-2"></i>`;
+        }
+
+        const getDayStr = (dParam) => {
+            const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        };
+        const todayStr = getDayStr();
+
+        const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
+        const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
+        const highPriorityTasks = todayTasks.filter(t => t.priority === 'high');
+        
+        const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
+        const estTimeStr = Math.floor(totalEstMin / 60) > 0 
+            ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
+            : `${totalEstMin}m`;
+
+        let workloadTone = "light and manageable";
+        if (totalEstMin > 240) workloadTone = "quite demanding";
+        else if (totalEstMin > 120) workloadTone = "steady and balanced";
+
+        let summaryHtml = "";
+
+        if (todayTasks.length === 0 && pastTasks.length === 0) {
+            summaryHtml = `Your schedule is completely clear! It's the perfect moment to review your active workflows, organize your <strong>Inbox</strong>, or simply take a well-deserved breather.`;
+        } else {
+            summaryHtml += `You're looking at a <strong>${workloadTone}</strong> day with <strong class="text-white">${todayTasks.length} tasks</strong> requiring roughly <strong class="text-white">${estTimeStr}</strong> of deep focus. `;
+            
+            if (highPriorityTasks.length > 0) {
+                summaryHtml += `I highly recommend tackling <span class="text-red-400 font-semibold cursor-pointer hover:underline" onclick="app.selectTask('${highPriorityTasks[0].id}')">"${esc(highPriorityTasks[0].title)}"</span> first to knock out your high-impact work early. `;
+            } else if (todayTasks.length > 0) {
+                summaryHtml += `Consider starting with <span class="text-brand font-semibold cursor-pointer hover:underline" onclick="app.selectTask('${todayTasks[0].id}')">"${esc(todayTasks[0].title)}"</span> to build some early momentum. `;
+            }
+
+            if (pastTasks.length > 0) {
+                summaryHtml += `Also, keep an eye on the <strong>${pastTasks.length} leftover tasks</strong> lingering from the past. Let's clear them out today.`;
+            }
+        }
+
+        if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
+
+        const renderList = (tasks, emptyMsg, highlightColorClass) => {
+            return tasks.length > 0 
+                ? tasks.map(t => `
+                    <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group" onclick="app.selectTask('${t.id}')">
+                        <div class="flex items-start gap-2">
+                            <i class="ph-bold ph-caret-right ${highlightColorClass} mt-0.5 shrink-0 group-hover:translate-x-1 transition-transform"></i>
+                            <span class="truncate font-medium text-white/90 group-hover:text-white">${esc(t.title)}</span>
+                        </div>
+                        <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider">
+                            ${t.priority === 'high' ? '<span class="text-red-400 flex items-center"><i class="ph-bold ph-warning-circle mr-1"></i> High</span>' : ''}
+                            <span class="flex items-center"><i class="ph-bold ph-clock mr-1"></i> ${(t.estimatedPomos || 1) * (t.pomoDuration || 25)}m</span>
+                            <span class="flex items-center"><i class="ph-bold ph-folder mr-1"></i> ${esc(t.project || 'Inbox')}</span>
+                        </div>
+                    </li>
+                `).join('')
+                : `<li class="text-text-faint italic p-4 text-center border border-dark-border border-dashed rounded-lg bg-dark-bg/20">${emptyMsg}</li>`;
+        };
+
+        if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
+        if($('ai-past-list')) $('ai-past-list').innerHTML = renderList(pastTasks, "All caught up! No overdue tasks.", "text-red-400");
+    },
+
     showBroadcastPopup: (b) => {
         if (document.getElementById('broadcast-' + b.id)) return;
 
@@ -697,7 +786,6 @@ const app = {
         state.view = v; state.filterProject = null;
         saveLocalState();
 
-        // Update the URL without reloading the page
         if (pushHistory) {
             const url = new URL(window.location);
             url.searchParams.set('view', v);
@@ -1054,85 +1142,6 @@ const app = {
         saveLocalState();
         _saveSetting(k, v);
     },
-
-    toggleAISummary: () => {
-    const content = $('ai-summary-content');
-    if (!content) return;
-    
-    const isHidden = content.classList.contains('hidden');
-    if (isHidden) {
-        haptic('light'); // Reusing your existing haptic helper
-        content.classList.remove('hidden');
-        content.classList.add('flex', 'animate-fade-in');
-        app.generateAISummaryData();
-    } else {
-        content.classList.add('hidden');
-        content.classList.remove('flex', 'animate-fade-in');
-    }
-},
-
-generateAISummaryData: () => {
-    // 1. Time-Based Greeting
-    const hour = new Date().getHours();
-    let timeGreeting = 'Good evening';
-    if (hour < 12) timeGreeting = 'Good morning';
-    else if (hour < 18) timeGreeting = 'Good afternoon';
-
-    const userNameElement = $('user-name-text');
-    const userName = userNameElement ? (userNameElement.textContent !== 'User' ? userNameElement.textContent : 'there') : 'there';
-    
-    if($('ai-greeting')) $('ai-greeting').textContent = `${timeGreeting}, ${userName}!`;
-
-    // 2. Fetch Task Data (Using existing getISTNow helper)
-    const getDayStr = (dParam) => {
-        const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    };
-    const todayStr = getDayStr();
-
-    // Filter tasks
-    const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
-    const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
-    
-    const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
-    const estTimeStr = Math.floor(totalEstMin / 60) > 0 
-        ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
-        : `${totalEstMin}m`;
-
-    // 3. Construct the Overview Text
-    let summaryText = "";
-    if (todayTasks.length > 0) {
-        summaryText += `You have <strong class="text-white">${todayTasks.length} tasks</strong> scheduled for today, requiring about <strong class="text-white">${estTimeStr}</strong> of focus. `;
-    }
-    if (pastTasks.length > 0) {
-        summaryText += `There are <strong class="text-red-400">${pastTasks.length} leftover tasks</strong> from previous days demanding your attention. `;
-    }
-    if (todayTasks.length === 0 && pastTasks.length === 0) {
-        summaryText = "Your schedule is completely clear! Great time to relax, review your projects, or plan ahead.";
-    } else {
-        summaryText += "Let's review your priorities and get into flow state.";
-    }
-
-    if($('ai-overview')) $('ai-overview').innerHTML = summaryText;
-
-    // 4. Populate the Interactive Lists
-    const todayList = $('ai-today-list');
-    const pastList = $('ai-past-list');
-
-    // Reusing the global 'esc' function for security
-    if(todayList) {
-        todayList.innerHTML = todayTasks.length > 0 
-            ? todayTasks.map(t => `<li class="flex items-start gap-2 bg-white/5 p-2 rounded border border-white/10 hover:bg-white/10 transition-colors cursor-pointer" onclick="app.selectTask('${t.id}')"><i class="ph-bold ph-caret-right text-brand mt-0.5 shrink-0"></i><span class="truncate">${esc(t.title)}</span></li>`).join('')
-            : `<li class="text-text-faint italic p-2 border border-transparent">No tasks scheduled for today.</li>`;
-    }
-
-    if(pastList) {
-        pastList.innerHTML = pastTasks.length > 0
-            ? pastTasks.map(t => `<li class="flex items-start gap-2 bg-red-500/5 p-2 rounded border border-red-500/10 hover:bg-red-500/10 transition-colors cursor-pointer" onclick="app.selectTask('${t.id}')"><i class="ph-bold ph-caret-right text-red-400 mt-0.5 shrink-0"></i><span class="truncate">${esc(t.title)}</span></li>`).join('')
-            : `<li class="text-text-faint italic p-2 border border-transparent">All caught up! No overdue tasks.</li>`;
-    }
-},
-
     signOut: () => signOut(auth).then(() => window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href))
 };
 
@@ -1403,7 +1412,6 @@ function updateAnalytics() {
         state.charts.taskBar = new Chart(ctxT, gC(ctxT, state.chartTypes.task, lbl, dpTask, '#3b82f6', 'Tasks Done'));
     }
 
-    // --- ADD TODAY TIMELINE CHART LOGIC ---
     const todayHours = Array(24).fill(0);
     logsToday.forEach(l => { 
         const d = parseDate(l.completedAt); 
@@ -1413,10 +1421,8 @@ function updateAnalytics() {
     if(els.analytics.todayTimelineChart) {
         if (state.charts.todayTimeline) state.charts.todayTimeline.destroy();
         const ctxToday = els.analytics.todayTimelineChart.getContext('2d');
-        // Passing 'line' explicitly to force a line graph regardless of other toggles
         state.charts.todayTimeline = new Chart(ctxToday, gC(ctxToday, 'line', Array.from({ length: 24 }, (_, i) => i + 'h'), todayHours, '#8b5cf6', 'Minutes'));
     }
-    // ---------------------------------------
 
     if(els.analytics.hourlyChart) {
         if (state.charts.hourly) state.charts.hourly.destroy();
@@ -1453,45 +1459,44 @@ function updateAnalytics() {
     }
     
     const pri = { high: 0, med: 0, low: 0, none: 0 };
-tasksDone.forEach(t => pri[t.priority || 'none']++);
-if(els.analytics.priorityChart) {
-    if (state.charts.priority) state.charts.priority.destroy();
-    state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: ['High', 'Med', 'Low', 'None'],
-            datasets: [{
-                data: [pri.high, pri.med, pri.low, pri.none],
-                backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'],
-                borderColor: '#000000',
-                borderWidth: 4,
-                hoverOffset: 4
-            }]
-        },
-        options: doughnutOptions
-    });
+    tasksDone.forEach(t => pri[t.priority || 'none']++);
+    if(els.analytics.priorityChart) {
+        if (state.charts.priority) state.charts.priority.destroy();
+        state.charts.priority = new Chart(els.analytics.priorityChart.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['High', 'Med', 'Low', 'None'],
+                datasets: [{
+                    data: [pri.high, pri.med, pri.low, pri.none],
+                    backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'],
+                    borderColor: '#000000',
+                    borderWidth: 4,
+                    hoverOffset: 4
+                }]
+            },
+            options: doughnutOptions
+        });
 
-    // Populate the text-based distribution list
-    const priList = document.getElementById('priority-rank-list');
-    if(priList) {
-        const priData = [
-            { label: 'High', count: pri.high, color: '#ef4444' },
-            { label: 'Medium', count: pri.med, color: '#eab308' },
-            { label: 'Low', count: pri.low, color: '#3b82f6' },
-            { label: 'None', count: pri.none, color: '#525252' }
-        ];
-        
-        priList.innerHTML = priData.map(p => `
-            <div class="priority-row">
-                <div class="priority-label-group">
-                    <div class="priority-dot" style="background-color: ${p.color};"></div>
-                    <span class="priority-name">${p.label}</span>
+        const priList = document.getElementById('priority-rank-list');
+        if(priList) {
+            const priData = [
+                { label: 'High', count: pri.high, color: '#ef4444' },
+                { label: 'Medium', count: pri.med, color: '#eab308' },
+                { label: 'Low', count: pri.low, color: '#3b82f6' },
+                { label: 'None', count: pri.none, color: '#525252' }
+            ];
+            
+            priList.innerHTML = priData.map(p => `
+                <div class="priority-row">
+                    <div class="priority-label-group">
+                        <div class="priority-dot" style="background-color: ${p.color};"></div>
+                        <span class="priority-name">${p.label}</span>
+                    </div>
+                    <span class="priority-count">${p.count} tasks</span>
                 </div>
-                <span class="priority-count">${p.count} tasks</span>
-            </div>
-        `).join('');
+            `).join('');
+        }
     }
-}
 
     const tc = {}; tasksDone.forEach(t => { if (t.tags) t.tags.forEach(g => tc[g] = (tc[g] || 0) + 1) });
     const st = Object.entries(tc).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -1510,71 +1515,6 @@ if(els.analytics.priorityChart) {
 $('prompt-cancel-btn').addEventListener('click', () => app.closePrompt(null)); $('prompt-confirm-btn').addEventListener('click', () => app.closePrompt(app.customPrompt.input.value)); $('prompt-input').addEventListener('keypress', e => { if (e.key === 'Enter') app.closePrompt(app.customPrompt.input.value) }); D.addEventListener('click', e => { if (!e.target.closest('#project-dropdown') && !e.target.closest('#priority-dropdown') && !e.target.closest('#repeat-dropdown')) { D.getElementById('project-options').classList.add('hidden'); D.getElementById('priority-options').classList.add('hidden'); D.getElementById('repeat-options').classList.add('hidden') } });
 function updateNavStyles(v, p) { D.querySelectorAll('.nav-btn').forEach(b => { const i = b.id === `nav-${v}`; b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-brand', i); b.classList.toggle('text-text-muted', !i); if (i) b.classList.remove('hover:text-white'); else b.classList.add('hover:text-white') }); D.querySelectorAll('.project-btn').forEach(b => { const i = v === 'project' && b.dataset.proj === p; b.classList.toggle('text-brand', i); b.classList.toggle('bg-brand', i); b.classList.toggle('bg-opacity-10', i); b.classList.toggle('text-text-muted', !i) }) }
 function updateProjectsUI() { const els = getEls(); els.projectList.innerHTML = ''; state.projects.forEach(p => { const d = D.createElement('div'); d.innerHTML = `<div class="group relative flex items-center"><button onclick="app.setProjectView('${esc(p)}')" data-proj="${esc(p)}" class="project-btn w-full flex items-center justify-between px-3 py-2 rounded text-text-muted hover:bg-dark-hover hover:text-white transition-colors text-sm group shrink-0"><div class="flex items-center min-w-0"><i class="ph-bold ph-hash mr-3 opacity-50 shrink-0"></i><span class="truncate font-medium">${esc(p)}</span></div></button><div class="absolute right-2 flex opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"><button onclick="app.renameProject('${esc(p)}', event)" class="text-text-muted hover:text-white p-1"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="app.deleteProject('${esc(p)}', event)" class="text-text-muted hover:text-red-400 p-1 ml-1"><i class="ph-bold ph-trash"></i></button></div></div>`; els.projectList.appendChild(d) }) }
-
-function updateDailyAssistantSummary() {
-    const els = getEls();
-    const assistantContainer = $('ai-assistant-summary');
-    
-    // Only show this detailed summary on the 'Today' view
-    if (state.view !== 'today') {
-        if(assistantContainer) assistantContainer.classList.add('hidden');
-        return;
-    } else {
-        if(assistantContainer) assistantContainer.classList.remove('hidden');
-    }
-
-    // 1. Time-Based Greeting
-    const hour = new Date().getHours();
-    let timeGreeting = 'Good evening';
-    if (hour < 12) timeGreeting = 'Good morning';
-    else if (hour < 18) timeGreeting = 'Good afternoon';
-
-    // The username is already populated in the DOM during auth state change
-    const userNameElement = $('user-name-text');
-    const userName = userNameElement ? (userNameElement.textContent !== 'User' ? userNameElement.textContent : 'there') : 'there';
-    
-    if($('assistant-greeting')) {
-        $('assistant-greeting').textContent = `${timeGreeting}, ${userName}!`;
-    }
-
-    // 2. Fetch Task Data
-    const getDayStr = (dParam) => {
-        const d = dParam ? new Date(new Date(dParam).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : getISTNow();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    };
-    const todayStr = getDayStr();
-
-    const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
-    const pastTasks = state.tasks.filter(x => x.dueDate < todayStr && x.status === 'todo');
-    
-    // Calculate total estimated time for today's tasks
-    const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
-    const estTimeStr = Math.floor(totalEstMin / 60) > 0 
-        ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` 
-        : `${totalEstMin}m`;
-
-    // 3. Construct the "AI" Summary Text
-    let summaryText = "";
-
-    if (todayTasks.length > 0) {
-        summaryText += `You have **${todayTasks.length} tasks** on your plate for today, requiring approximately **${estTimeStr}** of focus time. `;
-    }
-
-    if (pastTasks.length > 0) {
-        summaryText += `You also have **${pastTasks.length} leftover tasks** from the past. You might want to reschedule or tackle those first. `;
-    }
-
-    if (todayTasks.length === 0 && pastTasks.length === 0) {
-        summaryText = "Your schedule is completely clear right now. It's a great time to plan ahead, review your projects, or just take a breather!";
-    } else {
-        summaryText += "Let's lock in and get into flow state.";
-    }
-
-    // 4. Inject into UI with emphasis on metrics
-    if($('assistant-text')) {
-        $('assistant-text').innerHTML = summaryText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
-    }
-}
 
 function updateCounts() {
     const els = getEls();
@@ -1610,8 +1550,6 @@ function updateCounts() {
     const totalEstMin = tasksViewTodo.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
     els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
 
-    updateDailyAssistantSummary();
-    // --> ADD THIS LINE AT THE BOTTOM <--
     const aiPanel = $('ai-summary-content');
     if (aiPanel && !aiPanel.classList.contains('hidden')) {
         app.generateAISummaryData();
@@ -1639,7 +1577,6 @@ function renderTasks() {
         const isSel = x.id === state.selectedTaskId;
         const pc = Math.min(100, (cP / (x.estimatedPomos || 1)) * 100);
         
-        // Slightly boosted pill backgrounds to maintain contrast against the newly lightened card
         const prioColors = {
             high: 'text-red-400 bg-red-500/15 border-red-500/30',
             med: 'text-yellow-400 bg-yellow-500/15 border-yellow-500/30',
@@ -1647,7 +1584,6 @@ function renderTasks() {
             none: 'text-text-muted bg-white/10 border-white/10'
         };
         
-        // Refined Glassmorphism: 6% white default, 10% on hover/selected
         const sty = isSel 
             ? 'bg-white/[0.08] border-brand/60 shadow-[0_0_20px_rgba(255,87,87,0.2)] ring-1 ring-brand/50' 
             : 'bg-white/[0.04] border-white/[0.15] hover:bg-white/[0.08] hover:border-white/30 hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md';
@@ -1775,16 +1711,13 @@ function updateTimerUI(t) {
 
 // Handle browser Back/Forward buttons
 window.addEventListener('popstate', (e) => {
-    // It's safe to declare this inside the event listener since it's block-scoped
     const currentParams = new URLSearchParams(window.location.search);
     const view = currentParams.get('view') || 'today';
     if (app.setView) app.setView(view, false);
 });
 
-// Initialize view based on URL parameter (using the globally defined URL_PARAMS)
 let initialView = URL_PARAMS.get('view') || 'today';
 
-// Handle translation from Mobile Tabs to Desktop Views/Overlays
 if (initialView === 'tasks') {
     initialView = 'today';
 } else if (initialView === 'timer') {
