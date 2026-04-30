@@ -877,27 +877,26 @@ const app = {
         const h = Math.floor(estMin / 60); const m = estMin % 60;
         if($('mini-est-time')) $('mini-est-time').textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
         if($('mini-tasks-left')) $('mini-tasks-left').textContent = todayTasks.length;
-        const briefSheet = $('brief-sheet');
-        if (briefSheet && !briefSheet.classList.contains('translate-y-full')) {
+        
+        // --- UPDATED: Check if full screen modal is open ---
+        const briefModal = $('brief-modal');
+        if (briefModal && !briefModal.classList.contains('translate-y-full')) {
             app.generateAISummaryData();
         }
     },
 
-    openBriefSheet: () => {
+    openBriefModal: () => {
         haptic('light');
         history.pushState({ modal: 'brief' }, '');
         
         // Generate the data right before opening
         app.generateAISummaryData(); 
         
-        $('modal-overlay').classList.remove('hidden');
-        setTimeout(() => {
-            $('modal-overlay').classList.remove('opacity-0');
-            $('brief-sheet').classList.remove('translate-y-full');
-        }, 10);
+        // Slide up the full-screen modal
+        $('brief-modal').classList.remove('translate-y-full');
     },
 
-    closeBriefSheet: () => { 
+    closeBriefModal: () => { 
         history.back(); 
     },
 
@@ -2006,10 +2005,9 @@ window.addEventListener('popstate', (e) => {
         setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
         return; 
     }
-    if (!$('brief-sheet').classList.contains('translate-y-full')) { 
-        $('brief-sheet').classList.add('translate-y-full');
-        $('modal-overlay').classList.add('opacity-0');
-        setTimeout(() => { $('modal-overlay').classList.add('hidden'); }, 300);
+    if ($('brief-modal') && !$('brief-modal').classList.contains('translate-y-full')) { 
+        $('brief-modal').classList.add('translate-y-full');
+        // No overlay to hide, just slide the modal down!
         return; 
     }
     
