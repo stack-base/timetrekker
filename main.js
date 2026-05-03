@@ -21,7 +21,8 @@ function sendNotification(title, body) {
     if (Notification.permission === "granted") {
         new Notification(title, {
             body: body,
-            icon: "https://cdn-icons-png.flaticon.com/512/825/825510.png" // Optional generic timer icon
+            // Updated to use your custom TimeTrekker icon URL
+            icon: "https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png" 
         });
     } else {
         // Fallback if notifications are blocked
