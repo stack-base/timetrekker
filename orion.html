@@ -7,6 +7,7 @@
 <link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
@@ -18,25 +19,22 @@
     :root {
         --brand: #ff5757;
         --brand-hover: #e04848;
-        --brand-dim: rgba(255, 87, 87, 0.15); 
+        --brand-dim: rgba(255, 87, 87, 0.15); /* Boosted for better active state visibility */
         --bg-main: #0f0f0f;
         --bg-sidebar: #141414;
         --bg-card: #1e1e1e;
         --border: #2a2a2a;
         --hover: #333333;
         
-        --text-main: #f3f4f6; 
-        --text-muted: #a1a1aa; 
-        --text-faint: #71717a; 
+        /* Typography Visibility Updates */
+        --text-main: #f3f4f6; /* Brighter neutral white */
+        --text-muted: #a1a1aa; /* Warmer, clearer gray */
+        --text-faint: #71717a; /* Lifted significantly to pass contrast checks */
         
         --success: #10b981;
         --warning: #f59e0b;
         --danger: #ef4444;
         --info: #3b82f6;
-
-        /* Premium Apple/Google System Font Stacks */
-        --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-        --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,18 +42,13 @@
     body { 
         background-color: var(--bg-main); 
         color: var(--text-main); 
-        font-family: var(--font-sans); 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
         overflow: hidden; 
         height: 100vh; 
         width: 100vw; 
-        line-height: 1.5; 
-        -webkit-font-smoothing: antialiased; 
+        line-height: 1.5; /* Improved reading rhythm */
+        -webkit-font-smoothing: antialiased; /* Crisp rendering */
         -moz-osx-font-smoothing: grayscale; 
-    }
-
-    /* Apply Apple-style tight tracking to headings */
-    h1, h2, h3, .card-title {
-        letter-spacing: -0.02em;
     }
     
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -68,8 +61,9 @@
     .text-danger { color: var(--danger); }
     .font-bold { font-weight: 700; }
     
+    /* Typography Bumps */
     .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; } 
+    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; } /* Lifted from 0.75rem */
     
     .hidden { display: none !important; }
     .flex { display: flex; }
@@ -77,7 +71,7 @@
     .justify-between { justify-content: space-between; }
     .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); font-family: var(--font-sans); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); }
     .btn:hover { color: var(--text-main); }
     .btn-primary { background: var(--brand); color: #fff; }
     .btn-primary:hover { background: var(--brand-hover); }
@@ -103,6 +97,7 @@
     
     .sidebar-nav { flex: 1; padding: 1rem; overflow-y: auto; }
     
+    /* Adjusted Nav Label for Readability */
     .nav-label { font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0.75rem 0.5rem; }
     
     .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; }
@@ -124,19 +119,22 @@
     .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
     .card-body.no-pad { padding: 0; }
     
+    /* Adjusted Stat Label */
     .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
     
-    .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
     .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
 
     .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
     
+    /* Improved Table Header Typography */
     .data-table th { padding: 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
     
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
     .data-table tr:hover { background: var(--hover); }
 
+    /* Interactive Table Headers */
     th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
     th.sortable:hover { color: #fff; }
     th.sortable i { margin-left: 4px; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
@@ -148,20 +146,30 @@
     .modal-box.large { max-width: 500px; padding: 0; overflow: hidden; }
     
     .input-group { margin-bottom: 1rem; }
-    .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.025em; }
-    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: var(--font-sans); }
+    .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: 'Inter', sans-serif; }
     .input-control:focus { border-color: var(--brand); }
-    .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; font-family: var(--font-sans); letter-spacing: -0.01em; }
+    .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; }
     .input-transparent::placeholder { color: var(--text-muted); }
 
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Split-Screen Overlay Styles for Master Profile Modal */
+    /* Split-Screen Overlay Styles */
     .fs-overlay-container { padding: 0; background: var(--bg-main); align-items: stretch; flex-direction: row; }
     .fs-image-panel { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; padding: 2rem; position: relative; }
+    
+    /* Forces images of all sizes to stretch and fit gracefully */
     .fs-image-panel img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.5)); }
-    .fs-details-panel { width: 400px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; position: relative; flex-shrink: 0; overflow-y: auto; }
+    
+    .fs-details-panel { width: 400px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 2rem; position: relative; flex-shrink: 0; overflow-y: auto; }
+
+    /* Mobile adjustments for the overlay */
+    @media (max-width: 768px) {
+        .fs-overlay-container { flex-direction: column; }
+        .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } /* Gives top half of screen to image */
+        .fs-details-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
+    }
 
     @media (max-width: 1024px) {
         .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
@@ -183,11 +191,6 @@
         .card-header { padding: 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         .card-header .header-actions { width: 100%; display: flex; justify-content: space-between; }
         .stat-value { font-size: 1.5rem; }
-        
-        /* Mobile Split Screen Adjustments */
-        .fs-overlay-container { flex-direction: column; }
-        .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } 
-        .fs-details-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
     }
 </style>
 </head>
@@ -199,7 +202,7 @@
         <div class="sidebar-brand">
             <div class="flex items-center">
                 <div class="brand-icon"><img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 40px; height: auto;"></div>
-                <span style="margin-left: 0.75rem; font-weight: 700; font-size: 1.125rem; color: #fff; letter-spacing: -0.02em;">Orion</span>
+                <span style="margin-left: 0.75rem; font-weight: 700; font-size: 1.125rem; color: #fff;">Orion</span>
             </div>
             <button class="mobile-close-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-x"></i></button>
         </div>
@@ -226,11 +229,11 @@
             <div class="flex items-center" style="margin-bottom: 1.5rem; gap: 0.75rem;">
                  <div style="width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
                  <div style="min-width: 0;">
-                    <div class="truncate text-base font-bold" style="color: #fff; letter-spacing: -0.01em;">Orion Console</div>
+                    <div class="truncate text-base font-bold" style="color: #fff;">Orion Console</div>
                     <div class="text-sm text-muted">Connected</div>
                  </div>
             </div>
-            <button onclick="app.signOut()" class="btn btn-danger" style="width: 100%; text-transform: uppercase; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.025em; padding: 0.75rem;">
+            <button onclick="app.signOut()" class="btn btn-danger" style="width: 100%; text-transform: uppercase; font-size: 0.875rem; font-weight: 700; padding: 0.75rem;">
                 <i class="ph-bold ph-sign-out" style="margin-right: 0.5rem;"></i> Sign Out
             </button>
         </div>
@@ -253,13 +256,13 @@
                 <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
                 <div class="flex items-center" style="gap: 0.75rem;">
                    <h1>Data Management</h1>
-                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: var(--font-mono); background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700; letter-spacing: 0.025em;">CACHED (0m ago)</span>
+                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">CACHED (0m ago)</span>
                 </div>
             </div>
             <div class="flex items-center" style="gap: 1rem;">
                 <div style="text-align: right;">
-                    <div style="font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em;">Last Sync</div>
-                    <div id="last-sync-time" style="font-family: var(--font-mono); color: #fff; font-size: 12px;">--:--:--</div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase;">Last Sync</div>
+                    <div id="last-sync-time" style="font-family: monospace; color: #fff; font-size: 12px;">--:--:--</div>
                 </div>
                 <button onclick="app.hardRefresh()" class="btn btn-outline text-xs">
                     <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Update App
@@ -314,7 +317,7 @@
                     <div class="card" style="padding: 0; height: 400px;">
                         <div class="card-header">
                             <h3>Recent Sessions</h3>
-                            <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2); font-weight: 600; letter-spacing: 0.025em;">Live Feed</span>
+                            <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">Live Feed</span>
                         </div>
                         <div class="table-wrapper custom-scrollbar">
                             <table class="data-table">
@@ -340,8 +343,8 @@
                                 <div style="width: 100%; background: var(--bg-main); border-radius: 999px; height: 8px; overflow: hidden;"><div id="bar-priority" style="background: var(--danger); height: 100%; border-radius: 999px; transition: width 0.5s; width: 0%;"></div></div>
                             </div>
                             <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); margin-top: 1.5rem;">
-                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Console Logs</div>
-                                <div id="console-log" style="font-size: 12px; font-family: var(--font-mono); color: var(--text-faint); height: 96px; overflow-y: auto;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Console Logs</div>
+                                <div id="console-log" style="font-size: 11px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
                                     > Initializing Orion Console...<br>
                                 </div>
                             </div>
@@ -497,20 +500,20 @@
                         <div class="dashboard-grid grid-cols-3">
                              <div class="card" style="padding: 1.25rem;">
                                 <div class="stat-label">Cache Age</div>
-                                <div style="font-size: 1.5rem; font-family: var(--font-mono); color: #fff; font-weight: 700; letter-spacing: -0.02em;" id="stat-cache-age">--</div>
+                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-cache-age">--</div>
                              </div>
                              <div class="card" style="padding: 1.25rem;">
                                 <div class="stat-label">Items Stored</div>
-                                <div style="font-size: 1.5rem; font-family: var(--font-mono); color: #fff; font-weight: 700; letter-spacing: -0.02em;" id="stat-items-count">--</div>
+                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-items-count">-- objects</div>
                              </div>
                              <div class="card" style="padding: 1.25rem;">
                                 <div class="stat-label">Storage Usage</div>
-                                <div style="font-size: 1.5rem; font-family: var(--font-mono); color: #fff; font-weight: 700; letter-spacing: -0.02em;" id="stat-storage-size">--</div>
+                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-storage-size">-- KB</div>
                              </div>
                         </div>
                     </div>
                      <div style="display: flex; justify-content: flex-end;">
-                        <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.8125rem; font-weight: 700; color: var(--danger); text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; opacity: 0.7; font-family: var(--font-sans);">
+                        <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.8125rem; font-weight: 700; color: var(--danger); text-transform: uppercase; cursor: pointer; opacity: 0.7;">
                             Clear Local Cache & Reset
                         </button>
                     </div>
@@ -624,130 +627,138 @@
     </div>
 </div>
 
-<div id="master-profile-modal" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
+<div id="user-profile-modal" class="modal-overlay hidden">
+    <div class="modal-box large">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5);">
+            <h2 style="font-size: 1.125rem; font-weight: 700; color: #fff;">User Profile Management</h2>
+            <button type="button" onclick="app.toggleUserProfileModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+        </div>
+        
+        <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
+            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
+                
+                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; text-align: center;">
     
-    <div class="fs-image-panel" style="background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); position: relative; overflow: hidden;">
-        
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50vw; height: 50vw; background: var(--brand); filter: blur(120px); opacity: 0.15; border-radius: 50%; pointer-events: none;"></div>
-
-        <div style="position: absolute; top: 2rem; left: 2rem; z-index: 10;">
-            <span id="fs-user-provider" style="padding: 6px 16px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">PROVIDER</span>
-        </div>
-        
-        <img id="fs-main-avatar" src="" alt="User Avatar" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.8)); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 5;">
-        
-        <div id="fs-original-pic-container" style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; display: none;">
-            <button type="button" id="fs-btn-original-pic" class="btn" style="background: rgba(20,20,20,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(245, 158, 11, 0.4); color: var(--warning); padding: 0.75rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: all 0.2s;" onmouseover="this.style.background='var(--bg-card)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(20,20,20,0.8)'; this.style.transform='scale(1)';">
-                <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
-                <span id="fs-btn-original-text" style="font-weight: 700;">View Original Avatar</span>
-            </button>
-        </div>
-    </div>
-    
-    <form id="user-profile-form" class="fs-details-panel" onsubmit="app.handleSaveUserProfile(event)" style="padding: 0; background: var(--bg-main);">
-        
-        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.02em;">User Management</h3>
-            <button type="button" onclick="app.toggleUserProfileModal()" style="background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">
-                <i class="ph-bold ph-x" style="font-size: 1rem;"></i>
-            </button>
-        </div>
-        
-        <div style="padding: 2rem; flex: 1; overflow-y: auto;" class="custom-scrollbar">
-            <input type="hidden" id="modal-user-uid">
-            
-            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 1.25rem; letter-spacing: 0.05em;">Identity Configuration</div>
-
-                <div class="input-group">
-                    <label>Display Name</label>
-                    <div style="position: relative;">
-                        <i class="ph-bold ph-user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.125rem;"></i>
-                        <input type="text" id="modal-input-name" class="input-control" required style="font-size: 0.9375rem; padding: 0.75rem 0.75rem 0.75rem 2.75rem; font-weight: 500; background: var(--bg-main);">
+                    <!-- Enlarged Avatar with subtle shadow -->
+                    <div id="modal-user-avatar" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 700; color: #fff; overflow: hidden; margin-bottom: 1.25rem;">
+                    </div>
+                    
+                    <!-- Centered User Info -->
+                    <div style="min-width: 0; width: 100%;">
+                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;">User Name</div>
+                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
+                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 12px; font-family: monospace;">UID: </div>
+                        
+                        <!-- Pill-shaped provider badge for a polished look -->
+                        <span id="modal-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label>Contact Email</label>
-                    <div style="position: relative;">
-                        <i class="ph-bold ph-envelope-simple" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.125rem;"></i>
-                        <input type="email" id="modal-input-email" class="input-control" disabled style="font-size: 0.9375rem; padding: 0.75rem 0.75rem 0.75rem 2.75rem; opacity: 0.6; cursor: not-allowed; background: rgba(0,0,0,0.2);" title="Email is tied to Auth and cannot be edited here.">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="input-group">
+                        <label>Display Name (Firestore)</label>
+                        <input type="text" id="modal-input-name" class="input-control" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Contact Email</label>
+                        <input type="email" id="modal-input-email" class="input-control" disabled style="opacity: 0.5; cursor: not-allowed;" title="Email is tied to Auth and cannot be edited here.">
                     </div>
                 </div>
 
-                <div class="input-group" style="margin-bottom: 0;">
-                    <label style="display: flex; justify-content: space-between;">Profile Picture URL <span class="text-xs text-brand" style="text-transform: none; font-weight: 600; letter-spacing: 0;"><i class="ph-bold ph-eye" style="margin-right: 4px;"></i> Live Preview</span></label>
-                    <div style="position: relative;">
-                        <i class="ph-bold ph-image" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.125rem;"></i>
-                        <input type="url" id="modal-input-photo" class="input-control" placeholder="https://..." oninput="document.getElementById('fs-main-avatar').src = this.value || 'https://stack-base.github.io/media/brand/orion/orion_icon.png'" style="font-size: 0.9375rem; padding: 0.75rem 0.75rem 0.75rem 2.75rem; background: var(--bg-main);">
-                    </div>
+                <div class="input-group" style="margin-bottom: 2rem;">
+                    <label>Profile Picture URL</label>
+                    <input type="url" id="modal-input-photo" class="input-control" placeholder="https://...">
                 </div>
-            </div>
 
-            <div style="margin-bottom: 2rem;">
-                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em; padding-left: 0.5rem;">System Tracking</div>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.25rem;"><i class="ph-bold ph-fingerprint"></i></div>
-                        <div>
-                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Account UID</div>
-                            <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-main); font-family: var(--font-mono); margin-top: 2px;">--</div>
-                        </div>
+                <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">Administrative Actions</div>
+                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Send account password reset link.</div>
                     </div>
-                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('fs-user-uid').innerText); alert('UID Copied to Clipboard!');" class="btn btn-icon text-xs text-muted" style="border: 1px solid var(--border); background: var(--bg-main);" title="Copy UID" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">
-                        <i class="ph-bold ph-copy" style="font-size: 1.125rem;"></i>
+                    <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3);">
+                        <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Email
                     </button>
                 </div>
-            </div>
-
-            <div>
-                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em; padding-left: 0.5rem;">Administrative Controls</div>
-                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-                    
-                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;"><i class="ph-bold ph-lock-key"></i></div>
-                            <div>
-                                <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
-                                <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Dispatch a secure reset link.</div>
+                
+                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: flex-start; margin-top: 1rem;">
+                    <div style="flex: 1; padding-right: 1rem; min-width: 0;">
+                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Restore original display name and photo.</div>
+                        
+                        <!-- Previous Details Container -->
+                        <div id="revert-details-container" style="display: none; background: var(--bg-sidebar); border: 1px dashed var(--border); border-radius: 6px; padding: 0.75rem; margin-top: 1rem;">
+                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Original Data Saved:</div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <img id="revert-orig-photo" src="" alt="Original Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;">
+                                <div id="revert-orig-name" class="truncate" style="font-size: 0.875rem; color: #fff; font-weight: 500;">--</div>
                             </div>
                         </div>
-                        <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3); background: transparent;">
-                            Send Link
-                        </button>
                     </div>
-                    
-                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                        <div style="display: flex; align-items: flex-start; gap: 1rem; flex: 1; padding-right: 1rem; min-width: 0;">
-                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.1); color: var(--warning); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; margin-top: 2px;"><i class="ph-bold ph-clock-counter-clockwise"></i></div>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
-                                <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore original identity data.</div>
-                                
-                                <div id="revert-details-container" style="display: none; background: rgba(0,0,0,0.2); border: 1px dashed var(--border); border-radius: 8px; padding: 1rem; margin-top: 1rem;">
-                                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.1em;">Snapshot Saved</div>
-                                    <div style="display: flex; align-items: center; gap: 1rem;">
-                                        <img id="revert-orig-photo" src="" alt="Original Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;">
-                                        <div id="revert-orig-name" class="truncate" style="font-size: 0.875rem; color: #fff; font-weight: 600;">--</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs flex-shrink-0" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); background: transparent; margin-top: 4px;">
-                            Revert
-                        </button>
-                    </div>
+                    <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs flex-shrink-0" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); margin-top: 2px;">
+                        <i class="ph-bold ph-arrow-counter-clockwise" style="margin-right: 0.5rem;"></i> Revert
+                    </button>
                 </div>
-            </div>
 
+                <input type="hidden" id="modal-user-uid">
+            </div>
+            
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" onclick="app.toggleUserProfileModal()" class="btn btn-outline">Cancel</button>
+                <button type="submit" id="modal-save-profile-btn" class="btn btn-primary">Save Profile Data</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Split-Screen Avatar Overlay -->
+<!-- Split-Screen Avatar Overlay -->
+<div id="fullscreen-avatar-overlay" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
+    
+    <!-- Left/Top Side: Image Preview -->
+    <div class="fs-image-panel">
+        <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar">
+    </div>
+    
+    <!-- Right/Bottom Side: Details Panel -->
+    <div class="fs-details-panel">
+        
+        <!-- Close Button -->
+        <button onclick="document.getElementById('fullscreen-avatar-overlay').classList.add('hidden')" style="position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">
+            <i class="ph-bold ph-x"></i>
+        </button>
+        
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; padding-right: 2rem;">Profile Details</h3>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Display Name</div>
+            <div id="fs-user-name" style="font-size: 1.125rem; color: #fff; font-weight: 500;">--</div>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Email Address</div>
+            <div id="fs-user-email" style="font-size: 1rem; color: var(--text-main);">--</div>
         </div>
 
-        <div style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(12px); position: sticky; bottom: 0; z-index: 20;">
-            <button type="submit" id="modal-save-profile-btn" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 0.9375rem; font-weight: 600; box-shadow: 0 8px 16px rgba(255, 87, 87, 0.2); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 20px rgba(255, 87, 87, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 16px rgba(255, 87, 87, 0.2)';">
-                Save Profile Configuration
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Provider</div>
+            <span id="fs-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2); display: inline-block;">--</span>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">System UID</div>
+            <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
+        </div>
+
+        <!-- Original Avatar Toggle Button -->
+        <div id="fs-original-pic-container" style="margin-top: auto; padding-top: 1.5rem; display: none;">
+            <button id="fs-btn-original-pic" class="btn btn-outline text-xs" style="width: 100%; border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
+                <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
+                <span id="fs-btn-original-text">View Original Avatar</span>
             </button>
         </div>
-    </form>
+        
+    </div>
 </div>
 
 <script type="module">
@@ -764,7 +775,7 @@ const CACHE_KEY = 'orion_local_cache_v3';
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; 
 
-Chart.defaults.font.family='var(--font-sans)';
+Chart.defaults.font.family='Inter';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#2a2a2a';
 
@@ -890,7 +901,7 @@ const showLoginModal=()=>{
     const div=document.createElement('div');
     div.id='dev-login-modal';
     div.className='modal-overlay';
-    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center; letter-spacing: -0.02em;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.8125rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Orion</button></form></div>`;
+    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.8125rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Orion</button></form></div>`;
     document.body.appendChild(div);
     document.getElementById('dev-login-form').onsubmit=async(e)=>{
         e.preventDefault();
@@ -913,7 +924,7 @@ function showUnauthorizedScreen() {
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; background-color: var(--bg-main); color: var(--text-main);">
             <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="font-size: 48px; color: var(--danger); margin-bottom: 16px;"><i class="ph-bold ph-shield-warning"></i></div>
-                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">Clearance Required</h2>
+                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff;">Clearance Required</h2>
                 <p style="margin: 0 0 24px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">This console is restricted to authorized administrators. Your account lacks access.</p>
                 <button class="btn btn-outline" onclick="app.signOut()">Return to Login</button>
             </div>
@@ -1088,83 +1099,71 @@ const app={
         }
     },
     
-    // --- Unified Profile Management ---
+    // --- Profile Management ---
     toggleUserProfileModal: (uid = null) => {
-        const modal = document.getElementById('master-profile-modal');
+        const modal = document.getElementById('user-profile-modal');
         if (modal.classList.contains('hidden')) {
             const u = state.usersMap[uid];
             if (!u) return;
 
-            // 1. Populate Form Inputs
             document.getElementById('modal-user-uid').value = uid;
             document.getElementById('modal-input-name').value = u.name || '';
             document.getElementById('modal-input-email').value = u.email || '';
             document.getElementById('modal-input-photo').value = u.avatar || '';
             
-            // 2. Populate Read-Only UI
-            document.getElementById('fs-user-provider').innerText = u.provider.toUpperCase();
-            document.getElementById('fs-user-uid').innerText = uid;
+            document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
+            document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
+            document.getElementById('modal-user-uid-display').innerText = `UID: ${uid}`;
+            document.getElementById('modal-user-provider').innerText = u.provider.toUpperCase();
 
-            // 3. Setup Main Image (Fetch High-Res)
-            const img = document.getElementById('fs-main-avatar');
-            const fallbackAvatar = 'https://stack-base.github.io/media/brand/orion/orion_icon.png';
-            const highResCurrent = u.avatar ? u.avatar.replace(/=s\d+-c/g, '=s1024-c') : fallbackAvatar;
-            img.src = highResCurrent;
-
-            // 4. Setup "View Original Image" Toggle
-            const originalBtnContainer = document.getElementById('fs-original-pic-container');
-            const originalBtn = document.getElementById('fs-btn-original-pic');
-            const originalBtnText = document.getElementById('fs-btn-original-text');
-
-            if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== u.avatar) {
-                const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
-                originalBtnContainer.style.display = 'block';
-                
-                let showingOriginal = false;
-                originalBtnText.innerText = 'View Original Avatar';
-                
-                originalBtn.onclick = () => {
-                    showingOriginal = !showingOriginal;
-                    if (showingOriginal) {
-                        img.src = highResOriginal;
-                        originalBtnText.innerText = 'View Current Avatar';
-                    } else {
-                        img.src = highResCurrent;
-                        originalBtnText.innerText = 'View Original Avatar';
-                    }
-                };
+            const avatarContainer = document.getElementById('modal-user-avatar');
+            if (u.avatar) {
+                // Notice the addition of '${uid}' in the parameters
+                avatarContainer.innerHTML = `<img src="${u.avatar}" onclick="app.showFullscreenAvatar('${u.avatar}', '${uid}')" style="width: 100%; height: 100%; object-fit: cover; cursor: zoom-in;" title="Click to view full image and details">`;
             } else {
-                originalBtnContainer.style.display = 'none';
+                avatarContainer.innerHTML = (u.name || u.email || '?').charAt(0).toUpperCase();
+                avatarContainer.style.background = 'linear-gradient(to bottom right, var(--info), #8b5cf6)';
             }
 
-            // 5. Setup Password Reset
-            document.getElementById('btn-reset-password').onclick = () => app.triggerPasswordReset(u.email);
+            // Setup Reset Password button event
+            const resetBtn = document.getElementById('btn-reset-password');
+            resetBtn.onclick = () => app.triggerPasswordReset(u.email);
 
-            // 6. Setup Revert Profile UI
+            // Setup Revert Profile button state
+            // Setup Revert Profile button state and details
             const revertBtn = document.getElementById('btn-revert-profile');
             const revertDetails = document.getElementById('revert-details-container');
             const origName = document.getElementById('revert-orig-name');
             const origPhoto = document.getElementById('revert-orig-photo');
 
             if (u.originalProfile) {
-                revertBtn.disabled = false; revertBtn.style.opacity = '1'; revertBtn.style.cursor = 'pointer';
+                revertBtn.disabled = false;
+                revertBtn.style.opacity = '1';
+                revertBtn.style.cursor = 'pointer';
+                
+                // Populate and show the original details
                 origName.innerText = u.originalProfile.displayName || 'No Name';
+                
                 if (u.originalProfile.photoURL) {
-                    origPhoto.src = u.originalProfile.photoURL; origPhoto.style.display = 'block';
+                    origPhoto.src = u.originalProfile.photoURL;
+                    origPhoto.style.display = 'block';
                 } else {
                     origPhoto.style.display = 'none';
                 }
+                
                 revertDetails.style.display = 'block';
             } else {
-                revertBtn.disabled = true; revertBtn.style.opacity = '0.5'; revertBtn.style.cursor = 'not-allowed';
+                revertBtn.disabled = true;
+                revertBtn.style.opacity = '0.5';
+                revertBtn.style.cursor = 'not-allowed';
+                
+                // Hide the details if no original profile exists
                 revertDetails.style.display = 'none';
             }
 
-            // Open Modal
             modal.classList.remove('hidden');
             setTimeout(() => modal.style.opacity = '1', 10);
         } else {
-            // Close Modal
             modal.style.opacity = '0';
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
@@ -1175,7 +1174,7 @@ const app={
         const uid = document.getElementById('modal-user-uid').value;
         const u = state.usersMap[uid];
         const btn = document.getElementById('modal-save-profile-btn');
-        btn.innerText = 'Saving Configuration...'; btn.disabled = true;
+        btn.innerText = 'Saving...'; btn.disabled = true;
 
         const updatedData = {
             displayName: document.getElementById('modal-input-name').value,
@@ -1198,7 +1197,7 @@ const app={
         } catch (err) {
             alert('Failed to update profile: ' + err.message);
         } finally {
-            btn.innerText = 'Save Profile Configuration'; btn.disabled = false;
+            btn.innerText = 'Save Profile Data'; btn.disabled = false;
         }
     },
 
@@ -1493,7 +1492,57 @@ const app={
         } catch (e) { 
             log(`ERROR: ${e.message}`); 
         }
-    }
+    },
+
+    // Add this anywhere inside the app object
+    showFullscreenAvatar: (url, uid) => {
+        const overlay = document.getElementById('fullscreen-avatar-overlay');
+        const img = document.getElementById('fullscreen-avatar-img');
+        const originalBtnContainer = document.getElementById('fs-original-pic-container');
+        const originalBtn = document.getElementById('fs-btn-original-pic');
+        const originalBtnText = document.getElementById('fs-btn-original-text');
+
+        if (!url || !uid) return;
+        
+        // Fetch high-res version of the current image
+        const highResCurrent = url.replace(/=s\d+-c/g, '=s1024-c');
+        
+        const u = state.usersMap[uid];
+        if(u) {
+            document.getElementById('fs-user-name').innerText = u.name || 'Unknown User';
+            document.getElementById('fs-user-email').innerText = u.email || 'No Email';
+            document.getElementById('fs-user-provider').innerText = u.provider || 'UNKNOWN';
+            document.getElementById('fs-user-uid').innerText = uid;
+            
+            // Check if they have an original profile picture saved
+            if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== url) {
+                const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
+                originalBtnContainer.style.display = 'block';
+                
+                let showingOriginal = false;
+                originalBtnText.innerText = 'View Original Avatar';
+                
+                // Toggle logic
+                originalBtn.onclick = () => {
+                    showingOriginal = !showingOriginal;
+                    if (showingOriginal) {
+                        img.src = highResOriginal;
+                        originalBtnText.innerText = 'View Current Avatar';
+                    } else {
+                        img.src = highResCurrent;
+                        originalBtnText.innerText = 'View Original Avatar';
+                    }
+                };
+            } else {
+                // Hide the button if no original picture exists
+                originalBtnContainer.style.display = 'none';
+            }
+        }
+        
+        // Set the initial image
+        img.src = highResCurrent;
+        overlay.classList.remove('hidden');
+    },
 };
 
 function renderAll(){
@@ -1555,7 +1604,7 @@ function renderUsersTable(){
         const starIconClass = isStarred ? "ph-fill ph-star" : "ph-bold ph-star";
         const starColor = isStarred ? "color: var(--warning);" : "color: var(--text-muted);";
         
-        let avatarHTML=u.avatar?`<img src="${u.avatar}" onclick="app.toggleUserProfileModal('${u.uid}')" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor: pointer;" title="Manage Profile">`:`<div onclick="app.toggleUserProfileModal('${u.uid}')" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; cursor: pointer;" title="Manage Profile">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>`;
+        let avatarHTML=u.avatar?`<img src="${u.avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`:`<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff;">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>`;
         
         return `
         <tr>
@@ -1649,6 +1698,7 @@ function renderTasksTable(){
 
 function generateTaskRowHtml(t) {
     const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
+    /* Replaced 10px with 11px */
     const priBadge={
         high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
         med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
@@ -1657,7 +1707,9 @@ function generateTaskRowHtml(t) {
     }[t.priority||'none'];
     const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedSessionIds?t.completedSessionIds.length:0;
     const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
+    /* Replaced 10px with 11px */
     const userTag=!state.filterUser?`<div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
+    /* Replaced 10px with 11px */
     const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
     
     return `
@@ -1672,14 +1724,14 @@ function generateTaskRowHtml(t) {
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td>
         <td style="vertical-align: top; padding-top: 1.25rem;">
-            <div style="font-size: 0.8125rem; color: #fff; font-family: var(--font-mono);"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
+            <div style="font-size: 0.8125rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
             <div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div>
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem;">
             <div style="font-size: 0.8125rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div>
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
-            <div style="color: var(--text-muted); font-size: 0.8125rem; font-family: var(--font-mono); margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
+            <div style="color: var(--text-muted); font-size: 0.8125rem; font-family: monospace; margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
             <div class="flex items-center justify-end gap-1">
                 <button onclick="app.toggleAdminTaskModal('${t.id}', '${t._uid}')" class="btn btn-icon text-xs"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                 <button onclick="app.deleteAdminTask('${t.id}', '${t._uid}')" class="btn btn-icon text-xs text-danger hover:text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
@@ -1711,6 +1763,7 @@ function renderBroadcastsTable(){
     tbody.innerHTML=sortedBroadcasts.map(b=>{
         const d = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleString() : 'Just now';
         
+        /* Replaced 10px with 11px */
         let typeBadge = '';
         if(b.type === 'info') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">INFO</span>`;
         else if(b.type === 'warning') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">WARNING</span>`;
@@ -1722,10 +1775,12 @@ function renderBroadcastsTable(){
 
         const reads = b.readBy ? b.readBy.length : 0;
         const isExpired = b.expiresAt && new Date(b.expiresAt) < new Date();
+        /* Replaced 10px with 11px */
         const statusBadge = isExpired 
             ? `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">EXPIRED</span>` 
             : `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">ACTIVE</span>`;
 
+        /* Replaced 10px with 11px */
         let btnIndicator = b.btnText ? `<div style="font-size:11px; color:var(--brand); margin-top:4px;"><i class="ph-bold ph-link"></i> ${b.btnText}</div>` : '';
 
         return `
@@ -1736,7 +1791,7 @@ function renderBroadcastsTable(){
                 ${btnIndicator}
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem;">
-                <span style="color: var(--text-muted); font-size: 0.8125rem; font-family: var(--font-mono);">${targetLbl}</span>
+                <span style="color: var(--text-muted); font-size: 0.8125rem; font-family: monospace;">${targetLbl}</span>
                 <div style="margin-top: 8px;">${typeBadge}</div>
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem;">
@@ -1798,11 +1853,11 @@ function updateCharts(){
                 borderColor: '#ff5757',
                 backgroundColor: 'rgba(255, 87, 87, 0.1)',
                 borderWidth: 2,
-                pointBackgroundColor: '#1e1e1e', 
+                pointBackgroundColor: '#1e1e1e', // Match card background
                 pointBorderColor: '#ff5757',
                 pointBorderWidth: 2,
                 pointRadius: 4,
-                pointHoverRadius: 6, 
+                pointHoverRadius: 6, // Expands on hover
                 fill: true,
                 tension: 0.4
             }]
@@ -1811,7 +1866,7 @@ function updateCharts(){
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
-                mode: 'index', 
+                mode: 'index', // Tooltip appears when hovering the vertical slice
                 intersect: false,
             },
             plugins: {
@@ -1823,7 +1878,7 @@ function updateCharts(){
                     borderColor: '#2a2a2a',
                     borderWidth: 1,
                     padding: 12,
-                    displayColors: false, 
+                    displayColors: false, // Hides the little color square
                     callbacks: {
                         label: function(context) {
                             return context.parsed.y + ' minutes';
@@ -1861,8 +1916,8 @@ function updateCharts(){
                 data: sortedProj.map(x=>x[1]),
                 backgroundColor: ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],
                 borderWidth: 2,
-                borderColor: '#1e1e1e', 
-                hoverOffset: 5 
+                borderColor: '#1e1e1e', // Creates gaps between slices
+                hoverOffset: 5 // Slices pop out slightly on hover
             }]
         }, 
         options: {
@@ -1888,7 +1943,7 @@ function updateCharts(){
                 <span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span>
                 <span style="color: #fff;">${p[0]}</span>
             </div>
-            <span style="color: var(--text-muted); font-family: var(--font-mono);">${p[1]}</span>
+            <span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span>
         </div>
     `).join('');
 }
