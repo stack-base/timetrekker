@@ -2,7 +2,6 @@ const CACHE_NAME = 'orion-console-v1.0.0';
 
 // Caching standard UI assets for Orion
 const ASSETS_TO_CACHE = [
-    './',
     './orion.html',
     'https://unpkg.com/@phosphor-icons/web',
     'https://cdn.jsdelivr.net/npm/chart.js',
