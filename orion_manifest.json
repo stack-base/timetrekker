@@ -1,0 +1,47 @@
+{
+  "name": "Orion Console",
+  "short_name": "Orion",
+  "start_url": "./",
+  "display": "standalone",
+  "scope": "/",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "description": "Orion Console from StackBase.",
+  "icons": [
+    {
+      "src": "https://stack-base.github.io/media/brand/orion/orion_icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://stack-base.github.io/media/brand/orion/orion_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "User Directory",
+      "short_name": "Users",
+      "description": "View active TimeTrekker users",
+      "url": "./?view=users",
+      "icons": [{ "src": "https://stack-base.github.io/media/brand/orion/orion_icon.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Task Master",
+      "short_name": "Tasks",
+      "description": "Global task master list",
+      "url": "./?view=tasks",
+      "icons": [{ "src": "https://stack-base.github.io/media/brand/orion/orion_icon.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Broadcasts",
+      "short_name": "Broadcasts",
+      "description": "Send a system broadcast",
+      "url": "./?view=broadcasts",
+      "icons": [{ "src": "https://stack-base.github.io/media/brand/orion/orion_icon.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

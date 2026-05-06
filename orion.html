@@ -10,6 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+<link rel="manifest" href="./orion_manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="apple-touch-icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png">
+
 <style>
     :root {
         --brand: #ff5757;
@@ -1792,5 +1797,20 @@ function updateCharts(){
     `).join('');
 }
 </script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./orion_sw.js')
+                .then(registration => {
+                    console.log('Orion ServiceWorker registered successfully with scope: ', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Orion ServiceWorker registration failed: ', error);
+                });
+        });
+    }
+</script>
+
 </body>
 </html>
