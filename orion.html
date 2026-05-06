@@ -19,17 +19,16 @@
     :root {
         --brand: #ff5757;
         --brand-hover: #e04848;
-        --brand-dim: rgba(255, 87, 87, 0.15); /* Boosted for better active state visibility */
+        --brand-dim: rgba(255, 87, 87, 0.15); 
         --bg-main: #0f0f0f;
         --bg-sidebar: #141414;
         --bg-card: #1e1e1e;
         --border: #2a2a2a;
         --hover: #333333;
         
-        /* Typography Visibility Updates */
-        --text-main: #f3f4f6; /* Brighter neutral white */
-        --text-muted: #a1a1aa; /* Warmer, clearer gray */
-        --text-faint: #71717a; /* Lifted significantly to pass contrast checks */
+        --text-main: #f3f4f6; 
+        --text-muted: #a1a1aa; 
+        --text-faint: #71717a; 
         
         --success: #10b981;
         --warning: #f59e0b;
@@ -46,8 +45,8 @@
         overflow: hidden; 
         height: 100vh; 
         width: 100vw; 
-        line-height: 1.5; /* Improved reading rhythm */
-        -webkit-font-smoothing: antialiased; /* Crisp rendering */
+        line-height: 1.5; 
+        -webkit-font-smoothing: antialiased; 
         -moz-osx-font-smoothing: grayscale; 
     }
     
@@ -61,9 +60,8 @@
     .text-danger { color: var(--danger); }
     .font-bold { font-weight: 700; }
     
-    /* Typography Bumps */
     .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; } /* Lifted from 0.75rem */
+    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; } 
     
     .hidden { display: none !important; }
     .flex { display: flex; }
@@ -97,7 +95,6 @@
     
     .sidebar-nav { flex: 1; padding: 1rem; overflow-y: auto; }
     
-    /* Adjusted Nav Label for Readability */
     .nav-label { font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0.75rem 0.5rem; }
     
     .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; }
@@ -119,7 +116,6 @@
     .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
     .card-body.no-pad { padding: 0; }
     
-    /* Adjusted Stat Label */
     .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
     
     .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
@@ -128,13 +124,11 @@
     .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
     
-    /* Improved Table Header Typography */
     .data-table th { padding: 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
     
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
     .data-table tr:hover { background: var(--hover); }
 
-    /* Interactive Table Headers */
     th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
     th.sortable:hover { color: #fff; }
     th.sortable i { margin-left: 4px; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
@@ -155,21 +149,11 @@
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Split-Screen Overlay Styles */
+    /* Split-Screen Overlay Styles for Master Profile Modal */
     .fs-overlay-container { padding: 0; background: var(--bg-main); align-items: stretch; flex-direction: row; }
     .fs-image-panel { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; padding: 2rem; position: relative; }
-    
-    /* Forces images of all sizes to stretch and fit gracefully */
     .fs-image-panel img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.5)); }
-    
-    .fs-details-panel { width: 400px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 2rem; position: relative; flex-shrink: 0; overflow-y: auto; }
-
-    /* Mobile adjustments for the overlay */
-    @media (max-width: 768px) {
-        .fs-overlay-container { flex-direction: column; }
-        .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } /* Gives top half of screen to image */
-        .fs-details-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
-    }
+    .fs-details-panel { width: 400px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; position: relative; flex-shrink: 0; overflow-y: auto; }
 
     @media (max-width: 1024px) {
         .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
@@ -191,6 +175,11 @@
         .card-header { padding: 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         .card-header .header-actions { width: 100%; display: flex; justify-content: space-between; }
         .stat-value { font-size: 1.5rem; }
+        
+        /* Mobile Split Screen Adjustments */
+        .fs-overlay-container { flex-direction: column; }
+        .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } 
+        .fs-details-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
     }
 </style>
 </head>
@@ -627,138 +616,99 @@
     </div>
 </div>
 
-<div id="user-profile-modal" class="modal-overlay hidden">
-    <div class="modal-box large">
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5);">
-            <h2 style="font-size: 1.125rem; font-weight: 700; color: #fff;">User Profile Management</h2>
-            <button type="button" onclick="app.toggleUserProfileModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
-        </div>
-        
-        <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
-            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
-                
-                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; text-align: center;">
+<!-- State-of-the-Art Split-Screen Profile Manager -->
+<div id="master-profile-modal" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
     
-                    <!-- Enlarged Avatar with subtle shadow -->
-                    <div id="modal-user-avatar" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 700; color: #fff; overflow: hidden; margin-bottom: 1.25rem;">
-                    </div>
-                    
-                    <!-- Centered User Info -->
-                    <div style="min-width: 0; width: 100%;">
-                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;">User Name</div>
-                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
-                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 12px; font-family: monospace;">UID: </div>
-                        
-                        <!-- Pill-shaped provider badge for a polished look -->
-                        <span id="modal-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="input-group">
-                        <label>Display Name (Firestore)</label>
-                        <input type="text" id="modal-input-name" class="input-control" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Contact Email</label>
-                        <input type="email" id="modal-input-email" class="input-control" disabled style="opacity: 0.5; cursor: not-allowed;" title="Email is tied to Auth and cannot be edited here.">
-                    </div>
-                </div>
-
-                <div class="input-group" style="margin-bottom: 2rem;">
-                    <label>Profile Picture URL</label>
-                    <input type="url" id="modal-input-photo" class="input-control" placeholder="https://...">
-                </div>
-
-                <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">Administrative Actions</div>
-                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
-                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Send account password reset link.</div>
-                    </div>
-                    <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3);">
-                        <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Email
-                    </button>
-                </div>
-                
-                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: flex-start; margin-top: 1rem;">
-                    <div style="flex: 1; padding-right: 1rem; min-width: 0;">
-                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
-                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Restore original display name and photo.</div>
-                        
-                        <!-- Previous Details Container -->
-                        <div id="revert-details-container" style="display: none; background: var(--bg-sidebar); border: 1px dashed var(--border); border-radius: 6px; padding: 0.75rem; margin-top: 1rem;">
-                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Original Data Saved:</div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <img id="revert-orig-photo" src="" alt="Original Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;">
-                                <div id="revert-orig-name" class="truncate" style="font-size: 0.875rem; color: #fff; font-weight: 500;">--</div>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs flex-shrink-0" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); margin-top: 2px;">
-                        <i class="ph-bold ph-arrow-counter-clockwise" style="margin-right: 0.5rem;"></i> Revert
-                    </button>
-                </div>
-
-                <input type="hidden" id="modal-user-uid">
-            </div>
-            
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" onclick="app.toggleUserProfileModal()" class="btn btn-outline">Cancel</button>
-                <button type="submit" id="modal-save-profile-btn" class="btn btn-primary">Save Profile Data</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Split-Screen Avatar Overlay -->
-<!-- Split-Screen Avatar Overlay -->
-<div id="fullscreen-avatar-overlay" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
-    
-    <!-- Left/Top Side: Image Preview -->
+    <!-- Left Side: Dynamic Image Preview -->
     <div class="fs-image-panel">
-        <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar">
-    </div>
-    
-    <!-- Right/Bottom Side: Details Panel -->
-    <div class="fs-details-panel">
-        
-        <!-- Close Button -->
-        <button onclick="document.getElementById('fullscreen-avatar-overlay').classList.add('hidden')" style="position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">
-            <i class="ph-bold ph-x"></i>
-        </button>
-        
-        <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; padding-right: 2rem;">Profile Details</h3>
-        
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Display Name</div>
-            <div id="fs-user-name" style="font-size: 1.125rem; color: #fff; font-weight: 500;">--</div>
+        <!-- Floating Provider Badge -->
+        <div style="position: absolute; top: 2rem; left: 2rem; z-index: 10;">
+            <span id="fs-user-provider" style="padding: 6px 16px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">PROVIDER</span>
         </div>
         
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Email Address</div>
-            <div id="fs-user-email" style="font-size: 1rem; color: var(--text-main);">--</div>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Provider</div>
-            <span id="fs-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2); display: inline-block;">--</span>
-        </div>
+        <img id="fs-main-avatar" src="" alt="User Avatar" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.8)); transition: all 0.3s ease;">
         
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">System UID</div>
-            <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
-        </div>
-
-        <!-- Original Avatar Toggle Button -->
-        <div id="fs-original-pic-container" style="margin-top: auto; padding-top: 1.5rem; display: none;">
-            <button id="fs-btn-original-pic" class="btn btn-outline text-xs" style="width: 100%; border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
+        <!-- View Original Toggle (Floating Bottom Center) -->
+        <div id="fs-original-pic-container" style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; display: none;">
+            <button type="button" id="fs-btn-original-pic" class="btn" style="background: rgba(20,20,20,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--warning); padding: 0.75rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
                 <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
-                <span id="fs-btn-original-text">View Original Avatar</span>
+                <span id="fs-btn-original-text" style="font-weight: 700;">View Original Avatar</span>
             </button>
         </div>
-        
     </div>
+    
+    <!-- Right Side: Editable Management Form -->
+    <form id="user-profile-form" class="fs-details-panel" onsubmit="app.handleSaveUserProfile(event)" style="padding: 0;">
+        
+        <!-- Sticky Header -->
+        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0;">User Management</h3>
+            <button type="button" onclick="app.toggleUserProfileModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+        </div>
+        
+        <!-- Scrollable Form Body -->
+        <div style="padding: 2rem; flex: 1; overflow-y: auto;" class="custom-scrollbar">
+            <input type="hidden" id="modal-user-uid">
+            
+            <div class="input-group">
+                <label>Display Name (Firestore)</label>
+                <input type="text" id="modal-input-name" class="input-control" required style="font-size: 1rem; padding: 1rem; font-weight: 500;">
+            </div>
+
+            <div class="input-group">
+                <label>Contact Email</label>
+                <input type="email" id="modal-input-email" class="input-control" disabled style="opacity: 0.5; cursor: not-allowed; background: var(--bg-sidebar);" title="Email is tied to Auth and cannot be edited here.">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 2.5rem;">
+                <label>Profile Picture URL <span class="text-xs text-muted" style="text-transform: none; font-weight: 400;">(Live Preview)</span></label>
+                <input type="url" id="modal-input-photo" class="input-control" placeholder="https://..." oninput="document.getElementById('fs-main-avatar').src = this.value || 'https://stack-base.github.io/media/brand/orion/orion_icon.png'">
+            </div>
+
+            <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">System Tracking</div>
+            <div class="input-group" style="margin-bottom: 2.5rem;">
+                <div id="fs-user-uid" style="font-size: 0.8125rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 1rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
+            </div>
+
+            <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">Administrative Actions</div>
+            
+            <!-- Action: Password Reset -->
+            <div style="padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Dispatch a secure reset link.</div>
+                </div>
+                <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3);">
+                    <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Link
+                </button>
+            </div>
+            
+            <!-- Action: Revert Profile -->
+            <div style="padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1; padding-right: 1.5rem; min-width: 0;">
+                    <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore original identity data.</div>
+                    
+                    <!-- Original Data Display -->
+                    <div id="revert-details-container" style="display: none; background: var(--bg-sidebar); border: 1px dashed var(--border); border-radius: 6px; padding: 1rem; margin-top: 1rem;">
+                        <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.1em;">Snapshot Saved</div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <img id="revert-orig-photo" src="" alt="Original Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;">
+                            <div id="revert-orig-name" class="truncate" style="font-size: 0.875rem; color: #fff; font-weight: 600;">--</div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs flex-shrink-0" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); margin-top: 2px;">
+                    <i class="ph-bold ph-arrow-counter-clockwise" style="margin-right: 0.5rem;"></i> Revert
+                </button>
+            </div>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; bottom: 0; z-index: 10;">
+            <button type="submit" id="modal-save-profile-btn" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 0.9375rem; font-weight: 600;">Save Profile Configuration</button>
+        </div>
+    </form>
 </div>
 
 <script type="module">
@@ -1099,71 +1049,83 @@ const app={
         }
     },
     
-    // --- Profile Management ---
+    // --- Unified Profile Management ---
     toggleUserProfileModal: (uid = null) => {
-        const modal = document.getElementById('user-profile-modal');
+        const modal = document.getElementById('master-profile-modal');
         if (modal.classList.contains('hidden')) {
             const u = state.usersMap[uid];
             if (!u) return;
 
+            // 1. Populate Form Inputs
             document.getElementById('modal-user-uid').value = uid;
             document.getElementById('modal-input-name').value = u.name || '';
             document.getElementById('modal-input-email').value = u.email || '';
             document.getElementById('modal-input-photo').value = u.avatar || '';
             
-            document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
-            document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
-            document.getElementById('modal-user-uid-display').innerText = `UID: ${uid}`;
-            document.getElementById('modal-user-provider').innerText = u.provider.toUpperCase();
+            // 2. Populate Read-Only UI
+            document.getElementById('fs-user-provider').innerText = u.provider.toUpperCase();
+            document.getElementById('fs-user-uid').innerText = uid;
 
-            const avatarContainer = document.getElementById('modal-user-avatar');
-            if (u.avatar) {
-                // Notice the addition of '${uid}' in the parameters
-                avatarContainer.innerHTML = `<img src="${u.avatar}" onclick="app.showFullscreenAvatar('${u.avatar}', '${uid}')" style="width: 100%; height: 100%; object-fit: cover; cursor: zoom-in;" title="Click to view full image and details">`;
+            // 3. Setup Main Image (Fetch High-Res)
+            const img = document.getElementById('fs-main-avatar');
+            const fallbackAvatar = 'https://stack-base.github.io/media/brand/orion/orion_icon.png';
+            const highResCurrent = u.avatar ? u.avatar.replace(/=s\d+-c/g, '=s1024-c') : fallbackAvatar;
+            img.src = highResCurrent;
+
+            // 4. Setup "View Original Image" Toggle
+            const originalBtnContainer = document.getElementById('fs-original-pic-container');
+            const originalBtn = document.getElementById('fs-btn-original-pic');
+            const originalBtnText = document.getElementById('fs-btn-original-text');
+
+            if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== u.avatar) {
+                const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
+                originalBtnContainer.style.display = 'block';
+                
+                let showingOriginal = false;
+                originalBtnText.innerText = 'View Original Avatar';
+                
+                originalBtn.onclick = () => {
+                    showingOriginal = !showingOriginal;
+                    if (showingOriginal) {
+                        img.src = highResOriginal;
+                        originalBtnText.innerText = 'View Current Avatar';
+                    } else {
+                        img.src = highResCurrent;
+                        originalBtnText.innerText = 'View Original Avatar';
+                    }
+                };
             } else {
-                avatarContainer.innerHTML = (u.name || u.email || '?').charAt(0).toUpperCase();
-                avatarContainer.style.background = 'linear-gradient(to bottom right, var(--info), #8b5cf6)';
+                originalBtnContainer.style.display = 'none';
             }
 
-            // Setup Reset Password button event
-            const resetBtn = document.getElementById('btn-reset-password');
-            resetBtn.onclick = () => app.triggerPasswordReset(u.email);
+            // 5. Setup Password Reset
+            document.getElementById('btn-reset-password').onclick = () => app.triggerPasswordReset(u.email);
 
-            // Setup Revert Profile button state
-            // Setup Revert Profile button state and details
+            // 6. Setup Revert Profile UI
             const revertBtn = document.getElementById('btn-revert-profile');
             const revertDetails = document.getElementById('revert-details-container');
             const origName = document.getElementById('revert-orig-name');
             const origPhoto = document.getElementById('revert-orig-photo');
 
             if (u.originalProfile) {
-                revertBtn.disabled = false;
-                revertBtn.style.opacity = '1';
-                revertBtn.style.cursor = 'pointer';
-                
-                // Populate and show the original details
+                revertBtn.disabled = false; revertBtn.style.opacity = '1'; revertBtn.style.cursor = 'pointer';
                 origName.innerText = u.originalProfile.displayName || 'No Name';
-                
                 if (u.originalProfile.photoURL) {
-                    origPhoto.src = u.originalProfile.photoURL;
-                    origPhoto.style.display = 'block';
+                    origPhoto.src = u.originalProfile.photoURL; origPhoto.style.display = 'block';
                 } else {
                     origPhoto.style.display = 'none';
                 }
-                
                 revertDetails.style.display = 'block';
             } else {
-                revertBtn.disabled = true;
-                revertBtn.style.opacity = '0.5';
-                revertBtn.style.cursor = 'not-allowed';
-                
-                // Hide the details if no original profile exists
+                revertBtn.disabled = true; revertBtn.style.opacity = '0.5'; revertBtn.style.cursor = 'not-allowed';
                 revertDetails.style.display = 'none';
             }
 
+            // Open Modal
             modal.classList.remove('hidden');
             setTimeout(() => modal.style.opacity = '1', 10);
         } else {
+            // Close Modal
             modal.style.opacity = '0';
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
@@ -1174,7 +1136,7 @@ const app={
         const uid = document.getElementById('modal-user-uid').value;
         const u = state.usersMap[uid];
         const btn = document.getElementById('modal-save-profile-btn');
-        btn.innerText = 'Saving...'; btn.disabled = true;
+        btn.innerText = 'Saving Configuration...'; btn.disabled = true;
 
         const updatedData = {
             displayName: document.getElementById('modal-input-name').value,
@@ -1197,7 +1159,7 @@ const app={
         } catch (err) {
             alert('Failed to update profile: ' + err.message);
         } finally {
-            btn.innerText = 'Save Profile Data'; btn.disabled = false;
+            btn.innerText = 'Save Profile Configuration'; btn.disabled = false;
         }
     },
 
@@ -1492,57 +1454,7 @@ const app={
         } catch (e) { 
             log(`ERROR: ${e.message}`); 
         }
-    },
-
-    // Add this anywhere inside the app object
-    showFullscreenAvatar: (url, uid) => {
-        const overlay = document.getElementById('fullscreen-avatar-overlay');
-        const img = document.getElementById('fullscreen-avatar-img');
-        const originalBtnContainer = document.getElementById('fs-original-pic-container');
-        const originalBtn = document.getElementById('fs-btn-original-pic');
-        const originalBtnText = document.getElementById('fs-btn-original-text');
-
-        if (!url || !uid) return;
-        
-        // Fetch high-res version of the current image
-        const highResCurrent = url.replace(/=s\d+-c/g, '=s1024-c');
-        
-        const u = state.usersMap[uid];
-        if(u) {
-            document.getElementById('fs-user-name').innerText = u.name || 'Unknown User';
-            document.getElementById('fs-user-email').innerText = u.email || 'No Email';
-            document.getElementById('fs-user-provider').innerText = u.provider || 'UNKNOWN';
-            document.getElementById('fs-user-uid').innerText = uid;
-            
-            // Check if they have an original profile picture saved
-            if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== url) {
-                const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
-                originalBtnContainer.style.display = 'block';
-                
-                let showingOriginal = false;
-                originalBtnText.innerText = 'View Original Avatar';
-                
-                // Toggle logic
-                originalBtn.onclick = () => {
-                    showingOriginal = !showingOriginal;
-                    if (showingOriginal) {
-                        img.src = highResOriginal;
-                        originalBtnText.innerText = 'View Current Avatar';
-                    } else {
-                        img.src = highResCurrent;
-                        originalBtnText.innerText = 'View Original Avatar';
-                    }
-                };
-            } else {
-                // Hide the button if no original picture exists
-                originalBtnContainer.style.display = 'none';
-            }
-        }
-        
-        // Set the initial image
-        img.src = highResCurrent;
-        overlay.classList.remove('hidden');
-    },
+    }
 };
 
 function renderAll(){
@@ -1604,7 +1516,7 @@ function renderUsersTable(){
         const starIconClass = isStarred ? "ph-fill ph-star" : "ph-bold ph-star";
         const starColor = isStarred ? "color: var(--warning);" : "color: var(--text-muted);";
         
-        let avatarHTML=u.avatar?`<img src="${u.avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`:`<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff;">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>`;
+        let avatarHTML=u.avatar?`<img src="${u.avatar}" onclick="app.toggleUserProfileModal('${u.uid}')" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor: pointer;" title="Manage Profile">`:`<div onclick="app.toggleUserProfileModal('${u.uid}')" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; cursor: pointer;" title="Manage Profile">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>`;
         
         return `
         <tr>
@@ -1698,7 +1610,6 @@ function renderTasksTable(){
 
 function generateTaskRowHtml(t) {
     const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
-    /* Replaced 10px with 11px */
     const priBadge={
         high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
         med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
@@ -1707,9 +1618,7 @@ function generateTaskRowHtml(t) {
     }[t.priority||'none'];
     const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedSessionIds?t.completedSessionIds.length:0;
     const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
-    /* Replaced 10px with 11px */
     const userTag=!state.filterUser?`<div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
-    /* Replaced 10px with 11px */
     const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
     
     return `
@@ -1763,7 +1672,6 @@ function renderBroadcastsTable(){
     tbody.innerHTML=sortedBroadcasts.map(b=>{
         const d = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleString() : 'Just now';
         
-        /* Replaced 10px with 11px */
         let typeBadge = '';
         if(b.type === 'info') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">INFO</span>`;
         else if(b.type === 'warning') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">WARNING</span>`;
@@ -1775,12 +1683,10 @@ function renderBroadcastsTable(){
 
         const reads = b.readBy ? b.readBy.length : 0;
         const isExpired = b.expiresAt && new Date(b.expiresAt) < new Date();
-        /* Replaced 10px with 11px */
         const statusBadge = isExpired 
             ? `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">EXPIRED</span>` 
             : `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">ACTIVE</span>`;
 
-        /* Replaced 10px with 11px */
         let btnIndicator = b.btnText ? `<div style="font-size:11px; color:var(--brand); margin-top:4px;"><i class="ph-bold ph-link"></i> ${b.btnText}</div>` : '';
 
         return `
@@ -1853,11 +1759,11 @@ function updateCharts(){
                 borderColor: '#ff5757',
                 backgroundColor: 'rgba(255, 87, 87, 0.1)',
                 borderWidth: 2,
-                pointBackgroundColor: '#1e1e1e', // Match card background
+                pointBackgroundColor: '#1e1e1e', 
                 pointBorderColor: '#ff5757',
                 pointBorderWidth: 2,
                 pointRadius: 4,
-                pointHoverRadius: 6, // Expands on hover
+                pointHoverRadius: 6, 
                 fill: true,
                 tension: 0.4
             }]
@@ -1866,7 +1772,7 @@ function updateCharts(){
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
-                mode: 'index', // Tooltip appears when hovering the vertical slice
+                mode: 'index', 
                 intersect: false,
             },
             plugins: {
@@ -1878,7 +1784,7 @@ function updateCharts(){
                     borderColor: '#2a2a2a',
                     borderWidth: 1,
                     padding: 12,
-                    displayColors: false, // Hides the little color square
+                    displayColors: false, 
                     callbacks: {
                         label: function(context) {
                             return context.parsed.y + ' minutes';
@@ -1916,8 +1822,8 @@ function updateCharts(){
                 data: sortedProj.map(x=>x[1]),
                 backgroundColor: ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],
                 borderWidth: 2,
-                borderColor: '#1e1e1e', // Creates gaps between slices
-                hoverOffset: 5 // Slices pop out slightly on hover
+                borderColor: '#1e1e1e', 
+                hoverOffset: 5 
             }]
         }, 
         options: {
