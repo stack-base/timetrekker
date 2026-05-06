@@ -740,6 +740,14 @@
             <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">System UID</div>
             <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
         </div>
+
+        <!-- Original Avatar Toggle Button -->
+        <div id="fs-original-pic-container" style="margin-top: auto; padding-top: 1.5rem; display: none;">
+            <button id="fs-btn-original-pic" class="btn btn-outline text-xs" style="width: 100%; border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
+                <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
+                <span id="fs-btn-original-text">View Original Avatar</span>
+            </button>
+        </div>
         
     </div>
 </div>
@@ -1461,21 +1469,49 @@ const app={
     showFullscreenAvatar: (url, uid) => {
         const overlay = document.getElementById('fullscreen-avatar-overlay');
         const img = document.getElementById('fullscreen-avatar-img');
+        const originalBtnContainer = document.getElementById('fs-original-pic-container');
+        const originalBtn = document.getElementById('fs-btn-original-pic');
+        const originalBtnText = document.getElementById('fs-btn-original-text');
+
         if (!url || !uid) return;
         
-        // Populate the side panel data
+        // Fetch high-res version of the current image
+        const highResCurrent = url.replace(/=s\d+-c/g, '=s1024-c');
+        
         const u = state.usersMap[uid];
         if(u) {
             document.getElementById('fs-user-name').innerText = u.name || 'Unknown User';
             document.getElementById('fs-user-email').innerText = u.email || 'No Email';
             document.getElementById('fs-user-provider').innerText = u.provider || 'UNKNOWN';
             document.getElementById('fs-user-uid').innerText = uid;
+            
+            // Check if they have an original profile picture saved
+            if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== url) {
+                const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
+                originalBtnContainer.style.display = 'block';
+                
+                let showingOriginal = false;
+                originalBtnText.innerText = 'View Original Avatar';
+                
+                // Toggle logic
+                originalBtn.onclick = () => {
+                    showingOriginal = !showingOriginal;
+                    if (showingOriginal) {
+                        img.src = highResOriginal;
+                        originalBtnText.innerText = 'View Current Avatar';
+                    } else {
+                        img.src = highResCurrent;
+                        originalBtnText.innerText = 'View Original Avatar';
+                    }
+                };
+            } else {
+                // Hide the button if no original picture exists
+                originalBtnContainer.style.display = 'none';
+            }
         }
         
-        // Fetch high-res Google/Firebase image
-        const highResUrl = url.replace(/=s\d+-c/g, '=s1024-c');
-        
-        img.src = highResUrl;
+        // Set the initial image
+        img.src = highResCurrent;
         overlay.classList.remove('hidden');
     },
 };
