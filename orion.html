@@ -237,38 +237,12 @@
             padding: 0 1.25rem 2rem;
         }
 
-        #user-profile-modal .custom-scrollbar > div:first-child {
-            flex-direction: column;
-            text-align: center;
-            background: transparent !important;
-            border: none !important;
-            padding: 1rem 0 2rem;
-            margin-bottom: 1rem;
-            gap: 1rem;
-        }
-
+        /* Scale the original 160px avatar down slightly for mobile screens */
         #user-profile-modal #modal-user-avatar {
-            width: 110px !important;
-            height: 110px !important;
-            margin: 0 auto;
-            box-shadow: 0 15px 35px -5px rgba(0,0,0,0.4) !important;
-        }
-
-        #user-profile-modal .custom-scrollbar > div:first-child > div {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #user-profile-modal .custom-scrollbar > div:first-child > div > div:first-child {
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-            justify-content: center;
-        }
-        
-        #user-profile-modal #modal-user-name-display {
-            font-size: 1.75rem !important; 
+            width: 120px !important;
+            height: 120px !important;
+            font-size: 3rem !important;
+            margin-top: 1rem;
         }
 
         #user-profile-modal .custom-scrollbar > div[style*="display: grid"] {
@@ -743,17 +717,14 @@
         <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
             <div style="padding: 1.5rem; overflow-y: auto; max-height: calc(85vh - 130px);" class="custom-scrollbar">
                 
-                <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2rem; padding: 1.25rem; background: var(--bg-main); border-radius: 12px; border: 1px solid var(--border);">
-                    <div id="modal-user-avatar" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 50%; background: var(--bg-sidebar); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 600; color: #fff; overflow: hidden;">
+                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; text-align: center;">
+                    <div id="modal-user-avatar" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 700; color: #fff; overflow: hidden; margin-bottom: 1.25rem;">
                     </div>
-                    
-                    <div style="min-width: 0; flex: 1;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-                            <div id="modal-user-name-display" class="truncate" style="font-size: 1.25rem; font-weight: 600; color: #fff; letter-spacing: -0.02em;">User Name</div>
-                            <span id="modal-user-provider" style="padding: 2px 8px; border-radius: 6px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1);">PROV</span>
-                        </div>
-                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
-                        <div id="modal-user-uid-display" style="font-size: 0.75rem; color: var(--text-faint); font-family: monospace; user-select: all;">UID: </div>
+                    <div style="min-width: 0; width: 100%;">
+                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;">User Name</div>
+                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
+                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 12px; font-family: monospace;">UID: </div>
+                        <span id="modal-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
                     </div>
                 </div>
 
