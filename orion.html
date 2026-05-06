@@ -7,7 +7,6 @@
 <link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
@@ -19,17 +18,16 @@
     :root {
         --brand: #ff5757;
         --brand-hover: #e04848;
-        --brand-dim: rgba(255, 87, 87, 0.15); /* Boosted for better active state visibility */
+        --brand-dim: rgba(255, 87, 87, 0.15); 
         --bg-main: #0f0f0f;
         --bg-sidebar: #141414;
         --bg-card: #1e1e1e;
         --border: #2a2a2a;
         --hover: #333333;
         
-        /* Typography Visibility Updates */
-        --text-main: #f3f4f6; /* Brighter neutral white */
-        --text-muted: #a1a1aa; /* Warmer, clearer gray */
-        --text-faint: #71717a; /* Lifted significantly to pass contrast checks */
+        --text-main: #f3f4f6; 
+        --text-muted: #a1a1aa; 
+        --text-faint: #71717a; 
         
         --success: #10b981;
         --warning: #f59e0b;
@@ -42,13 +40,30 @@
     body { 
         background-color: var(--bg-main); 
         color: var(--text-main); 
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+        /* The Ultimate Native System Font Stack */
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; 
         overflow: hidden; 
         height: 100vh; 
         width: 100vw; 
-        line-height: 1.5; /* Improved reading rhythm */
-        -webkit-font-smoothing: antialiased; /* Crisp rendering */
+        line-height: 1.4; /* Tighter reading rhythm for UI */
+        -webkit-font-smoothing: antialiased; 
         -moz-osx-font-smoothing: grayscale; 
+    }
+
+    /* Premium Native Monospace Stack */
+    [style*="monospace"] {
+        font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important;
+        letter-spacing: -0.01em;
+    }
+
+    /* Apple-style typography polish for headings */
+    h1, h2, h3, .card-title, .stat-value, .brand-icon + span {
+        letter-spacing: -0.02em;
+    }
+
+    /* Ensure small UI labels remain highly legible */
+    .stat-label, .nav-label, th {
+        letter-spacing: 0.04em;
     }
     
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -61,9 +76,8 @@
     .text-danger { color: var(--danger); }
     .font-bold { font-weight: 700; }
     
-    /* Typography Bumps */
     .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; } /* Lifted from 0.75rem */
+    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; }
     
     .hidden { display: none !important; }
     .flex { display: flex; }
@@ -97,8 +111,7 @@
     
     .sidebar-nav { flex: 1; padding: 1rem; overflow-y: auto; }
     
-    /* Adjusted Nav Label for Readability */
-    .nav-label { font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0.75rem 0.5rem; }
+    .nav-label { font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin: 1.5rem 0.75rem 0.5rem; }
     
     .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; }
     .nav-item i { font-size: 1.125rem; margin-right: 0.75rem; }
@@ -119,8 +132,7 @@
     .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
     .card-body.no-pad { padding: 0; }
     
-    /* Adjusted Stat Label */
-    .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
     
     .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
     .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
@@ -128,13 +140,11 @@
     .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
     .data-table { width: 100%; border-collapse: collapse; text-align: left; }
     
-    /* Improved Table Header Typography */
-    .data-table th { padding: 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    .data-table th { padding: 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
     
     .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
     .data-table tr:hover { background: var(--hover); }
 
-    /* Interactive Table Headers */
     th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
     th.sortable:hover { color: #fff; }
     th.sortable i { margin-left: 4px; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
@@ -147,7 +157,7 @@
     
     .input-group { margin-bottom: 1rem; }
     .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: 'Inter', sans-serif; }
+    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: inherit; }
     .input-control:focus { border-color: var(--brand); }
     .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; }
     .input-transparent::placeholder { color: var(--text-muted); }
@@ -155,19 +165,14 @@
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Split-Screen Overlay Styles */
     .fs-overlay-container { padding: 0; background: var(--bg-main); align-items: stretch; flex-direction: row; }
     .fs-image-panel { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; padding: 2rem; position: relative; }
-    
-    /* Forces images of all sizes to stretch and fit gracefully */
     .fs-image-panel img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.5)); }
-    
     .fs-details-panel { width: 400px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 2rem; position: relative; flex-shrink: 0; overflow-y: auto; }
 
-    /* Mobile adjustments for the overlay */
     @media (max-width: 768px) {
         .fs-overlay-container { flex-direction: column; }
-        .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } /* Gives top half of screen to image */
+        .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } 
         .fs-details-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
     }
 
@@ -191,6 +196,106 @@
         .card-header { padding: 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         .card-header .header-actions { width: 100%; display: flex; justify-content: space-between; }
         .stat-value { font-size: 1.5rem; }
+    }
+
+    /* Mobile Fullscreen Native Contact Card (iOS / One UI Style) */
+    @media (max-width: 768px) {
+        #user-profile-modal {
+            padding: 0;
+            align-items: flex-end; 
+        }
+        
+        #user-profile-modal .modal-box {
+            width: 100vw;
+            height: 100dvh; 
+            max-width: 100%;
+            max-height: 100dvh;
+            border-radius: 0 !important;
+            border: none !important;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-main);
+        }
+
+        #user-profile-modal .modal-box > div:first-child {
+            padding: calc(1rem + env(safe-area-inset-top)) 1.25rem 1rem;
+            background: var(--bg-main);
+            border-bottom: none !important;
+            z-index: 10;
+        }
+
+        #user-profile-modal form {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #user-profile-modal .custom-scrollbar {
+            max-height: none !important;
+            flex: 1;
+            padding: 0 1.25rem 2rem;
+        }
+
+        #user-profile-modal .custom-scrollbar > div:first-child {
+            flex-direction: column;
+            text-align: center;
+            background: transparent !important;
+            border: none !important;
+            padding: 1rem 0 2rem;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        #user-profile-modal #modal-user-avatar {
+            width: 110px !important;
+            height: 110px !important;
+            margin: 0 auto;
+            box-shadow: 0 15px 35px -5px rgba(0,0,0,0.4) !important;
+        }
+
+        #user-profile-modal .custom-scrollbar > div:first-child > div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #user-profile-modal .custom-scrollbar > div:first-child > div > div:first-child {
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            justify-content: center;
+        }
+        
+        #user-profile-modal #modal-user-name-display {
+            font-size: 1.75rem !important; 
+        }
+
+        #user-profile-modal .custom-scrollbar > div[style*="display: grid"] {
+            display: flex !important;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        #user-profile-modal .input-control {
+            padding: 0.875rem;
+            font-size: 1rem; 
+        }
+
+        #user-profile-modal form > div:last-child {
+            padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+            background: rgba(15, 15, 15, 0.85) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border) !important;
+        }
+
+        #user-profile-modal form > div:last-child button {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1rem;
+            border-radius: 10px;
+        }
     }
 </style>
 </head>
@@ -628,102 +733,97 @@
 </div>
 
 <div id="user-profile-modal" class="modal-overlay hidden">
-    <div class="modal-box large">
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5);">
-            <h2 style="font-size: 1.125rem; font-weight: 700; color: #fff;">User Profile Management</h2>
-            <button type="button" onclick="app.toggleUserProfileModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+    <div class="modal-box large" style="border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);">
+        
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02);">
+            <h2 style="font-size: 1.0625rem; font-weight: 600; color: #fff; letter-spacing: -0.01em;">User Profile</h2>
+            <button type="button" onclick="app.toggleUserProfileModal()" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';"><i class="ph-bold ph-x" style="font-size: 0.875rem;"></i></button>
         </div>
         
         <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
-            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
+            <div style="padding: 1.5rem; overflow-y: auto; max-height: calc(85vh - 130px);" class="custom-scrollbar">
                 
-                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; text-align: center;">
-    
-                    <!-- Enlarged Avatar with subtle shadow -->
-                    <div id="modal-user-avatar" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 700; color: #fff; overflow: hidden; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2rem; padding: 1.25rem; background: var(--bg-main); border-radius: 12px; border: 1px solid var(--border);">
+                    <div id="modal-user-avatar" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 50%; background: var(--bg-sidebar); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 600; color: #fff; overflow: hidden;">
                     </div>
                     
-                    <!-- Centered User Info -->
-                    <div style="min-width: 0; width: 100%;">
-                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;">User Name</div>
-                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
-                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 12px; font-family: monospace;">UID: </div>
-                        
-                        <!-- Pill-shaped provider badge for a polished look -->
-                        <span id="modal-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
+                    <div style="min-width: 0; flex: 1;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                            <div id="modal-user-name-display" class="truncate" style="font-size: 1.25rem; font-weight: 600; color: #fff; letter-spacing: -0.02em;">User Name</div>
+                            <span id="modal-user-provider" style="padding: 2px 8px; border-radius: 6px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1);">PROV</span>
+                        </div>
+                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
+                        <div id="modal-user-uid-display" style="font-size: 0.75rem; color: var(--text-faint); font-family: monospace; user-select: all;">UID: </div>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="input-group">
-                        <label>Display Name (Firestore)</label>
-                        <input type="text" id="modal-input-name" class="input-control" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Display Name</label>
+                        <input type="text" id="modal-input-name" class="input-control" style="background: var(--bg-main);" required>
                     </div>
-                    <div class="input-group">
-                        <label>Contact Email</label>
-                        <input type="email" id="modal-input-email" class="input-control" disabled style="opacity: 0.5; cursor: not-allowed;" title="Email is tied to Auth and cannot be edited here.">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Contact Email</label>
+                        <input type="email" id="modal-input-email" class="input-control" disabled style="background: rgba(0,0,0,0.2); color: var(--text-faint); cursor: not-allowed;" title="Tied to Auth. Cannot be edited.">
                     </div>
                 </div>
 
-                <div class="input-group" style="margin-bottom: 2rem;">
-                    <label>Profile Picture URL</label>
-                    <input type="url" id="modal-input-photo" class="input-control" placeholder="https://...">
+                <div class="input-group" style="margin-bottom: 2.5rem;">
+                    <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Profile Picture URL</label>
+                    <input type="url" id="modal-input-photo" class="input-control" style="background: var(--bg-main);" placeholder="https://...">
                 </div>
 
-                <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">Administrative Actions</div>
-                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
-                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Send account password reset link.</div>
+                <div class="nav-label" style="margin-left: 0; margin-bottom: 0.75rem; color: var(--text-muted);">Administrative Actions</div>
+                <div style="border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); overflow: hidden;">
+                    
+                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                        <div>
+                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Password Reset</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Force an auth reset link to the user's email.</div>
+                        </div>
+                        <button type="button" id="btn-reset-password" class="btn text-xs" style="background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); flex-shrink: 0;">
+                            Send Email
+                        </button>
                     </div>
-                    <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3);">
-                        <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Email
-                    </button>
-                </div>
-                
-                <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: flex-start; margin-top: 1rem;">
-                    <div style="flex: 1; padding-right: 1rem; min-width: 0;">
-                        <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
-                        <div style="font-size: 0.8125rem; color: var(--text-muted);">Restore original display name and photo.</div>
-                        
-                        <!-- Previous Details Container -->
-                        <div id="revert-details-container" style="display: none; background: var(--bg-sidebar); border: 1px dashed var(--border); border-radius: 6px; padding: 0.75rem; margin-top: 1rem;">
-                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Original Data Saved:</div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <img id="revert-orig-photo" src="" alt="Original Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;">
-                                <div id="revert-orig-name" class="truncate" style="font-size: 0.875rem; color: #fff; font-weight: 500;">--</div>
+                    
+                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1; padding-right: 1.5rem; min-width: 0;">
+                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Revert Profile Data</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore the original display name and photo from the initial auth provider.</div>
+                            
+                            <div id="revert-details-container" style="display: none; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 0.75rem; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05);">
+                                <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Original Snapshot</div>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <img id="revert-orig-photo" src="" alt="Original" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border);">
+                                    <div id="revert-orig-name" class="truncate" style="font-size: 0.8125rem; color: #fff; font-weight: 500;">--</div>
+                                </div>
                             </div>
                         </div>
+                        <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn text-xs flex-shrink-0" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); margin-top: 2px;">
+                            Revert User
+                        </button>
                     </div>
-                    <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs flex-shrink-0" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); margin-top: 2px;">
-                        <i class="ph-bold ph-arrow-counter-clockwise" style="margin-right: 0.5rem;"></i> Revert
-                    </button>
                 </div>
 
                 <input type="hidden" id="modal-user-uid">
             </div>
             
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" onclick="app.toggleUserProfileModal()" class="btn btn-outline">Cancel</button>
-                <button type="submit" id="modal-save-profile-btn" class="btn btn-primary">Save Profile Data</button>
+            <div style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); background: rgba(255, 255, 255, 0.02); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" onclick="app.toggleUserProfileModal()" class="btn btn-outline" style="border-color: transparent;">Cancel</button>
+                <button type="submit" id="modal-save-profile-btn" class="btn btn-primary" style="border-radius: 8px;">Save Changes</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Split-Screen Avatar Overlay -->
-<!-- Split-Screen Avatar Overlay -->
 <div id="fullscreen-avatar-overlay" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
     
-    <!-- Left/Top Side: Image Preview -->
     <div class="fs-image-panel">
         <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar">
     </div>
     
-    <!-- Right/Bottom Side: Details Panel -->
     <div class="fs-details-panel">
         
-        <!-- Close Button -->
         <button onclick="document.getElementById('fullscreen-avatar-overlay').classList.add('hidden')" style="position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">
             <i class="ph-bold ph-x"></i>
         </button>
@@ -750,7 +850,6 @@
             <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
         </div>
 
-        <!-- Original Avatar Toggle Button -->
         <div id="fs-original-pic-container" style="margin-top: auto; padding-top: 1.5rem; display: none;">
             <button id="fs-btn-original-pic" class="btn btn-outline text-xs" style="width: 100%; border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
                 <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
@@ -775,7 +874,7 @@ const CACHE_KEY = 'orion_local_cache_v3';
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; 
 
-Chart.defaults.font.family='Inter';
+Chart.defaults.font.family='-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#2a2a2a';
 
@@ -1114,23 +1213,19 @@ const app={
             document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
             document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
             document.getElementById('modal-user-uid-display').innerText = `UID: ${uid}`;
-            document.getElementById('modal-user-provider').innerText = u.provider.toUpperCase();
+            document.getElementById('modal-user-provider').innerText = u.provider.substring(0, 4).toUpperCase();
 
             const avatarContainer = document.getElementById('modal-user-avatar');
             if (u.avatar) {
-                // Notice the addition of '${uid}' in the parameters
                 avatarContainer.innerHTML = `<img src="${u.avatar}" onclick="app.showFullscreenAvatar('${u.avatar}', '${uid}')" style="width: 100%; height: 100%; object-fit: cover; cursor: zoom-in;" title="Click to view full image and details">`;
             } else {
                 avatarContainer.innerHTML = (u.name || u.email || '?').charAt(0).toUpperCase();
                 avatarContainer.style.background = 'linear-gradient(to bottom right, var(--info), #8b5cf6)';
             }
 
-            // Setup Reset Password button event
             const resetBtn = document.getElementById('btn-reset-password');
             resetBtn.onclick = () => app.triggerPasswordReset(u.email);
 
-            // Setup Revert Profile button state
-            // Setup Revert Profile button state and details
             const revertBtn = document.getElementById('btn-revert-profile');
             const revertDetails = document.getElementById('revert-details-container');
             const origName = document.getElementById('revert-orig-name');
@@ -1141,7 +1236,6 @@ const app={
                 revertBtn.style.opacity = '1';
                 revertBtn.style.cursor = 'pointer';
                 
-                // Populate and show the original details
                 origName.innerText = u.originalProfile.displayName || 'No Name';
                 
                 if (u.originalProfile.photoURL) {
@@ -1157,7 +1251,6 @@ const app={
                 revertBtn.style.opacity = '0.5';
                 revertBtn.style.cursor = 'not-allowed';
                 
-                // Hide the details if no original profile exists
                 revertDetails.style.display = 'none';
             }
 
@@ -1197,7 +1290,7 @@ const app={
         } catch (err) {
             alert('Failed to update profile: ' + err.message);
         } finally {
-            btn.innerText = 'Save Profile Data'; btn.disabled = false;
+            btn.innerText = 'Save Changes'; btn.disabled = false;
         }
     },
 
@@ -1494,7 +1587,6 @@ const app={
         }
     },
 
-    // Add this anywhere inside the app object
     showFullscreenAvatar: (url, uid) => {
         const overlay = document.getElementById('fullscreen-avatar-overlay');
         const img = document.getElementById('fullscreen-avatar-img');
@@ -1504,7 +1596,6 @@ const app={
 
         if (!url || !uid) return;
         
-        // Fetch high-res version of the current image
         const highResCurrent = url.replace(/=s\d+-c/g, '=s1024-c');
         
         const u = state.usersMap[uid];
@@ -1514,7 +1605,6 @@ const app={
             document.getElementById('fs-user-provider').innerText = u.provider || 'UNKNOWN';
             document.getElementById('fs-user-uid').innerText = uid;
             
-            // Check if they have an original profile picture saved
             if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== url) {
                 const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
                 originalBtnContainer.style.display = 'block';
@@ -1522,7 +1612,6 @@ const app={
                 let showingOriginal = false;
                 originalBtnText.innerText = 'View Original Avatar';
                 
-                // Toggle logic
                 originalBtn.onclick = () => {
                     showingOriginal = !showingOriginal;
                     if (showingOriginal) {
@@ -1534,12 +1623,10 @@ const app={
                     }
                 };
             } else {
-                // Hide the button if no original picture exists
                 originalBtnContainer.style.display = 'none';
             }
         }
         
-        // Set the initial image
         img.src = highResCurrent;
         overlay.classList.remove('hidden');
     },
@@ -1698,7 +1785,6 @@ function renderTasksTable(){
 
 function generateTaskRowHtml(t) {
     const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
-    /* Replaced 10px with 11px */
     const priBadge={
         high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
         med:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">MED</span>',
@@ -1707,9 +1793,7 @@ function generateTaskRowHtml(t) {
     }[t.priority||'none'];
     const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedSessionIds?t.completedSessionIds.length:0;
     const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
-    /* Replaced 10px with 11px */
     const userTag=!state.filterUser?`<div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
-    /* Replaced 10px with 11px */
     const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
     
     return `
@@ -1763,7 +1847,6 @@ function renderBroadcastsTable(){
     tbody.innerHTML=sortedBroadcasts.map(b=>{
         const d = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleString() : 'Just now';
         
-        /* Replaced 10px with 11px */
         let typeBadge = '';
         if(b.type === 'info') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">INFO</span>`;
         else if(b.type === 'warning') typeBadge = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2);">WARNING</span>`;
@@ -1775,12 +1858,10 @@ function renderBroadcastsTable(){
 
         const reads = b.readBy ? b.readBy.length : 0;
         const isExpired = b.expiresAt && new Date(b.expiresAt) < new Date();
-        /* Replaced 10px with 11px */
         const statusBadge = isExpired 
             ? `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">EXPIRED</span>` 
             : `<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">ACTIVE</span>`;
 
-        /* Replaced 10px with 11px */
         let btnIndicator = b.btnText ? `<div style="font-size:11px; color:var(--brand); margin-top:4px;"><i class="ph-bold ph-link"></i> ${b.btnText}</div>` : '';
 
         return `
@@ -1853,11 +1934,11 @@ function updateCharts(){
                 borderColor: '#ff5757',
                 backgroundColor: 'rgba(255, 87, 87, 0.1)',
                 borderWidth: 2,
-                pointBackgroundColor: '#1e1e1e', // Match card background
+                pointBackgroundColor: '#1e1e1e', 
                 pointBorderColor: '#ff5757',
                 pointBorderWidth: 2,
                 pointRadius: 4,
-                pointHoverRadius: 6, // Expands on hover
+                pointHoverRadius: 6, 
                 fill: true,
                 tension: 0.4
             }]
@@ -1866,7 +1947,7 @@ function updateCharts(){
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
-                mode: 'index', // Tooltip appears when hovering the vertical slice
+                mode: 'index', 
                 intersect: false,
             },
             plugins: {
@@ -1878,7 +1959,7 @@ function updateCharts(){
                     borderColor: '#2a2a2a',
                     borderWidth: 1,
                     padding: 12,
-                    displayColors: false, // Hides the little color square
+                    displayColors: false, 
                     callbacks: {
                         label: function(context) {
                             return context.parsed.y + ' minutes';
@@ -1916,8 +1997,8 @@ function updateCharts(){
                 data: sortedProj.map(x=>x[1]),
                 backgroundColor: ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],
                 borderWidth: 2,
-                borderColor: '#1e1e1e', // Creates gaps between slices
-                hoverOffset: 5 // Slices pop out slightly on hover
+                borderColor: '#1e1e1e', 
+                hoverOffset: 5 
             }]
         }, 
         options: {
