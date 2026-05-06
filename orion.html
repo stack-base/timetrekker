@@ -621,14 +621,20 @@
         <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
             <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
                 
-                <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 2rem;">
-                    <div id="modal-user-avatar" style="width: 120px; height: 120px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; color: #fff; overflow: hidden;">
+                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; text-align: center;">
+    
+                    <!-- Enlarged Avatar with subtle shadow -->
+                    <div id="modal-user-avatar" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 700; color: #fff; overflow: hidden; margin-bottom: 1.25rem;">
                     </div>
-                    <div style="min-width: 0;">
-                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 4px;">User Name</div>
-                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 4px;">user@example.com</div>
-                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 8px; font-family: monospace;">UID: </div>
-                        <span id="modal-user-provider" style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
+                    
+                    <!-- Centered User Info -->
+                    <div style="min-width: 0; width: 100%;">
+                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;">User Name</div>
+                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
+                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 12px; font-family: monospace;">UID: </div>
+                        
+                        <!-- Pill-shaped provider badge for a polished look -->
+                        <span id="modal-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
                     </div>
                 </div>
 
