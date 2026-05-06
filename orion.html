@@ -686,6 +686,11 @@
     </div>
 </div>
 
+<!-- Fullscreen Avatar Overlay -->
+<div id="fullscreen-avatar-overlay" class="modal-overlay hidden" style="z-index: 9999; cursor: zoom-out;" onclick="this.classList.add('hidden')">
+    <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar" style="max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); object-fit: contain;">
+</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -1043,7 +1048,8 @@ const app={
 
             const avatarContainer = document.getElementById('modal-user-avatar');
             if (u.avatar) {
-                avatarContainer.innerHTML = `<img src="${u.avatar}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                // Added cursor styling and onclick handler
+                avatarContainer.innerHTML = `<img src="${u.avatar}" onclick="app.showFullscreenAvatar('${u.avatar}')" style="width: 100%; height: 100%; object-fit: cover; cursor: zoom-in;" title="Click to view full image">`;
             } else {
                 avatarContainer.innerHTML = (u.name || u.email || '?').charAt(0).toUpperCase();
                 avatarContainer.style.background = 'linear-gradient(to bottom right, var(--info), #8b5cf6)';
@@ -1396,7 +1402,16 @@ const app={
         } catch (e) { 
             log(`ERROR: ${e.message}`); 
         }
-    }
+    },
+
+    // Add this anywhere inside the app object
+    showFullscreenAvatar: (url) => {
+        const overlay = document.getElementById('fullscreen-avatar-overlay');
+        const img = document.getElementById('fullscreen-avatar-img');
+        if (!url) return;
+        img.src = url;
+        overlay.classList.remove('hidden');
+    },
 };
 
 function renderAll(){
