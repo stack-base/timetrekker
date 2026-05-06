@@ -688,7 +688,7 @@
 
 <!-- Fullscreen Avatar Overlay -->
 <div id="fullscreen-avatar-overlay" class="modal-overlay hidden" style="z-index: 9999; cursor: zoom-out;" onclick="this.classList.add('hidden')">
-    <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar" style="max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); object-fit: contain;">
+    <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar" style="width: 90vw; height: 90vh; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.8));">
 </div>
 
 <script type="module">
@@ -1409,7 +1409,11 @@ const app={
         const overlay = document.getElementById('fullscreen-avatar-overlay');
         const img = document.getElementById('fullscreen-avatar-img');
         if (!url) return;
-        img.src = url;
+        
+        // Trick for Google/Firebase avatars: replace the small size parameter (e.g., =s96-c) with a high-res one
+        const highResUrl = url.replace(/=s\d+-c/g, '=s1024-c');
+        
+        img.src = highResUrl;
         overlay.classList.remove('hidden');
     },
 };
