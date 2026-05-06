@@ -1184,7 +1184,7 @@ const app={
             document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
             document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
             document.getElementById('modal-user-uid-display').innerText = `UID: ${uid}`;
-            document.getElementById('modal-user-provider').innerText = u.provider.substring(0, 4).toUpperCase();
+            document.getElementById('modal-user-provider').innerText = u.provider.replace('.com', '').toUpperCase();
 
             const avatarContainer = document.getElementById('modal-user-avatar');
             if (u.avatar) {
