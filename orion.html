@@ -7,7 +7,6 @@
 <link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
@@ -34,6 +33,10 @@
         --warning: #f59e0b;
         --danger: #ef4444;
         --info: #3b82f6;
+
+        /* Premium Apple/Google System Font Stacks */
+        --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,13 +44,18 @@
     body { 
         background-color: var(--bg-main); 
         color: var(--text-main); 
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+        font-family: var(--font-sans); 
         overflow: hidden; 
         height: 100vh; 
         width: 100vw; 
         line-height: 1.5; 
         -webkit-font-smoothing: antialiased; 
         -moz-osx-font-smoothing: grayscale; 
+    }
+
+    /* Apply Apple-style tight tracking to headings */
+    h1, h2, h3, .card-title {
+        letter-spacing: -0.02em;
     }
     
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -69,7 +77,7 @@
     .justify-between { justify-content: space-between; }
     .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); font-family: var(--font-sans); }
     .btn:hover { color: var(--text-main); }
     .btn-primary { background: var(--brand); color: #fff; }
     .btn-primary:hover { background: var(--brand-hover); }
@@ -118,7 +126,7 @@
     
     .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
     
-    .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
+    .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
     .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
 
     .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
@@ -140,10 +148,10 @@
     .modal-box.large { max-width: 500px; padding: 0; overflow: hidden; }
     
     .input-group { margin-bottom: 1rem; }
-    .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: 'Inter', sans-serif; }
+    .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.025em; }
+    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: var(--font-sans); }
     .input-control:focus { border-color: var(--brand); }
-    .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; }
+    .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; font-family: var(--font-sans); letter-spacing: -0.01em; }
     .input-transparent::placeholder { color: var(--text-muted); }
 
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
@@ -191,7 +199,7 @@
         <div class="sidebar-brand">
             <div class="flex items-center">
                 <div class="brand-icon"><img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 40px; height: auto;"></div>
-                <span style="margin-left: 0.75rem; font-weight: 700; font-size: 1.125rem; color: #fff;">Orion</span>
+                <span style="margin-left: 0.75rem; font-weight: 700; font-size: 1.125rem; color: #fff; letter-spacing: -0.02em;">Orion</span>
             </div>
             <button class="mobile-close-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-x"></i></button>
         </div>
@@ -218,11 +226,11 @@
             <div class="flex items-center" style="margin-bottom: 1.5rem; gap: 0.75rem;">
                  <div style="width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
                  <div style="min-width: 0;">
-                    <div class="truncate text-base font-bold" style="color: #fff;">Orion Console</div>
+                    <div class="truncate text-base font-bold" style="color: #fff; letter-spacing: -0.01em;">Orion Console</div>
                     <div class="text-sm text-muted">Connected</div>
                  </div>
             </div>
-            <button onclick="app.signOut()" class="btn btn-danger" style="width: 100%; text-transform: uppercase; font-size: 0.875rem; font-weight: 700; padding: 0.75rem;">
+            <button onclick="app.signOut()" class="btn btn-danger" style="width: 100%; text-transform: uppercase; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.025em; padding: 0.75rem;">
                 <i class="ph-bold ph-sign-out" style="margin-right: 0.5rem;"></i> Sign Out
             </button>
         </div>
@@ -245,13 +253,13 @@
                 <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
                 <div class="flex items-center" style="gap: 0.75rem;">
                    <h1>Data Management</h1>
-                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">CACHED (0m ago)</span>
+                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: var(--font-mono); background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700; letter-spacing: 0.025em;">CACHED (0m ago)</span>
                 </div>
             </div>
             <div class="flex items-center" style="gap: 1rem;">
                 <div style="text-align: right;">
-                    <div style="font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase;">Last Sync</div>
-                    <div id="last-sync-time" style="font-family: monospace; color: #fff; font-size: 12px;">--:--:--</div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em;">Last Sync</div>
+                    <div id="last-sync-time" style="font-family: var(--font-mono); color: #fff; font-size: 12px;">--:--:--</div>
                 </div>
                 <button onclick="app.hardRefresh()" class="btn btn-outline text-xs">
                     <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Update App
@@ -306,7 +314,7 @@
                     <div class="card" style="padding: 0; height: 400px;">
                         <div class="card-header">
                             <h3>Recent Sessions</h3>
-                            <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">Live Feed</span>
+                            <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2); font-weight: 600; letter-spacing: 0.025em;">Live Feed</span>
                         </div>
                         <div class="table-wrapper custom-scrollbar">
                             <table class="data-table">
@@ -332,8 +340,8 @@
                                 <div style="width: 100%; background: var(--bg-main); border-radius: 999px; height: 8px; overflow: hidden;"><div id="bar-priority" style="background: var(--danger); height: 100%; border-radius: 999px; transition: width 0.5s; width: 0%;"></div></div>
                             </div>
                             <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); margin-top: 1.5rem;">
-                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Console Logs</div>
-                                <div id="console-log" style="font-size: 11px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Console Logs</div>
+                                <div id="console-log" style="font-size: 12px; font-family: var(--font-mono); color: var(--text-faint); height: 96px; overflow-y: auto;">
                                     > Initializing Orion Console...<br>
                                 </div>
                             </div>
@@ -489,20 +497,20 @@
                         <div class="dashboard-grid grid-cols-3">
                              <div class="card" style="padding: 1.25rem;">
                                 <div class="stat-label">Cache Age</div>
-                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-cache-age">--</div>
+                                <div style="font-size: 1.5rem; font-family: var(--font-mono); color: #fff; font-weight: 700; letter-spacing: -0.02em;" id="stat-cache-age">--</div>
                              </div>
                              <div class="card" style="padding: 1.25rem;">
                                 <div class="stat-label">Items Stored</div>
-                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-items-count">-- objects</div>
+                                <div style="font-size: 1.5rem; font-family: var(--font-mono); color: #fff; font-weight: 700; letter-spacing: -0.02em;" id="stat-items-count">--</div>
                              </div>
                              <div class="card" style="padding: 1.25rem;">
                                 <div class="stat-label">Storage Usage</div>
-                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-storage-size">-- KB</div>
+                                <div style="font-size: 1.5rem; font-family: var(--font-mono); color: #fff; font-weight: 700; letter-spacing: -0.02em;" id="stat-storage-size">--</div>
                              </div>
                         </div>
                     </div>
                      <div style="display: flex; justify-content: flex-end;">
-                        <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.8125rem; font-weight: 700; color: var(--danger); text-transform: uppercase; cursor: pointer; opacity: 0.7;">
+                        <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.8125rem; font-weight: 700; color: var(--danger); text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; opacity: 0.7; font-family: var(--font-sans);">
                             Clear Local Cache & Reset
                         </button>
                     </div>
@@ -616,97 +624,128 @@
     </div>
 </div>
 
-<!-- State-of-the-Art Split-Screen Profile Manager -->
 <div id="master-profile-modal" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
     
-    <!-- Left Side: Dynamic Image Preview -->
-    <div class="fs-image-panel">
-        <!-- Floating Provider Badge -->
+    <div class="fs-image-panel" style="background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); position: relative; overflow: hidden;">
+        
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50vw; height: 50vw; background: var(--brand); filter: blur(120px); opacity: 0.15; border-radius: 50%; pointer-events: none;"></div>
+
         <div style="position: absolute; top: 2rem; left: 2rem; z-index: 10;">
-            <span id="fs-user-provider" style="padding: 6px 16px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">PROVIDER</span>
+            <span id="fs-user-provider" style="padding: 6px 16px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">PROVIDER</span>
         </div>
         
-        <img id="fs-main-avatar" src="" alt="User Avatar" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.8)); transition: all 0.3s ease;">
+        <img id="fs-main-avatar" src="" alt="User Avatar" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.8)); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 5;">
         
-        <!-- View Original Toggle (Floating Bottom Center) -->
         <div id="fs-original-pic-container" style="position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; display: none;">
-            <button type="button" id="fs-btn-original-pic" class="btn" style="background: rgba(20,20,20,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--warning); padding: 0.75rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            <button type="button" id="fs-btn-original-pic" class="btn" style="background: rgba(20,20,20,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(245, 158, 11, 0.4); color: var(--warning); padding: 0.75rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: all 0.2s;" onmouseover="this.style.background='var(--bg-card)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(20,20,20,0.8)'; this.style.transform='scale(1)';">
                 <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
                 <span id="fs-btn-original-text" style="font-weight: 700;">View Original Avatar</span>
             </button>
         </div>
     </div>
     
-    <!-- Right Side: Editable Management Form -->
-    <form id="user-profile-form" class="fs-details-panel" onsubmit="app.handleSaveUserProfile(event)" style="padding: 0;">
+    <form id="user-profile-form" class="fs-details-panel" onsubmit="app.handleSaveUserProfile(event)" style="padding: 0; background: var(--bg-main);">
         
-        <!-- Sticky Header -->
-        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0;">User Management</h3>
-            <button type="button" onclick="app.toggleUserProfileModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.02em;">User Management</h3>
+            <button type="button" onclick="app.toggleUserProfileModal()" style="background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">
+                <i class="ph-bold ph-x" style="font-size: 1rem;"></i>
+            </button>
         </div>
         
-        <!-- Scrollable Form Body -->
         <div style="padding: 2rem; flex: 1; overflow-y: auto;" class="custom-scrollbar">
             <input type="hidden" id="modal-user-uid">
             
-            <div class="input-group">
-                <label>Display Name (Firestore)</label>
-                <input type="text" id="modal-input-name" class="input-control" required style="font-size: 1rem; padding: 1rem; font-weight: 500;">
-            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 1.25rem; letter-spacing: 0.05em;">Identity Configuration</div>
 
-            <div class="input-group">
-                <label>Contact Email</label>
-                <input type="email" id="modal-input-email" class="input-control" disabled style="opacity: 0.5; cursor: not-allowed; background: var(--bg-sidebar);" title="Email is tied to Auth and cannot be edited here.">
-            </div>
-
-            <div class="input-group" style="margin-bottom: 2.5rem;">
-                <label>Profile Picture URL <span class="text-xs text-muted" style="text-transform: none; font-weight: 400;">(Live Preview)</span></label>
-                <input type="url" id="modal-input-photo" class="input-control" placeholder="https://..." oninput="document.getElementById('fs-main-avatar').src = this.value || 'https://stack-base.github.io/media/brand/orion/orion_icon.png'">
-            </div>
-
-            <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">System Tracking</div>
-            <div class="input-group" style="margin-bottom: 2.5rem;">
-                <div id="fs-user-uid" style="font-size: 0.8125rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 1rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
-            </div>
-
-            <div class="nav-label" style="margin-left: 0; margin-bottom: 1rem;">Administrative Actions</div>
-            
-            <!-- Action: Password Reset -->
-            <div style="padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div>
-                    <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
-                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Dispatch a secure reset link.</div>
-                </div>
-                <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3);">
-                    <i class="ph-bold ph-envelope-simple" style="margin-right: 0.5rem;"></i> Send Link
-                </button>
-            </div>
-            
-            <!-- Action: Revert Profile -->
-            <div style="padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1; padding-right: 1.5rem; min-width: 0;">
-                    <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
-                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore original identity data.</div>
-                    
-                    <!-- Original Data Display -->
-                    <div id="revert-details-container" style="display: none; background: var(--bg-sidebar); border: 1px dashed var(--border); border-radius: 6px; padding: 1rem; margin-top: 1rem;">
-                        <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.1em;">Snapshot Saved</div>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <img id="revert-orig-photo" src="" alt="Original Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;">
-                            <div id="revert-orig-name" class="truncate" style="font-size: 0.875rem; color: #fff; font-weight: 600;">--</div>
-                        </div>
+                <div class="input-group">
+                    <label>Display Name</label>
+                    <div style="position: relative;">
+                        <i class="ph-bold ph-user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.125rem;"></i>
+                        <input type="text" id="modal-input-name" class="input-control" required style="font-size: 0.9375rem; padding: 0.75rem 0.75rem 0.75rem 2.75rem; font-weight: 500; background: var(--bg-main);">
                     </div>
                 </div>
-                <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs flex-shrink-0" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); margin-top: 2px;">
-                    <i class="ph-bold ph-arrow-counter-clockwise" style="margin-right: 0.5rem;"></i> Revert
-                </button>
+
+                <div class="input-group">
+                    <label>Contact Email</label>
+                    <div style="position: relative;">
+                        <i class="ph-bold ph-envelope-simple" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.125rem;"></i>
+                        <input type="email" id="modal-input-email" class="input-control" disabled style="font-size: 0.9375rem; padding: 0.75rem 0.75rem 0.75rem 2.75rem; opacity: 0.6; cursor: not-allowed; background: rgba(0,0,0,0.2);" title="Email is tied to Auth and cannot be edited here.">
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label style="display: flex; justify-content: space-between;">Profile Picture URL <span class="text-xs text-brand" style="text-transform: none; font-weight: 600; letter-spacing: 0;"><i class="ph-bold ph-eye" style="margin-right: 4px;"></i> Live Preview</span></label>
+                    <div style="position: relative;">
+                        <i class="ph-bold ph-image" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.125rem;"></i>
+                        <input type="url" id="modal-input-photo" class="input-control" placeholder="https://..." oninput="document.getElementById('fs-main-avatar').src = this.value || 'https://stack-base.github.io/media/brand/orion/orion_icon.png'" style="font-size: 0.9375rem; padding: 0.75rem 0.75rem 0.75rem 2.75rem; background: var(--bg-main);">
+                    </div>
+                </div>
             </div>
+
+            <div style="margin-bottom: 2rem;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em; padding-left: 0.5rem;">System Tracking</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.25rem;"><i class="ph-bold ph-fingerprint"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Account UID</div>
+                            <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-main); font-family: var(--font-mono); margin-top: 2px;">--</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('fs-user-uid').innerText); alert('UID Copied to Clipboard!');" class="btn btn-icon text-xs text-muted" style="border: 1px solid var(--border); background: var(--bg-main);" title="Copy UID" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">
+                        <i class="ph-bold ph-copy" style="font-size: 1.125rem;"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em; padding-left: 0.5rem;">Administrative Controls</div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    
+                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;"><i class="ph-bold ph-lock-key"></i></div>
+                            <div>
+                                <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Password Reset</div>
+                                <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Dispatch a secure reset link.</div>
+                            </div>
+                        </div>
+                        <button type="button" id="btn-reset-password" class="btn btn-outline text-xs" style="color: var(--info); border-color: rgba(59, 130, 246, 0.3); background: transparent;">
+                            Send Link
+                        </button>
+                    </div>
+                    
+                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; align-items: flex-start; gap: 1rem; flex: 1; padding-right: 1rem; min-width: 0;">
+                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.1); color: var(--warning); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; margin-top: 2px;"><i class="ph-bold ph-clock-counter-clockwise"></i></div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 0.875rem; font-weight: 700; color: #fff;">Revert Profile</div>
+                                <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore original identity data.</div>
+                                
+                                <div id="revert-details-container" style="display: none; background: rgba(0,0,0,0.2); border: 1px dashed var(--border); border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.1em;">Snapshot Saved</div>
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <img id="revert-orig-photo" src="" alt="Original Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;">
+                                        <div id="revert-orig-name" class="truncate" style="font-size: 0.875rem; color: #fff; font-weight: 600;">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn btn-outline text-xs flex-shrink-0" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); background: transparent; margin-top: 4px;">
+                            Revert
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Sticky Footer -->
-        <div style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; bottom: 0; z-index: 10;">
-            <button type="submit" id="modal-save-profile-btn" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 0.9375rem; font-weight: 600;">Save Profile Configuration</button>
+        <div style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(12px); position: sticky; bottom: 0; z-index: 20;">
+            <button type="submit" id="modal-save-profile-btn" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 0.9375rem; font-weight: 600; box-shadow: 0 8px 16px rgba(255, 87, 87, 0.2); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 20px rgba(255, 87, 87, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 16px rgba(255, 87, 87, 0.2)';">
+                Save Profile Configuration
+            </button>
         </div>
     </form>
 </div>
@@ -725,7 +764,7 @@ const CACHE_KEY = 'orion_local_cache_v3';
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; 
 
-Chart.defaults.font.family='Inter';
+Chart.defaults.font.family='var(--font-sans)';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#2a2a2a';
 
@@ -851,7 +890,7 @@ const showLoginModal=()=>{
     const div=document.createElement('div');
     div.id='dev-login-modal';
     div.className='modal-overlay';
-    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.8125rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Orion</button></form></div>`;
+    div.innerHTML=`<div class="modal-box"><h2 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; display: flex; align-items: center; letter-spacing: -0.02em;"><i class="ph-bold ph-lock-key" style="margin-right: 0.5rem;"></i> Orion Login</h2><form id="dev-login-form"><div class="input-group"><label>Email</label><input type="email" id="dev-email" class="input-control" placeholder="access@orion.com" required></div><div class="input-group"><label>Password</label><input type="password" id="dev-pass" class="input-control" placeholder="••••••••" required></div><div id="login-error" style="color: var(--danger); font-size: 0.8125rem; display: none; margin-bottom: 1rem;"></div><button type="submit" class="btn btn-primary" style="width: 100%;">Access Orion</button></form></div>`;
     document.body.appendChild(div);
     document.getElementById('dev-login-form').onsubmit=async(e)=>{
         e.preventDefault();
@@ -874,7 +913,7 @@ function showUnauthorizedScreen() {
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; background-color: var(--bg-main); color: var(--text-main);">
             <div style="background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 12px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="font-size: 48px; color: var(--danger); margin-bottom: 16px;"><i class="ph-bold ph-shield-warning"></i></div>
-                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff;">Clearance Required</h2>
+                <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">Clearance Required</h2>
                 <p style="margin: 0 0 24px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">This console is restricted to authorized administrators. Your account lacks access.</p>
                 <button class="btn btn-outline" onclick="app.signOut()">Return to Login</button>
             </div>
@@ -1633,14 +1672,14 @@ function generateTaskRowHtml(t) {
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem;">${priBadge}</td>
         <td style="vertical-align: top; padding-top: 1.25rem;">
-            <div style="font-size: 0.8125rem; color: #fff; font-family: monospace;"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
+            <div style="font-size: 0.8125rem; color: #fff; font-family: var(--font-mono);"><span style="color: var(--brand); font-weight: 700;">${donePomos}</span> / ${estPomos}</div>
             <div style="width: 64px; height: 4px; background: var(--bg-main); border-radius: 999px; margin-top: 4px; overflow: hidden;"><div style="height: 100%; background: var(--brand); width:${Math.min((donePomos/estPomos)*100,100)}%;"></div></div>
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem;">
             <div style="font-size: 0.8125rem; color: var(--text-muted);">${fmtTime(donePomos*dur)} / ${fmtTime(estPomos*dur)}</div>
         </td>
         <td style="vertical-align: top; padding-top: 1.25rem; text-align: right;">
-            <div style="color: var(--text-muted); font-size: 0.8125rem; font-family: monospace; margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
+            <div style="color: var(--text-muted); font-size: 0.8125rem; font-family: var(--font-mono); margin-bottom: 0.5rem;">${t.dueDate||'-'}</div>
             <div class="flex items-center justify-end gap-1">
                 <button onclick="app.toggleAdminTaskModal('${t.id}', '${t._uid}')" class="btn btn-icon text-xs"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
                 <button onclick="app.deleteAdminTask('${t.id}', '${t._uid}')" class="btn btn-icon text-xs text-danger hover:text-danger"><i class="ph-bold ph-trash text-sm"></i></button>
@@ -1697,7 +1736,7 @@ function renderBroadcastsTable(){
                 ${btnIndicator}
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem;">
-                <span style="color: var(--text-muted); font-size: 0.8125rem; font-family: monospace;">${targetLbl}</span>
+                <span style="color: var(--text-muted); font-size: 0.8125rem; font-family: var(--font-mono);">${targetLbl}</span>
                 <div style="margin-top: 8px;">${typeBadge}</div>
             </td>
             <td style="vertical-align: top; padding-top: 1.25rem;">
@@ -1849,7 +1888,7 @@ function updateCharts(){
                 <span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span>
                 <span style="color: #fff;">${p[0]}</span>
             </div>
-            <span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span>
+            <span style="color: var(--text-muted); font-family: var(--font-mono);">${p[1]}</span>
         </div>
     `).join('');
 }
