@@ -859,6 +859,80 @@ const app={
         img.src = highResCurrent;
         overlay.classList.remove('hidden');
     },
+
+    exportSingleUser: () => {
+        // 1. Get the target User ID from the currently open modal
+        const uid = document.getElementById('modal-user-uid').value;
+        
+        // 2. Gather their specific data
+        const user = state.usersList.find(u => u.id === uid) || state.usersMap[uid];
+        const tasks = state.tasks.filter(t => t._uid === uid);
+        const sessions = state.sessions.filter(s => s._uid === uid);
+
+        if (!user) return alert("User data not found.");
+
+        // 3. Bundle into a single package
+        const exportObj = {
+            meta: { version: '1.0', exportDate: new Date().toISOString(), type: 'single_user', originalUid: uid },
+            userProfile: user,
+            tasks: tasks,
+            sessions: sessions
+        };
+
+        // 4. Trigger download
+        const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); 
+        a.href = url; 
+        a.download = `orion_user_${uid.slice(0,6)}_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        
+        log(`<span style="color: var(--info);">Exported data package for user ${uid}.</span>`);
+    },
+
+    importSingleUser: (input) => {
+        const targetUid = document.getElementById('modal-user-uid').value;
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                
+                // Security check to ensure they uploaded a single user file, not a global backup
+                if (data.meta?.type !== 'single_user') {
+                    input.value = '';
+                    return alert("Invalid file type. Please upload a specific user JSON export.");
+                }
+                
+                // Optional: Check if they are importing User A's data into User B's profile
+                if (data.meta.originalUid !== targetUid) {
+                    if (!confirm(`Warning: This backup belongs to a different UID (${data.meta.originalUid}). Importing will assign these tasks/sessions to the current user (${targetUid}). Continue?`)) {
+                        input.value = '';
+                        return;
+                    }
+                }
+
+                // Force the imported tasks and sessions to belong to the target user
+                const newTasks = (data.tasks || []).map(t => ({ ...t, _uid: targetUid }));
+                const newSessions = (data.sessions || []).map(s => ({ ...s, _uid: targetUid }));
+
+                // Overwrite this specific user's cache while keeping everyone else's intact
+                state.tasks = [...state.tasks.filter(t => t._uid !== targetUid), ...newTasks];
+                state.sessions = [...state.sessions.filter(s => s._uid !== targetUid), ...newSessions];
+
+                saveCache();
+                app.refreshData(false); // Refresh UI from cache
+                alert(`Successfully restored ${newTasks.length} tasks and ${newSessions.length} sessions for this user!`);
+                log(`<span style="color: var(--success);">Restored data applied to user ${targetUid}.</span>`);
+                
+            } catch (err) {
+                alert('Error parsing JSON file. Ensure it is a valid user backup.');
+            }
+        };
+        reader.readAsText(input.files[0]);
+        input.value = ''; // Reset input
+    },
 };
 
 function renderAll(){

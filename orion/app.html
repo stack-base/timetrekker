@@ -748,6 +748,31 @@
                     <input type="url" id="modal-input-photo" class="input-control" style="background: var(--bg-main);" placeholder="https://...">
                 </div>
 
+                <div class="nav-label" style="margin-left: 0; margin-bottom: 0.75rem; color: var(--text-muted);">User Data Management</div>
+                <div style="border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); overflow: hidden; margin-bottom: 2.5rem;">
+                    
+                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                        <div>
+                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Export User Data</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Download a complete JSON package of this user's profile, tasks, and focus sessions.</div>
+                        </div>
+                        <button type="button" onclick="app.exportSingleUser()" class="btn text-xs" style="background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); flex-shrink: 0;">
+                            <i class="ph-bold ph-download-simple" style="margin-right: 4px;"></i> Export
+                        </button>
+                    </div>
+                    
+                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="padding-right: 1.5rem;">
+                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Import/Restore Data</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore this user's tasks and sessions from a previous JSON export.</div>
+                        </div>
+                        <input type="file" id="import-single-user-file" class="hidden" accept=".json" onchange="app.importSingleUser(this)">
+                        <button type="button" onclick="document.getElementById('import-single-user-file').click()" class="btn text-xs" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); flex-shrink: 0;">
+                            <i class="ph-bold ph-upload-simple" style="margin-right: 4px;"></i> Import
+                        </button>
+                    </div>
+                </div>
+
                 <div class="nav-label" style="margin-left: 0; margin-bottom: 0.75rem; color: var(--text-muted);">Administrative Actions</div>
                 <div style="border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); overflow: hidden;">
                     
