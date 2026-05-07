@@ -276,7 +276,7 @@ const app={
         state.keepFilter=true; 
         app.setView('tasks');
     },
-    viewAsUser:(uid)=>{ window.open(`application?uid=${uid}`,'_blank'); },
+    viewAsUser:(uid)=>{ window.open(`https://stack-base.github.io/timetrekker/application?uid=${uid}`,'_blank'); },
     clearTaskFilter:()=>{ 
         state.filterUser=null; 
         updateURL();
