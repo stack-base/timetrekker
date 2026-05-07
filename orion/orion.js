@@ -328,6 +328,101 @@ const app={
         };
         reader.readAsText(input.files[0]); input.value = '';
     },
+    exportCSV: (type) => {
+        let data = [];
+        if (type === 'users') data = state.usersList;
+        else if (type === 'tasks') data = state.tasks;
+        else if (type === 'sessions') data = state.sessions;
+        
+        if (!data || !data.length) return alert(`No ${type} data available to export.`);
+
+        // 1. Gather all unique keys to use as CSV headers
+        const headers = Array.from(new Set(data.flatMap(Object.keys)));
+        
+        // 2. Map data to CSV rows
+        const csvRows = [
+            headers.join(','), // Header row
+            ...data.map(row => headers.map(fieldName => {
+                let val = row[fieldName] === null || row[fieldName] === undefined ? '' : row[fieldName];
+                // Convert Objects/Arrays to JSON string so it doesn't just say "[object Object]"
+                if (typeof val === 'object') val = JSON.stringify(val);
+                // Escape quotes and wrap the value in quotes to handle internal commas
+                val = val.toString().replace(/"/g, '""');
+                return `"${val}"`;
+            }).join(','))
+        ];
+
+        // 3. Create blob and download
+        const csvString = csvRows.join('\r\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); 
+        a.href = url; 
+        a.download = `orion_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a); 
+        a.click(); 
+        document.body.removeChild(a); 
+        URL.revokeObjectURL(url);
+        
+        log(`<span style="color: var(--info);">CSV Export generated for ${type}.</span>`);
+    },
+
+    handleCSVImport: (input) => {
+        if (!input.files || !input.files[0]) return;
+        const targetType = document.getElementById('csv-import-target').value;
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const text = e.target.result;
+                // Basic CSV Parser (handles quotes correctly)
+                const rows = text.split('\n').filter(row => row.trim() !== '');
+                const headers = rows[0].split(',').map(h => h.replace(/(^"|"$)/g, '').trim());
+                
+                const parsedData = rows.slice(1).map(row => {
+                    const values = [];
+                    let inQuotes = false;
+                    let currentValue = "";
+                    
+                    for (let i = 0; i < row.length; i++) {
+                        const char = row[i];
+                        if (char === '"' && row[i+1] === '"') { currentValue += '"'; i++; } // Escaped quote
+                        else if (char === '"') { inQuotes = !inQuotes; } // Toggle quote state
+                        else if (char === ',' && !inQuotes) { values.push(currentValue); currentValue = ""; } // Next column
+                        else { currentValue += char; }
+                    }
+                    values.push(currentValue); // Push last value
+
+                    // Construct object
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        let val = values[index];
+                        // Try parsing back JSON objects/arrays if they were stringified during export
+                        try { if (val.startsWith('{') || val.startsWith('[')) val = JSON.parse(val); } catch(e){}
+                        obj[header] = val;
+                    });
+                    return obj;
+                });
+
+                // Merge parsed data into local state
+                if (targetType === 'users') {
+                    state.usersList = [...state.usersList, ...parsedData];
+                } else if (targetType === 'tasks') {
+                    state.tasks = [...state.tasks, ...parsedData];
+                }
+                
+                saveCache(); // Save the new merged state
+                app.refreshData(false); // Reload UI
+                alert(`Successfully imported ${parsedData.length} rows into ${targetType}!`);
+                log(`<span style="color: var(--success);">CSV Import merged into ${targetType}.</span>`);
+            } catch (err) { 
+                alert('Error parsing CSV file. Ensure it is formatted correctly.'); 
+                console.error(err);
+            }
+        };
+        reader.readAsText(input.files[0]); 
+        input.value = ''; // Reset input
+    },
     clearLocalData: () => {
         if(confirm('Clear all cached data?')){
             localStorage.removeItem(CACHE_KEY); localStorage.removeItem(STAR_KEY);

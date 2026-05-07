@@ -530,28 +530,51 @@
                             <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
                                 <i class="ph-bold ph-export" style="font-size: 1.5rem;"></i>
                             </div>
-                            <h3 class="card-title">Export Data Snapshot</h3>
-                            <p class="text-sm text-muted" style="margin-bottom: 2rem; line-height: 1.6;">
-                                Download your entire dashboard state (Users, Tasks, Sessions) as a JSON file. Use this to transfer data between devices or create offline backups.
+                            <h3 class="card-title">Export Data</h3>
+                            <p class="text-sm text-muted" style="margin-bottom: 1rem; line-height: 1.6;">
+                                Download your dashboard state. JSON backs up everything, while CSV allows you to export flat tables for Excel.
                             </p>
-                            <button onclick="app.exportData()" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
-                                <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Download JSON
-                            </button>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <button onclick="app.exportData()" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+                                    <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Download Full JSON Backup
+                                </button>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button onclick="app.exportCSV('users')" class="btn btn-outline" style="flex: 1;">CSV: Users</button>
+                                    <button onclick="app.exportCSV('tasks')" class="btn btn-outline" style="flex: 1;">CSV: Tasks</button>
+                                    <button onclick="app.exportCSV('sessions')" class="btn btn-outline" style="flex: 1;">CSV: Sessions</button>
+                                </div>
+                            </div>
                         </div>
 
-                         <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
+                        <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
                             <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">RESTORE</span>
                             <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
                                 <i class="ph-bold ph-upload-simple" style="font-size: 1.5rem;"></i>
                             </div>
-                            <h3 class="card-title">Import Data Snapshot</h3>
-                             <p class="text-sm text-muted" style="margin-bottom: 2rem; line-height: 1.6;">
-                                Restore a previously saved JSON file. <span class="text-brand font-bold">Warning:</span> This will overwrite your current local dashboard view.
+                            <h3 class="card-title">Import Data</h3>
+                            <p class="text-sm text-muted" style="margin-bottom: 1rem; line-height: 1.6;">
+                                Restore a JSON snapshot or merge a CSV file into your local cache. <span class="text-brand font-bold">Warning:</span> JSON will overwrite your current view.
                             </p>
-                             <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
-                            <button onclick="document.getElementById('import-file').click()" class="btn btn-outline" style="width: 100%; padding: 0.75rem;">
-                                <i class="ph-bold ph-file-arrow-up" style="margin-right: 0.5rem;"></i> Select Backup File
-                            </button>
+                            
+                            <input type="file" id="import-file-json" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                            <input type="file" id="import-file-csv" class="hidden" accept=".csv" onchange="app.handleCSVImport(this)">
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <button onclick="document.getElementById('import-file-json').click()" class="btn btn-outline" style="width: 100%; padding: 0.75rem;">
+                                    <i class="ph-bold ph-file-arrow-up" style="margin-right: 0.5rem;"></i> Upload JSON Backup
+                                </button>
+                                
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <select id="csv-import-target" class="input-control" style="flex: 1; margin: 0; padding: 0.5rem;">
+                                        <option value="users">Target: Users</option>
+                                        <option value="tasks">Target: Tasks</option>
+                                    </select>
+                                    <button onclick="document.getElementById('import-file-csv').click()" class="btn btn-outline" style="flex: 1; padding: 0.5rem;">
+                                        <i class="ph-bold ph-file-csv" style="margin-right: 0.5rem;"></i> Upload CSV
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
