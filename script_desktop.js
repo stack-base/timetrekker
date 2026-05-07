@@ -631,22 +631,61 @@ const app = {
         if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
 
         // Render function for simple lists (Today & Past)
+        // Render function for simple lists (Today & Past)
         const renderList = (tasks, emptyMsg, highlightColorClass) => {
             return tasks.length > 0
                 ? tasks.map(t => `
-                    <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group min-w-0" onclick="app.selectTask('${t.id}')">
-                        <div class="flex items-start gap-2 min-w-0">
-                            <i class="ph-bold ph-caret-right ${highlightColorClass} mt-0.5 shrink-0 group-hover:translate-x-1 transition-transform"></i>
-                            <span class="truncate font-medium text-white/90 group-hover:text-white block min-w-0">${esc(t.title)}</span>
-                        </div>
-                        <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider w-full overflow-hidden">
-                            ${t.priority === 'high' ? '<span class="text-red-400 flex items-center shrink-0"><i class="ph-bold ph-warning-circle mr-1"></i> High</span>' : ''}
-                            <span class="flex items-center shrink-0"><i class="ph-bold ph-clock mr-1"></i> ${(t.estimatedPomos || 1) * (t.pomoDuration || 25)}m</span>
-                            <span class="flex items-center shrink-0 truncate"><i class="ph-bold ph-folder mr-1"></i> ${esc(t.project || 'Inbox')}</span>
+                    <li class="flex flex-col gap-1 bg-white/[0.03] p-3.5 rounded-xl border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer group shadow-sm min-w-0 mb-2" onclick="app.selectTask('${t.id}')">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="flex items-center justify-center w-7 h-7 rounded-full bg-dark-bg border border-dark-border shrink-0 shadow-inner group-hover:border-white/20 transition-colors">
+                                <i class="ph-bold ph-caret-right ${highlightColorClass} text-xs group-hover:translate-x-0.5 transition-transform"></i>
+                            </div>
+                            <span class="truncate font-medium text-white/90 group-hover:text-white text-sm tracking-wide block min-w-0">${esc(t.title)}</span>
                         </div>
                     </li>
                 `).join('')
-                : `<li class="text-text-faint italic p-4 text-center border border-dark-border border-dashed rounded-lg bg-dark-bg/20">${emptyMsg}</li>`;
+                : `<li class="text-text-faint italic p-4 text-center border border-dark-border border-dashed rounded-xl bg-dark-bg/20">${emptyMsg}</li>`;
+        };
+
+        if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
+        if($('ai-past-list')) $('ai-past-list').innerHTML = renderList(pastTasks, "All caught up! No overdue tasks.", "text-red-400");
+        
+        // --- Grouped Upcoming Tasks Rendering ---
+        if($('ai-upcoming-list')) {
+            let upcomingHtml = '';
+            
+            if (upcomingTasks.length === 0) {
+                upcomingHtml = `<li class="text-text-faint italic p-4 text-center border border-dark-border border-dashed rounded-xl bg-dark-bg/20">No upcoming tasks on the horizon.</li>`;
+            } else {
+                // Group tasks by date
+                const groupedUpcoming = upcomingTasks.reduce((acc, t) => {
+                    if (!acc[t.dueDate]) acc[t.dueDate] = [];
+                    acc[t.dueDate].push(t);
+                    return acc;
+                }, {});
+
+                // Iterate through sorted dates
+                Object.keys(groupedUpcoming).sort().forEach(dateStr => {
+                    const dateObj = new Date(dateStr);
+                    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                    // Add Date Header
+                    upcomingHtml += `<div class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2 mt-4 first:mt-0 flex items-center border-b border-dark-border/50 pb-1"><i class="ph-bold ph-calendar mr-1.5"></i> ${formattedDate}</div>`;
+
+                    // Add Tasks for this date
+                    upcomingHtml += groupedUpcoming[dateStr].map(t => `
+                        <li class="flex flex-col gap-1 bg-white/[0.03] p-3.5 rounded-xl border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer group shadow-sm min-w-0 mb-2" onclick="app.selectTask('${t.id}')">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="flex items-center justify-center w-7 h-7 rounded-full bg-dark-bg border border-dark-border shrink-0 shadow-inner group-hover:border-white/20 transition-colors">
+                                    <i class="ph-bold ph-caret-right text-blue-400 text-xs group-hover:translate-x-0.5 transition-transform"></i>
+                                </div>
+                                <span class="truncate font-medium text-white/90 group-hover:text-white text-sm tracking-wide block min-w-0">${esc(t.title)}</span>
+                            </div>
+                        </li>
+                    `).join('');
+                });
+            }
+            $('ai-upcoming-list').innerHTML = upcomingHtml;
         };
 
         if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
