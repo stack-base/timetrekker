@@ -287,51 +287,13 @@
                     </div>
                     
                     <div class="shrink-0 lg:border-l lg:border-dark-border lg:pl-5 flex justify-end w-full lg:w-auto mt-2 lg:mt-0 flex items-center h-full">
-                        <button onclick="app.toggleAISummary()" class="relative w-12 h-12 flex items-center justify-center rounded-full bg-dark-bg border border-dark-border hover:bg-dark-hover transition-all duration-300 group overflow-hidden" title="Generate AI Summary">
+                        <button onclick="app.toggleBriefModal(true)" class="relative w-12 h-12 flex items-center justify-center rounded-full bg-dark-bg border border-dark-border hover:bg-dark-hover transition-all duration-300 group overflow-hidden" title="Generate AI Summary">
                             <i class="ph-fill ph-sparkle text-xl text-text-muted group-hover:text-white transition-colors duration-300"></i>
                         </button>
                     </div>
                 </div>
 
                 <div id="ai-summary-wrapper" class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out">
-                    <div class="overflow-hidden">
-                        <!-- We use opacity transition so the text smoothly fades in as it rolls down -->
-                        <div id="ai-summary-content" class="flex flex-col px-5 pb-5 border-t border-dark-border pt-1 opacity-0 transition-opacity duration-300 delay-75">
-                            <div id="ai-loaded-state" class="flex flex-col gap-6 pt-4">
-                                <div class="pb-2">
-                                    <h3 id="ai-greeting" class="text-xl font-bold text-white mb-2 flex items-center"></h3>
-                                    <p id="ai-overview" class="text-sm text-text-muted leading-relaxed"></p>
-                                </div>
-                                
-                                <div class="overflow-y-auto overflow-x-hidden max-h-[350px] custom-scrollbar pr-2 pb-2">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        
-                                        <div class="flex flex-col h-full min-w-0">
-                                            <h4 class="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center shrink-0"><i class="ph-bold ph-sun mr-1.5 text-brand"></i> Tasks for Today</h4>
-                                            <ul id="ai-today-list" class="space-y-2 text-sm text-white flex-1"></ul>
-                                        </div>
-                                        
-                                        <div class="flex flex-col h-full min-w-0">
-                                            <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-3 flex items-center shrink-0"><i class="ph-bold ph-warning-circle mr-1.5"></i> Needs Attention</h4>
-                                            <ul id="ai-past-list" class="space-y-2 text-sm text-white flex-1"></ul>
-                                        </div>
-                                        
-                                        <div class="flex flex-col h-full min-w-0">
-                                            <h4 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3 flex items-center shrink-0"><i class="ph-bold ph-calendar-forward mr-1.5"></i> Upcoming</h4>
-                                            <ul id="ai-upcoming-list" class="space-y-2 text-sm text-white flex-1"></ul>
-                                        </div>
-                                        
-                                    </div>
-                                </div>
-                                
-                                <div class="pt-6 mt-auto border-t border-dark-border/50">
-                                    <p class="text-[10px] text-text-muted/50 text-center flex items-center justify-center gap-1.5 font-medium">
-                                        TimeTrekker Intelligence is in beta and may occasionally make mistakes.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -813,6 +775,52 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="brief-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[130] hidden flex items-center justify-center p-4 lg:p-10 opacity-0 transition-opacity duration-300">
+    <div class="bg-dark-card border border-dark-border w-full max-w-6xl h-full max-h-[85vh] rounded-2xl shadow-2xl flex flex-col transform scale-95 transition-transform duration-300 overflow-hidden" id="brief-panel">
+        
+        <div class="px-8 py-6 border-b border-dark-border flex items-center justify-between bg-dark-sidebar shrink-0">
+            <div>
+                <h2 class="text-2xl font-bold text-white tracking-tight">Daily Brief</h2>
+                <p class="text-xs text-brand font-bold uppercase tracking-wider mt-1">TimeTrekker Intelligence</p>
+            </div>
+            <button onclick="app.toggleBriefModal(false)" class="w-10 h-10 flex items-center justify-center rounded-full bg-dark-bg border border-dark-border text-text-muted hover:text-white transition-colors active:scale-90 shadow-sm">
+                <i class="ph-bold ph-x text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-8 lg:p-10 custom-scrollbar bg-dark-bg">
+            <div class="pb-6 mb-8 border-b border-dark-border/50">
+                <h3 id="ai-greeting" class="text-3xl font-bold text-white mb-3 flex items-center tracking-tight"></h3>
+                <p id="ai-overview" class="text-base text-text-muted leading-relaxed max-w-4xl"></p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="flex flex-col h-full min-w-0">
+                    <h4 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4 flex items-center shrink-0"><i class="ph-bold ph-sun mr-2 text-brand"></i> Tasks for Today</h4>
+                    <ul id="ai-today-list" class="space-y-3 text-base text-white flex-1"></ul>
+                </div>
+                
+                <div class="flex flex-col h-full min-w-0">
+                    <h4 class="text-sm font-bold text-red-400 uppercase tracking-wider mb-4 flex items-center shrink-0"><i class="ph-bold ph-warning-circle mr-2"></i> Needs Attention</h4>
+                    <ul id="ai-past-list" class="space-y-3 text-base text-white flex-1"></ul>
+                </div>
+                
+                <div class="flex flex-col h-full min-w-0">
+                    <h4 class="text-sm font-bold text-blue-400 uppercase tracking-wider mb-4 flex items-center shrink-0"><i class="ph-bold ph-calendar mr-2"></i> Upcoming</h4>
+                    <ul id="ai-upcoming-list" class="space-y-3 text-base text-white flex-1"></ul>
+                </div>
+            </div>
+
+            <div class="pt-16 pb-4 mt-auto">
+                <p class="text-xs text-text-muted/50 text-center flex items-center justify-center gap-1.5 font-medium">
+                    TimeTrekker Intelligence is in beta and may occasionally make mistakes.
+                </p>
+            </div>
+        </div>
+        
     </div>
 </div>
 

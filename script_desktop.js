@@ -548,32 +548,27 @@ const _saveSetting = debounce((k, v) => {
 }, 500);
 
 const app = {
-    toggleAISummary: () => {
-        const wrapper = $('ai-summary-wrapper');
-        const content = $('ai-summary-content');
-        if (!wrapper || !content) return;
+    toggleBriefModal: (show = true) => {
+        const modal = $('brief-modal');
+        const panel = $('brief-panel');
+        if (!modal || !panel) return;
 
-        if (wrapper.classList.contains('grid-rows-[0fr]')) {
+        if (show) {
             haptic('light');
+            app.generateAISummaryData(); // Generate data right before showing
             
-            // Instantly generate and inject the data
-            app.generateAISummaryData(); 
-            
-            // Trigger smooth roll down
-            wrapper.classList.remove('grid-rows-[0fr]');
-            wrapper.classList.add('grid-rows-[1fr]');
-            
-            // Fade in the text smoothly as it expands
-            content.classList.remove('opacity-0');
-            content.classList.add('opacity-100');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            setTimeout(() => {
+                panel.classList.remove('scale-95');
+                panel.classList.add('scale-100');
+            }, 10);
         } else {
-            // Trigger smooth roll up
-            wrapper.classList.remove('grid-rows-[1fr]');
-            wrapper.classList.add('grid-rows-[0fr]');
-            
-            // Fade text out
-            content.classList.remove('opacity-100');
-            content.classList.add('opacity-0');
+            haptic('light');
+            modal.classList.add('opacity-0');
+            panel.classList.remove('scale-100');
+            panel.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
         }
     },
 
@@ -1615,8 +1610,8 @@ function updateCounts() {
     els.stats.estTime.textContent = Math.floor(totalEstMin / 60) > 0 ? `${Math.floor(totalEstMin / 60)}h ${totalEstMin % 60}m` : `${totalEstMin}m`;
 
     // --- Updated AI Summary Visibility Check ---
-    const aiWrapper = $('ai-summary-wrapper');
-    if (aiWrapper && aiWrapper.classList.contains('grid-rows-[1fr]')) {
+    const briefModal = $('brief-modal');
+    if (briefModal && !briefModal.classList.contains('hidden')) {
         app.generateAISummaryData();
     }
 }
