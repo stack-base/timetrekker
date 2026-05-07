@@ -1,7 +1,7 @@
 {
   "name": "Orion Console",
   "short_name": "Orion",
-  "start_url": "./orion.html",
+  "start_url": "./app",
   "display": "standalone",
   "scope": "/",
   "background_color": "#0f0f0f",
