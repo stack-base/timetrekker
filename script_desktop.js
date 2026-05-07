@@ -598,6 +598,12 @@ const app = {
 
         const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
         const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
+        
+        // NEW: Filter and sort upcoming tasks chronologically
+        const upcomingTasks = state.tasks
+            .filter(x => x.dueDate && x.dueDate > todayStr && x.status === 'todo')
+            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
         const highPriorityTasks = todayTasks.filter(t => t.priority === 'high');
 
         const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (b.pomoDuration || 25)), 0);
@@ -629,26 +635,37 @@ const app = {
 
         if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
 
-        const renderList = (tasks, emptyMsg, highlightColorClass) => {
+        // UPDATED: renderList now accepts a `showDate` parameter for the upcoming view
+        const renderList = (tasks, emptyMsg, highlightColorClass, showDate = false) => {
             return tasks.length > 0
-                ? tasks.map(t => `
+                ? tasks.map(t => {
+                    // Format date as MM-DD if showDate is true
+                    const dateBadge = showDate && t.dueDate 
+                        ? `<span class="flex items-center text-blue-300 ml-auto"><i class="ph-bold ph-calendar mr-1"></i> ${t.dueDate.substring(5)}</span>` 
+                        : '';
+                        
+                    return `
                     <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group" onclick="app.selectTask('${t.id}')">
                         <div class="flex items-start gap-2">
                             <i class="ph-bold ph-caret-right ${highlightColorClass} mt-0.5 shrink-0 group-hover:translate-x-1 transition-transform"></i>
                             <span class="truncate font-medium text-white/90 group-hover:text-white">${esc(t.title)}</span>
                         </div>
-                        <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider">
+                        <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider w-full pr-2">
                             ${t.priority === 'high' ? '<span class="text-red-400 flex items-center"><i class="ph-bold ph-warning-circle mr-1"></i> High</span>' : ''}
                             <span class="flex items-center"><i class="ph-bold ph-clock mr-1"></i> ${(t.estimatedPomos || 1) * (t.pomoDuration || 25)}m</span>
                             <span class="flex items-center"><i class="ph-bold ph-folder mr-1"></i> ${esc(t.project || 'Inbox')}</span>
+                            ${dateBadge}
                         </div>
                     </li>
-                `).join('')
+                `}).join('')
                 : `<li class="text-text-faint italic p-4 text-center border border-dark-border border-dashed rounded-lg bg-dark-bg/20">${emptyMsg}</li>`;
         };
 
         if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
         if($('ai-past-list')) $('ai-past-list').innerHTML = renderList(pastTasks, "All caught up! No overdue tasks.", "text-red-400");
+        
+        // NEW: Render the upcoming list with dates visible
+        if($('ai-upcoming-list')) $('ai-upcoming-list').innerHTML = renderList(upcomingTasks, "No upcoming tasks on the horizon.", "text-blue-400", true);
     },
 
     showBroadcastPopup: (b) => {
