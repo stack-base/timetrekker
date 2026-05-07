@@ -233,9 +233,11 @@
         #users-table-body tr td:nth-child(7) > div { justify-content: space-between !important; width: 100%; gap: 0.5rem; }
         #users-table-body tr td:nth-child(7) .btn { flex: 1; padding: 0.625rem 0; justify-content: center; }
 
-        /* TASKS TABLE MAPPING */
+        /* TASKS TABLE MAPPING & WIDTH FIXES */
+        #view-tasks .table-wrapper { padding: 0 0.5rem; box-sizing: border-box; }
+        #view-tasks .data-table tbody tr.task-row { width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; }
         #tasks-table-body tr.task-row td:nth-child(1) { order: 1; width: auto; margin-right: 0.75rem; margin-top: 2px; }
-        #tasks-table-body tr.task-row td:nth-child(2) { order: 2; flex: 1; min-width: 0; }
+        #tasks-table-body tr.task-row td:nth-child(2) { order: 2; flex: 1; min-width: 0; white-space: normal; word-wrap: break-word; overflow: hidden; }
         #tasks-table-body tr.task-row td:nth-child(3) { order: 3; width: 100%; padding-left: 2rem; margin-top: 0.5rem; }
         #tasks-table-body tr.task-row td:nth-child(4) { order: 4; width: 50%; padding-left: 2rem; margin-top: 0.75rem; }
         #tasks-table-body tr.task-row td:nth-child(5) { order: 5; width: 50%; text-align: right; margin-top: 0.75rem; display: flex; align-items: flex-end; justify-content: flex-end; }
@@ -1864,20 +1866,25 @@ function updateCharts(){
     const days={}; 
     state.sessions.forEach(s=>{ 
         if(!s.completedAt) return; 
-        const d=new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000).toLocaleDateString(); 
-        days[d]=(days[d]||0)+(s.duration||25); 
+        const dateObj = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000); 
+        const dateKey = dateObj.toISOString().split('T')[0];
+        days[dateKey] = (days[dateKey] || 0) + (s.duration || 25); 
     });
     
-    const sortedDays=Object.keys(days).sort((a,b)=>new Date(a)-new Date(b)).slice(-7);
+    const sortedDateKeys = Object.keys(days).sort().slice(-7);
+    
+    const displayLabels = sortedDateKeys.map(dKey => {
+        return new Date(dKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
     
     if(state.charts.activity) state.charts.activity.destroy();
     state.charts.activity = new Chart(document.getElementById('activityChart').getContext('2d'), { 
         type: 'line', 
         data: {
-            labels: sortedDays,
+            labels: displayLabels,
             datasets: [{
                 label: 'Focus Minutes',
-                data: sortedDays.map(d=>days[d]),
+                data: sortedDateKeys.map(k => days[k]),
                 borderColor: '#ff5757',
                 backgroundColor: 'rgba(255, 87, 87, 0.1)',
                 borderWidth: 2,
