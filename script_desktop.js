@@ -635,25 +635,24 @@ const app = {
 
         if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
 
-        // UPDATED: renderList now accepts a `showDate` parameter for the upcoming view
+        // UPDATED: renderList with min-w-0 to prevent horizontal overflow
         const renderList = (tasks, emptyMsg, highlightColorClass, showDate = false) => {
             return tasks.length > 0
                 ? tasks.map(t => {
-                    // Format date as MM-DD if showDate is true
                     const dateBadge = showDate && t.dueDate 
-                        ? `<span class="flex items-center text-blue-300 ml-auto"><i class="ph-bold ph-calendar mr-1"></i> ${t.dueDate.substring(5)}</span>` 
+                        ? `<span class="flex items-center text-blue-300 ml-auto shrink-0"><i class="ph-bold ph-calendar mr-1"></i> ${t.dueDate.substring(5)}</span>` 
                         : '';
                         
                     return `
-                    <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group" onclick="app.selectTask('${t.id}')">
-                        <div class="flex items-start gap-2">
+                    <li class="flex flex-col gap-1.5 bg-dark-bg/40 p-3 rounded-lg border border-dark-border hover:border-brand/40 transition-all cursor-pointer group min-w-0" onclick="app.selectTask('${t.id}')">
+                        <div class="flex items-start gap-2 min-w-0">
                             <i class="ph-bold ph-caret-right ${highlightColorClass} mt-0.5 shrink-0 group-hover:translate-x-1 transition-transform"></i>
-                            <span class="truncate font-medium text-white/90 group-hover:text-white">${esc(t.title)}</span>
+                            <span class="truncate font-medium text-white/90 group-hover:text-white block min-w-0">${esc(t.title)}</span>
                         </div>
-                        <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider w-full pr-2">
-                            ${t.priority === 'high' ? '<span class="text-red-400 flex items-center"><i class="ph-bold ph-warning-circle mr-1"></i> High</span>' : ''}
-                            <span class="flex items-center"><i class="ph-bold ph-clock mr-1"></i> ${(t.estimatedPomos || 1) * (t.pomoDuration || 25)}m</span>
-                            <span class="flex items-center"><i class="ph-bold ph-folder mr-1"></i> ${esc(t.project || 'Inbox')}</span>
+                        <div class="flex gap-3 ml-6 text-[11px] text-text-faint uppercase font-bold tracking-wider w-full overflow-hidden">
+                            ${t.priority === 'high' ? '<span class="text-red-400 flex items-center shrink-0"><i class="ph-bold ph-warning-circle mr-1"></i> High</span>' : ''}
+                            <span class="flex items-center shrink-0"><i class="ph-bold ph-clock mr-1"></i> ${(t.estimatedPomos || 1) * (t.pomoDuration || 25)}m</span>
+                            <span class="flex items-center shrink-0 truncate"><i class="ph-bold ph-folder mr-1"></i> ${esc(t.project || 'Inbox')}</span>
                             ${dateBadge}
                         </div>
                     </li>
