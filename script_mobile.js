@@ -918,6 +918,12 @@ const app = {
 
         const todayTasks = state.tasks.filter(x => x.dueDate === todayStr && x.status === 'todo');
         const pastTasks = state.tasks.filter(x => x.dueDate && x.dueDate < todayStr && x.status === 'todo');
+        
+        // NEW: Filter and sort upcoming tasks chronologically
+        const upcomingTasks = state.tasks
+            .filter(x => x.dueDate && x.dueDate > todayStr && x.status === 'todo')
+            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
         const highPriorityTasks = todayTasks.filter(t => t.priority === 'high');
 
         const totalEstMin = todayTasks.reduce((a, b) => a + ((parseInt(b.estimatedPomos) || 1) * (parseInt(b.pomoDuration) || 25)), 0);
@@ -936,7 +942,6 @@ const app = {
         } else {
             summaryHtml += `You have a <strong>${workloadTone}</strong> day with <strong class="text-white">${todayTasks.length} tasks</strong> requiring roughly <strong class="text-white">${estTimeStr}</strong> of deep focus. `;
 
-            // --- UPDATED: Passing just the ID string ---
             if (highPriorityTasks.length > 0) {
                 summaryHtml += `Start with <span class="text-red-400 font-bold cursor-pointer" onclick="app.openTaskDetail('${highPriorityTasks[0].id}')">"${esc(highPriorityTasks[0].title)}"</span>. `;
             } else if (todayTasks.length > 0) {
@@ -953,7 +958,6 @@ const app = {
         const renderList = (tasks, emptyMsg, highlightColorClass) => {
             return tasks.length > 0
                 ? tasks.map(t => `
-                    <!-- --- UPDATED: Passing just the ID string --- -->
                     <li class="flex flex-col gap-1 bg-dark-active/40 p-3.5 rounded-xl border border-dark-border/80 active:bg-dark-active/60 active:scale-95 transition-all shadow-sm" onclick="app.openTaskDetail('${t.id}')">
                         <div class="flex items-center gap-3">
                             <div class="flex items-center justify-center w-7 h-7 rounded-full bg-dark-bg border border-dark-border/50 shrink-0 shadow-inner">
@@ -968,6 +972,40 @@ const app = {
 
         if($('ai-today-list')) $('ai-today-list').innerHTML = renderList(todayTasks, "Nothing scheduled for today.", "text-brand");
         if($('ai-past-list')) $('ai-past-list').innerHTML = renderList(pastTasks, "All caught up!", "text-red-400");
+        
+        // --- NEW: Grouped Upcoming Tasks Rendering ---
+        if($('ai-upcoming-list')) {
+            let upcomingHtml = '';
+            
+            if (upcomingTasks.length === 0) {
+                upcomingHtml = `<li class="text-text-muted text-xs italic p-4 text-center border border-dark-border/50 border-dashed rounded-xl bg-dark-active/10">No upcoming tasks on the horizon.</li>`;
+            } else {
+                const groupedUpcoming = upcomingTasks.reduce((acc, t) => {
+                    if (!acc[t.dueDate]) acc[t.dueDate] = [];
+                    acc[t.dueDate].push(t);
+                    return acc;
+                }, {});
+
+                Object.keys(groupedUpcoming).sort().forEach(dateStr => {
+                    const dateObj = new Date(dateStr);
+                    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                    upcomingHtml += `<div class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2 mt-5 first:mt-0 flex items-center border-b border-dark-border/50 pb-1.5"><i class="ph-bold ph-calendar mr-1.5"></i> ${formattedDate}</div>`;
+
+                    upcomingHtml += groupedUpcoming[dateStr].map(t => `
+                        <li class="flex flex-col gap-1 bg-dark-active/40 p-3.5 rounded-xl border border-dark-border/80 active:bg-dark-active/60 active:scale-95 transition-all shadow-sm" onclick="app.openTaskDetail('${t.id}')">
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center justify-center w-7 h-7 rounded-full bg-dark-bg border border-dark-border/50 shrink-0 shadow-inner">
+                                    <i class="ph-bold ph-caret-right text-blue-400 text-xs"></i>
+                                </div>
+                                <span class="truncate font-medium text-white text-sm tracking-wide">${esc(t.title)}</span>
+                            </div>
+                        </li>
+                    `).join('');
+                });
+            }
+            $('ai-upcoming-list').innerHTML = upcomingHtml;
+        }
     },
 
     setRange: (r) => {
