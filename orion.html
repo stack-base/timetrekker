@@ -32,7 +32,7 @@
         --info: #3b82f6;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     
     body { 
         background-color: var(--bg-main); 
@@ -197,6 +197,58 @@
         #user-profile-modal .input-control { padding: 0.875rem; font-size: 1rem; }
         #user-profile-modal form > div:last-child { padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom)); background: rgba(15, 15, 15, 0.85) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border) !important; }
         #user-profile-modal form > div:last-child button { flex: 1; padding: 1rem; font-size: 1rem; border-radius: 10px; }
+        
+        /* Mobile Overview Optimizations */
+        #view-overview .grid-cols-2 .card { height: auto !important; min-height: 300px; max-height: 60vh; }
+        #view-overview .grid-cols-3 .col-span-2 > div { height: 200px !important; }
+        .data-table th, .data-table td { padding: 0.625rem 0.5rem; font-size: 0.75rem; white-space: nowrap; }
+        #view-overview .table-wrapper { max-height: 350px; overflow-y: auto; }
+        .stat-value { font-size: 1.5rem !important; }
+        .dashboard-grid .card canvas { max-width: 100%; }
+
+        /* Mobile Profile Modal Optimizations */
+        #user-profile-modal .nav-label + div > div { flex-direction: column !important; align-items: flex-start !important; gap: 1rem; }
+        #user-profile-modal .nav-label + div > div > div:first-child { padding-right: 0 !important; width: 100%; }
+        #user-profile-modal .nav-label + div button { width: 100%; padding: 0.875rem !important; font-size: 0.875rem !important; justify-content: center; }
+        #user-profile-modal #modal-user-name-display { font-size: 1.25rem !important; }
+        #modal-user-provider { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Mobile Table Card Layouts */
+        #view-users thead, #view-tasks thead, #view-broadcasts thead { display: none; }
+        #view-users .card, #view-tasks .card, #view-broadcasts .card { background: transparent; border: none; padding: 0 !important; }
+        #view-users .card-header, #view-tasks .card-header, #view-broadcasts .card-header { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; }
+        #view-users .data-table tbody tr, #view-tasks .data-table tbody tr.task-row, #view-broadcasts .data-table tbody tr { display: flex; flex-wrap: wrap; align-items: flex-start; padding: 1rem; margin-bottom: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+        #view-tasks .data-table tbody tr[style*="background"] { border: none; background: transparent !important; padding: 0.5rem 0.25rem; margin-bottom: 0; }
+        #view-tasks .data-table tbody tr[style*="background"] td { padding: 0 !important; background: transparent; }
+        #view-users .data-table tbody td, #view-tasks .data-table tbody tr.task-row td, #view-broadcasts .data-table tbody td { display: block; padding: 0 !important; border: none; }
+        
+        /* USERS TABLE MAPPING */
+        #users-table-body tr td:nth-child(1) { order: 1; width: auto; margin-right: 0.5rem; margin-top: 6px; }
+        #users-table-body tr td:nth-child(2) { order: 2; width: auto; margin-right: 0.75rem; }
+        #users-table-body tr td:nth-child(3) { order: 3; flex: 1; min-width: 0; }
+        #users-table-body tr td:nth-child(4) { order: 4; width: 100%; padding-left: 3.25rem; margin-top: 0.5rem; }
+        #users-table-body tr td:nth-child(5) { order: 5; width: 50%; padding-left: 3.25rem; margin-top: 0.75rem; }
+        #users-table-body tr td:nth-child(6) { order: 6; width: 50%; text-align: right; margin-top: 0.75rem; display: flex; align-items: flex-end; justify-content: flex-end; }
+        #users-table-body tr td:nth-child(7) { order: 7; width: 100%; margin-top: 1rem; padding-top: 1rem !important; border-top: 1px dashed var(--border); }
+        #users-table-body tr td:nth-child(7) > div { justify-content: space-between !important; width: 100%; gap: 0.5rem; }
+        #users-table-body tr td:nth-child(7) .btn { flex: 1; padding: 0.625rem 0; justify-content: center; }
+
+        /* TASKS TABLE MAPPING */
+        #tasks-table-body tr.task-row td:nth-child(1) { order: 1; width: auto; margin-right: 0.75rem; margin-top: 2px; }
+        #tasks-table-body tr.task-row td:nth-child(2) { order: 2; flex: 1; min-width: 0; }
+        #tasks-table-body tr.task-row td:nth-child(3) { order: 3; width: 100%; padding-left: 2rem; margin-top: 0.5rem; }
+        #tasks-table-body tr.task-row td:nth-child(4) { order: 4; width: 50%; padding-left: 2rem; margin-top: 0.75rem; }
+        #tasks-table-body tr.task-row td:nth-child(5) { order: 5; width: 50%; text-align: right; margin-top: 0.75rem; display: flex; align-items: flex-end; justify-content: flex-end; }
+        #tasks-table-body tr.task-row td:nth-child(6) { order: 6; width: 100%; margin-top: 1rem; padding-top: 0.75rem !important; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; }
+        #tasks-table-body tr.task-row td:nth-child(6) > div:first-child { margin-bottom: 0 !important; }
+
+        /* BROADCASTS TABLE MAPPING */
+        #broadcasts-table-body tr td:nth-child(1) { order: 1; width: auto; margin-right: 0.75rem; margin-top: 2px; }
+        #broadcasts-table-body tr td:nth-child(2) { order: 2; flex: 1; min-width: 0; }
+        #broadcasts-table-body tr td:nth-child(3) { order: 3; width: 100%; padding-left: 2.25rem; margin-top: 0.75rem; }
+        #broadcasts-table-body tr td:nth-child(4) { order: 4; width: 100%; padding-left: 2.25rem; margin-top: 0.5rem; }
+        #broadcasts-table-body tr td:nth-child(5) { order: 5; width: 100%; margin-top: 1rem; padding-top: 0.75rem !important; border-top: 1px dashed var(--border); }
+        #broadcasts-table-body tr td:nth-child(5) > div { justify-content: flex-end !important; }
     }
 </style>
 </head>
