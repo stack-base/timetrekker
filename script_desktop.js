@@ -631,16 +631,19 @@ const app = {
         if($('ai-overview')) $('ai-overview').innerHTML = summaryHtml;
 
         // Render function for simple lists (Today & Past)
-        // Render function for simple lists (Today & Past)
         const renderList = (tasks, emptyMsg, highlightColorClass) => {
             return tasks.length > 0
                 ? tasks.map(t => `
                     <li class="flex flex-col gap-1 bg-white/[0.03] p-3.5 rounded-xl border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer group shadow-sm min-w-0 mb-2" onclick="app.selectTask('${t.id}')">
-                        <div class="flex items-center gap-3 min-w-0">
+                        <div class="flex items-center gap-3 min-w-0 w-full">
                             <div class="flex items-center justify-center w-7 h-7 rounded-full bg-dark-bg border border-dark-border shrink-0 shadow-inner group-hover:border-white/20 transition-colors">
                                 <i class="ph-bold ph-caret-right ${highlightColorClass} text-xs group-hover:translate-x-0.5 transition-transform"></i>
                             </div>
-                            <span class="truncate font-medium text-white/90 group-hover:text-white text-sm tracking-wide block min-w-0">${esc(t.title)}</span>
+                            <span class="truncate font-medium text-white/90 group-hover:text-white text-sm tracking-wide block min-w-0 flex-1">${esc(t.title)}</span>
+                            
+                            <button onclick="app.editTask('${t.id}', event)" class="opacity-0 group-hover:opacity-100 flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-text-muted hover:text-white transition-all shrink-0 shadow-sm" title="Edit Task">
+                                <i class="ph-bold ph-pencil-simple text-xs"></i>
+                            </button>
                         </div>
                     </li>
                 `).join('')
@@ -675,11 +678,15 @@ const app = {
                     // Add Tasks for this date
                     upcomingHtml += groupedUpcoming[dateStr].map(t => `
                         <li class="flex flex-col gap-1 bg-white/[0.03] p-3.5 rounded-xl border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer group shadow-sm min-w-0 mb-2" onclick="app.selectTask('${t.id}')">
-                            <div class="flex items-center gap-3 min-w-0">
+                            <div class="flex items-center gap-3 min-w-0 w-full">
                                 <div class="flex items-center justify-center w-7 h-7 rounded-full bg-dark-bg border border-dark-border shrink-0 shadow-inner group-hover:border-white/20 transition-colors">
                                     <i class="ph-bold ph-caret-right text-blue-400 text-xs group-hover:translate-x-0.5 transition-transform"></i>
                                 </div>
-                                <span class="truncate font-medium text-white/90 group-hover:text-white text-sm tracking-wide block min-w-0">${esc(t.title)}</span>
+                                <span class="truncate font-medium text-white/90 group-hover:text-white text-sm tracking-wide block min-w-0 flex-1">${esc(t.title)}</span>
+                                
+                                <button onclick="app.editTask('${t.id}', event)" class="opacity-0 group-hover:opacity-100 flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-text-muted hover:text-white transition-all shrink-0 shadow-sm" title="Edit Task">
+                                    <i class="ph-bold ph-pencil-simple text-xs"></i>
+                                </button>
                             </div>
                         </li>
                     `).join('');
