@@ -327,6 +327,11 @@ onAuthStateChanged(auth, async (user) => {
 
         } catch (error) {
             console.error("Error verifying account status:", error);
+            // Bulletproof fallback: If Firebase denies them access to their own profile,
+            // assume they are banned or their session is revoked.
+            if (error.code === 'permission-denied') {
+                handleSuspension();
+            }
         }
 
     } else {
