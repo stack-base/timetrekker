@@ -890,44 +890,67 @@ const app={
         log(`<span style="color: var(--info);">Exported data package for user ${uid}.</span>`);
     },
 
-    importSingleUser: (input) => {
+    importSingleUser: async (input) => {
         const targetUid = document.getElementById('modal-user-uid').value;
         if (!input.files || !input.files[0]) return;
+
         const reader = new FileReader();
         
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const data = JSON.parse(e.target.result);
                 
-                // Security check to ensure they uploaded a single user file, not a global backup
+                // Security check
                 if (data.meta?.type !== 'single_user') {
                     input.value = '';
                     return alert("Invalid file type. Please upload a specific user JSON export.");
                 }
                 
-                // Optional: Check if they are importing User A's data into User B's profile
+                // UID check
                 if (data.meta.originalUid !== targetUid) {
-                    if (!confirm(`Warning: This backup belongs to a different UID (${data.meta.originalUid}). Importing will assign these tasks/sessions to the current user (${targetUid}). Continue?`)) {
+                    if (!confirm(`Warning: This backup belongs to a different UID (${data.meta.originalUid}). Importing will assign these tasks to the current user (${targetUid}). Continue?`)) {
                         input.value = '';
                         return;
                     }
                 }
 
-                // Force the imported tasks and sessions to belong to the target user
-                const newTasks = (data.tasks || []).map(t => ({ ...t, _uid: targetUid }));
-                const newSessions = (data.sessions || []).map(s => ({ ...s, _uid: targetUid }));
+                // Show loading state on the button
+                const importBtn = input.nextElementSibling;
+                const originalHtml = importBtn.innerHTML;
+                importBtn.innerHTML = 'Uploading...';
+                importBtn.disabled = true;
 
-                // Overwrite this specific user's cache while keeping everyone else's intact
-                state.tasks = [...state.tasks.filter(t => t._uid !== targetUid), ...newTasks];
-                state.sessions = [...state.sessions.filter(s => s._uid !== targetUid), ...newSessions];
+                // --- LIVE DATABASE UPLOAD ---
+                const batch = writeBatch(db);
+                const newTasks = data.tasks || [];
 
-                saveCache();
-                app.refreshData(false); // Refresh UI from cache
-                alert(`Successfully restored ${newTasks.length} tasks and ${newSessions.length} sessions for this user!`);
-                log(`<span style="color: var(--success);">Restored data applied to user ${targetUid}.</span>`);
+                newTasks.forEach(t => {
+                    const taskData = { ...t };
+                    // Remove frontend-only tags and the old ID so Firestore creates a fresh clone
+                    delete taskData._uid;
+                    delete taskData.id; 
+                    
+                    // Assign the new task strictly to the target user's database path
+                    const newRef = doc(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'));
+                    batch.set(newRef, taskData);
+                });
+
+                // Commit the batch to Firestore
+                await batch.commit();
+
+                // Force a live refresh from Firestore (true) to pull down the newly saved data
+                await app.refreshData(true); 
+                
+                // Reset UI
+                importBtn.innerHTML = originalHtml;
+                importBtn.disabled = false;
+                
+                alert(`Successfully pushed ${newTasks.length} tasks directly to Firestore for this user!`);
+                log(`<span style="color: var(--success);">Restored data uploaded to Firestore for user ${targetUid.slice(0,6)}...</span>`);
                 
             } catch (err) {
-                alert('Error parsing JSON file. Ensure it is a valid user backup.');
+                alert('Error parsing JSON file or writing to the database.');
+                console.error(err);
             }
         };
         reader.readAsText(input.files[0]);
