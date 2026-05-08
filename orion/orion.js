@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
@@ -938,7 +938,6 @@ const app={
                         delete taskData._uid; 
                         delete taskData.id;   
                         
-                        // 🐛 FIX: Convert Task string dates back to numerical timestamps
                         if (typeof taskData.createdAt === 'string') taskData.createdAt = new Date(taskData.createdAt).getTime();
                         if (typeof taskData.completedAt === 'string') taskData.completedAt = new Date(taskData.completedAt).getTime();
                         
@@ -948,31 +947,42 @@ const app={
                     });
                 }
 
-                // --- 2. IMPORT SESSIONS ---
+                // --- 2. IMPORT SESSIONS (Fixed for TimeTrekker Analytics) ---
                 if (importMode === 'sessions' || importMode === 'both') {
                     const newSessions = data.sessions || [];
                     if (newSessions.length > 0) {
-                        const cleanedSessions = newSessions.map(s => {
+                        const sessionsByMonth = {};
+
+                        // Clean and Group Sessions by Month
+                        newSessions.forEach(s => {
                             const sData = { ...s };
                             delete sData._uid; 
                             
-                            // 🐛 FIX: Convert Session string dates back to numerical timestamps
                             if (typeof sData.completedAt === 'string') {
                                 sData.completedAt = new Date(sData.completedAt).getTime();
                             }
 
-                            return sData;
+                            // Determine proper YYYY-MM folder for this session
+                            let d = new Date();
+                            if (sData.completedAt) d = new Date(sData.completedAt);
+                            const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+                            if (!sessionsByMonth[monthStr]) sessionsByMonth[monthStr] = [];
+                            sessionsByMonth[monthStr].push(sData);
                         });
                         
-                        const importLogId = `import_backup_${Date.now()}`;
-                        const logRef = doc(db, 'artifacts', appId, 'users', targetUid, 'monthly_logs', importLogId);
-                        
-                        batch.set(logRef, {
-                            monthKey: importLogId,
-                            sessions: cleanedSessions,
-                            importedAt: serverTimestamp()
+                        // Write to the actual monthly_logs documents that TimeTrekker queries
+                        Object.keys(sessionsByMonth).forEach(monthStr => {
+                            const logRef = doc(db, 'artifacts', appId, 'users', targetUid, 'monthly_logs', monthStr);
+                            
+                            batch.set(logRef, {
+                                month: monthStr, // THE CRITICAL FIX: Add the month field for the query
+                                sessions: arrayUnion(...sessionsByMonth[monthStr]),
+                                importedAt: serverTimestamp()
+                            }, { merge: true }); // merge: true prevents wiping existing sessions for that month
                         });
-                        sessionsCount = cleanedSessions.length;
+                        
+                        sessionsCount = newSessions.length;
                     }
                 }
 
