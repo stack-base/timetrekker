@@ -298,18 +298,21 @@ let profileListener = null;
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // 1. Define the path to the user's document
+        // 1. Critical: Assign user to global state so getUid() functions properly
+        state.user = user; 
+        const currentUid = getUid(); // Resolves actual UID or Orion Admin view
+        
         const userRef = doc(db, 'artifacts', 'timetrekker-v1', 'users', user.uid);
         
         try {
-            // 2. Initial check: Is the user already banned before the app even loads?
+            // Initial check for bans before app loads
             const snap = await getDoc(userRef);
             if (snap.exists() && snap.data().isBanned) {
                 await handleSuspension();
-                return; // Critical: Stop here so the rest of the app doesn't load
+                return; 
             }
 
-            // 3. Real-time tripwire: Watch for bans while the user is actively using the app
+            // Real-time tripwire
             profileListener = onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists() && docSnap.data().isBanned) {
                     handleSuspension();
@@ -317,18 +320,30 @@ onAuthStateChanged(auth, async (user) => {
             });
 
             // =========================================================
-            // ✅ YOUR APP INITIALIZATION GOES HERE
-            // The user is clear. Load tasks, initialize the focus timer, 
-            // and display the main dashboard UI.
+            // ✅ APP INITIALIZATION (GREEN LIGHT ZONE)
             // =========================================================
             console.log("User cleared. Initializing TimeTrekker...");
-            // initApp(); 
-            // loadTasks();
+            
+            // Sync Profile details
+            await syncUserProfile(user);
+            if (VIEW_AS_UID && user.uid === ORION_ID) {
+                showOrionBanner(VIEW_AS_UID);
+            }
+
+            // Switch UI: Hide login wrapper, show main app wrapper
+            const mainContainer = document.getElementById('timetrekker-app');
+            const loginSection = document.getElementById('login-section');
+            if (mainContainer) mainContainer.classList.remove('hidden');
+            if (loginSection) loginSection.classList.add('hidden');
+
+            // Fire off your existing real-time Firestore listeners
+            subTasks(currentUid);
+            subTimer(currentUid);
+            subLogs(currentUid);
+            subBroadcasts(currentUid);
 
         } catch (error) {
             console.error("Error verifying account status:", error);
-            // Bulletproof fallback: If Firebase denies them access to their own profile,
-            // assume they are banned or their session is revoked.
             if (error.code === 'permission-denied') {
                 handleSuspension();
             }
@@ -336,39 +351,37 @@ onAuthStateChanged(auth, async (user) => {
 
     } else {
         // User is not logged in, or just got signed out
+        state.user = null; // Clear the state
         
-        // Clean up the real-time listener to prevent memory leaks
         if (profileListener) {
             profileListener(); 
             profileListener = null;
         }
         
         // =========================================================
-        // ✅ YOUR LOGIN UI LOGIC GOES HERE
-        // Show the login screen, hide the main dashboard.
+        // ✅ LOGIN UI LOGIC (RED LIGHT ZONE)
         // =========================================================
         console.log("User signed out. Showing login UI...");
-        // showLoginScreen();
+        
+        const mainContainer = document.getElementById('timetrekker-app');
+        const loginSection = document.getElementById('login-section');
+        if (mainContainer) mainContainer.classList.add('hidden');
+        if (loginSection) loginSection.classList.remove('hidden');
     }
 });
 
-// The function that triggers the polished lockout UI
 async function handleSuspension() {
-    // 1. Forcibly kill their session on the backend
     try {
         await signOut(auth);
     } catch (e) {
         console.error("Sign out error:", e);
     }
     
-    // 2. Hide the main app UI
-    // IMPORTANT: Change 'timetrekker-app' to the actual ID of your main wrapper div
     const mainContainer = document.getElementById('timetrekker-app');
     if (mainContainer) {
         mainContainer.classList.add('hidden');
     }
     
-    // 3. Reveal the liquid glass suspension overlay
     const suspensionOverlay = document.getElementById('suspension-overlay');
     if (suspensionOverlay) {
         suspensionOverlay.classList.remove('hidden');
@@ -1686,11 +1699,9 @@ function renderTasks() {
                             <h3 class="text-base font-bold text-white tracking-tight truncate transition-colors duration-300 ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3>
                         </div>
                         
-                        <!-- Always-visible action button group -->
                         <div class="flex-shrink-0 flex items-center gap-1.5 z-20 bg-dark-bg/50 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-sm">
                             <button onclick="app.startTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-brand hover:text-white hover:bg-brand rounded-full transition-colors" title="Start Focus"><i class="ph-fill ph-play text-xs"></i></button>
                             
-                            <!-- Dedicated Edit Button -->
                             <button onclick="app.editTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors" title="Edit Task"><i class="ph-bold ph-pencil-simple text-xs"></i></button>
                             
                             <button onclick="app.deleteTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors" title="Delete Task"><i class="ph-bold ph-trash text-xs"></i></button>
