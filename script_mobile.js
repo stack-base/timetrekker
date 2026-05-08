@@ -1,6 +1,3 @@
-import { doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
