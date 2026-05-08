@@ -892,6 +892,8 @@ const app={
 
     importSingleUser: async (input) => {
         const targetUid = document.getElementById('modal-user-uid').value;
+        const importMode = document.getElementById('single-user-import-mode').value; // 'tasks', 'sessions', or 'both'
+        
         if (!input.files || !input.files[0]) return;
 
         const reader = new FileReader();
@@ -900,53 +902,92 @@ const app={
             try {
                 const data = JSON.parse(e.target.result);
                 
-                // Security check
+                // Security checks
                 if (data.meta?.type !== 'single_user') {
                     input.value = '';
                     return alert("Invalid file type. Please upload a specific user JSON export.");
                 }
                 
-                // UID check
                 if (data.meta.originalUid !== targetUid) {
-                    if (!confirm(`Warning: This backup belongs to a different UID (${data.meta.originalUid}). Importing will assign these tasks to the current user (${targetUid}). Continue?`)) {
+                    if (!confirm(`Warning: This backup belongs to a different UID (${data.meta.originalUid}). Importing will assign this data to the current user (${targetUid}). Continue?`)) {
                         input.value = '';
                         return;
                     }
                 }
 
-                // Show loading state on the button
+                // Show loading state
                 const importBtn = input.nextElementSibling;
                 const originalHtml = importBtn.innerHTML;
                 importBtn.innerHTML = 'Uploading...';
                 importBtn.disabled = true;
 
-                // --- LIVE DATABASE UPLOAD ---
                 const batch = writeBatch(db);
-                const newTasks = data.tasks || [];
+                let tasksCount = 0;
+                let sessionsCount = 0;
 
-                newTasks.forEach(t => {
-                    const taskData = { ...t };
-                    // Remove frontend-only tags and the old ID so Firestore creates a fresh clone
-                    delete taskData._uid;
-                    delete taskData.id; 
-                    
-                    // Assign the new task strictly to the target user's database path
-                    const newRef = doc(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'));
-                    batch.set(newRef, taskData);
-                });
+                // --- 1. IMPORT TASKS (If Selected) ---
+                if (importMode === 'tasks' || importMode === 'both') {
+                    const newTasks = data.tasks || [];
+                    newTasks.forEach(t => {
+                        const taskData = { ...t };
+                        delete taskData._uid; // Strip local tag
+                        delete taskData.id;   // Let Firestore auto-generate a fresh ID
+                        
+                        const newRef = doc(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'));
+                        batch.set(newRef, taskData);
+                        tasksCount++;
+                    });
+                }
 
-                // Commit the batch to Firestore
+                // --- 2. IMPORT SESSIONS (If Selected) ---
+                if (importMode === 'sessions' || importMode === 'both') {
+                    const newSessions = data.sessions || [];
+                    if (newSessions.length > 0) {
+                        // Strip frontend-only tags from sessions
+                        const cleanedSessions = newSessions.map(s => {
+                            const sData = { ...s };
+                            delete sData._uid; 
+                            return sData;
+                        });
+                        
+                        // Because Firestore stores sessions inside 'monthly_logs' documents, 
+                        // we bundle imported sessions into a unique timestamped log file.
+                        const importLogId = `import_backup_${Date.now()}`;
+                        const logRef = doc(db, 'artifacts', appId, 'users', targetUid, 'monthly_logs', importLogId);
+                        
+                        batch.set(logRef, {
+                            monthKey: importLogId,
+                            sessions: cleanedSessions,
+                            importedAt: serverTimestamp()
+                        });
+                        sessionsCount = cleanedSessions.length;
+                    }
+                }
+
+                // Check if file was empty
+                if (tasksCount === 0 && sessionsCount === 0) {
+                    alert("No matching data found in file for the selected import mode.");
+                    importBtn.innerHTML = originalHtml;
+                    importBtn.disabled = false;
+                    return;
+                }
+
+                // Commit to live Firestore
                 await batch.commit();
-
-                // Force a live refresh from Firestore (true) to pull down the newly saved data
+                
+                // Force UI to sync with live Firestore
                 await app.refreshData(true); 
                 
-                // Reset UI
+                // Reset UI & Notify
                 importBtn.innerHTML = originalHtml;
                 importBtn.disabled = false;
                 
-                alert(`Successfully pushed ${newTasks.length} tasks directly to Firestore for this user!`);
-                log(`<span style="color: var(--success);">Restored data uploaded to Firestore for user ${targetUid.slice(0,6)}...</span>`);
+                let successMessage = `Success! Pushed to Live Database:\n`;
+                if (tasksCount > 0) successMessage += `✓ ${tasksCount} Tasks\n`;
+                if (sessionsCount > 0) successMessage += `✓ ${sessionsCount} Sessions\n`;
+                alert(successMessage);
+                
+                log(`<span style="color: var(--success);">Restored ${importMode} uploaded to Firestore for user ${targetUid.slice(0,6)}...</span>`);
                 
             } catch (err) {
                 alert('Error parsing JSON file or writing to the database.');
@@ -954,7 +995,62 @@ const app={
             }
         };
         reader.readAsText(input.files[0]);
-        input.value = ''; // Reset input
+        input.value = ''; // Reset input field so you can upload the same file again if needed
+    },
+
+    resetUserData: async (btn) => {
+        const targetUid = document.getElementById('modal-user-uid').value;
+        if (!targetUid) return;
+
+        const u = state.usersMap[targetUid];
+        const userName = u ? (u.name || u.email) : targetUid;
+
+        // Strict Warning Safeguard
+        if (!confirm(`DANGER: Are you absolutely sure you want to permanently delete ALL tasks and sessions for ${userName}? This cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            // UI Loading State
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = 'Deleting...';
+            btn.disabled = true;
+
+            // 1. Fetch all Tasks and Logs explicitly tied to this user from Live Firestore
+            const tasksQ = query(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'));
+            const logsQ = query(collection(db, 'artifacts', appId, 'users', targetUid, 'monthly_logs'));
+
+            const [tasksSnap, logsSnap] = await Promise.all([getDocs(tasksQ), getDocs(logsQ)]);
+
+            // 2. Queue them up for Batch Deletion
+            const batch = writeBatch(db);
+            tasksSnap.forEach(d => batch.delete(d.ref));
+            logsSnap.forEach(d => batch.delete(d.ref));
+
+            // 3. Commit the destructive action to Firestore
+            await batch.commit();
+
+            // 4. Clean up local state memory so they instantly disappear from the dashboard
+            state.tasks = state.tasks.filter(t => t._uid !== targetUid);
+            state.sessions = state.sessions.filter(s => s._uid !== targetUid);
+            saveCache();
+
+            // 5. Force UI to sync with live Firestore
+            await app.refreshData(true);
+
+            // Reset UI
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+
+            alert(`Successfully deleted ${tasksSnap.size} tasks and ${logsSnap.size} session logs for ${userName}.`);
+            log(`<span style="color: var(--warning);">Reset data (deleted ${tasksSnap.size} tasks, ${logsSnap.size} logs) for user ${targetUid.slice(0,6)}...</span>`);
+            
+        } catch (err) {
+            alert('Error resetting user data: ' + err.message);
+            console.error(err);
+            btn.innerHTML = `<i class="ph-bold ph-trash" style="margin-right: 4px;"></i> Delete Data`;
+            btn.disabled = false;
+        }
     },
 };
 
