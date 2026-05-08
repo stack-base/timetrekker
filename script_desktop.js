@@ -1,3 +1,6 @@
+import { doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -294,119 +297,81 @@ const subBroadcasts = (uid) => {
     });
 };
 
-onAuthStateChanged(auth, u => {
-    if (u) {
-        state.user = u;
-        syncUserProfile(u);
-        const els = getEls();
+let profileListener = null;
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // 1. Define the path to the user's document
+        const userRef = doc(db, 'artifacts', 'timetrekker-v1', 'users', user.uid);
         
-        let viewingAsUser = false;
-        if (VIEW_AS_UID) {
-            if (u.uid === ORION_ID) {
-                showOrionBanner(VIEW_AS_UID);
-                viewingAsUser = true;
+        try {
+            // 2. Initial check: Is the user already banned before the app even loads?
+            const snap = await getDoc(userRef);
+            if (snap.exists() && snap.data().isBanned) {
+                await handleSuspension();
+                return; // Critical: Stop here so the rest of the app doesn't load
             }
-        }
 
-        const effectiveUid = getUid();
-        const p = $('user-profile-display');
-        
-        if (p) {
-            p.classList.remove('hidden'); p.classList.add('flex');
-            
-            if (viewingAsUser) {
-                $('user-name-text').textContent = "Simulated User";
-                $('user-email-text').textContent = VIEW_AS_UID;
-                $('user-avatar-initials').textContent = "?";
-                
-                getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
-                    if(snap.exists()) {
-                        const d = snap.data();
-                        const name = d.displayName || d.name || 'User';
-                        $('user-name-text').textContent = name;
-                        $('user-email-text').textContent = d.email || VIEW_AS_UID;
-                        if(els.settingsName) els.settingsName.textContent = name;
-                        if(els.settingsEmail) els.settingsEmail.textContent = d.email || VIEW_AS_UID;
-                        
-                        if (d.photoURL) {
-                            $('user-avatar-initials').innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded">`;
-                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
-                        } else {
-                            const initial = name.charAt(0).toUpperCase();
-                            $('user-avatar-initials').innerHTML = initial;
-                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
-                        }
-                    }
-                });
-            } else {
-                getDoc(doc(db, 'artifacts', APP_ID, 'users', effectiveUid)).then(s => {
-                    if (s.exists()) {
-                        const d = s.data();
-                        const name = d.displayName || u.displayName || u.email.split('@')[0];
-                        const email = d.email || u.email;
-                        const pic = d.photoURL;
-
-                        $('user-name-text').textContent = name;
-                        $('user-email-text').textContent = email;
-                        if(els.settingsName) els.settingsName.textContent = name;
-                        if(els.settingsEmail) els.settingsEmail.textContent = email;
-
-                        if (pic) {
-                            $('user-avatar-initials').innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded">`;
-                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
-                        } else {
-                            const initial = name.charAt(0).toUpperCase();
-                            $('user-avatar-initials').innerHTML = initial;
-                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
-                        }
-                    }
-                });
-            }
-        } 
-
-        subTasks(effectiveUid);
-        subLogs(effectiveUid);
-        subTimer(effectiveUid);
-        subBroadcasts(effectiveUid); 
-
-        if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long', month: 'long', day: 'numeric' });
-
-        app.setSound(state.sound);
-
-        setInterval(() => {
-            const now = getISTNow();
-            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            if (state.lastCheckTime !== currentTime) {
-                state.lastCheckTime = currentTime;
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-                    state.tasks.forEach(t => {
-                        if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
-                            try {
-                                haptic('light');
-                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png' });
-                            } catch (e) { }
-                        }
-                    });
+            // 3. Real-time tripwire: Watch for bans while the user is actively using the app
+            profileListener = onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists() && docSnap.data().isBanned) {
+                    handleSuspension();
                 }
-            }
-        }, 10000);
+            });
 
-        const action = URL_PARAMS.get('action');
-        if (action === 'new-task') {
-            setTimeout(() => app.toggleAddTaskModal(), 500);
-        } else if (action === 'focus') {
-            setTimeout(() => app.toggleFocusPanel(true), 500);
-        } else if (action === 'view-today') {
-            setTimeout(() => app.setView('today'), 500);
-        } else if (action === 'view-analytics') {
-            setTimeout(() => app.setView('analytics'), 500);
+            // =========================================================
+            // ✅ YOUR APP INITIALIZATION GOES HERE
+            // The user is clear. Load tasks, initialize the focus timer, 
+            // and display the main dashboard UI.
+            // =========================================================
+            console.log("User cleared. Initializing TimeTrekker...");
+            // initApp(); 
+            // loadTasks();
+
+        } catch (error) {
+            console.error("Error verifying account status:", error);
         }
 
     } else {
-        window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href);
+        // User is not logged in, or just got signed out
+        
+        // Clean up the real-time listener to prevent memory leaks
+        if (profileListener) {
+            profileListener(); 
+            profileListener = null;
+        }
+        
+        // =========================================================
+        // ✅ YOUR LOGIN UI LOGIC GOES HERE
+        // Show the login screen, hide the main dashboard.
+        // =========================================================
+        console.log("User signed out. Showing login UI...");
+        // showLoginScreen();
     }
 });
+
+// The function that triggers the polished lockout UI
+async function handleSuspension() {
+    // 1. Forcibly kill their session on the backend
+    try {
+        await signOut(auth);
+    } catch (e) {
+        console.error("Sign out error:", e);
+    }
+    
+    // 2. Hide the main app UI
+    // IMPORTANT: Change 'timetrekker-app' to the actual ID of your main wrapper div
+    const mainContainer = document.getElementById('timetrekker-app');
+    if (mainContainer) {
+        mainContainer.classList.add('hidden');
+    }
+    
+    // 3. Reveal the liquid glass suspension overlay
+    const suspensionOverlay = document.getElementById('suspension-overlay');
+    if (suspensionOverlay) {
+        suspensionOverlay.classList.remove('hidden');
+    }
+}
 
 const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', uid, 'tasks'), s => {
     const t = [], p = new Set(['Inbox', 'Work', 'Personal', 'Study']);

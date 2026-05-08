@@ -1,3 +1,6 @@
+import { doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -261,198 +264,81 @@ const subBroadcasts = (uid) => {
     });
 };
 
-onAuthStateChanged(auth, u => {
-    if (u) {
-        state.user = u;
-        syncUserProfile(u);
+let profileListener = null;
 
-        let viewingAsUser = false;
-        if (VIEW_AS_UID && u.uid === ORION_ID) {
-            showOrionBanner(VIEW_AS_UID);
-            viewingAsUser = true;
-        }
-
-        const effectiveUid = getUid();
-
-        if (viewingAsUser) {
-            if($('header-avatar')) $('header-avatar').textContent = "?";
-            if($('settings-avatar')) $('settings-avatar').textContent = "?";
-            if($('settings-name')) $('settings-name').textContent = "Simulated User";
-            if($('settings-email')) $('settings-email').textContent = VIEW_AS_UID;
-            
-            // Use getDoc for a single read to conserve Firebase quota
-            getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
-                if(snap.exists()) {
-                    const d = snap.data();
-                    const name = d.displayName || d.name || 'User';
-                    
-                    if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
-                    if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
-                    if($('settings-name')) $('settings-name').textContent = name;
-                    if($('settings-email')) $('settings-email').textContent = d.email || VIEW_AS_UID;
-                    
-                    if (d.photoURL) {
-                        if($('header-avatar-img')) { $('header-avatar-img').src = d.photoURL; $('header-avatar-img').classList.remove('hidden'); }
-                        if($('settings-avatar-img')) { $('settings-avatar-img').src = d.photoURL; $('settings-avatar-img').classList.remove('hidden'); }
-                    } else {
-                        // Hide image if reverted or empty
-                        if($('header-avatar-img')) { $('header-avatar-img').src = ''; $('header-avatar-img').classList.add('hidden'); }
-                        if($('settings-avatar-img')) { $('settings-avatar-img').src = ''; $('settings-avatar-img').classList.add('hidden'); }
-                    }
-                }
-            });
-        } else {
-            // Standard User - Also using getDoc to save reads
-            getDoc(doc(db, 'artifacts', APP_ID, 'users', effectiveUid)).then(s => {
-                if(s.exists()) {
-                    const d = s.data();
-                    const name = d.displayName || u.displayName || u.email.split('@')[0];
-                    const pic = d.photoURL;
-                    const email = d.email || u.email; // Uses d.email to pull edited emails correctly
-                    
-                    if($('header-avatar')) $('header-avatar').textContent = name.charAt(0).toUpperCase();
-                    if($('settings-avatar')) $('settings-avatar').textContent = name.charAt(0).toUpperCase();
-                    if($('settings-name')) $('settings-name').textContent = name;
-                    if($('settings-email')) $('settings-email').textContent = email;
-                    
-                    if (pic) {
-                        if($('header-avatar-img')) { $('header-avatar-img').src = pic; $('header-avatar-img').classList.remove('hidden'); }
-                        if($('settings-avatar-img')) { $('settings-avatar-img').src = pic; $('settings-avatar-img').classList.remove('hidden'); }
-                    } else {
-                        // Hide image if reverted or empty
-                        if($('header-avatar-img')) { $('header-avatar-img').src = ''; $('header-avatar-img').classList.add('hidden'); }
-                        if($('settings-avatar-img')) { $('settings-avatar-img').src = ''; $('settings-avatar-img').classList.add('hidden'); }
-                    }
-                }
-            });
-        }
-
-        if($('current-date')) $('current-date').textContent = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long', month: 'long', day: 'numeric' });
-
-        onSnapshot(collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'tasks'), s => {
-            state.tasks = s.docs.map(d => ({id: d.id, ...d.data()}));
-            const p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
-            state.tasks.forEach(t => { if(t.project && t.project !== 'Inbox') p.add(t.project); });
-            state.projects = p;
-            
-            app.renderTasks();
-            app.renderMiniStats();
-            
-            if(!$('project-sheet').classList.contains('translate-y-full')) app.renderProjectSheet();
-            if(state.activeTab === 'analytics') app.renderAnalytics();
-            if (state.timer.taskId) {
-                 const t = state.tasks.find(x => x.id === state.timer.taskId);
-                 if (t) app.updateTimerUI();
-            }
-        });
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // 1. Define the path to the user's document
+        const userRef = doc(db, 'artifacts', 'timetrekker-v1', 'users', user.uid);
         
-        onSnapshot(doc(db, 'artifacts', APP_ID, 'users', effectiveUid, 'timer', 'active'), s => {
-            if(s.exists()) {
-                const d = s.data();
-                state.timer = {
-                    ...state.timer,
-                    status: d.status || 'idle',
-                    mode: d.mode || 'focus',
-                    endTime: d.endTime ? d.endTime.toMillis() : null,
-                    remaining: d.remaining || (state.timer.settings[d.mode || 'focus'] * 60),
-                    totalDuration: d.totalDuration || (state.timer.settings[d.mode || 'focus'] * 60),
-                    taskId: d.taskId || null,
-                    sessionId: d.sessionId || null, 
-                    pomoCountCurrentSession: d.sessionCount || 0,
-                    initiatorId: d.initiatorId || null
-                };
-                
-                let settingsChanged = false;
-                if(d.strictMode !== undefined) { state.timer.settings.strictMode = d.strictMode; settingsChanged = true; if($('toggle-strict')) $('toggle-strict').setAttribute('aria-pressed', d.strictMode); }
-                if(d.autoStartPomo !== undefined) { state.timer.settings.autoStartPomo = d.autoStartPomo; settingsChanged = true; if($('toggle-auto-pomo')) $('toggle-auto-pomo').setAttribute('aria-pressed', d.autoStartPomo); }
-                if(d.autoStartBreak !== undefined) { state.timer.settings.autoStartBreak = d.autoStartBreak; settingsChanged = true; if($('toggle-auto-break')) $('toggle-auto-break').setAttribute('aria-pressed', d.autoStartBreak); }
-                if(d.disableBreak !== undefined) { state.timer.settings.disableBreak = d.disableBreak; settingsChanged = true; if($('toggle-disable-break')) $('toggle-disable-break').setAttribute('aria-pressed', d.disableBreak); }
-                if(d.focus !== undefined) { state.timer.settings.focus = d.focus; settingsChanged = true; }
-                if(d.short !== undefined) { state.timer.settings.short = d.short; settingsChanged = true; }
-                if(d.long !== undefined) { state.timer.settings.long = d.long; settingsChanged = true; }
-                if(d.longBreakInterval !== undefined) { state.timer.settings.longBreakInterval = d.longBreakInterval; settingsChanged = true; }
-                
-                if(settingsChanged) saveLocalState();
-
-                app.updateTimerUI();
-                
-                if(state.timer.status === 'running') {
-                    startTimerLoop();
-                    wakeLock.request();
-                    if (state.sound !== 'none') {
-                        const audio = $('audio-player');
-                        if (audio && audio.paused) audio.play().catch(()=>{});
-                    }
-                } else {
-                    stopTimerLoop();
-                    wakeLock.release();
-                    const audio = $('audio-player');
-                    if(audio) audio.pause();
-                }
-            } else {
-                app.resetTimer(true);
+        try {
+            // 2. Initial check: Is the user already banned before the app even loads?
+            const snap = await getDoc(userRef);
+            if (snap.exists() && snap.data().isBanned) {
+                await handleSuspension();
+                return; // Critical: Stop here so the rest of the app doesn't load
             }
-        });
 
-        const logsQuery = query(
-            collection(db, 'artifacts', APP_ID, 'users', effectiveUid, 'monthly_logs'),
-            orderBy('month', 'desc'),
-            limit(12) 
-        );
-
-        onSnapshot(logsQuery, s => {
-            let allSessions = [];
-            s.docs.forEach(docSnap => {
-                const data = docSnap.data();
-                if (data.sessions && Array.isArray(data.sessions)) {
-                    allSessions = allSessions.concat(data.sessions);
+            // 3. Real-time tripwire: Watch for bans while the user is actively using the app
+            profileListener = onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists() && docSnap.data().isBanned) {
+                    handleSuspension();
                 }
             });
-            allSessions.sort((a, b) => b.completedAt - a.completedAt);
-            state.logs = allSessions;
-            if(state.activeTab === 'analytics') app.renderAnalytics();
-        });
 
-        subBroadcasts(effectiveUid);
+            // =========================================================
+            // ✅ YOUR APP INITIALIZATION GOES HERE
+            // The user is clear. Load tasks, initialize the focus timer, 
+            // and display the main dashboard UI.
+            // =========================================================
+            console.log("User cleared. Initializing TimeTrekker...");
+            // initApp(); 
+            // loadTasks();
 
-        setInterval(() => {
-            const now = getISTNow();
-            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            if (state.lastCheckTime !== currentTime) {
-                state.lastCheckTime = currentTime;
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    const todayStr = getDayStr(now);
-                    state.tasks.forEach(t => {
-                        if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
-                             try { 
-                                 haptic('medium'); 
-                                 new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: ASSETS.icon }); 
-                             } catch (e) {}
-                        }
-                    });
-                }
-            }
-        }, 10000);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const action = urlParams.get('action');
-        if (action === 'new-task') {
-            setTimeout(() => app.openTaskModal(), 500);
-        } else if (action === 'focus') {
-            setTimeout(() => app.switchTab('timer'), 500);
-        } else if (action === 'view-today') {
-            setTimeout(() => {
-                app.switchTab('tasks');
-                app.setFilter('today');
-            }, 500);
-        } else if (action === 'view-analytics') {
-            setTimeout(() => app.switchTab('analytics'), 500);
+        } catch (error) {
+            console.error("Error verifying account status:", error);
         }
 
     } else {
-        window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href);
+        // User is not logged in, or just got signed out
+        
+        // Clean up the real-time listener to prevent memory leaks
+        if (profileListener) {
+            profileListener(); 
+            profileListener = null;
+        }
+        
+        // =========================================================
+        // ✅ YOUR LOGIN UI LOGIC GOES HERE
+        // Show the login screen, hide the main dashboard.
+        // =========================================================
+        console.log("User signed out. Showing login UI...");
+        // showLoginScreen();
     }
 });
+
+// The function that triggers the polished lockout UI
+async function handleSuspension() {
+    // 1. Forcibly kill their session on the backend
+    try {
+        await signOut(auth);
+    } catch (e) {
+        console.error("Sign out error:", e);
+    }
+    
+    // 2. Hide the main app UI
+    // IMPORTANT: Change 'timetrekker-app' to the actual ID of your main wrapper div
+    const mainContainer = document.getElementById('timetrekker-app');
+    if (mainContainer) {
+        mainContainer.classList.add('hidden');
+    }
+    
+    // 3. Reveal the liquid glass suspension overlay
+    const suspensionOverlay = document.getElementById('suspension-overlay');
+    if (suspensionOverlay) {
+        suspensionOverlay.classList.remove('hidden');
+    }
+}
 
 let timerInterval;
 const startTimerLoop = () => {
