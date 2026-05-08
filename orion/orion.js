@@ -892,9 +892,13 @@ const app={
 
     importSingleUser: async (input) => {
         const targetUid = document.getElementById('modal-user-uid').value;
-        const importMode = document.getElementById('single-user-import-mode').value; // 'tasks', 'sessions', or 'both'
+        const importMode = document.getElementById('single-user-import-mode')?.value || 'both'; 
         
         if (!input.files || !input.files[0]) return;
+
+        // Get Current User's Name for the warning label
+        const targetUser = state.usersMap[targetUid];
+        const targetLabel = targetUser ? `${targetUser.name || targetUser.email} (${targetUid})` : targetUid;
 
         const reader = new FileReader();
         
@@ -908,8 +912,13 @@ const app={
                     return alert("Invalid file type. Please upload a specific user JSON export.");
                 }
                 
+                // UID check with Name (UID) formatting
                 if (data.meta.originalUid !== targetUid) {
-                    if (!confirm(`Warning: This backup belongs to a different UID (${data.meta.originalUid}). Importing will assign this data to the current user (${targetUid}). Continue?`)) {
+                    const origUid = data.meta.originalUid;
+                    const origName = data.userProfile ? (data.userProfile.displayName || data.userProfile.name || data.userProfile.email) : 'Unknown User';
+                    const origLabel = `${origName} (${origUid})`;
+
+                    if (!confirm(`Warning: This backup belongs to:\n${origLabel}\n\nImporting will reassign this data to the current user:\n${targetLabel}\n\nContinue?`)) {
                         input.value = '';
                         return;
                     }
@@ -925,13 +934,13 @@ const app={
                 let tasksCount = 0;
                 let sessionsCount = 0;
 
-                // --- 1. IMPORT TASKS (If Selected) ---
+                // --- 1. IMPORT TASKS ---
                 if (importMode === 'tasks' || importMode === 'both') {
                     const newTasks = data.tasks || [];
                     newTasks.forEach(t => {
                         const taskData = { ...t };
-                        delete taskData._uid; // Strip local tag
-                        delete taskData.id;   // Let Firestore auto-generate a fresh ID
+                        delete taskData._uid; 
+                        delete taskData.id;   
                         
                         const newRef = doc(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'));
                         batch.set(newRef, taskData);
@@ -939,19 +948,16 @@ const app={
                     });
                 }
 
-                // --- 2. IMPORT SESSIONS (If Selected) ---
+                // --- 2. IMPORT SESSIONS ---
                 if (importMode === 'sessions' || importMode === 'both') {
                     const newSessions = data.sessions || [];
                     if (newSessions.length > 0) {
-                        // Strip frontend-only tags from sessions
                         const cleanedSessions = newSessions.map(s => {
                             const sData = { ...s };
                             delete sData._uid; 
                             return sData;
                         });
                         
-                        // Because Firestore stores sessions inside 'monthly_logs' documents, 
-                        // we bundle imported sessions into a unique timestamped log file.
                         const importLogId = `import_backup_${Date.now()}`;
                         const logRef = doc(db, 'artifacts', appId, 'users', targetUid, 'monthly_logs', importLogId);
                         
@@ -964,7 +970,6 @@ const app={
                     }
                 }
 
-                // Check if file was empty
                 if (tasksCount === 0 && sessionsCount === 0) {
                     alert("No matching data found in file for the selected import mode.");
                     importBtn.innerHTML = originalHtml;
@@ -982,12 +987,10 @@ const app={
                 importBtn.innerHTML = originalHtml;
                 importBtn.disabled = false;
                 
-                let successMessage = `Success! Pushed to Live Database:\n`;
+                let successMessage = `Success! Pushed to Live Database for ${targetUser?.name || 'User'}:\n`;
                 if (tasksCount > 0) successMessage += `✓ ${tasksCount} Tasks\n`;
                 if (sessionsCount > 0) successMessage += `✓ ${sessionsCount} Sessions\n`;
                 alert(successMessage);
-                
-                log(`<span style="color: var(--success);">Restored ${importMode} uploaded to Firestore for user ${targetUid.slice(0,6)}...</span>`);
                 
             } catch (err) {
                 alert('Error parsing JSON file or writing to the database.');
@@ -995,7 +998,55 @@ const app={
             }
         };
         reader.readAsText(input.files[0]);
-        input.value = ''; // Reset input field so you can upload the same file again if needed
+        input.value = ''; 
+    },
+
+    resetUserData: async (btn) => {
+        const targetUid = document.getElementById('modal-user-uid').value;
+        if (!targetUid) return;
+
+        // Get Current User's Name for the warning label
+        const u = state.usersMap[targetUid];
+        const targetLabel = u ? `${u.name || u.email} (${targetUid})` : targetUid;
+
+        // Strict Warning Safeguard with Name (UID)
+        if (!confirm(`DANGER: Are you absolutely sure you want to permanently delete ALL tasks and sessions for:\n\n${targetLabel}\n\nThis cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = 'Deleting...';
+            btn.disabled = true;
+
+            const tasksQ = query(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'));
+            const logsQ = query(collection(db, 'artifacts', appId, 'users', targetUid, 'monthly_logs'));
+
+            const [tasksSnap, logsSnap] = await Promise.all([getDocs(tasksQ), getDocs(logsQ)]);
+
+            const batch = writeBatch(db);
+            tasksSnap.forEach(d => batch.delete(d.ref));
+            logsSnap.forEach(d => batch.delete(d.ref));
+
+            await batch.commit();
+
+            state.tasks = state.tasks.filter(t => t._uid !== targetUid);
+            state.sessions = state.sessions.filter(s => s._uid !== targetUid);
+            saveCache();
+
+            await app.refreshData(true);
+
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+
+            alert(`Successfully deleted ${tasksSnap.size} tasks and ${logsSnap.size} session logs for ${u?.name || 'User'}.`);
+            
+        } catch (err) {
+            alert('Error resetting user data: ' + err.message);
+            console.error(err);
+            btn.innerHTML = `<i class="ph-bold ph-trash" style="margin-right: 4px;"></i> Delete Data`;
+            btn.disabled = false;
+        }
     },
 
     resetUserData: async (btn) => {
