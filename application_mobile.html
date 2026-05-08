@@ -54,29 +54,6 @@
     .spring-sheet { transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) !important; }
     
     #timer-progress { filter: drop-shadow(0 0 8px rgba(255, 87, 87, 0.4)); transition: stroke-dashoffset 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
-
-    #suspension-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(15, 15, 15, 0.6);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-    }
-    
-    .suspension-card {
-        background: rgba(30, 30, 30, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 40px;
-        text-align: center;
-        max-width: 400px;
-        width: 90%;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
 </style>
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
@@ -816,19 +793,6 @@
                 </p>
             </div>
 
-        </div>
-    </div>
-
-    <div id="suspension-overlay" class="hidden">
-        <div class="suspension-card">
-            <div style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: var(--danger); font-size: 32px;">
-                <i class="ph-bold ph-shield-slash"></i>
-            </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 12px; letter-spacing: -0.02em;">Account Suspended</h2>
-            <p style="font-size: 0.9375rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 32px;">
-                Access to this account has been revoked due to a violation of our terms of service or suspicious activity.
-            </p>
-            <button onclick="window.location.reload()" class="btn btn-outline" style="width: 100%; padding: 12px; border-radius: 10px;">Return to Login</button>
         </div>
     </div>
     

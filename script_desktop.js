@@ -294,99 +294,119 @@ const subBroadcasts = (uid) => {
     });
 };
 
-let profileListener = null;
-
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        // 1. Critical: Assign user to global state so getUid() functions properly
-        state.user = user; 
-        const currentUid = getUid(); // Resolves actual UID or Orion Admin view
+onAuthStateChanged(auth, u => {
+    if (u) {
+        state.user = u;
+        syncUserProfile(u);
+        const els = getEls();
         
-        const userRef = doc(db, 'artifacts', 'timetrekker-v1', 'users', user.uid);
-        
-        try {
-            // Initial check for bans before app loads
-            const snap = await getDoc(userRef);
-            if (snap.exists() && snap.data().isBanned) {
-                await handleSuspension();
-                return; 
-            }
-
-            // Real-time tripwire
-            profileListener = onSnapshot(userRef, (docSnap) => {
-                if (docSnap.exists() && docSnap.data().isBanned) {
-                    handleSuspension();
-                }
-            });
-
-            // =========================================================
-            // ✅ APP INITIALIZATION (GREEN LIGHT ZONE)
-            // =========================================================
-            console.log("User cleared. Initializing TimeTrekker...");
-            
-            // Sync Profile details
-            await syncUserProfile(user);
-            if (VIEW_AS_UID && user.uid === ORION_ID) {
+        let viewingAsUser = false;
+        if (VIEW_AS_UID) {
+            if (u.uid === ORION_ID) {
                 showOrionBanner(VIEW_AS_UID);
+                viewingAsUser = true;
             }
+        }
 
-            // Switch UI: Hide login wrapper, show main app wrapper
-            const mainContainer = document.getElementById('timetrekker-app');
-            const loginSection = document.getElementById('login-section');
-            if (mainContainer) mainContainer.classList.remove('hidden');
-            if (loginSection) loginSection.classList.add('hidden');
+        const effectiveUid = getUid();
+        const p = $('user-profile-display');
+        
+        if (p) {
+            p.classList.remove('hidden'); p.classList.add('flex');
+            
+            if (viewingAsUser) {
+                $('user-name-text').textContent = "Simulated User";
+                $('user-email-text').textContent = VIEW_AS_UID;
+                $('user-avatar-initials').textContent = "?";
+                
+                getDoc(doc(db, 'artifacts', APP_ID, 'users', VIEW_AS_UID)).then(snap => {
+                    if(snap.exists()) {
+                        const d = snap.data();
+                        const name = d.displayName || d.name || 'User';
+                        $('user-name-text').textContent = name;
+                        $('user-email-text').textContent = d.email || VIEW_AS_UID;
+                        if(els.settingsName) els.settingsName.textContent = name;
+                        if(els.settingsEmail) els.settingsEmail.textContent = d.email || VIEW_AS_UID;
+                        
+                        if (d.photoURL) {
+                            $('user-avatar-initials').innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded">`;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${d.photoURL}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+                        } else {
+                            const initial = name.charAt(0).toUpperCase();
+                            $('user-avatar-initials').innerHTML = initial;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
+                        }
+                    }
+                });
+            } else {
+                getDoc(doc(db, 'artifacts', APP_ID, 'users', effectiveUid)).then(s => {
+                    if (s.exists()) {
+                        const d = s.data();
+                        const name = d.displayName || u.displayName || u.email.split('@')[0];
+                        const email = d.email || u.email;
+                        const pic = d.photoURL;
 
-            // Fire off your existing real-time Firestore listeners
-            subTasks(currentUid);
-            subTimer(currentUid);
-            subLogs(currentUid);
-            subBroadcasts(currentUid);
+                        $('user-name-text').textContent = name;
+                        $('user-email-text').textContent = email;
+                        if(els.settingsName) els.settingsName.textContent = name;
+                        if(els.settingsEmail) els.settingsEmail.textContent = email;
 
-        } catch (error) {
-            console.error("Error verifying account status:", error);
-            if (error.code === 'permission-denied') {
-                handleSuspension();
+                        if (pic) {
+                            $('user-avatar-initials').innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded">`;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = `<img src="${pic}" alt="Profile" class="w-full h-full object-cover rounded-full">`;
+                        } else {
+                            const initial = name.charAt(0).toUpperCase();
+                            $('user-avatar-initials').innerHTML = initial;
+                            if(els.settingsAvatar) els.settingsAvatar.innerHTML = initial;
+                        }
+                    }
+                });
             }
+        } 
+
+        subTasks(effectiveUid);
+        subLogs(effectiveUid);
+        subTimer(effectiveUid);
+        subBroadcasts(effectiveUid); 
+
+        if(els.currentDate) els.currentDate.textContent = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long', month: 'long', day: 'numeric' });
+
+        app.setSound(state.sound);
+
+        setInterval(() => {
+            const now = getISTNow();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            if (state.lastCheckTime !== currentTime) {
+                state.lastCheckTime = currentTime;
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                    state.tasks.forEach(t => {
+                        if (t.status === 'todo' && t.reminder === currentTime && (t.dueDate === todayStr || !t.dueDate)) {
+                            try {
+                                haptic('light');
+                                new Notification(`Reminder: ${t.title}`, { body: "It's time for your task.", icon: 'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png' });
+                            } catch (e) { }
+                        }
+                    });
+                }
+            }
+        }, 10000);
+
+        const action = URL_PARAMS.get('action');
+        if (action === 'new-task') {
+            setTimeout(() => app.toggleAddTaskModal(), 500);
+        } else if (action === 'focus') {
+            setTimeout(() => app.toggleFocusPanel(true), 500);
+        } else if (action === 'view-today') {
+            setTimeout(() => app.setView('today'), 500);
+        } else if (action === 'view-analytics') {
+            setTimeout(() => app.setView('analytics'), 500);
         }
 
     } else {
-        // User is not logged in, or just got signed out
-        state.user = null; // Clear the state
-        
-        if (profileListener) {
-            profileListener(); 
-            profileListener = null;
-        }
-        
-        // =========================================================
-        // ✅ LOGIN UI LOGIC (RED LIGHT ZONE)
-        // =========================================================
-        console.log("User signed out. Showing login UI...");
-        
-        const mainContainer = document.getElementById('timetrekker-app');
-        const loginSection = document.getElementById('login-section');
-        if (mainContainer) mainContainer.classList.add('hidden');
-        if (loginSection) loginSection.classList.remove('hidden');
+        window.location.href = 'https://stack-base.github.io/account/login?redirectUrl=' + encodeURIComponent(window.location.href);
     }
 });
-
-async function handleSuspension() {
-    try {
-        await signOut(auth);
-    } catch (e) {
-        console.error("Sign out error:", e);
-    }
-    
-    const mainContainer = document.getElementById('timetrekker-app');
-    if (mainContainer) {
-        mainContainer.classList.add('hidden');
-    }
-    
-    const suspensionOverlay = document.getElementById('suspension-overlay');
-    if (suspensionOverlay) {
-        suspensionOverlay.classList.remove('hidden');
-    }
-}
 
 const subTasks = uid => onSnapshot(collection(db, 'artifacts', APP_ID, 'users', uid, 'tasks'), s => {
     const t = [], p = new Set(['Inbox', 'Work', 'Personal', 'Study']);
@@ -1699,9 +1719,11 @@ function renderTasks() {
                             <h3 class="text-base font-bold text-white tracking-tight truncate transition-colors duration-300 ${x.status === 'done' ? 'line-through text-text-muted' : ''}">${esc(x.title)}</h3>
                         </div>
                         
+                        <!-- Always-visible action button group -->
                         <div class="flex-shrink-0 flex items-center gap-1.5 z-20 bg-dark-bg/50 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-sm">
                             <button onclick="app.startTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-brand hover:text-white hover:bg-brand rounded-full transition-colors" title="Start Focus"><i class="ph-fill ph-play text-xs"></i></button>
                             
+                            <!-- Dedicated Edit Button -->
                             <button onclick="app.editTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors" title="Edit Task"><i class="ph-bold ph-pencil-simple text-xs"></i></button>
                             
                             <button onclick="app.deleteTask('${x.id}',event)" class="w-7 h-7 flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors" title="Delete Task"><i class="ph-bold ph-trash text-xs"></i></button>

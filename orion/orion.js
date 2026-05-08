@@ -485,31 +485,6 @@ const app={
                 revertDetails.style.display = 'none';
             }
 
-            const banBtn = document.getElementById('btn-toggle-ban');
-            const providerBadge = document.getElementById('modal-user-provider');
-
-            if (u.isBanned) {
-                banBtn.innerHTML = '<i class="ph-bold ph-shield-check" style="margin-right: 4px;"></i> Unban';
-                banBtn.style.color = 'var(--success)';
-                banBtn.style.background = 'rgba(16, 185, 129, 0.1)';
-                banBtn.style.borderColor = 'rgba(16, 185, 129, 0.2)';
-                
-                providerBadge.innerText = u.provider.replace('.com', '').toUpperCase() + ' (BANNED)';
-                providerBadge.style.background = 'rgba(239, 68, 68, 0.1)';
-                providerBadge.style.color = 'var(--danger)';
-                providerBadge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-            } else {
-                banBtn.innerHTML = '<i class="ph-bold ph-shield-slash" style="margin-right: 4px;"></i> Ban User';
-                banBtn.style.color = 'var(--danger)';
-                banBtn.style.background = 'rgba(239, 68, 68, 0.1)';
-                banBtn.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                
-                providerBadge.innerText = u.provider.replace('.com', '').toUpperCase();
-                providerBadge.style.background = 'var(--brand-dim)';
-                providerBadge.style.color = 'var(--brand)';
-                providerBadge.style.borderColor = 'rgba(255,87,87,0.2)';
-            }
-
             modal.classList.remove('hidden');
             setTimeout(() => modal.style.opacity = '1', 10);
         } else {
@@ -1142,45 +1117,6 @@ const app={
             btn.disabled = false;
         }
     },
-
-    toggleUserBan: async () => {
-        const uid = document.getElementById('modal-user-uid').value;
-        const u = state.usersMap[uid];
-        if (!u) return;
-
-        const isCurrentlyBanned = !!u.isBanned;
-        const newBannedState = !isCurrentlyBanned;
-        const actionText = newBannedState ? 'BAN' : 'UNBAN';
-
-        if (!confirm(`Are you sure you want to ${actionText} ${u.name || u.email}?`)) return;
-
-        const btn = document.getElementById('btn-toggle-ban');
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = 'Updating...'; 
-        btn.disabled = true;
-
-        try {
-            await updateDoc(doc(db, 'artifacts', appId, 'users', uid), {
-                isBanned: newBannedState,
-                updatedAt: serverTimestamp()
-            });
-            
-            // Update local state immediately so UI feels responsive
-            u.isBanned = newBannedState;
-            
-            log(`<span style="color:var(--${newBannedState ? 'danger' : 'success'})">User ${uid} has been ${actionText.toLowerCase()}ned.</span>`);
-            
-            // Refresh the modal state without closing it
-            app.toggleUserProfileModal(); // Close
-            setTimeout(() => app.toggleUserProfileModal(uid), 300); // Re-open with new state
-            app.refreshData(true);
-            
-        } catch (err) {
-            alert(`Failed to update account status: ` + err.message);
-            btn.innerHTML = originalHtml; 
-            btn.disabled = false;
-        }
-    },
 };
 
 function renderAll(){
@@ -1205,8 +1141,7 @@ function processUsers(){
             tasks:0, focus:0, 
             lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0, 
             profileLoaded:true,
-            originalProfile: u.originalProfile || null,
-            isBanned: u.isBanned || false
+            originalProfile: u.originalProfile || null
         }; 
     });
     state.tasks.forEach(t=>{ if(!map[t._uid])map[t._uid]={uid:t._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:t._uid}; map[t._uid].tasks++; });
