@@ -896,7 +896,6 @@ const app={
         
         if (!input.files || !input.files[0]) return;
 
-        // Get Current User's Name for the warning label
         const targetUser = state.usersMap[targetUid];
         const targetLabel = targetUser ? `${targetUser.name || targetUser.email} (${targetUid})` : targetUid;
 
@@ -906,13 +905,11 @@ const app={
             try {
                 const data = JSON.parse(e.target.result);
                 
-                // Security checks
                 if (data.meta?.type !== 'single_user') {
                     input.value = '';
                     return alert("Invalid file type. Please upload a specific user JSON export.");
                 }
                 
-                // UID check with Name (UID) formatting
                 if (data.meta.originalUid !== targetUid) {
                     const origUid = data.meta.originalUid;
                     const origName = data.userProfile ? (data.userProfile.displayName || data.userProfile.name || data.userProfile.email) : 'Unknown User';
@@ -924,7 +921,6 @@ const app={
                     }
                 }
 
-                // Show loading state
                 const importBtn = input.nextElementSibling;
                 const originalHtml = importBtn.innerHTML;
                 importBtn.innerHTML = 'Uploading...';
@@ -942,6 +938,10 @@ const app={
                         delete taskData._uid; 
                         delete taskData.id;   
                         
+                        // 🐛 FIX: Convert Task string dates back to numerical timestamps
+                        if (typeof taskData.createdAt === 'string') taskData.createdAt = new Date(taskData.createdAt).getTime();
+                        if (typeof taskData.completedAt === 'string') taskData.completedAt = new Date(taskData.completedAt).getTime();
+                        
                         const newRef = doc(collection(db, 'artifacts', appId, 'users', targetUid, 'tasks'));
                         batch.set(newRef, taskData);
                         tasksCount++;
@@ -955,6 +955,12 @@ const app={
                         const cleanedSessions = newSessions.map(s => {
                             const sData = { ...s };
                             delete sData._uid; 
+                            
+                            // 🐛 FIX: Convert Session string dates back to numerical timestamps
+                            if (typeof sData.completedAt === 'string') {
+                                sData.completedAt = new Date(sData.completedAt).getTime();
+                            }
+
                             return sData;
                         });
                         
@@ -977,13 +983,9 @@ const app={
                     return;
                 }
 
-                // Commit to live Firestore
                 await batch.commit();
-                
-                // Force UI to sync with live Firestore
                 await app.refreshData(true); 
                 
-                // Reset UI & Notify
                 importBtn.innerHTML = originalHtml;
                 importBtn.disabled = false;
                 
@@ -995,6 +997,8 @@ const app={
             } catch (err) {
                 alert('Error parsing JSON file or writing to the database.');
                 console.error(err);
+                input.nextElementSibling.innerHTML = '<i class="ph-bold ph-upload-simple" style="margin-right: 4px;"></i> Import';
+                input.nextElementSibling.disabled = false;
             }
         };
         reader.readAsText(input.files[0]);
