@@ -256,10 +256,10 @@ const app={
         const btn = document.querySelector('button[onclick="app.generatePDFReport()"]');
         if (!btn) return;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin" style="margin-right: 0.5rem;"></i> Generating Report...';
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin" style="margin-right: 0.5rem;"></i> Compiling Data...';
         btn.disabled = true;
 
-        // 1. Fetch the Orion Logo and convert it to Base64 for the PDF
+        // 1. Fetch the Orion Logo and convert it to Base64
         let logoBase64 = null;
         try {
             const res = await fetch('https://stack-base.github.io/media/brand/orion/orion_icon.png');
@@ -280,34 +280,40 @@ const app={
                 const now = new Date();
                 
                 // --- DESIGN TOKENS ---
-                const margin = 14;
+                const margin = 14; // Fixed margin to align everything perfectly
                 const pageWidth = doc.internal.pageSize.width;
                 const contentWidth = pageWidth - (margin * 2);
-                const brandColor = [255, 87, 87]; // var(--brand)
+                const brandColor = [255, 87, 87];
                 const textMain = [30, 30, 30];
                 const textMuted = [113, 113, 122];
 
-                // --- DATA GATHERING & ANALYSIS ---
+                // --- DATA GATHERING & DEEP ANALYSIS ---
                 const usersCount = Object.keys(state.usersMap).length;
                 
                 const totalTasks = state.tasks.length;
                 const completedTasks = state.tasks.filter(t => t.status === 'done').length;
                 const completionRate = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
-                const highPriorityTasks = state.tasks.filter(t => t.priority === 'high').length;
+                
+                // Priority Deep Dive
+                const priorityCounts = { high: 0, med: 0, low: 0, none: 0 };
+                state.tasks.forEach(t => priorityCounts[t.priority || 'none']++);
                 
                 const totalSessions = state.sessions.length;
                 const totalFocusMinutes = state.sessions.reduce((acc, s) => acc + (s.duration || 25), 0);
                 const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
                 const avgFocusPerUser = usersCount ? Math.round(totalFocusMinutes / usersCount) : 0;
 
-                const projs = {};
+                // Project Deep Dive
+                const projectStats = {};
                 state.sessions.forEach(s => {
                     const p = s.project || 'Inbox';
-                    projs[p] = (projs[p] || 0) + 1;
+                    if (!projectStats[p]) projectStats[p] = { count: 0, minutes: 0 };
+                    projectStats[p].count += 1;
+                    projectStats[p].minutes += (s.duration || 25);
                 });
-                const sortedProjs = Object.entries(projs).sort((a,b) => b[1] - a[1]);
+                const sortedProjs = Object.entries(projectStats).sort((a,b) => b[1].count - a[1].count);
                 const topProjectName = sortedProjs.length > 0 ? sortedProjs[0][0] : 'None';
-                const topProjectCount = sortedProjs.length > 0 ? sortedProjs[0][1] : 0;
+                const topProjectCount = sortedProjs.length > 0 ? sortedProjs[0][1].count : 0;
 
                 // --- HELPER FUNCTION ---
                 const drawSectionHeader = (title, y) => {
@@ -321,22 +327,26 @@ const app={
                     return y + 15;
                 };
 
+                // OPTIMIZED TABLE STYLES (Tight Padding)
+                const tableStyles = {
+                    theme: 'grid',
+                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 }, textColor: [60, 60, 60], lineColor: [240, 240, 240], lineWidth: 0.1 },
+                    headStyles: { fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [252, 252, 252] },
+                    margin: { left: margin, right: margin }
+                };
+
                 let currentY = 0;
 
                 // --- PAGE 1: COVER & EXECUTIVE SUMMARY ---
-                
-                // Top Brand Accent Line
                 doc.setFillColor(...brandColor);
                 doc.rect(0, 0, pageWidth, 6, 'F');
 
-                // Header
                 currentY = 28;
                 let titleX = margin;
-                
-                // Inject Header Logo
                 if (logoBase64) {
                     doc.addImage(logoBase64, 'PNG', margin, currentY - 8, 10, 10);
-                    titleX = margin + 14; // Shift title to the right to make room for the logo
+                    titleX = margin + 14; 
                 }
 
                 doc.setFont('helvetica', 'bold');
@@ -350,7 +360,6 @@ const app={
                 doc.setTextColor(...textMuted);
                 doc.text(`Comprehensive Ecosystem Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
 
-                // Executive Summary
                 currentY += 22;
                 currentY = drawSectionHeader('Executive Summary', currentY);
 
@@ -358,11 +367,9 @@ const app={
                 doc.setFontSize(10.5);
                 doc.setTextColor(60, 60, 60);
 
-                const p1 = `This document provides a definitive analytical overview of the platform's performance, user engagement, and system utilization as managed through the Orion Console. As of this reporting cycle, the ecosystem is actively sustaining a directory of ${usersCount} registered users. Engagement metrics demonstrate robust utilization of the core mechanics, with the user base collectively logging ${totalSessions} focus sessions. This translates to an aggregate of ${totalFocusHours} hours of dedicated, uninterrupted deep work. On average, this indicates an engagement rate of ${avgFocusPerUser} focus minutes per registered user.`;
+                const p1 = `This document provides a definitive analytical overview of the platform's performance, user engagement, and system utilization as managed through the Orion Console. As of this reporting cycle, the ecosystem is actively sustaining a directory of ${usersCount} registered users. Engagement metrics demonstrate robust utilization of the core mechanics, with the user base collectively logging ${totalSessions} focus sessions. This translates to an aggregate of ${totalFocusHours} hours of dedicated, uninterrupted deep work.`;
 
-                const p2 = `Task master analytics reveal a highly dynamic and action-oriented user base. System-wide, a total of ${totalTasks} tasks have been registered across all user accounts. Of these active directives, ${completedTasks} have been successfully driven to completion, yielding a global completion rate of ${completionRate}%. Priority tracking indicates that ${highPriorityTasks} tasks were explicitly flagged as high-priority, demonstrating that users are actively relying on the platform to manage and execute their most critical, time-sensitive objectives.`;
-
-                const p3 = `Distribution analytics regarding project categorization highlight "${topProjectName}" as the primary focus vector across the ecosystem, accounting for ${topProjectCount} individual sessions. Combined with our system health and data integrity indicators, this telemetry suggests a stable, highly engaged user base that consistently leverages the platform for continuous productivity and daily workflow management.`;
+                const p2 = `Task master analytics reveal a highly dynamic and action-oriented user base. System-wide, a total of ${totalTasks} tasks have been registered across all user accounts. Of these active directives, ${completedTasks} have been successfully driven to completion, yielding a global completion rate of ${completionRate}%. Priority distribution indicates active triage among users, detailed below.`;
 
                 const splitP1 = doc.splitTextToSize(p1, contentWidth);
                 doc.text(splitP1, margin, currentY, { lineHeightFactor: 1.6 });
@@ -372,34 +379,41 @@ const app={
                 doc.text(splitP2, margin, currentY, { lineHeightFactor: 1.6 });
                 currentY += (splitP2.length * 5.5) + 6;
 
-                const splitP3 = doc.splitTextToSize(p3, contentWidth);
-                doc.text(splitP3, margin, currentY, { lineHeightFactor: 1.6 });
+                // Priority Distribution Mini-Table
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Priority Level', 'Task Count', 'Percentage of Total']],
+                    body: [
+                        ['HIGH Priority', priorityCounts.high.toString(), `${totalTasks ? Math.round((priorityCounts.high/totalTasks)*100) : 0}%`],
+                        ['MEDIUM Priority', priorityCounts.med.toString(), `${totalTasks ? Math.round((priorityCounts.med/totalTasks)*100) : 0}%`],
+                        ['LOW Priority', priorityCounts.low.toString(), `${totalTasks ? Math.round((priorityCounts.low/totalTasks)*100) : 0}%`],
+                        ['Unassigned / None', priorityCounts.none.toString(), `${totalTasks ? Math.round((priorityCounts.none/totalTasks)*100) : 0}%`]
+                    ],
+                    ...tableStyles,
+                    headStyles: { fillColor: [75, 85, 99], textColor: [255, 255, 255] },
+                    tableWidth: contentWidth * 0.75
+                });
 
-
-                // --- PAGE 2: VISUAL ANALYTICS (Moved to new page) ---
+                // --- PAGE 2: VISUAL ANALYTICS ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('Telemetry & Visuals', currentY);
 
-                // Capture Activity Chart
                 const activityCanvas = document.getElementById('activityChart');
                 if (activityCanvas) {
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(10);
                     doc.setTextColor(...textMain);
                     doc.text(`Global Focus Activity (7-Day Trend)`, margin, currentY);
-                    
                     try {
                         const activityImg = activityCanvas.toDataURL('image/png', 1.0);
-                        doc.setDrawColor(230, 230, 230);
-                        doc.setLineWidth(0.5);
+                        doc.setDrawColor(230, 230, 230); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, 75);
                         doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, contentWidth - 4, 71);
                         currentY += 95;
-                    } catch(e) { console.warn("Could not export activity chart", e); }
+                    } catch(e) {}
                 }
 
-                // Capture Project Distribution Chart
                 const projectCanvas = document.getElementById('projectDistChart');
                 if (projectCanvas) {
                     doc.setFont('helvetica', 'bold');
@@ -409,11 +423,10 @@ const app={
                         const projectImg = projectCanvas.toDataURL('image/png', 1.0);
                         doc.rect(margin, currentY + 4, 80, 80);
                         doc.addImage(projectImg, 'PNG', margin + 2, currentY + 6, 76, 76);
-                    } catch(e) { console.warn("Could not export project chart", e); }
+                    } catch(e) {}
                 }
 
-
-                // --- PAGE 3: USER DIRECTORY (Red Header) ---
+                // --- PAGE 3: USER DIRECTORY ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('User Directory', currentY);
@@ -431,27 +444,44 @@ const app={
                     startY: currentY,
                     head: [['Account Name', 'Email Address', 'Auth', 'Total Tasks', 'Focus Time', 'Last Active']],
                     body: userTableBody,
-                    theme: 'striped',
-                    headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255] }, // Vibrant Red
-                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 } }
+                    ...tableStyles,
+                    headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' }
                 });
 
+                // --- PAGE 4: PROJECT ANALYTICS (NEW) ---
+                if (sortedProjs.length > 0) {
+                    doc.addPage();
+                    currentY = 25;
+                    currentY = drawSectionHeader('Project Analytics Matrix', currentY);
 
-                // --- PAGE 4: TASK MASTER LIST (Blue Header) ---
+                    const projectTableBody = sortedProjs.map(([name, stats]) => [
+                        name,
+                        stats.count.toString(),
+                        `${Math.floor(stats.minutes / 60)}h ${stats.minutes % 60}m`
+                    ]);
+
+                    doc.autoTable({
+                        startY: currentY,
+                        head: [['Project / Category Name', 'Total Sessions Logged', 'Aggregate Time Spent']],
+                        body: projectTableBody,
+                        ...tableStyles,
+                        headStyles: { fillColor: [139, 92, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // Purple header
+                    });
+                }
+
+                // --- PAGE 5: TASK MASTER LIST ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('Task Master List', currentY);
 
                 const taskTableBody = state.tasks.map(t => {
                     const u = state.usersMap[t._uid];
-                    const owner = u ? (u.name || u.email) : t._uid;
-                    const donePomos = t.completedSessionIds ? t.completedSessionIds.length : 0;
                     return [
                         t.title || 'Untitled',
-                        owner,
+                        u ? (u.name || u.email) : t._uid,
                         t.project || 'Inbox',
                         (t.priority || 'none').toUpperCase(),
-                        `${donePomos} / ${t.estimatedPomos || 1}`,
+                        `${t.completedSessionIds ? t.completedSessionIds.length : 0} / ${t.estimatedPomos || 1}`,
                         t.status === 'done' ? 'Completed' : 'Pending'
                     ];
                 });
@@ -460,13 +490,42 @@ const app={
                     startY: currentY,
                     head: [['Task Directive', 'Assigned Owner', 'Project Tag', 'Priority', 'Pomos', 'Status']],
                     body: taskTableBody,
-                    theme: 'striped',
-                    headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] }, // Vibrant Blue
-                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 } }
+                    ...tableStyles,
+                    headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' } 
                 });
 
+                // --- PAGE 6: GLOBAL SESSION LEDGER (NEW) ---
+                if (state.sessions.length > 0) {
+                    doc.addPage();
+                    currentY = 25;
+                    currentY = drawSectionHeader('Global Session Ledger (Raw Feed)', currentY);
 
-                // --- PAGE 5: BROADCASTS (Green Header) ---
+                    const sessionTableBody = state.sessions.map(s => {
+                        const u = state.usersMap[s._uid];
+                        let dateStr = 'Unknown';
+                        if (s.completedAt) {
+                            const d = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000);
+                            dateStr = `${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                        }
+                        return [
+                            dateStr,
+                            u ? (u.name || u.email) : s._uid,
+                            s.taskTitle || 'Unknown Task',
+                            s.project || 'Inbox',
+                            `${s.duration || 25} min`
+                        ];
+                    });
+
+                    doc.autoTable({
+                        startY: currentY,
+                        head: [['Completion Timestamp', 'User', 'Task Title', 'Project', 'Duration']],
+                        body: sessionTableBody,
+                        ...tableStyles,
+                        headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], fontStyle: 'bold' } // Dark gray/black header
+                    });
+                }
+
+                // --- PAGE 7: BROADCASTS ---
                 if (state.broadcasts && state.broadcasts.length > 0) {
                     doc.addPage();
                     currentY = 25;
@@ -474,24 +533,21 @@ const app={
 
                     const broadcastBody = state.broadcasts.map(b => {
                         const target = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name : b.target);
-                        const date = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown';
-                        const reads = b.readBy ? b.readBy.length.toString() : '0';
                         return [
-                            date,
+                            b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown',
                             b.type.toUpperCase(),
                             target,
                             b.message.length > 60 ? b.message.substring(0, 60) + '...' : b.message,
-                            reads
+                            b.readBy ? b.readBy.length.toString() : '0'
                         ];
                     });
 
                     doc.autoTable({
                         startY: currentY,
-                        head: [['Dispatch Date', 'Class', 'Target Scope', 'Message Payload', 'Engagement']],
+                        head: [['Dispatch Date', 'Class', 'Target Scope', 'Message Payload', 'Views']],
                         body: broadcastBody,
-                        theme: 'striped',
-                        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255] }, // Vibrant Green
-                        styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 } }
+                        ...tableStyles,
+                        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' }
                     });
                 }
 
@@ -501,16 +557,12 @@ const app={
                     doc.setPage(i);
                     const footerY = doc.internal.pageSize.height - 15;
                     
-                    // Left side: Logo + Brand Name
-                    if (logoBase64) {
-                        doc.addImage(logoBase64, 'PNG', margin, footerY - 4, 5, 5);
-                    }
+                    if (logoBase64) doc.addImage(logoBase64, 'PNG', margin, footerY - 4, 5, 5);
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(8);
                     doc.setTextColor(100, 100, 100);
                     doc.text(`ORION CONSOLE`, margin + (logoBase64 ? 7 : 0), footerY);
 
-                    // Right side: Page Tracker
                     doc.setFont('helvetica', 'normal');
                     doc.setTextColor(150, 150, 150);
                     doc.text(`CONFIDENTIAL  •  PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
@@ -524,7 +576,6 @@ const app={
             } catch (err) {
                 console.error(err);
                 alert("An error occurred while generating the PDF: " + err.message);
-                log(`<span style="color: var(--danger);">PDF Generation Error: ${err.message}</span>`);
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
