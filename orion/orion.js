@@ -463,20 +463,34 @@ const app={
                 currentY = 25;
                 currentY = drawSectionHeader('Telemetry Visuals', 'Graphical representation of current activity', currentY);
 
-                // --- HIGH-RES EXTRACTION & ASPECT RATIO FIX ---
+                // --- HIGH-RES EXTRACTION & FILE SIZE OPTIMIZATION ---
                 const extractHighResChart = (chartInstance) => {
                     if (!chartInstance) return null;
                     
-                    // Temporarily boost resolution for a crisp PDF image
                     const origRatio = chartInstance.options.devicePixelRatio || window.devicePixelRatio;
-                    chartInstance.options.devicePixelRatio = 3; 
+                    
+                    // 1.5 is the sweet spot: crisp text, much smaller file size than 3.0
+                    chartInstance.options.devicePixelRatio = 1.5; 
                     chartInstance.resize();
-                    chartInstance.update('none'); // Update synchronously without animation
+                    chartInstance.update('none'); 
                     
-                    const imgData = chartInstance.canvas.toDataURL('image/png', 1.0);
-                    const aspect = chartInstance.canvas.width / chartInstance.canvas.height;
+                    const canvas = chartInstance.canvas;
+                    const ctx = canvas.getContext('2d');
                     
-                    // Revert back to screen-resolution immediately
+                    // JPEG doesn't support transparency. Fill the background with your dark theme color 
+                    // before taking the snapshot so it doesn't default to pitch black.
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = '#1e1e1e'; 
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Export as JPEG with 80% quality to crush the file size down to KBs
+                    const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                    const aspect = canvas.width / canvas.height;
+                    
+                    ctx.restore(); // Remove the background fill
+                    
+                    // Revert back to screen-resolution
                     chartInstance.options.devicePixelRatio = origRatio;
                     chartInstance.resize();
                     chartInstance.update('none');
@@ -492,7 +506,6 @@ const app={
                         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, 75);
                         
-                        // Scale proportionally to fit inside the 75mm high container
                         const maxW = contentWidth - 4;
                         const maxH = 71;
                         let drawW = maxW;
@@ -503,11 +516,10 @@ const app={
                             drawW = maxH * actData.aspect;
                         }
                         
-                        // Center it perfectly in the allocated rectangle
                         const actX = margin + 2 + (maxW - drawW) / 2;
                         const actY = currentY + 6 + (maxH - drawH) / 2;
 
-                        doc.addImage(actData.imgData, 'PNG', actX, actY, drawW, drawH);
+                        doc.addImage(actData.imgData, 'JPEG', actX, actY, drawW, drawH);
                         currentY += 95;
                     } catch(e) { console.warn("Activity chart export failed", e); }
                 }
@@ -517,11 +529,13 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
-                        doc.rect(margin, currentY + 4, 80, 80);
+                        // Increase pie chart container size to 110 tall
+                        const boxSize = 110; 
+                        doc.setDrawColor(226, 232, 240);
+                        doc.rect(margin, currentY + 4, contentWidth, boxSize); 
                         
-                        // Fix the oval issue: Scale proportionally to fit the 80x80mm box
-                        const maxW = 76;
-                        const maxH = 76;
+                        const maxW = boxSize - 10;
+                        const maxH = boxSize - 10;
                         let drawW = maxW;
                         let drawH = maxW / projData.aspect;
                         
@@ -530,11 +544,14 @@ const app={
                             drawW = maxH * projData.aspect;
                         }
                         
-                        // Center it perfectly 
-                        const projX = margin + 2 + (maxW - drawW) / 2;
-                        const projY = currentY + 6 + (maxH - drawH) / 2;
+                        // Perfectly center the larger pie chart on the page
+                        const projX = (pageWidth - drawW) / 2;
+                        const projY = currentY + 4 + (boxSize - drawH) / 2;
 
-                        doc.addImage(projData.imgData, 'PNG', projX, projY, drawW, drawH);
+                        doc.addImage(projData.imgData, 'JPEG', projX, projY, drawW, drawH);
+                        
+                        // Push the Y cursor down properly for the next pages
+                        currentY += boxSize + 15; 
                     } catch(e) { console.warn("Project chart export failed", e); }
                 }
 
