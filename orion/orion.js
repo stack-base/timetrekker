@@ -259,18 +259,26 @@ const app={
         btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin" style="margin-right: 0.5rem;"></i> Compiling Brief...';
         btn.disabled = true;
 
-        // 1. Fetch the Orion Logo and convert it to Base64
-        let logoBase64 = null;
+        // 1. Fetch Logos (Orion & TimeTrekker) and convert to Base64
+        let orionLogoBase64 = null;
+        let ttLogoBase64 = null;
         try {
-            const res = await fetch('https://stack-base.github.io/media/brand/orion/orion_icon.png');
-            const blob = await res.blob();
-            logoBase64 = await new Promise(resolve => {
+            const [resOrion, resTT] = await Promise.all([
+                fetch('https://stack-base.github.io/media/brand/orion/orion_icon.png'),
+                fetch('https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png')
+            ]);
+            const [blobOrion, blobTT] = await Promise.all([resOrion.blob(), resTT.blob()]);
+            
+            const toBase64 = (blob) => new Promise(resolve => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
             });
+
+            orionLogoBase64 = await toBase64(blobOrion);
+            ttLogoBase64 = await toBase64(blobTT);
         } catch (e) {
-            console.warn("Could not fetch Orion logo for PDF.", e);
+            console.warn("Could not fetch brand logos for PDF.", e);
         }
 
         setTimeout(() => {
@@ -285,7 +293,7 @@ const app={
                 const contentWidth = pageWidth - (margin * 2);
                 const textMain = [15, 23, 42];   // Slate 900
                 const textMuted = [100, 116, 139]; // Slate 500
-                const brandColor = [74, 75, 168];
+                const brandColor = [74, 75, 168]; // Retaining Orion's core brand accent
 
                 // --- DATA GATHERING & DEEP ANALYSIS ---
                 const usersCount = Object.keys(state.usersMap).length;
@@ -354,7 +362,7 @@ const app={
                     }
                 };
 
-                // VIBRANT STRIPED TABLE STYLES (Tight Padding for large datasets)
+                // VIBRANT STRIPED TABLE STYLES
                 const tableStyles = {
                     theme: 'striped',
                     styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 }, textColor: [60, 60, 60] },
@@ -374,8 +382,8 @@ const app={
                 // Integrated Header
                 currentY = 28;
                 let titleX = margin;
-                if (logoBase64) {
-                    doc.addImage(logoBase64, 'PNG', margin, currentY - 8, 10, 10);
+                if (orionLogoBase64) {
+                    doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8, 10, 10);
                     titleX = margin + 14; 
                 }
 
@@ -384,11 +392,17 @@ const app={
                 doc.setTextColor(...textMain);
                 doc.text(`ORION Insights`, titleX, currentY);
                 
+                // Add TimeTrekker badge/logo if available next to the title
+                if (ttLogoBase64) {
+                    const titleWidth = doc.getTextWidth(`ORION Insights`);
+                    doc.addImage(ttLogoBase64, 'PNG', titleX + titleWidth + 4, currentY - 6, 7, 7);
+                }
+                
                 currentY += 8;
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(11);
                 doc.setTextColor(...textMuted);
-                doc.text(`System Telemetry & Operational Throughput Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
+                doc.text(`Target Environment: TIMETREKKER  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
 
                 currentY += 22;
                 currentY = drawSectionHeader('EXECUTIVE SUMMARY', 'High-level metrics and system health', currentY);
@@ -422,7 +436,7 @@ const app={
                 doc.setFontSize(9);
                 doc.setTextColor(51, 65, 85);
 
-                const p1 = `This intelligence brief provides a comprehensive, data-driven analysis of platform utilization, user engagement, and operational throughput within the Orion ecosystem. Spanning the entirety of the cached lifecycle, this report evaluates the activities of ${usersCount} registered identities. The overarching engagement profile remains robust, characterized by ${totalSessions} distinct focus sessions that have culminated in ${totalFocusHours} aggregate hours of uninterrupted deep work. This volume indicates an average engagement depth of ${avgFocusPerUser} focus minutes per user, underscoring the platform's efficacy in sustaining prolonged user attention.`;
+                const p1 = `This intelligence brief provides a comprehensive, data-driven analysis of platform utilization, user engagement, and operational throughput for the TimeTrekker environment. Managed via the Orion administration framework and spanning the entirety of the cached lifecycle, this report evaluates the activities of ${usersCount} registered identities. The overarching engagement profile remains robust, characterized by ${totalSessions} distinct focus sessions that have culminated in ${totalFocusHours} aggregate hours of uninterrupted deep work. This volume indicates an average engagement depth of ${avgFocusPerUser} focus minutes per user, underscoring the platform's efficacy in sustaining prolonged user attention.`;
 
                 const p2 = `Operational throughput is measured via the Task Master framework. To date, the system has tracked the lifecycle of ${totalTasks} discrete directives. Of these, ${completedTasks} have been successfully executed and archived, resulting in a global completion rate of ${completionRate}%. This metric serves as a key indicator of user productivity and system friction. Categorical distribution of these efforts highlights "${topProjectName}" as the dominant focus vector, capturing the highest concentration of user sessions.`;
 
@@ -451,8 +465,8 @@ const app={
                         ['Unassigned / None', priorityCounts.none.toString(), `${totalTasks ? Math.round((priorityCounts.none/totalTasks)*100) : 0}%`]
                     ],
                     ...tableStyles,
-                    headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold' }, // Slate Header
-                    tableWidth: contentWidth * 0.75, // Make it look embedded rather than full-width
+                    headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold' },
+                    tableWidth: contentWidth * 0.75, 
                     margin: { left: margin }
                 });
 
@@ -468,18 +482,15 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin, currentY);
                     try {
-                        // 1. Boost resolution to 4x for ultra-crisp rendering
                         const oldRatio = state.charts.activity.options.devicePixelRatio || window.devicePixelRatio;
                         state.charts.activity.options.devicePixelRatio = 4;
                         state.charts.activity.update('none'); 
                         
                         const activityImg = activityCanvas.toDataURL('image/png');
                         
-                        // Restore original resolution
                         state.charts.activity.options.devicePixelRatio = oldRatio;
                         state.charts.activity.update('none');
 
-                        // Keep exact aspect ratio
                         const ratio = activityCanvas.width / activityCanvas.height;
                         const imgWidth = contentWidth - 4;
                         const imgHeight = imgWidth / ratio;
@@ -488,7 +499,6 @@ const app={
                         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, frameHeight);
                         
-                        // 2. Add 'FAST' compression flag to keep the PDF size small
                         doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight, undefined, 'FAST');
                         
                         currentY += frameHeight + 16;
@@ -502,18 +512,15 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
-                        // 1. Boost resolution to 4x
                         const oldRatio = state.charts.proj.options.devicePixelRatio || window.devicePixelRatio;
                         state.charts.proj.options.devicePixelRatio = 4;
                         state.charts.proj.update('none');
                         
                         const projectImg = projectCanvas.toDataURL('image/png');
                         
-                        // Restore
                         state.charts.proj.options.devicePixelRatio = oldRatio;
                         state.charts.proj.update('none');
 
-                        // Calculate aspect ratio (The Oval Fix)
                         const ratio = projectCanvas.width / projectCanvas.height;
                         const maxDim = 76;
                         let imgW = maxDim;
@@ -530,7 +537,6 @@ const app={
 
                         doc.rect(margin, currentY + 4, 80, 80);
                         
-                        // 2. Add 'FAST' compression flag
                         doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
                     } catch(e) {
                         console.error("Project chart export failed", e);
@@ -541,7 +547,6 @@ const app={
                 // DATA PAGES
                 // ==========================================
                 
-                // User Directory
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
@@ -560,10 +565,9 @@ const app={
                     head: [['Account Name', 'Email Address', 'Auth', 'Total Tasks', 'Focus Time', 'Last Active']],
                     body: userTableBody,
                     ...tableStyles,
-                    headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT RED
+                    headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' }
                 });
 
-                // PROJECT ANALYTICS MATRIX
                 if (sortedProjs.length > 0) {
                     doc.addPage();
                     currentY = 25;
@@ -580,11 +584,10 @@ const app={
                         head: [['Project / Category Name', 'Total Sessions Logged', 'Aggregate Time Spent']],
                         body: projectTableBody,
                         ...tableStyles,
-                        headStyles: { fillColor: [139, 92, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT PURPLE
+                        headStyles: { fillColor: [139, 92, 246], textColor: [255, 255, 255], fontStyle: 'bold' } 
                     });
                 }
 
-                // TASK MASTER LIST
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('TASK MASTER LIST', 'Global ledger of pending and completed directives', currentY);
@@ -606,10 +609,9 @@ const app={
                     head: [['Task Directive', 'Assigned Owner', 'Project Tag', 'Priority', 'Pomos', 'Status']],
                     body: taskTableBody,
                     ...tableStyles,
-                    headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT BLUE
+                    headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' } 
                 });
 
-                // SESSION TELEMETRY LEDGER
                 if (state.sessions.length > 0) {
                     doc.addPage();
                     currentY = 25;
@@ -636,11 +638,10 @@ const app={
                         head: [['Completion Timestamp', 'User', 'Task Title', 'Project', 'Duration']],
                         body: sessionTableBody,
                         ...tableStyles,
-                        headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], fontStyle: 'bold' } // DARK SLATE
+                        headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], fontStyle: 'bold' } 
                     });
                 }
 
-                // Broadcasts
                 if (state.broadcasts && state.broadcasts.length > 0) {
                     doc.addPage();
                     currentY = 25;
@@ -662,7 +663,7 @@ const app={
                         head: [['Dispatch Date', 'Class', 'Target Scope', 'Message Payload', 'Views']],
                         body: broadcastBody,
                         ...tableStyles,
-                        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT GREEN
+                        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' } 
                     });
                 }
 
@@ -674,18 +675,18 @@ const app={
                     doc.setPage(i);
                     const footerY = doc.internal.pageSize.height - 12;
                     
-                    if (logoBase64) doc.addImage(logoBase64, 'PNG', margin, footerY - 4, 4.5, 4.5);
+                    if (orionLogoBase64) doc.addImage(orionLogoBase64, 'PNG', margin, footerY - 4, 4.5, 4.5);
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
                     doc.setTextColor(148, 163, 184);
-                    doc.text(`ORION — CONFIDENTIAL & PROPRIETARY`, margin + (logoBase64 ? 6 : 0), footerY - 0.5);
+                    doc.text(`ORION CONSOLE  //  TIMETREKKER REPORT — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 6 : 0), footerY - 0.5);
 
                     doc.setFont('helvetica', 'normal');
                     doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
                 }
 
                 // --- SAVE PDF ---
-                const filename = `Orion_Intelligence_Brief_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`;
+                const filename = `Orion_TimeTrekker_Report_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`;
                 doc.save(filename);
                 log(`<span style="color: var(--success);">Intelligence Report (${filename}) generated successfully.</span>`);
 
