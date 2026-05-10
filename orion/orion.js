@@ -463,28 +463,79 @@ const app={
                 currentY = 25;
                 currentY = drawSectionHeader('Telemetry Visuals', 'Graphical representation of current activity', currentY);
 
-                const activityCanvas = document.getElementById('activityChart');
-                if (activityCanvas) {
+                // --- HIGH-RES EXTRACTION & ASPECT RATIO FIX ---
+                const extractHighResChart = (chartInstance) => {
+                    if (!chartInstance) return null;
+                    
+                    // Temporarily boost resolution for a crisp PDF image
+                    const origRatio = chartInstance.options.devicePixelRatio || window.devicePixelRatio;
+                    chartInstance.options.devicePixelRatio = 3; 
+                    chartInstance.resize();
+                    chartInstance.update('none'); // Update synchronously without animation
+                    
+                    const imgData = chartInstance.canvas.toDataURL('image/png', 1.0);
+                    const aspect = chartInstance.canvas.width / chartInstance.canvas.height;
+                    
+                    // Revert back to screen-resolution immediately
+                    chartInstance.options.devicePixelRatio = origRatio;
+                    chartInstance.resize();
+                    chartInstance.update('none');
+                    
+                    return { imgData, aspect };
+                };
+
+                const actData = extractHighResChart(state.charts.activity);
+                if (actData) {
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin, currentY);
                     try {
-                        const activityImg = activityCanvas.toDataURL('image/png', 1.0);
                         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, 75);
-                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, contentWidth - 4, 71);
+                        
+                        // Scale proportionally to fit inside the 75mm high container
+                        const maxW = contentWidth - 4;
+                        const maxH = 71;
+                        let drawW = maxW;
+                        let drawH = maxW / actData.aspect;
+                        
+                        if (drawH > maxH) {
+                            drawH = maxH;
+                            drawW = maxH * actData.aspect;
+                        }
+                        
+                        // Center it perfectly in the allocated rectangle
+                        const actX = margin + 2 + (maxW - drawW) / 2;
+                        const actY = currentY + 6 + (maxH - drawH) / 2;
+
+                        doc.addImage(actData.imgData, 'PNG', actX, actY, drawW, drawH);
                         currentY += 95;
-                    } catch(e) {}
+                    } catch(e) { console.warn("Activity chart export failed", e); }
                 }
 
-                const projectCanvas = document.getElementById('projectDistChart');
-                if (projectCanvas) {
+                const projData = extractHighResChart(state.charts.proj);
+                if (projData) {
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
-                        const projectImg = projectCanvas.toDataURL('image/png', 1.0);
                         doc.rect(margin, currentY + 4, 80, 80);
-                        doc.addImage(projectImg, 'PNG', margin + 2, currentY + 6, 76, 76);
-                    } catch(e) {}
+                        
+                        // Fix the oval issue: Scale proportionally to fit the 80x80mm box
+                        const maxW = 76;
+                        const maxH = 76;
+                        let drawW = maxW;
+                        let drawH = maxW / projData.aspect;
+                        
+                        if (drawH > maxH) {
+                            drawH = maxH;
+                            drawW = maxH * projData.aspect;
+                        }
+                        
+                        // Center it perfectly 
+                        const projX = margin + 2 + (maxW - drawW) / 2;
+                        const projY = currentY + 6 + (maxH - drawH) / 2;
+
+                        doc.addImage(projData.imgData, 'PNG', projX, projY, drawW, drawH);
+                    } catch(e) { console.warn("Project chart export failed", e); }
                 }
 
                 // ==========================================
