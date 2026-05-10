@@ -247,7 +247,7 @@ const app={
         if(v==='tasks')renderTasksTable();
         if(v==='broadcasts')renderBroadcastsTable();
     },
-    generatePDFReport: () => {
+    generatePDFReport: async () => {
         if (!window.jspdf) {
             alert("PDF library is still loading or failed to load. Please check your internet connection.");
             return;
@@ -258,6 +258,20 @@ const app={
         const originalText = btn.innerHTML;
         btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin" style="margin-right: 0.5rem;"></i> Generating Report...';
         btn.disabled = true;
+
+        // 1. Fetch the Orion Logo and convert it to Base64 for the PDF
+        let logoBase64 = null;
+        try {
+            const res = await fetch('https://stack-base.github.io/media/brand/orion/orion_icon.png');
+            const blob = await res.blob();
+            logoBase64 = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.warn("Could not fetch Orion logo for PDF.", e);
+        }
 
         setTimeout(() => {
             try {
@@ -271,7 +285,7 @@ const app={
                 const contentWidth = pageWidth - (margin * 2);
                 const brandColor = [255, 87, 87]; // var(--brand)
                 const textMain = [30, 30, 30];
-                const textMuted = [113, 113, 122]; // Zinc 500
+                const textMuted = [113, 113, 122];
 
                 // --- DATA GATHERING & ANALYSIS ---
                 const usersCount = Object.keys(state.usersMap).length;
@@ -295,7 +309,7 @@ const app={
                 const topProjectName = sortedProjs.length > 0 ? sortedProjs[0][0] : 'None';
                 const topProjectCount = sortedProjs.length > 0 ? sortedProjs[0][1] : 0;
 
-                // --- HELPER FUNCTIONS ---
+                // --- HELPER FUNCTION ---
                 const drawSectionHeader = (title, y) => {
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(14);
@@ -316,11 +330,19 @@ const app={
                 doc.rect(0, 0, pageWidth, 6, 'F');
 
                 // Header
-                currentY = 30;
+                currentY = 28;
+                let titleX = margin;
+                
+                // Inject Header Logo
+                if (logoBase64) {
+                    doc.addImage(logoBase64, 'PNG', margin, currentY - 8, 10, 10);
+                    titleX = margin + 14; // Shift title to the right to make room for the logo
+                }
+
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(28);
+                doc.setFontSize(26);
                 doc.setTextColor(...textMain);
-                doc.text(`ORION INTELLIGENCE`, margin, currentY);
+                doc.text(`ORION INTELLIGENCE`, titleX, currentY);
                 
                 currentY += 8;
                 doc.setFont('helvetica', 'normal');
@@ -329,7 +351,7 @@ const app={
                 doc.text(`Comprehensive Ecosystem Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
 
                 // Executive Summary
-                currentY += 25;
+                currentY += 22;
                 currentY = drawSectionHeader('Executive Summary', currentY);
 
                 doc.setFont('helvetica', 'normal');
@@ -352,9 +374,11 @@ const app={
 
                 const splitP3 = doc.splitTextToSize(p3, contentWidth);
                 doc.text(splitP3, margin, currentY, { lineHeightFactor: 1.6 });
-                currentY += (splitP3.length * 5.5) + 20;
 
-                // --- VISUAL ANALYTICS ---
+
+                // --- PAGE 2: VISUAL ANALYTICS (Moved to new page) ---
+                doc.addPage();
+                currentY = 25;
                 currentY = drawSectionHeader('Telemetry & Visuals', currentY);
 
                 // Capture Activity Chart
@@ -367,12 +391,11 @@ const app={
                     
                     try {
                         const activityImg = activityCanvas.toDataURL('image/png', 1.0);
-                        // Subtle border around dark canvas
                         doc.setDrawColor(230, 230, 230);
                         doc.setLineWidth(0.5);
-                        doc.rect(margin, currentY + 4, contentWidth, 60);
-                        doc.addImage(activityImg, 'PNG', margin + 1, currentY + 5, contentWidth - 2, 58);
-                        currentY += 75;
+                        doc.rect(margin, currentY + 4, contentWidth, 75);
+                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, contentWidth - 4, 71);
+                        currentY += 95;
                     } catch(e) { console.warn("Could not export activity chart", e); }
                 }
 
@@ -384,14 +407,15 @@ const app={
                     doc.text(`Categorical Project Distribution`, margin, currentY);
                     try {
                         const projectImg = projectCanvas.toDataURL('image/png', 1.0);
-                        doc.rect(margin, currentY + 4, 60, 60);
-                        doc.addImage(projectImg, 'PNG', margin + 1, currentY + 5, 58, 58);
+                        doc.rect(margin, currentY + 4, 80, 80);
+                        doc.addImage(projectImg, 'PNG', margin + 2, currentY + 6, 76, 76);
                     } catch(e) { console.warn("Could not export project chart", e); }
                 }
 
-                // --- PAGE 2: USER DIRECTORY ---
+
+                // --- PAGE 3: USER DIRECTORY (Red Header) ---
                 doc.addPage();
-                currentY = 20;
+                currentY = 25;
                 currentY = drawSectionHeader('User Directory', currentY);
 
                 const userTableBody = Object.values(state.usersMap).map(u => [
@@ -403,25 +427,19 @@ const app={
                     u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'
                 ]);
 
-                // Modern Table Styling
-                const tableStyles = {
-                    theme: 'grid',
-                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 6, textColor: [60, 60, 60], lineColor: [240, 240, 240], lineWidth: 0.1 },
-                    headStyles: { fillColor: [248, 250, 252], textColor: [15, 15, 15], fontStyle: 'bold' },
-                    alternateRowStyles: { fillColor: [252, 252, 252] },
-                    margin: { left: margin, right: margin }
-                };
-
                 doc.autoTable({
                     startY: currentY,
                     head: [['Account Name', 'Email Address', 'Auth', 'Total Tasks', 'Focus Time', 'Last Active']],
                     body: userTableBody,
-                    ...tableStyles
+                    theme: 'striped',
+                    headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255] }, // Vibrant Red
+                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 5 }
                 });
 
-                // --- PAGE 3: TASK MASTER LIST ---
+
+                // --- PAGE 4: TASK MASTER LIST (Blue Header) ---
                 doc.addPage();
-                currentY = 20;
+                currentY = 25;
                 currentY = drawSectionHeader('Task Master List', currentY);
 
                 const taskTableBody = state.tasks.map(t => {
@@ -442,13 +460,16 @@ const app={
                     startY: currentY,
                     head: [['Task Directive', 'Assigned Owner', 'Project Tag', 'Priority', 'Pomos', 'Status']],
                     body: taskTableBody,
-                    ...tableStyles
+                    theme: 'striped',
+                    headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] }, // Vibrant Blue
+                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 5 }
                 });
 
-                // --- PAGE 4: BROADCASTS ---
+
+                // --- PAGE 5: BROADCASTS (Green Header) ---
                 if (state.broadcasts && state.broadcasts.length > 0) {
                     doc.addPage();
-                    currentY = 20;
+                    currentY = 25;
                     currentY = drawSectionHeader('Broadcast Archive', currentY);
 
                     const broadcastBody = state.broadcasts.map(b => {
@@ -468,7 +489,9 @@ const app={
                         startY: currentY,
                         head: [['Dispatch Date', 'Class', 'Target Scope', 'Message Payload', 'Engagement']],
                         body: broadcastBody,
-                        ...tableStyles
+                        theme: 'striped',
+                        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255] }, // Vibrant Green
+                        styles: { font: 'helvetica', fontSize: 9, cellPadding: 5 }
                     });
                 }
 
@@ -476,10 +499,21 @@ const app={
                 const pageCount = doc.internal.getNumberOfPages();
                 for (let i = 1; i <= pageCount; i++) {
                     doc.setPage(i);
-                    doc.setFont('helvetica', 'normal');
+                    const footerY = doc.internal.pageSize.height - 15;
+                    
+                    // Left side: Logo + Brand Name
+                    if (logoBase64) {
+                        doc.addImage(logoBase64, 'PNG', margin, footerY - 4, 5, 5);
+                    }
+                    doc.setFont('helvetica', 'bold');
                     doc.setFontSize(8);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`ORION CONSOLE`, margin + (logoBase64 ? 7 : 0), footerY);
+
+                    // Right side: Page Tracker
+                    doc.setFont('helvetica', 'normal');
                     doc.setTextColor(150, 150, 150);
-                    doc.text(`ORION CONSOLE  •  CONFIDENTIAL  •  PAGE ${i} OF ${pageCount}`, margin, doc.internal.pageSize.height - 15);
+                    doc.text(`CONFIDENTIAL  •  PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
                 }
 
                 // --- SAVE PDF ---
