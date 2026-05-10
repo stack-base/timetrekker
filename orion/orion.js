@@ -253,78 +253,176 @@ const app={
             return;
         }
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const now = new Date();
-        const monthStr = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const btn = document.querySelector('button[onclick="app.generatePDFReport()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin" style="margin-right: 0.5rem;"></i> Generating...';
+        btn.disabled = true;
 
-        // 1. Calculate KPIs for the current month
-        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        setTimeout(() => {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const now = new Date();
+                const monthStr = now.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-        const monthlySessions = state.sessions.filter(s => {
-            const completedAt = s.completedAt ? (typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000) : 0;
-            return completedAt >= currentMonthStart;
-        });
+                // --- DATA GATHERING ---
+                const usersCount = Object.keys(state.usersMap).length;
+                const totalTasks = state.tasks.length;
+                const completedTasks = state.tasks.filter(t => t.status === 'done').length;
+                const completionRate = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                
+                const totalSessions = state.sessions.length;
+                const totalFocusMinutes = state.sessions.reduce((acc, s) => acc + (s.duration || 25), 0);
+                const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
 
-        const monthlyTasks = state.tasks.filter(t => {
-            const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
-            return createdAt >= currentMonthStart;
-        });
+                // --- PAGE 1: COVER & EXECUTIVE SUMMARY ---
+                doc.setFontSize(24);
+                doc.setTextColor(30, 30, 30);
+                doc.text(`Orion Comprehensive System Report`, 14, 25);
 
-        const totalFocusMinutes = monthlySessions.reduce((acc, s) => acc + (s.duration || 25), 0);
-        const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Generated On: ${now.toLocaleString()}`, 14, 32);
+                doc.text(`Reporting Scope: Entire Database Timeline (All Cached Data)`, 14, 37);
 
-        // 2. Setup Document Header
-        doc.setFontSize(22);
-        doc.setTextColor(30, 30, 30);
-        doc.text(`Orion Executive Summary`, 14, 22);
+                // Text Summary
+                doc.setFontSize(14);
+                doc.setTextColor(30, 30, 30);
+                doc.text(`1. Executive Summary`, 14, 50);
+                
+                doc.setFontSize(11);
+                doc.setTextColor(60, 60, 60);
+                const summaryText = `As of ${now.toLocaleDateString()}, the Orion system is currently tracking ${usersCount} active users. Across all users, a total of ${totalTasks} tasks have been created, with a global completion rate of ${completionRate}%. Engagement metrics show ${totalSessions} total focus sessions logged, resulting in an aggregate of ${totalFocusHours} hours of deep work.`;
+                const splitSummary = doc.splitTextToSize(summaryText, 180);
+                doc.text(splitSummary, 14, 58);
 
-        doc.setFontSize(11);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Reporting Period: ${monthStr}`, 14, 30);
-        doc.text(`Generated On: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, 14, 36);
+                // --- 2. VISUAL ANALYTICS (Embedding Canvas Charts) ---
+                doc.setFontSize(14);
+                doc.setTextColor(30, 30, 30);
+                doc.text(`2. Visual Analytics`, 14, 85);
 
-        // 3. Primary KPI Table
-        doc.autoTable({
-            startY: 45,
-            head: [['Key Performance Indicator', 'Value']],
-            body: [
-                ['Total Active Users in Directory', Object.keys(state.usersMap).length.toString()],
-                ['New Tasks Created (This Month)', monthlyTasks.length.toString()],
-                ['Focus Sessions Completed (This Month)', monthlySessions.length.toString()],
-                ['Total Focus Time Logged (This Month)', `${totalFocusHours} Hours`]
-            ],
-            theme: 'grid',
-            headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' },
-            styles: { fontSize: 11, cellPadding: 6 },
-            alternateRowStyles: { fillColor: [250, 250, 250] }
-        });
+                let currentY = 95;
 
-        // 4. Top Projects Analysis
-        const projs = {};
-        monthlySessions.forEach(s => {
-            const p = s.project || 'Inbox';
-            projs[p] = (projs[p] || 0) + 1;
-        });
-        const topProjs = Object.entries(projs).sort((a,b) => b[1] - a[1]).slice(0, 10);
+                // Capture Activity Chart
+                const activityCanvas = document.getElementById('activityChart');
+                if (activityCanvas) {
+                    doc.setFontSize(11);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Global Focus Activity (Last 7 Days)`, 14, currentY);
+                    
+                    // Convert dark-mode canvas to image (Note: may look dark on white PDF)
+                    const activityImg = activityCanvas.toDataURL('image/png', 1.0);
+                    doc.addImage(activityImg, 'PNG', 14, currentY + 5, 180, 60);
+                    currentY += 75;
+                }
 
-        if(topProjs.length > 0) {
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 15,
-                head: [['Top Categories / Projects (This Month)', 'Total Sessions']],
-                body: topProjs.map(p => [p[0], p[1].toString()]),
-                theme: 'grid',
-                headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' },
-                styles: { fontSize: 11, cellPadding: 6 },
-                alternateRowStyles: { fillColor: [250, 250, 250] }
-            });
-        }
+                // Capture Project Distribution Chart
+                const projectCanvas = document.getElementById('projectDistChart');
+                if (projectCanvas) {
+                    doc.text(`Popular Projects Distribution`, 14, currentY);
+                    const projectImg = projectCanvas.toDataURL('image/png', 1.0);
+                    // Doughnut chart is roughly square
+                    doc.addImage(projectImg, 'PNG', 14, currentY + 5, 60, 60);
+                }
 
-        // 5. Save the PDF
-        const filename = `Orion_Report_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`;
-        doc.save(filename);
-        
-        log(`<span style="color: var(--success);">Monthly PDF Report (${filename}) generated successfully.</span>`);
+                // --- PAGE 2: USER DIRECTORY ---
+                doc.addPage();
+                doc.setFontSize(14);
+                doc.setTextColor(30, 30, 30);
+                doc.text(`3. Global User Directory`, 14, 20);
+
+                const userTableBody = Object.values(state.usersMap).map(u => [
+                    u.name || 'Unknown',
+                    u.email || 'No Email',
+                    u.provider || 'N/A',
+                    u.tasks.toString(),
+                    `${Math.floor(u.focus / 60)}h ${u.focus % 60}m`,
+                    u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'
+                ]);
+
+                doc.autoTable({
+                    startY: 28,
+                    head: [['Name', 'Email', 'Provider', 'Tasks', 'Focus Time', 'Last Active']],
+                    body: userTableBody,
+                    theme: 'striped',
+                    headStyles: { fillColor: [255, 87, 87] },
+                    styles: { fontSize: 9 }
+                });
+
+                // --- PAGE 3: TASK MASTER LIST ---
+                doc.addPage();
+                doc.setFontSize(14);
+                doc.setTextColor(30, 30, 30);
+                doc.text(`4. Task Master List (Global)`, 14, 20);
+
+                const taskTableBody = state.tasks.map(t => {
+                    const u = state.usersMap[t._uid];
+                    const owner = u ? (u.name || u.email) : t._uid;
+                    const donePomos = t.completedSessionIds ? t.completedSessionIds.length : 0;
+                    return [
+                        t.title || 'Untitled',
+                        owner,
+                        t.project || 'Inbox',
+                        t.priority || 'none',
+                        `${donePomos} / ${t.estimatedPomos || 1}`,
+                        t.dueDate || 'None',
+                        t.status === 'done' ? 'Completed' : 'Pending'
+                    ];
+                });
+
+                doc.autoTable({
+                    startY: 28,
+                    head: [['Task Title', 'Owner', 'Project', 'Priority', 'Pomos', 'Due Date', 'Status']],
+                    body: taskTableBody,
+                    theme: 'striped',
+                    headStyles: { fillColor: [59, 130, 246] },
+                    styles: { fontSize: 8 }
+                });
+
+                // --- PAGE 4: BROADCAST HISTORY ---
+                if (state.broadcasts && state.broadcasts.length > 0) {
+                    doc.addPage();
+                    doc.setFontSize(14);
+                    doc.setTextColor(30, 30, 30);
+                    doc.text(`5. System Broadcast History`, 14, 20);
+
+                    const broadcastBody = state.broadcasts.map(b => {
+                        const target = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name : b.target);
+                        const date = b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown';
+                        const reads = b.readBy ? b.readBy.length.toString() : '0';
+                        return [
+                            date,
+                            b.type.toUpperCase(),
+                            target,
+                            b.message.substring(0, 50) + (b.message.length > 50 ? '...' : ''),
+                            reads
+                        ];
+                    });
+
+                    doc.autoTable({
+                        startY: 28,
+                        head: [['Date', 'Type', 'Target', 'Message Snippet', 'Views']],
+                        body: broadcastBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: [16, 185, 129] },
+                        styles: { fontSize: 9 }
+                    });
+                }
+
+                // --- SAVE PDF ---
+                const filename = `Orion_Detailed_Report_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`;
+                doc.save(filename);
+                log(`<span style="color: var(--success);">Comprehensive PDF Report (${filename}) generated successfully.</span>`);
+
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred while generating the PDF: " + err.message);
+                log(`<span style="color: var(--danger);">PDF Generation Error: ${err.message}</span>`);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }, 100); // Small timeout to allow UI to update the button to "Generating..."
     },
     handleSort: (view, col) => {
         if (state.sort[view].col === col) {
