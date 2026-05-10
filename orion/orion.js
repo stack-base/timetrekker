@@ -299,6 +299,7 @@ const app={
                 const totalSessions = state.sessions.length;
                 const totalFocusMinutes = state.sessions.reduce((acc, s) => acc + (s.duration || 25), 0);
                 const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
+                const avgFocusPerUser = usersCount ? Math.round(totalFocusMinutes / usersCount) : 0;
 
                 const projectStats = {};
                 state.sessions.forEach(s => {
@@ -353,7 +354,7 @@ const app={
                     }
                 };
 
-                // RESTORED VIBRANT TABLE STYLES
+                // VIBRANT STRIPED TABLE STYLES (Tight Padding for large datasets)
                 const tableStyles = {
                     theme: 'striped',
                     styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 }, textColor: [60, 60, 60] },
@@ -410,7 +411,7 @@ const app={
 
                 currentY = cY + cardH + 15;
 
-                // Narrative Text
+                // DETAILED NARRATIVE TEXT
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
                 doc.setTextColor(...textMain);
@@ -421,10 +422,39 @@ const app={
                 doc.setFontSize(9);
                 doc.setTextColor(51, 65, 85);
 
-                const summaryText = `The Orion ecosystem is currently tracking ${usersCount} unique user identities. Overall platform engagement remains strong, with ${totalSessions} focus sessions successfully completed, translating to ${totalFocusHours} hours of aggregate deep work. Task administration indicates a robust completion rate of ${completionRate}%, with a significant volume of tasks (${priorityCounts.high}) classified as high priority, demonstrating critical reliance on the system for daily operations.`;
+                const p1 = `This intelligence brief provides a comprehensive, data-driven analysis of platform utilization, user engagement, and operational throughput within the Orion ecosystem. Spanning the entirety of the cached lifecycle, this report evaluates the activities of ${usersCount} registered identities. The overarching engagement profile remains robust, characterized by ${totalSessions} distinct focus sessions that have culminated in ${totalFocusHours} aggregate hours of uninterrupted deep work. This volume indicates an average engagement depth of ${avgFocusPerUser} focus minutes per user, underscoring the platform's efficacy in sustaining prolonged user attention.`;
 
-                const splitSummary = doc.splitTextToSize(summaryText, contentWidth);
-                doc.text(splitSummary, margin, currentY, { lineHeightFactor: 1.6 });
+                const p2 = `Operational throughput is measured via the Task Master framework. To date, the system has tracked the lifecycle of ${totalTasks} discrete directives. Of these, ${completedTasks} have been successfully executed and archived, resulting in a global completion rate of ${completionRate}%. This metric serves as a key indicator of user productivity and system friction. Categorical distribution of these efforts highlights "${topProjectName}" as the dominant focus vector, capturing the highest concentration of user sessions.`;
+
+                const p3 = `Furthermore, task triage behaviors reveal significant reliance on the platform for critical operations. The table below delineates the explicit prioritization hierarchy established by the active user base, offering insight into the urgency and classification of pending system directives.`;
+
+                const splitP1 = doc.splitTextToSize(p1, contentWidth);
+                doc.text(splitP1, margin, currentY, { lineHeightFactor: 1.5 });
+                currentY += (splitP1.length * 4.5) + 4;
+
+                const splitP2 = doc.splitTextToSize(p2, contentWidth);
+                doc.text(splitP2, margin, currentY, { lineHeightFactor: 1.5 });
+                currentY += (splitP2.length * 4.5) + 4;
+
+                const splitP3 = doc.splitTextToSize(p3, contentWidth);
+                doc.text(splitP3, margin, currentY, { lineHeightFactor: 1.5 });
+                currentY += (splitP3.length * 4.5) + 8;
+
+                // EMBEDDED PRIORITY DISTRIBUTION TABLE
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Priority Classification', 'Active Directives', 'System Weight (%)']],
+                    body: [
+                        ['HIGH Priority', priorityCounts.high.toString(), `${totalTasks ? Math.round((priorityCounts.high/totalTasks)*100) : 0}%`],
+                        ['MEDIUM Priority', priorityCounts.med.toString(), `${totalTasks ? Math.round((priorityCounts.med/totalTasks)*100) : 0}%`],
+                        ['LOW Priority', priorityCounts.low.toString(), `${totalTasks ? Math.round((priorityCounts.low/totalTasks)*100) : 0}%`],
+                        ['Unassigned / None', priorityCounts.none.toString(), `${totalTasks ? Math.round((priorityCounts.none/totalTasks)*100) : 0}%`]
+                    ],
+                    ...tableStyles,
+                    headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold' }, // Slate Header
+                    tableWidth: contentWidth * 0.75, // Make it look embedded rather than full-width
+                    margin: { left: margin }
+                });
 
                 // ==========================================
                 // PAGE 2: VISUAL ANALYTICS
