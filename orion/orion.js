@@ -259,6 +259,7 @@ const app={
         btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin" style="margin-right: 0.5rem;"></i> Compiling Brief...';
         btn.disabled = true;
 
+        // 1. Fetch the Orion Logo and convert it to Base64
         let logoBase64 = null;
         try {
             const res = await fetch('https://stack-base.github.io/media/brand/orion/orion_icon.png');
@@ -268,7 +269,9 @@ const app={
                 reader.onload = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
             });
-        } catch (e) { console.warn("Could not fetch Orion logo for PDF.", e); }
+        } catch (e) {
+            console.warn("Could not fetch Orion logo for PDF.", e);
+        }
 
         setTimeout(() => {
             try {
@@ -276,27 +279,15 @@ const app={
                 const doc = new jsPDF('p', 'mm', 'a4');
                 const now = new Date();
                 
-                // --- INSTITUTIONAL DESIGN TOKENS ---
-                const margin = 18; // Wider, editorial margins
+                // --- DESIGN TOKENS ---
+                const margin = 14; 
                 const pageWidth = doc.internal.pageSize.width;
                 const contentWidth = pageWidth - (margin * 2);
-                
-                // Deep, sophisticated typography colors
-                const textMain = [15, 23, 42];       // Deep Navy/Slate
-                const textMuted = [100, 116, 139];   // Mid Slate
-                const textFaint = [148, 163, 184];   // Light Slate
-                
-                // Vibrant Brand Accents
-                const colors = {
-                    brand: [255, 87, 87],
-                    blue: [59, 130, 246],
-                    green: [16, 185, 129],
-                    amber: [245, 158, 11],
-                    purple: [139, 92, 246],
-                    dark: [30, 30, 30]
-                };
+                const textMain = [15, 23, 42];   // Slate 900
+                const textMuted = [100, 116, 139]; // Slate 500
+                const brandColor = [255, 87, 87];
 
-                // --- DATA GATHERING ---
+                // --- DATA GATHERING & DEEP ANALYSIS ---
                 const usersCount = Object.keys(state.usersMap).length;
                 const totalTasks = state.tasks.length;
                 const completedTasks = state.tasks.filter(t => t.status === 'done').length;
@@ -320,144 +311,172 @@ const app={
                 const sortedProjs = Object.entries(projectStats).sort((a,b) => b[1].count - a[1].count);
                 const topProjectName = sortedProjs.length > 0 ? sortedProjs[0][0] : 'None';
 
-                // --- EDITORIAL HELPER FUNCTIONS ---
-                
-                // Fintech Style Section Header: All-caps with a sharp vertical accent bar
+                // --- HELPER FUNCTIONS ---
                 const drawSectionHeader = (title, subtitle, y) => {
-                    doc.setFillColor(...colors.brand);
-                    doc.rect(margin, y - 4, 1.5, subtitle ? 11 : 5, 'F'); // Vertical Accent
+                    // Institutional style: Vertical Accent Line + ALL CAPS
+                    doc.setFillColor(...brandColor);
+                    doc.rect(margin, y - 4.5, 1.5, 12, 'F'); // Sharp vertical accent
 
                     doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(12);
+                    doc.setFontSize(13);
                     doc.setTextColor(...textMain);
-                    doc.text(title.toUpperCase(), margin + 5, y);
+                    doc.text(title.toUpperCase(), margin + 5, y); // Offset text to the right of the line
                     
                     if (subtitle) {
                         doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(9);
+                        doc.setFontSize(8);
                         doc.setTextColor(...textMuted);
                         doc.text(subtitle, margin + 5, y + 5);
-                        y += 4;
+                        y += 5;
                     }
-                    return y + 14;
+                    
+                    // Removed the full horizontal line for a cleaner, open look
+                    return y + 16;
                 };
 
-                // Institutional KPI Cards: Light fill, clean top-border accent, large numbers
-                const drawKPICard = (x, y, w, h, label, value, subtext, accentColor) => {
-                    doc.setFillColor(248, 250, 252);
-                    doc.rect(x, y, w, h, 'F');
+                const drawKPICard = (x, y, w, h, label, value, subtext, accentColor = brandColor) => {
+                    // Minimalist Card Base (Sharp corners)
+                    doc.setFillColor(255, 255, 255);
+                    doc.setDrawColor(226, 232, 240); // Very subtle structural border
+                    doc.setLineWidth(0.2);
+                    doc.rect(x, y, w, h, 'FD'); 
                     
+                    // Top Edge Colorful Accent
                     doc.setFillColor(...accentColor);
-                    doc.rect(x, y, w, 1.2, 'F'); // Top accent line
+                    doc.rect(x, y, w, 1.5, 'F'); 
                     
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
-                    doc.setTextColor(...textMuted);
-                    doc.text(label.toUpperCase(), x + 4, y + 7);
+                    doc.setTextColor(100, 116, 139); // Slate muted
+                    doc.text(label.toUpperCase(), x + 4, y + 8);
                     
-                    doc.setFontSize(20);
+                    doc.setFontSize(18);
                     doc.setTextColor(...textMain);
                     doc.text(value.toString(), x + 4, y + 17);
                     
                     if (subtext) {
                         doc.setFont('helvetica', 'normal');
                         doc.setFontSize(7);
+                        doc.setTextColor(148, 163, 184);
                         doc.text(subtext, x + 4, y + 23);
                     }
                 };
 
-                // Ledger-Style Tables: Vibrant Headers, clean horizontal lines for rows (no vertical grids)
-                const createTableStyles = (headerColor) => ({
-                    theme: 'plain',
-                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 }, textColor: [50, 50, 50] },
-                    headStyles: { fillColor: headerColor, textColor: [255, 255, 255], fontStyle: 'bold' },
-                    bodyStyles: { lineWidth: { bottom: 0.1 }, lineColor: [226, 232, 240] }, // Subtle horizontal borders
+                const drawKPICard = (x, y, w, h, label, value, subtext) => {
+                    doc.setFillColor(248, 250, 252);
+                    doc.setDrawColor(226, 232, 240);
+                    doc.setLineWidth(0.5);
+                    doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(...textMuted);
+                    doc.text(label.toUpperCase(), x + 4, y + 6);
+                    
+                    doc.setFontSize(18);
+                    doc.setTextColor(...textMain);
+                    doc.text(value.toString(), x + 4, y + 15);
+                    
+                    if (subtext) {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(7);
+                        doc.text(subtext, x + 4, y + 21);
+                    }
+                };
+
+                // VIBRANT STRIPED TABLE STYLES (Tight Padding for large datasets)
+                const tableStyles = {
+                    theme: 'striped',
+                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 }, textColor: [60, 60, 60] },
                     margin: { left: margin, right: margin }
-                });
+                };
 
                 let currentY = 0;
 
                 // ==========================================
-                // PAGE 1: COVER HEADER & EXECUTIVE SUMMARY
+                // PAGE 1: HEADER & EXECUTIVE SUMMARY
                 // ==========================================
                 
-                // Absolute Top Brand Strip
-                doc.setFillColor(...colors.brand);
-                doc.rect(0, 0, pageWidth, 4, 'F');
+                // Top Brand Accent Line
+                doc.setFillColor(...brandColor);
+                doc.rect(0, 0, pageWidth, 6, 'F');
 
-                currentY = 24;
+                // Integrated Header
+                currentY = 28;
                 let titleX = margin;
                 if (logoBase64) {
-                    doc.addImage(logoBase64, 'PNG', margin, currentY - 7, 8, 8);
-                    titleX = margin + 12; 
+                    doc.addImage(logoBase64, 'PNG', margin, currentY - 8, 10, 10);
+                    titleX = margin + 14; 
                 }
 
-                // Institutional Document Title
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(22);
+                doc.setFontSize(26);
                 doc.setTextColor(...textMain);
                 doc.text(`ORION INTELLIGENCE`, titleX, currentY);
                 
-                // Date alignment to the right
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                doc.setTextColor(...textMuted);
-                const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                doc.text(dateStr, pageWidth - margin, currentY, { align: 'right' });
-
                 currentY += 8;
-                doc.setFontSize(10);
-                doc.text(`System Telemetry & Operational Throughput Brief`, margin, currentY);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.setTextColor(...textMuted);
+                doc.text(`Comprehensive Ecosystem Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
 
-                // Elegant horizontal divider
-                doc.setDrawColor(226, 232, 240);
-                doc.setLineWidth(0.5);
-                doc.line(margin, currentY + 6, pageWidth - margin, currentY + 6);
-
-                currentY += 20;
+                currentY += 22;
                 currentY = drawSectionHeader('Executive Summary', 'High-level metrics and system health', currentY);
 
-                // KPI Grid (3x2) - Colored Accents
+                // KPI Grid (3x2)
                 const cardW = (contentWidth - 8) / 3;
-                const cardH = 28;
+                const cardH = 26;
                 let cX = margin;
                 let cY = currentY;
 
-                drawKPICard(cX, cY, cardW, cardH, 'Active Identities', usersCount, 'Global directory', colors.brand);
-                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Task Directives', totalTasks, `${completionRate}% Completion Rate`, colors.blue);
-                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'High Priority', priorityCounts.high, 'Urgent actions pending', colors.amber);
+                // Color palette for top edges
+                const cBlue = [59, 130, 246];
+                const cGreen = [16, 185, 129];
+                const cOrange = [245, 158, 11];
+                const cPurple = [139, 92, 246];
+
+                drawKPICard(cX, cY, cardW, cardH, 'Total Active Users', usersCount, 'Global directory', cBlue);
+                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Total Tasks', totalTasks, `${completionRate}% Completion Rate`, cGreen);
+                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'High Priority', priorityCounts.high, 'Active directives', brandColor); // using your global red
                 
                 cY += cardH + 4;
                 
-                drawKPICard(cX, cY, cardW, cardH, 'Logged Sessions', totalSessions, 'Focus blocks recorded', colors.green);
-                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Aggregated Hours', totalFocusHours, 'Deep work sustained', colors.purple);
-                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'Primary Vector', topProjectName.substring(0,15), 'Dominant focus category', colors.dark);
+                drawKPICard(cX, cY, cardW, cardH, 'Total Sessions', totalSessions, 'Focus blocks logged', cPurple);
+                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Aggregated Hours', totalFocusHours, 'Deep work recorded', cBlue);
+                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'Top Project', topProjectName.substring(0,15), 'Most active category', cOrange);
 
-                currentY = cY + cardH + 18;
+                currentY = cY + cardH + 15;
 
-                // NARRATIVE TEXT - "Prospectus Style"
+                // DETAILED NARRATIVE TEXT
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9);
+                doc.setFontSize(10);
                 doc.setTextColor(...textMain);
-                doc.text("OPERATIONAL ANALYSIS", margin, currentY);
+                doc.text("System Telemetry Analysis", margin, currentY);
                 currentY += 6;
 
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
-                doc.setTextColor(71, 85, 105); // Slightly darker gray for readability
+                doc.setTextColor(51, 65, 85);
 
-                const p1 = `This intelligence brief outlines the current operational telemetry within the Orion ecosystem. Analyzing the activities of ${usersCount} registered identities, the platform has facilitated ${totalSessions} isolated focus sessions. This activity culminates in a global aggregate of ${totalFocusHours} hours of uninterrupted engagement, averaging ${avgFocusPerUser} focus minutes per active identity. This sustained utilization indicates a high level of operational stickiness.`;
-                const p2 = `Throughput via the Task Master architecture remains robust. The system has successfully processed and archived ${completedTasks} of ${totalTasks} established directives, yielding a platform-wide completion rate of ${completionRate}%. Categorical distribution indicates that resource allocation is heavily concentrated within the "${topProjectName}" vector, representing the primary driver of ecosystem productivity. Below is the active prioritization matrix governing pending system directives.`;
+                const p1 = `This intelligence brief provides a comprehensive, data-driven analysis of platform utilization, user engagement, and operational throughput within the Orion ecosystem. Spanning the entirety of the cached lifecycle, this report evaluates the activities of ${usersCount} registered identities. The overarching engagement profile remains robust, characterized by ${totalSessions} distinct focus sessions that have culminated in ${totalFocusHours} aggregate hours of uninterrupted deep work. This volume indicates an average engagement depth of ${avgFocusPerUser} focus minutes per user, underscoring the platform's efficacy in sustaining prolonged user attention.`;
+
+                const p2 = `Operational throughput is measured via the Task Master framework. To date, the system has tracked the lifecycle of ${totalTasks} discrete directives. Of these, ${completedTasks} have been successfully executed and archived, resulting in a global completion rate of ${completionRate}%. This metric serves as a key indicator of user productivity and system friction. Categorical distribution of these efforts highlights "${topProjectName}" as the dominant focus vector, capturing the highest concentration of user sessions.`;
+
+                const p3 = `Furthermore, task triage behaviors reveal significant reliance on the platform for critical operations. The table below delineates the explicit prioritization hierarchy established by the active user base, offering insight into the urgency and classification of pending system directives.`;
 
                 const splitP1 = doc.splitTextToSize(p1, contentWidth);
-                doc.text(splitP1, margin, currentY, { lineHeightFactor: 1.6 });
-                currentY += (splitP1.length * 5) + 4;
+                doc.text(splitP1, margin, currentY, { lineHeightFactor: 1.5 });
+                currentY += (splitP1.length * 4.5) + 4;
 
                 const splitP2 = doc.splitTextToSize(p2, contentWidth);
-                doc.text(splitP2, margin, currentY, { lineHeightFactor: 1.6 });
-                currentY += (splitP2.length * 5) + 8;
+                doc.text(splitP2, margin, currentY, { lineHeightFactor: 1.5 });
+                currentY += (splitP2.length * 4.5) + 4;
 
-                // EMBEDDED PRIORITY TABLE - Clean Ledger Style
+                const splitP3 = doc.splitTextToSize(p3, contentWidth);
+                doc.text(splitP3, margin, currentY, { lineHeightFactor: 1.5 });
+                currentY += (splitP3.length * 4.5) + 8;
+
+                // EMBEDDED PRIORITY DISTRIBUTION TABLE
                 doc.autoTable({
                     startY: currentY,
                     head: [['Priority Classification', 'Active Directives', 'System Weight (%)']],
@@ -465,10 +484,12 @@ const app={
                         ['HIGH Priority', priorityCounts.high.toString(), `${totalTasks ? Math.round((priorityCounts.high/totalTasks)*100) : 0}%`],
                         ['MEDIUM Priority', priorityCounts.med.toString(), `${totalTasks ? Math.round((priorityCounts.med/totalTasks)*100) : 0}%`],
                         ['LOW Priority', priorityCounts.low.toString(), `${totalTasks ? Math.round((priorityCounts.low/totalTasks)*100) : 0}%`],
-                        ['Unassigned', priorityCounts.none.toString(), `${totalTasks ? Math.round((priorityCounts.none/totalTasks)*100) : 0}%`]
+                        ['Unassigned / None', priorityCounts.none.toString(), `${totalTasks ? Math.round((priorityCounts.none/totalTasks)*100) : 0}%`]
                     ],
-                    ...createTableStyles([71, 85, 105]), // Slate header for internal table
-                    tableWidth: contentWidth * 0.8, 
+                    ...tableStyles,
+                    headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold' }, // Slate Header
+                    tableWidth: contentWidth * 0.75, // Make it look embedded rather than full-width
+                    margin: { left: margin }
                 });
 
                 // ==========================================
@@ -480,67 +501,86 @@ const app={
 
                 const activityCanvas = document.getElementById('activityChart');
                 if (activityCanvas && state.charts.activity) {
-                    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...textMuted);
-                    doc.text(`FIG 1.0 — FOCUS ACTIVITY CONTINUUM (7-DAY)`, margin, currentY);
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
+                    doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin, currentY);
                     try {
+                        // 1. Boost resolution to 4x for ultra-crisp rendering
                         const oldRatio = state.charts.activity.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.activity.options.devicePixelRatio = 4; // High-Res
+                        state.charts.activity.options.devicePixelRatio = 4;
                         state.charts.activity.update('none'); 
                         
                         const activityImg = activityCanvas.toDataURL('image/png');
                         
+                        // Restore original resolution
                         state.charts.activity.options.devicePixelRatio = oldRatio;
                         state.charts.activity.update('none');
 
+                        // Keep exact aspect ratio
                         const ratio = activityCanvas.width / activityCanvas.height;
                         const imgWidth = contentWidth - 4;
                         const imgHeight = imgWidth / ratio;
                         const frameHeight = imgHeight + 4;
 
-                        doc.setDrawColor(241, 245, 249); doc.setLineWidth(1);
+                        doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, frameHeight);
+                        
+                        // 2. Add 'FAST' compression flag to keep the PDF size small
                         doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight, undefined, 'FAST');
                         
                         currentY += frameHeight + 16;
-                    } catch(e) {}
+                    } catch(e) {
+                        console.error("Activity chart export failed", e);
+                    }
                 }
 
                 const projectCanvas = document.getElementById('projectDistChart');
                 if (projectCanvas && state.charts.proj) {
-                    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...textMuted);
-                    doc.text(`FIG 2.0 — CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
+                    doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
+                        // 1. Boost resolution to 4x
                         const oldRatio = state.charts.proj.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.proj.options.devicePixelRatio = 4; // High-Res
+                        state.charts.proj.options.devicePixelRatio = 4;
                         state.charts.proj.update('none');
                         
                         const projectImg = projectCanvas.toDataURL('image/png');
                         
+                        // Restore
                         state.charts.proj.options.devicePixelRatio = oldRatio;
                         state.charts.proj.update('none');
 
+                        // Calculate aspect ratio (The Oval Fix)
                         const ratio = projectCanvas.width / projectCanvas.height;
-                        const maxDim = 80;
-                        let imgW = maxDim; let imgH = maxDim;
+                        const maxDim = 76;
+                        let imgW = maxDim;
+                        let imgH = maxDim;
 
-                        if (ratio > 1) { imgH = maxDim / ratio; } else { imgW = maxDim * ratio; }
+                        if (ratio > 1) { 
+                            imgH = maxDim / ratio;
+                        } else { 
+                            imgW = maxDim * ratio;
+                        }
 
-                        const offsetX = margin + 4 + ((maxDim - imgW) / 2);
+                        const offsetX = margin + 2 + ((maxDim - imgW) / 2);
                         const offsetY = currentY + 6 + ((maxDim - imgH) / 2);
 
-                        doc.setDrawColor(241, 245, 249); doc.setLineWidth(1);
-                        doc.rect(margin, currentY + 4, 88, 88);
+                        doc.rect(margin, currentY + 4, 80, 80);
+                        
+                        // 2. Add 'FAST' compression flag
                         doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
-                    } catch(e) {}
+                    } catch(e) {
+                        console.error("Project chart export failed", e);
+                    }
                 }
 
                 // ==========================================
-                // DATA PAGES (Colorful Ledger Tables)
+                // DATA PAGES
                 // ==========================================
                 
+                // User Directory
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('Global Identity Ledger', 'Complete list of registered system users', currentY);
+                currentY = drawSectionHeader('Global User Directory', 'Complete list of registered system identities', currentY);
 
                 const userTableBody = Object.values(state.usersMap).map(u => [
                     u.name || 'Unknown',
@@ -553,11 +593,13 @@ const app={
 
                 doc.autoTable({
                     startY: currentY,
-                    head: [['Account Name', 'Email Address', 'Auth', 'Directives', 'Focus Time', 'Last Active']],
+                    head: [['Account Name', 'Email Address', 'Auth', 'Total Tasks', 'Focus Time', 'Last Active']],
                     body: userTableBody,
-                    ...createTableStyles(colors.brand) // Brand Red Header
+                    ...tableStyles,
+                    headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT RED
                 });
 
+                // Project Analytics Matrix
                 if (sortedProjs.length > 0) {
                     doc.addPage();
                     currentY = 25;
@@ -573,13 +615,15 @@ const app={
                         startY: currentY,
                         head: [['Project / Category Name', 'Total Sessions Logged', 'Aggregate Time Spent']],
                         body: projectTableBody,
-                        ...createTableStyles(colors.purple) // Purple Header
+                        ...tableStyles,
+                        headStyles: { fillColor: [139, 92, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT PURPLE
                     });
                 }
 
+                // Task Master List
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('Task Master Index', 'Global ledger of pending and completed directives', currentY);
+                currentY = drawSectionHeader('Task Master List', 'Global ledger of all system directives', currentY);
 
                 const taskTableBody = state.tasks.map(t => {
                     const u = state.usersMap[t._uid];
@@ -597,13 +641,15 @@ const app={
                     startY: currentY,
                     head: [['Task Directive', 'Assigned Owner', 'Project Tag', 'Priority', 'Pomos', 'Status']],
                     body: taskTableBody,
-                    ...createTableStyles(colors.blue) // Blue Header
+                    ...tableStyles,
+                    headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT BLUE
                 });
 
+                // Global Session Ledger
                 if (state.sessions.length > 0) {
                     doc.addPage();
                     currentY = 25;
-                    currentY = drawSectionHeader('Session Telemetry Ledger', 'Chronological feed of focus blocks', currentY);
+                    currentY = drawSectionHeader('Global Session Ledger', 'Raw chronological feed of focus blocks', currentY);
 
                     const sessionTableBody = state.sessions.map(s => {
                         const u = state.usersMap[s._uid];
@@ -623,16 +669,18 @@ const app={
 
                     doc.autoTable({
                         startY: currentY,
-                        head: [['Completion Timestamp', 'Identity', 'Task Title', 'Project', 'Duration']],
+                        head: [['Completion Timestamp', 'User', 'Task Title', 'Project', 'Duration']],
                         body: sessionTableBody,
-                        ...createTableStyles(colors.dark) // Dark Slate Header
+                        ...tableStyles,
+                        headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], fontStyle: 'bold' } // DARK SLATE
                     });
                 }
 
+                // Broadcasts
                 if (state.broadcasts && state.broadcasts.length > 0) {
                     doc.addPage();
                     currentY = 25;
-                    currentY = drawSectionHeader('Broadcast Dispatch Archive', 'Historical communications records', currentY);
+                    currentY = drawSectionHeader('Broadcast Archive', 'Historical dispatch records', currentY);
 
                     const broadcastBody = state.broadcasts.map(b => {
                         const target = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name : b.target);
@@ -649,22 +697,24 @@ const app={
                         startY: currentY,
                         head: [['Dispatch Date', 'Class', 'Target Scope', 'Message Payload', 'Views']],
                         body: broadcastBody,
-                        ...createTableStyles(colors.green) // Green Header
+                        ...tableStyles,
+                        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT GREEN
                     });
                 }
 
                 // ==========================================
-                // GLOBAL FOOTER (Minimalist)
+                // GLOBAL FOOTER RENDERING
                 // ==========================================
                 const pageCount = doc.internal.getNumberOfPages();
                 for (let i = 1; i <= pageCount; i++) {
                     doc.setPage(i);
                     const footerY = doc.internal.pageSize.height - 12;
                     
+                    if (logoBase64) doc.addImage(logoBase64, 'PNG', margin, footerY - 4, 4.5, 4.5);
                     doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(6);
-                    doc.setTextColor(...textFaint);
-                    doc.text(`ORION INTELLIGENCE CONSOLE — CONFIDENTIAL & PROPRIETARY`, margin, footerY);
+                    doc.setFontSize(7);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(`ORION CONSOLE`, margin + (logoBase64 ? 6 : 0), footerY - 0.5);
 
                     doc.setFont('helvetica', 'normal');
                     doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
