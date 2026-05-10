@@ -392,7 +392,7 @@ const app={
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(26);
                 doc.setTextColor(...textMain);
-                doc.text(`ORION Insights`, orionTitleX, currentY);
+                doc.text(`ORION`, orionTitleX, currentY);
 
                 // --- Center Divider ---
                 doc.setDrawColor(226, 232, 240); // Light slate border color
@@ -408,7 +408,7 @@ const app={
                 }
                 doc.setFontSize(22); // Slightly smaller font to establish hierarchy
                 // Adjust Y slightly to baseline-align the 22pt text with the 26pt text
-                doc.text(`TIMETREKKER`, ttTitleX, currentY - 0.5); 
+                doc.text(`TimeTrekker`, ttTitleX, currentY - 0.5); 
 
                 // --- Subtitles ---
                 currentY += 12;
@@ -419,7 +419,7 @@ const app={
                 
                 currentY += 6;
                 doc.setFontSize(10);
-                doc.text(`Target Environment: TIMETREKKER`, margin, currentY);
+                doc.text(`Target Environment: TimeTrekker`, margin, currentY);
 
                 currentY += 20;
                 currentY = drawSectionHeader('EXECUTIVE SUMMARY', 'High-level metrics and system health', currentY);
@@ -453,7 +453,7 @@ const app={
                 doc.setFontSize(9);
                 doc.setTextColor(51, 65, 85);
 
-                const p1 = `This intelligence brief provides a comprehensive, data-driven analysis of platform utilization, user engagement, and operational throughput for the TimeTrekker environment. Managed via the Orion administration framework and spanning the entirety of the cached lifecycle, this report evaluates the activities of ${usersCount} registered identities. The overarching engagement profile remains robust, characterized by ${totalSessions} distinct focus sessions that have culminated in ${totalFocusHours} aggregate hours of uninterrupted deep work. This volume indicates an average engagement depth of ${avgFocusPerUser} focus minutes per user, underscoring the platform's efficacy in sustaining prolonged user attention.`;
+                const p1 = `This intelligence brief provides a comprehensive, data-driven analysis of platform utilization, user engagement, and operational throughput for the TimeTrekker environment. Managed via the Orion framework and spanning the entirety of the cached lifecycle, this report evaluates the activities of ${usersCount} registered users. The overarching engagement profile remains robust, characterized by ${totalSessions} distinct focus sessions that have culminated in ${totalFocusHours} aggregate hours of uninterrupted deep work. This volume indicates an average engagement depth of ${avgFocusPerUser} focus minutes per user, underscoring the platform's efficacy in sustaining prolonged user attention.`;
 
                 const p2 = `Operational throughput is measured via the Task Master framework. To date, the system has tracked the lifecycle of ${totalTasks} discrete directives. Of these, ${completedTasks} have been successfully executed and archived, resulting in a global completion rate of ${completionRate}%. This metric serves as a key indicator of user productivity and system friction. Categorical distribution of these efforts highlights "${topProjectName}" as the dominant focus vector, capturing the highest concentration of user sessions.`;
 
@@ -685,6 +685,106 @@ const app={
                 }
 
                 // ==========================================
+                // FINAL PAGE: SYSTEM DECLARATION & LEGAL
+                // ==========================================
+                
+                doc.addPage();
+                currentY = 25;
+                currentY = drawSectionHeader('SYSTEM DECLARATION & LEGAL NOTICE', 'Ecosystem definitions, disclaimers, and confidentiality terms', currentY);
+                
+                currentY += 10;
+
+                // --- ECOSYSTEM DEFINITIONS ---
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.setTextColor(...textMain);
+                doc.text("Ecosystem Architecture", margin, currentY);
+                currentY += 8;
+
+                doc.setFontSize(10);
+                
+                // StackBase
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...textMain);
+                doc.text("StackBase:", margin, currentY);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(51, 65, 85);
+                let defStackBase = doc.splitTextToSize("The parent organization and foundational infrastructure provider responsible for the development, deployment, and maintenance of both the application and the administrative console.", contentWidth - 25);
+                doc.text(defStackBase, margin + 25, currentY);
+                currentY += (defStackBase.length * 4.5) + 4;
+
+                // TimeTrekker
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...textMain);
+                doc.text("TimeTrekker:", margin, currentY);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(51, 65, 85);
+                let defTT = doc.splitTextToSize("The primary target environment. A productivity and focus-management application that serves as the source of all raw user activity and telemetry data contained within this report.", contentWidth - 25);
+                doc.text(defTT, margin + 25, currentY);
+                currentY += (defTT.length * 4.5) + 4;
+
+                // Orion
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...textMain);
+                doc.text("Orion Console:", margin, currentY);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(51, 65, 85);
+                let defOrion = doc.splitTextToSize("The centralized administrative framework and analytical engine. Orion Intelligence programmatically aggregates, processes, and formats the raw data from TimeTrekker to generate this brief.", contentWidth - 25);
+                doc.text(defOrion, margin + 25, currentY);
+                currentY += (defOrion.length * 4.5) + 12;
+
+                // --- DISCLAIMER ---
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.setTextColor(...textMain);
+                doc.text("Automated Generation Disclaimer", margin, currentY);
+                currentY += 8;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(51, 65, 85);
+                const disclaimerText = "This report was generated programmatically by Orion Intelligence based on the available database cache at the time of export. While every effort is made to ensure data integrity and accurate aggregation, the analytical summaries are automated. StackBase, TimeTrekker, and associated administrative personnel assume no liability for discrepancies, omissions, or operational actions taken based on this automated telemetry.";
+                const splitDisclaimer = doc.splitTextToSize(disclaimerText, contentWidth);
+                doc.text(splitDisclaimer, margin, currentY, { lineHeightFactor: 1.5 });
+                currentY += (splitDisclaimer.length * 4.5) + 12;
+
+                // --- CONFIDENTIALITY ---
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.setTextColor(220, 38, 38); // Red text for emphasis
+                doc.text("Strict Confidentiality Notice", margin, currentY);
+                currentY += 8;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(51, 65, 85);
+                const confText = "This document contains highly sensitive operational and user engagement data. It is strictly confidential and intended solely for internal administrative review. It is NOT authorized for public distribution, external sharing, or official compliance use until formally reviewed, signed, and stamped by an authorized administrator.";
+                const splitConf = doc.splitTextToSize(confText, contentWidth);
+                doc.text(splitConf, margin, currentY, { lineHeightFactor: 1.5 });
+                
+                // --- SIGNATURE BLOCK ---
+                // Push the signature block to the bottom of the page
+                const sigY = doc.internal.pageSize.height - 60;
+                
+                doc.setDrawColor(203, 213, 225); // Slate-300
+                doc.setLineWidth(0.5);
+                
+                // Signature Line
+                doc.line(margin, sigY, margin + 60, sigY);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(...textMuted);
+                doc.text("AUTHORIZED SIGNATURE", margin, sigY + 5);
+
+                // Date Line
+                doc.line(margin + 75, sigY, margin + 115, sigY);
+                doc.text("DATE", margin + 75, sigY + 5);
+
+                // Stamp Area
+                doc.line(margin + 130, sigY, pageWidth - margin, sigY);
+                doc.text("OFFICIAL STAMP / SEAL", margin + 130, sigY + 5);
+
+                // ==========================================
                 // GLOBAL FOOTER RENDERING
                 // ==========================================
                 const pageCount = doc.internal.getNumberOfPages();
@@ -696,7 +796,7 @@ const app={
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
                     doc.setTextColor(148, 163, 184);
-                    doc.text(`ORION CONSOLE  //  TIMETREKKER REPORT — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 6 : 0), footerY - 0.5);
+                    doc.text(`ORION  //  TimeTrekker REPORT — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 6 : 0), footerY - 0.5);
 
                     doc.setFont('helvetica', 'normal');
                     doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
