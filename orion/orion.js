@@ -468,18 +468,18 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin, currentY);
                     try {
-                        // 1. Boost resolution for crisp PDF render (2.5x balances quality & file size)
+                        // 1. Boost resolution to 4x for ultra-crisp rendering
                         const oldRatio = state.charts.activity.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.activity.options.devicePixelRatio = 2.5;
-                        state.charts.activity.update('none'); // Update synchronously without animation
+                        state.charts.activity.options.devicePixelRatio = 4;
+                        state.charts.activity.update('none'); 
                         
                         const activityImg = activityCanvas.toDataURL('image/png');
                         
-                        // Restore original resolution so the UI doesn't stay huge
+                        // Restore original resolution
                         state.charts.activity.options.devicePixelRatio = oldRatio;
                         state.charts.activity.update('none');
 
-                        // 2. Keep exact aspect ratio to prevent distortion/blurriness
+                        // Keep exact aspect ratio
                         const ratio = activityCanvas.width / activityCanvas.height;
                         const imgWidth = contentWidth - 4;
                         const imgHeight = imgWidth / ratio;
@@ -487,7 +487,10 @@ const app={
 
                         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, frameHeight);
-                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight);
+                        
+                        // 2. Add 'FAST' compression flag to keep the PDF size small
+                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight, undefined, 'FAST');
+                        
                         currentY += frameHeight + 16;
                     } catch(e) {
                         console.error("Activity chart export failed", e);
@@ -499,9 +502,9 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
-                        // 1. Boost resolution
+                        // 1. Boost resolution to 4x
                         const oldRatio = state.charts.proj.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.proj.options.devicePixelRatio = 2.5;
+                        state.charts.proj.options.devicePixelRatio = 4;
                         state.charts.proj.update('none');
                         
                         const projectImg = projectCanvas.toDataURL('image/png');
@@ -510,24 +513,25 @@ const app={
                         state.charts.proj.options.devicePixelRatio = oldRatio;
                         state.charts.proj.update('none');
 
-                        // 2. Calculate aspect ratio to fix the "oval" distortion issue
+                        // Calculate aspect ratio (The Oval Fix)
                         const ratio = projectCanvas.width / projectCanvas.height;
                         const maxDim = 76;
                         let imgW = maxDim;
                         let imgH = maxDim;
 
-                        if (ratio > 1) { // Wider than tall
+                        if (ratio > 1) { 
                             imgH = maxDim / ratio;
-                        } else { // Taller than wide
+                        } else { 
                             imgW = maxDim * ratio;
                         }
 
-                        // Center the properly proportioned circle in the 80x80 outline box
                         const offsetX = margin + 2 + ((maxDim - imgW) / 2);
                         const offsetY = currentY + 6 + ((maxDim - imgH) / 2);
 
                         doc.rect(margin, currentY + 4, 80, 80);
-                        doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH);
+                        
+                        // 2. Add 'FAST' compression flag
+                        doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
                     } catch(e) {
                         console.error("Project chart export failed", e);
                     }
