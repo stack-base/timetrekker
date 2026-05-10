@@ -392,7 +392,7 @@ const app={
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(26);
                 doc.setTextColor(...textMain);
-                doc.text(`ORION`, orionTitleX, currentY);
+                doc.text(`Orion`, orionTitleX, currentY);
 
                 // --- Center Divider ---
                 doc.setDrawColor(226, 232, 240); // Light slate border color
@@ -796,7 +796,7 @@ const app={
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
                     doc.setTextColor(148, 163, 184);
-                    doc.text(`ORION  //  TimeTrekker REPORT — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 6 : 0), footerY - 0.5);
+                    doc.text(`Orion  //  TimeTrekker REPORT — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 6 : 0), footerY - 0.5);
 
                     doc.setFont('helvetica', 'normal');
                     doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
