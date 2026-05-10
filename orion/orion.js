@@ -391,7 +391,7 @@ const app={
                 doc.text(`System Telemetry & Operational Throughput Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
 
                 currentY += 22;
-                currentY = drawSectionHeader('Executive Summary', 'High-level metrics and system health', currentY);
+                currentY = drawSectionHeader('EXECUTIVE SUMMARY', 'High-level metrics and system health', currentY);
 
                 // KPI Grid (3x2)
                 const cardW = (contentWidth - 8) / 3;
@@ -461,7 +461,7 @@ const app={
                 // ==========================================
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('Telemetry Visuals', 'Graphical representation of current activity', currentY);
+                currentY = drawSectionHeader('TELEMETRY VISUALS', 'Graphical representation of current activity', currentY);
 
                 const activityCanvas = document.getElementById('activityChart');
                 if (activityCanvas && state.charts.activity) {
@@ -544,7 +544,7 @@ const app={
                 // User Directory
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('Global User Directory', 'Complete list of registered system identities', currentY);
+                currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
 
                 const userTableBody = Object.values(state.usersMap).map(u => [
                     u.name || 'Unknown',
@@ -563,11 +563,11 @@ const app={
                     headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT RED
                 });
 
-                // Project Analytics Matrix
+                // PROJECT ANALYTICS MATRIX
                 if (sortedProjs.length > 0) {
                     doc.addPage();
                     currentY = 25;
-                    currentY = drawSectionHeader('Project Analytics Matrix', 'Resource allocation per project category', currentY);
+                    currentY = drawSectionHeader('PROJECT ANALYTICS MATRIX', 'Resource allocation per project category', currentY);
 
                     const projectTableBody = sortedProjs.map(([name, stats]) => [
                         name,
@@ -584,10 +584,10 @@ const app={
                     });
                 }
 
-                // Task Master List
+                // TASK MASTER LIST
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('Task Master List', 'Global ledger of all system directives', currentY);
+                currentY = drawSectionHeader('TASK MASTER LIST', 'Global ledger of pending and completed directives', currentY);
 
                 const taskTableBody = state.tasks.map(t => {
                     const u = state.usersMap[t._uid];
@@ -609,11 +609,11 @@ const app={
                     headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT BLUE
                 });
 
-                // Global Session Ledger
+                // SESSION TELEMETRY LEDGER
                 if (state.sessions.length > 0) {
                     doc.addPage();
                     currentY = 25;
-                    currentY = drawSectionHeader('Global Session Ledger', 'Raw chronological feed of focus blocks', currentY);
+                    currentY = drawSectionHeader('SESSION TELEMETRY LEDGER', 'Raw chronological feed of focus blocks', currentY);
 
                     const sessionTableBody = state.sessions.map(s => {
                         const u = state.usersMap[s._uid];
@@ -644,7 +644,7 @@ const app={
                 if (state.broadcasts && state.broadcasts.length > 0) {
                     doc.addPage();
                     currentY = 25;
-                    currentY = drawSectionHeader('Broadcast Archive', 'Historical dispatch records', currentY);
+                    currentY = drawSectionHeader('BROADCAST ARCHIVE', 'Historical broadcasts dispatch records', currentY);
 
                     const broadcastBody = state.broadcasts.map(b => {
                         const target = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name : b.target);
