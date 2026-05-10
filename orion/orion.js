@@ -468,9 +468,9 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin, currentY);
                     try {
-                        // 1. Boost resolution to 4x for ultra-crisp rendering
+                        // 1. Boost resolution to 6x for ultra-crisp rendering
                         const oldRatio = state.charts.activity.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.activity.options.devicePixelRatio = 4;
+                        state.charts.activity.options.devicePixelRatio = 6;
                         state.charts.activity.update('none'); 
                         
                         const activityImg = activityCanvas.toDataURL('image/png');
@@ -488,8 +488,8 @@ const app={
                         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, frameHeight);
                         
-                        // 2. Add 'FAST' compression flag to keep the PDF size small
-                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight, undefined, 'FAST');
+                        // 2. Add 'SLOW' compression flag to keep the PDF size small
+                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight, undefined, 'SLOW');
                         
                         currentY += frameHeight + 16;
                     } catch(e) {
@@ -502,9 +502,9 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
-                        // 1. Boost resolution to 4x
+                        // 1. Boost resolution to 6x
                         const oldRatio = state.charts.proj.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.proj.options.devicePixelRatio = 4;
+                        state.charts.proj.options.devicePixelRatio = 6;
                         state.charts.proj.update('none');
                         
                         const projectImg = projectCanvas.toDataURL('image/png');
@@ -530,8 +530,8 @@ const app={
 
                         doc.rect(margin, currentY + 4, 80, 80);
                         
-                        // 2. Add 'FAST' compression flag
-                        doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
+                        // 2. Add 'SLOW' compression flag
+                        doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'SLOW');
                     } catch(e) {
                         console.error("Project chart export failed", e);
                     }
