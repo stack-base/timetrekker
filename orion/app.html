@@ -1,885 +1,893 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Orion</title>
-<link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-<link rel="manifest" href="./orion_manifest.json">
-<meta name="theme-color" content="#0f0f0f">
-<link rel="apple-touch-icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<style>
-    :root {
-        --brand: #ff5757;
-        --brand-hover: #e04848;
-        --brand-dim: rgba(255, 87, 87, 0.15); 
-        --bg-main: #0f0f0f;
-        --bg-sidebar: #141414;
-        --bg-card: #1e1e1e;
-        --border: #2a2a2a;
-        --hover: #333333;
-        --text-main: #f3f4f6; 
-        --text-muted: #a1a1aa; 
-        --text-faint: #71717a; 
-        --success: #10b981;
-        --warning: #f59e0b;
-        --danger: #ef4444;
-        --info: #3b82f6;
-    }
+        <title>Orion</title>
+        <link rel="apple-touch-icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png">
+        <link rel="icon" href="https://stack-base.github.io/media/brand/orion/orion_icon.png" type="image/x-icon">
+        <link rel="manifest" href="./orion_manifest.json">
+        <meta name="theme-color" content="#0f0f0f">
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    
-    body { 
-        background-color: var(--bg-main); 
-        color: var(--text-main); 
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; 
-        overflow: hidden; 
-        height: 100vh; 
-        width: 100vw; 
-        line-height: 1.4;
-        -webkit-font-smoothing: antialiased; 
-        -moz-osx-font-smoothing: grayscale; 
-    }
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://unpkg.com/@phosphor-icons/web"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-    [style*="monospace"] {
-        font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important;
-        letter-spacing: -0.01em;
-    }
+        <style>
+            :root {
+                --brand: #ff5757;
+                --brand-hover: #e04848;
+                --brand-dim: rgba(255, 87, 87, 0.15); 
+                --bg-main: #0f0f0f;
+                --bg-sidebar: #141414;
+                --bg-card: #1e1e1e;
+                --border: #2a2a2a;
+                --hover: #333333;
+                --text-main: #f3f4f6; 
+                --text-muted: #a1a1aa; 
+                --text-faint: #71717a; 
+                --success: #10b981;
+                --warning: #f59e0b;
+                --danger: #ef4444;
+                --info: #3b82f6;
+            }
 
-    h1, h2, h3, .card-title, .stat-value, .brand-icon + span {
-        letter-spacing: -0.02em;
-    }
-
-    .stat-label, .nav-label, th {
-        letter-spacing: 0.04em;
-    }
-    
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 4px; }
-    
-    .text-brand { color: var(--brand); }
-    .text-muted { color: var(--text-muted); }
-    .text-faint { color: var(--text-faint); }
-    .text-danger { color: var(--danger); }
-    .font-bold { font-weight: 700; }
-    
-    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-    .text-xs { font-size: 0.8125rem; line-height: 1.125rem; }
-    
-    .hidden { display: none !important; }
-    .flex { display: flex; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); }
-    .btn:hover { color: var(--text-main); }
-    .btn-primary { background: var(--brand); color: #fff; }
-    .btn-primary:hover { background: var(--brand-hover); }
-    .btn-outline { border-color: var(--border); background: var(--bg-card); }
-    .btn-outline:hover { border-color: var(--text-muted); color: #fff; }
-    .btn-danger { border-color: rgba(239, 68, 68, 0.3); color: var(--danger); background: rgba(239, 68, 68, 0.05); }
-    .btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
-    .btn-icon { padding: 0.5rem; }
-
-    .app-layout { display: flex; height: 100%; width: 100%; position: relative; }
-    .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
-    .scroll-container { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
-
-    .header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(8px); z-index: 10; flex-shrink: 0; }
-    .header h1 { font-size: 1.25rem; font-weight: 600; color: #fff; }
-    .mobile-menu-btn { display: none; background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; margin-right: 1rem; }
-
-    .sidebar { width: 256px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; transition: transform 0.3s ease; }
-    .sidebar-brand { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--border); }
-    .brand-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
-    .mobile-close-btn { display: none; background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
-    .mobile-close-btn:hover { color: #fff; }
-    
-    .sidebar-nav { flex: 1; padding: 1rem; overflow-y: auto; }
-    .nav-label { font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin: 1.5rem 0.75rem 0.5rem; }
-    .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; }
-    .nav-item i { font-size: 1.125rem; margin-right: 0.75rem; }
-    .nav-item:hover { background: var(--hover); color: #fff; }
-    .nav-item.active { background: var(--brand-dim); color: var(--brand); border-color: rgba(255, 87, 87, 0.2); }
-    .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
-
-    .dashboard-grid { display: grid; gap: 1.5rem; margin-bottom: 2rem; }
-    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-    .col-span-2 { grid-column: span 2; }
-
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-    .card-title { font-size: 1.125rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
-    .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5); }
-    .card-header h3 { font-size: 1.125rem; font-weight: 700; color: #fff; }
-    .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
-    .card-body.no-pad { padding: 0; }
-    
-    .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
-    .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
-    .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
-
-    .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
-    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { padding: 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
-    .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
-    .data-table tr:hover { background: var(--hover); }
-
-    th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
-    th.sortable:hover { color: #fff; }
-    th.sortable i { margin-left: 4px; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
-    th.sortable.active { color: var(--brand); }
-    th.sortable.active i { opacity: 1; }
-
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); transition: opacity 0.3s; }
-    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transform: scale(1); transition: transform 0.3s; }
-    .modal-box.large { max-width: 500px; padding: 0; overflow: hidden; }
-    
-    .input-group { margin-bottom: 1rem; }
-    .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: inherit; }
-    .input-control:focus { border-color: var(--brand); }
-    .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; }
-    .input-transparent::placeholder { color: var(--text-muted); }
-
-    .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    .fs-overlay-container { padding: 0; background: var(--bg-main); align-items: stretch; flex-direction: row; }
-    .fs-image-panel { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; padding: 2rem; position: relative; }
-    .fs-image-panel img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.5)); }
-    .fs-details-panel { width: 400px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 2rem; position: relative; flex-shrink: 0; overflow-y: auto; }
-
-    @media (max-width: 1024px) {
-        .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
-        .grid-cols-3 { grid-template-columns: 1fr; }
-        .col-span-2 { grid-column: span 1; }
-    }
-
-    @media (max-width: 768px) {
-        .fs-overlay-container { flex-direction: column; }
-        .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } 
-        .fs-details-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
-        
-        .sidebar { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; z-index: 999; border-right: none; }
-        .sidebar.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-        .mobile-close-btn { display: block; }
-        .nav-item { padding: 0.75rem; font-size: 0.9375rem; margin-bottom: 0.25rem; }
-        .nav-item i { font-size: 1.25rem; margin-right: 0.75rem; }
-        .mobile-menu-btn { display: block; }
-        .header { padding: 0 1rem; height: 56px; }
-        .header h1 { font-size: 1.125rem; }
-        .scroll-container { padding: 1rem 0.875rem; }
-        .dashboard-grid { gap: 0.875rem; margin-bottom: 1.5rem; }
-        .grid-cols-2 { grid-template-columns: 1fr; }
-        .card { padding: 0.875rem; border-radius: 10px; }
-        .card-header { padding: 0.875rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-        .card-header .header-actions { width: 100%; display: flex; justify-content: space-between; }
-        .stat-value { font-size: 1.375rem; }
-        .card-title { font-size: 1rem; margin-bottom: 0.5rem; }
-        .stat-label { font-size: 0.75rem; margin-bottom: 0.25rem; }
-
-        #user-profile-modal { padding: 0; align-items: flex-end; }
-        #user-profile-modal .modal-box { width: 100vw; height: 100dvh; max-width: 100%; max-height: 100dvh; border-radius: 0 !important; border: none !important; display: flex; flex-direction: column; background: var(--bg-main); }
-        #user-profile-modal .modal-box > div:first-child { padding: calc(1rem + env(safe-area-inset-top)) 1.25rem 1rem; background: var(--bg-main); border-bottom: none !important; z-index: 10; }
-        #user-profile-modal form { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-        #user-profile-modal .custom-scrollbar { max-height: none !important; flex: 1; padding: 0 1.25rem 2rem; }
-        #user-profile-modal #modal-user-avatar { width: 120px !important; height: 120px !important; font-size: 3rem !important; margin-top: 1rem; }
-        #user-profile-modal .custom-scrollbar > div[style*="display: grid"] { display: flex !important; flex-direction: column; gap: 1rem; }
-        #user-profile-modal .input-control { padding: 0.875rem; font-size: 1rem; }
-        #user-profile-modal form > div:last-child { padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom)); background: rgba(15, 15, 15, 0.85) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border) !important; }
-        #user-profile-modal form > div:last-child button { flex: 1; padding: 1rem; font-size: 1rem; border-radius: 10px; }
-        
-        /* Mobile Overview Optimizations */
-        #view-overview .grid-cols-2 .card { height: auto !important; min-height: 300px; max-height: 60vh; }
-        #view-overview .grid-cols-3 .col-span-2 > div { height: 200px !important; }
-        .data-table th, .data-table td { padding: 0.625rem 0.5rem; font-size: 0.75rem; white-space: nowrap; }
-        #view-overview .table-wrapper { max-height: 350px; overflow-y: auto; }
-        .stat-value { font-size: 1.5rem !important; }
-        .dashboard-grid .card canvas { max-width: 100%; }
-
-        /* Mobile Profile Modal Optimizations */
-        #user-profile-modal .nav-label + div > div { flex-direction: column !important; align-items: flex-start !important; gap: 1rem; }
-        #user-profile-modal .nav-label + div > div > div:first-child { padding-right: 0 !important; width: 100%; }
-        #user-profile-modal .nav-label + div button { width: 100%; padding: 0.875rem !important; font-size: 0.875rem !important; justify-content: center; }
-        #user-profile-modal #modal-user-name-display { font-size: 1.25rem !important; }
-        #modal-user-provider { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Mobile Table Card Layouts */
-        #view-users thead, #view-tasks thead, #view-broadcasts thead { display: none; }
-        #view-users .card, #view-tasks .card, #view-broadcasts .card { background: transparent; border: none; padding: 0 !important; }
-        #view-users .card-header, #view-tasks .card-header, #view-broadcasts .card-header { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; }
-        #view-users .data-table tbody tr, #view-tasks .data-table tbody tr.task-row, #view-broadcasts .data-table tbody tr { display: flex; flex-wrap: wrap; align-items: flex-start; padding: 1rem; margin-bottom: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
-        #view-tasks .data-table tbody tr[style*="background"] { border: none; background: transparent !important; padding: 0.5rem 0.25rem; margin-bottom: 0; }
-        #view-tasks .data-table tbody tr[style*="background"] td { padding: 0 !important; background: transparent; }
-        #view-users .data-table tbody td, #view-tasks .data-table tbody tr.task-row td, #view-broadcasts .data-table tbody td { display: block; padding: 0 !important; border: none; }
-        
-        /* USERS TABLE MAPPING */
-        #users-table-body tr td:nth-child(1) { order: 1; width: auto; margin-right: 0.5rem; margin-top: 6px; }
-        #users-table-body tr td:nth-child(2) { order: 2; width: auto; margin-right: 0.75rem; }
-        #users-table-body tr td:nth-child(3) { order: 3; flex: 1; min-width: 0; }
-        #users-table-body tr td:nth-child(4) { order: 4; width: 100%; padding-left: 3.25rem; margin-top: 0.5rem; }
-        #users-table-body tr td:nth-child(5) { order: 5; width: 50%; padding-left: 3.25rem; margin-top: 0.75rem; }
-        #users-table-body tr td:nth-child(6) { order: 6; width: 50%; text-align: right; margin-top: 0.75rem; display: flex; align-items: flex-end; justify-content: flex-end; }
-        #users-table-body tr td:nth-child(7) { order: 7; width: 100%; margin-top: 1rem; padding-top: 1rem !important; border-top: 1px dashed var(--border); }
-        #users-table-body tr td:nth-child(7) > div { justify-content: space-between !important; width: 100%; gap: 0.5rem; }
-        #users-table-body tr td:nth-child(7) .btn { flex: 1; padding: 0.625rem 0; justify-content: center; }
-
-        /* TASKS TABLE MAPPING & WIDTH FIXES */
-        #view-tasks .table-wrapper { padding: 0 0.5rem; box-sizing: border-box; }
-        #view-tasks .data-table tbody tr.task-row { width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; }
-        #tasks-table-body tr.task-row td:nth-child(1) { order: 1; width: auto; margin-right: 0.75rem; margin-top: 2px; }
-        #tasks-table-body tr.task-row td:nth-child(2) { order: 2; flex: 1; min-width: 0; white-space: normal; word-wrap: break-word; overflow: hidden; }
-        #tasks-table-body tr.task-row td:nth-child(3) { order: 3; width: 100%; padding-left: 2rem; margin-top: 0.5rem; }
-        #tasks-table-body tr.task-row td:nth-child(4) { order: 4; width: 50%; padding-left: 2rem; margin-top: 0.75rem; }
-        #tasks-table-body tr.task-row td:nth-child(5) { order: 5; width: 50%; text-align: right; margin-top: 0.75rem; display: flex; align-items: flex-end; justify-content: flex-end; }
-        #tasks-table-body tr.task-row td:nth-child(6) { order: 6; width: 100%; margin-top: 1rem; padding-top: 0.75rem !important; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; }
-        #tasks-table-body tr.task-row td:nth-child(6) > div:first-child { margin-bottom: 0 !important; }
-
-        /* BROADCASTS TABLE MAPPING */
-        #broadcasts-table-body tr td:nth-child(1) { order: 1; width: auto; margin-right: 0.75rem; margin-top: 2px; }
-        #broadcasts-table-body tr td:nth-child(2) { order: 2; flex: 1; min-width: 0; }
-        #broadcasts-table-body tr td:nth-child(3) { order: 3; width: 100%; padding-left: 2.25rem; margin-top: 0.75rem; }
-        #broadcasts-table-body tr td:nth-child(4) { order: 4; width: 100%; padding-left: 2.25rem; margin-top: 0.5rem; }
-        #broadcasts-table-body tr td:nth-child(5) { order: 5; width: 100%; margin-top: 1rem; padding-top: 0.75rem !important; border-top: 1px dashed var(--border); }
-        #broadcasts-table-body tr td:nth-child(5) > div { justify-content: flex-end !important; }
-    }
-</style>
-</head>
-<body>
-
-<div id="orion-app" class="app-layout" style="display: none;">
-
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <div class="flex items-center">
-                <div class="brand-icon"><img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 40px; height: auto;"></div>
-                <span style="margin-left: 0.75rem; font-weight: 700; font-size: 1.125rem; color: #fff;">Orion</span>
-            </div>
-            <button class="mobile-close-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-x"></i></button>
-        </div>
-        <nav class="sidebar-nav custom-scrollbar">
-            <button onclick="app.setView('overview')" id="nav-overview" class="nav-item active">
-                <i class="ph-bold ph-squares-four"></i><span>Overview</span>
-            </button>
-            <div class="nav-label">Data Sources</div>
-            <button onclick="app.setView('users')" id="nav-users" class="nav-item">
-                <i class="ph-bold ph-users"></i><span>Users</span>
-            </button>
-            <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-item">
-                <i class="ph-bold ph-check-square"></i><span>Tasks Master</span>
-            </button>
-            <button onclick="app.setView('broadcasts')" id="nav-broadcasts" class="nav-item">
-                <i class="ph-bold ph-megaphone"></i><span>Broadcasts</span>
-            </button>
-            <div class="nav-label">System</div>
-            <button onclick="app.setView('data')" id="nav-data" class="nav-item">
-                <i class="ph-bold ph-database"></i><span>Data Management</span>
-            </button>
-        </nav>
-        <div class="sidebar-footer">
-            <div class="flex items-center" style="margin-bottom: 1.5rem; gap: 0.75rem;">
-                 <div style="width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
-                 <div style="min-width: 0;">
-                    <div class="truncate text-base font-bold" style="color: #fff;">Orion Console</div>
-                    <div class="text-sm text-muted">Connected</div>
-                 </div>
-            </div>
-            <button onclick="app.signOut()" class="btn btn-danger" style="width: 100%; text-transform: uppercase; font-size: 0.875rem; font-weight: 700; padding: 0.75rem;">
-                <i class="ph-bold ph-sign-out" style="margin-right: 0.5rem;"></i> Sign Out
-            </button>
-        </div>
-    </aside>
-
-    <main class="main-area">
-        
-        <header id="standard-header" class="header">
-            <div class="flex items-center">
-                <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
-                <h1 id="page-title">Overview</h1>
-            </div>
-            <button onclick="app.refreshData(true)" class="btn btn-outline text-xs btn-icon" title="Refresh Data">
-                <i class="ph-bold ph-arrows-clockwise"></i> <span style="margin-left: 0.5rem;" class="hidden sm:inline">Refresh</span>
-            </button>
-        </header>
-
-        <header id="data-header" class="header hidden">
-            <div class="flex items-center">
-                <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
-                <div class="flex items-center" style="gap: 0.75rem;">
-                   <h1>Data Management</h1>
-                   <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">CACHED (0m ago)</span>
-                </div>
-            </div>
-            <div class="flex items-center" style="gap: 1rem;">
-                <div style="text-align: right;">
-                    <div style="font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase;">Last Sync</div>
-                    <div id="last-sync-time" style="font-family: monospace; color: #fff; font-size: 12px;">--:--:--</div>
-                </div>
-                <button onclick="app.hardRefresh()" class="btn btn-outline text-xs">
-                    <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Update App
-                </button>
-            </div>
-        </header>
-
-        <div class="scroll-container custom-scrollbar">
+            * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
             
-            <div id="view-overview" class="view-section fade-in">
-                <div class="dashboard-grid grid-cols-4">
-                    <div class="card">
-                        <div class="stat-icon" style="color: var(--brand);"><i class="ph-fill ph-users"></i></div>
-                        <div class="stat-label">Total Users</div>
-                        <div class="stat-value" id="kpi-users">--</div>
-                        <div class="text-xs" style="color: var(--success); display: flex; align-items: center;"><i class="ph-bold ph-trend-up" style="margin-right: 4px;"></i> Lifetime signups</div>
-                    </div>
-                    <div class="card">
-                        <div class="stat-icon" style="color: var(--info);"><i class="ph-fill ph-clock"></i></div>
-                        <div class="stat-label">Total Focus Time</div>
-                        <div class="stat-value" id="kpi-focus">--</div>
-                        <div class="text-xs text-faint">Aggregated hours</div>
-                    </div>
-                    <div class="card">
-                        <div class="stat-icon" style="color: var(--success);"><i class="ph-fill ph-check-circle"></i></div>
-                        <div class="stat-label">Tasks Created</div>
-                        <div class="stat-value" id="kpi-tasks">--</div>
-                        <div class="text-xs text-faint">Across all projects</div>
-                    </div>
-                    <div class="card">
-                        <div class="stat-icon" style="color: var(--warning);"><i class="ph-fill ph-lightning"></i></div>
-                        <div class="stat-label">Avg Session</div>
-                        <div class="stat-value" id="kpi-avg">--</div>
-                        <div class="text-xs text-faint">Minutes per focus</div>
-                    </div>
-                </div>
+            body { 
+                background-color: var(--bg-main); 
+                color: var(--text-main); 
+                font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; 
+                overflow: hidden; 
+                height: 100vh; 
+                width: 100vw; 
+                line-height: 1.4;
+                -webkit-font-smoothing: antialiased; 
+                -moz-osx-font-smoothing: grayscale; 
+            }
+
+            [style*="monospace"] {
+                font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important;
+                letter-spacing: -0.01em;
+            }
+
+            h1, h2, h3, .card-title, .stat-value, .brand-icon + span {
+                letter-spacing: -0.02em;
+            }
+
+            .stat-label, .nav-label, th {
+                letter-spacing: 0.04em;
+            }
+            
+            ::-webkit-scrollbar { width: 6px; height: 6px; }
+            ::-webkit-scrollbar-track { background: transparent; }
+            ::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 4px; }
+            
+            .text-brand { color: var(--brand); }
+            .text-muted { color: var(--text-muted); }
+            .text-faint { color: var(--text-faint); }
+            .text-danger { color: var(--danger); }
+            .font-bold { font-weight: 700; }
+            
+            .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+            .text-xs { font-size: 0.8125rem; line-height: 1.125rem; }
+            
+            .hidden { display: none !important; }
+            .flex { display: flex; }
+            .items-center { align-items: center; }
+            .justify-between { justify-content: space-between; }
+            .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+            .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: var(--text-muted); }
+            .btn:hover { color: var(--text-main); }
+            .btn-primary { background: var(--brand); color: #fff; }
+            .btn-primary:hover { background: var(--brand-hover); }
+            .btn-outline { border-color: var(--border); background: var(--bg-card); }
+            .btn-outline:hover { border-color: var(--text-muted); color: #fff; }
+            .btn-danger { border-color: rgba(239, 68, 68, 0.3); color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+            .btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
+            .btn-icon { padding: 0.5rem; }
+
+            .app-layout { display: flex; height: 100%; width: 100%; position: relative; }
+            .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+            .scroll-container { flex: 1; overflow-y: auto; padding: 2rem; position: relative; }
+
+            .header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(8px); z-index: 10; flex-shrink: 0; }
+            .header h1 { font-size: 1.25rem; font-weight: 600; color: #fff; }
+            .mobile-menu-btn { display: none; background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; margin-right: 1rem; }
+
+            .sidebar { width: 256px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; transition: transform 0.3s ease; }
+            .sidebar-brand { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--border); }
+            .brand-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
+            .mobile-close-btn { display: none; background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+            .mobile-close-btn:hover { color: #fff; }
+            
+            .sidebar-nav { flex: 1; padding: 1rem; overflow-y: auto; }
+            .nav-label { font-size: 0.75rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin: 1.5rem 0.75rem 0.5rem; }
+            .nav-item { width: 100%; display: flex; align-items: center; padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; background: transparent; font-size: 0.875rem; margin-bottom: 0.25rem; }
+            .nav-item i { font-size: 1.125rem; margin-right: 0.75rem; }
+            .nav-item:hover { background: var(--hover); color: #fff; }
+            .nav-item.active { background: var(--brand-dim); color: var(--brand); border-color: rgba(255, 87, 87, 0.2); }
+            .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
+
+            .dashboard-grid { display: grid; gap: 1.5rem; margin-bottom: 2rem; }
+            .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+            .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+            .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+            .col-span-2 { grid-column: span 2; }
+
+            .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+            .card-title { font-size: 1.125rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
+            .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 30, 30, 0.5); }
+            .card-header h3 { font-size: 1.125rem; font-weight: 700; color: #fff; }
+            .card-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
+            .card-body.no-pad { padding: 0; }
+            
+            .stat-label { font-size: 0.8125rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
+            .stat-value { font-size: 1.875rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
+            .stat-icon { position: absolute; top: 0; right: 0; padding: 1rem; font-size: 4rem; opacity: 0.1; }
+
+            .table-wrapper { width: 100%; overflow-x: auto; flex: 1; }
+            .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+            .data-table th { padding: 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+            .data-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+            .data-table tr:hover { background: var(--hover); }
+
+            th.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
+            th.sortable:hover { color: #fff; }
+            th.sortable i { margin-left: 4px; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
+            th.sortable.active { color: var(--brand); }
+            th.sortable.active i { opacity: 1; }
+
+            .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); transition: opacity 0.3s; }
+            .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transform: scale(1); transition: transform 0.3s; }
+            .modal-box.large { max-width: 500px; padding: 0; overflow: hidden; }
+            
+            .input-group { margin-bottom: 1rem; }
+            .input-group label { display: block; font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+            .input-control { width: 100%; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; color: #fff; outline: none; transition: border-color 0.2s; font-family: inherit; }
+            .input-control:focus { border-color: var(--brand); }
+            .input-transparent { background: transparent; border: none; color: #fff; font-size: 1.25rem; font-weight: 500; outline: none; width: 100%; padding: 0 0 1rem 0; margin-bottom: 0.5rem; }
+            .input-transparent::placeholder { color: var(--text-muted); }
+
+            .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+            .fs-overlay-container { padding: 0; background: var(--bg-main); align-items: stretch; flex-direction: row; }
+            .fs-image-panel { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; padding: 2rem; position: relative; }
+            .fs-image-panel img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.5)); }
+            .fs-details-panel { width: 400px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 2rem; position: relative; flex-shrink: 0; overflow-y: auto; }
+
+            @media (max-width: 1024px) {
+                .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+                .grid-cols-3 { grid-template-columns: 1fr; }
+                .col-span-2 { grid-column: span 1; }
+            }
+
+            @media (max-width: 768px) {
+                .fs-overlay-container { flex-direction: column; }
+                .fs-image-panel { flex: 0 0 50vh; padding: 1rem; } 
+                .fs-details-panel { width: 100%; flex: 1; border-left: none; border-top: 1px solid var(--border); }
                 
-                <div class="dashboard-grid grid-cols-3">
-                    <div class="card col-span-2">
-                        <h3 class="card-title">Global Focus Activity</h3>
-                        <div style="position: relative; height: 250px; width: 100%;"><canvas id="activityChart"></canvas></div>
-                    </div>
-                    <div class="card">
-                        <h3 class="card-title" style="margin-bottom: 0.25rem;">Popular Projects</h3>
-                        <p class="text-xs text-muted" style="margin-bottom: 1.5rem;">Top categories users create</p>
-                        <div style="position: relative; height: 180px; width: 100%; display: flex; justify-content: center; margin-bottom: 1rem;"><canvas id="projectDistChart"></canvas></div>
-                        <div id="top-projects-list" style="flex: 1; overflow-y: auto;"></div>
-                    </div>
-                </div>
+                .sidebar { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; z-index: 999; border-right: none; }
+                .sidebar.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+                .mobile-close-btn { display: block; }
+                .nav-item { padding: 0.75rem; font-size: 0.9375rem; margin-bottom: 0.25rem; }
+                .nav-item i { font-size: 1.25rem; margin-right: 0.75rem; }
+                .mobile-menu-btn { display: block; }
+                .header { padding: 0 1rem; height: 56px; }
+                .header h1 { font-size: 1.125rem; }
+                .scroll-container { padding: 1rem 0.875rem; }
+                .dashboard-grid { gap: 0.875rem; margin-bottom: 1.5rem; }
+                .grid-cols-2 { grid-template-columns: 1fr; }
+                .card { padding: 0.875rem; border-radius: 10px; }
+                .card-header { padding: 0.875rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+                .card-header .header-actions { width: 100%; display: flex; justify-content: space-between; }
+                .stat-value { font-size: 1.375rem; }
+                .card-title { font-size: 1rem; margin-bottom: 0.5rem; }
+                .stat-label { font-size: 0.75rem; margin-bottom: 0.25rem; }
+
+                #user-profile-modal { padding: 0; align-items: flex-end; }
+                #user-profile-modal .modal-box { width: 100vw; height: 100dvh; max-width: 100%; max-height: 100dvh; border-radius: 0 !important; border: none !important; display: flex; flex-direction: column; background: var(--bg-main); }
+                #user-profile-modal .modal-box > div:first-child { padding: calc(1rem + env(safe-area-inset-top)) 1.25rem 1rem; background: var(--bg-main); border-bottom: none !important; z-index: 10; }
+                #user-profile-modal form { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+                #user-profile-modal .custom-scrollbar { max-height: none !important; flex: 1; padding: 0 1.25rem 2rem; }
+                #user-profile-modal #modal-user-avatar { width: 120px !important; height: 120px !important; font-size: 3rem !important; margin-top: 1rem; }
+                #user-profile-modal .custom-scrollbar > div[style*="display: grid"] { display: flex !important; flex-direction: column; gap: 1rem; }
+                #user-profile-modal .input-control { padding: 0.875rem; font-size: 1rem; }
+                #user-profile-modal form > div:last-child { padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom)); background: rgba(15, 15, 15, 0.85) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border) !important; }
+                #user-profile-modal form > div:last-child button { flex: 1; padding: 1rem; font-size: 1rem; border-radius: 10px; }
                 
-                <div class="dashboard-grid grid-cols-2">
-                    <div class="card" style="padding: 0; height: 400px;">
-                        <div class="card-header">
-                            <h3>Recent Sessions</h3>
-                            <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">Live Feed</span>
-                        </div>
-                        <div class="table-wrapper custom-scrollbar">
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>Timestamp</th><th>Task</th><th>Duration</th></tr>
-                                </thead>
-                                <tbody id="live-feed-body">
-                                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted); font-style: italic;">Loading...</td></tr>
-                                </tbody>
-                            </table>
+                /* Mobile Overview Optimizations */
+                #view-overview .grid-cols-2 .card { height: auto !important; min-height: 300px; max-height: 60vh; }
+                #view-overview .grid-cols-3 .col-span-2 > div { height: 200px !important; }
+                .data-table th, .data-table td { padding: 0.625rem 0.5rem; font-size: 0.75rem; white-space: nowrap; }
+                #view-overview .table-wrapper { max-height: 350px; overflow-y: auto; }
+                .stat-value { font-size: 1.5rem !important; }
+                .dashboard-grid .card canvas { max-width: 100%; }
+
+                /* Mobile Profile Modal Optimizations */
+                #user-profile-modal .nav-label + div > div { flex-direction: column !important; align-items: flex-start !important; gap: 1rem; }
+                #user-profile-modal .nav-label + div > div > div:first-child { padding-right: 0 !important; width: 100%; }
+                #user-profile-modal .nav-label + div button { width: 100%; padding: 0.875rem !important; font-size: 0.875rem !important; justify-content: center; }
+                #user-profile-modal #modal-user-name-display { font-size: 1.25rem !important; }
+                #modal-user-provider { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+                /* Mobile Table Card Layouts */
+                #view-users thead, #view-tasks thead, #view-broadcasts thead { display: none; }
+                #view-users .card, #view-tasks .card, #view-broadcasts .card { background: transparent; border: none; padding: 0 !important; }
+                #view-users .card-header, #view-tasks .card-header, #view-broadcasts .card-header { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; }
+                #view-users .data-table tbody tr, #view-tasks .data-table tbody tr.task-row, #view-broadcasts .data-table tbody tr { display: flex; flex-wrap: wrap; align-items: flex-start; padding: 1rem; margin-bottom: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+                #view-tasks .data-table tbody tr[style*="background"] { border: none; background: transparent !important; padding: 0.5rem 0.25rem; margin-bottom: 0; }
+                #view-tasks .data-table tbody tr[style*="background"] td { padding: 0 !important; background: transparent; }
+                #view-users .data-table tbody td, #view-tasks .data-table tbody tr.task-row td, #view-broadcasts .data-table tbody td { display: block; padding: 0 !important; border: none; }
+                
+                /* USERS TABLE MAPPING */
+                #users-table-body tr td:nth-child(1) { order: 1; width: auto; margin-right: 0.5rem; margin-top: 6px; }
+                #users-table-body tr td:nth-child(2) { order: 2; width: auto; margin-right: 0.75rem; }
+                #users-table-body tr td:nth-child(3) { order: 3; flex: 1; min-width: 0; }
+                #users-table-body tr td:nth-child(4) { order: 4; width: 100%; padding-left: 3.25rem; margin-top: 0.5rem; }
+                #users-table-body tr td:nth-child(5) { order: 5; width: 50%; padding-left: 3.25rem; margin-top: 0.75rem; }
+                #users-table-body tr td:nth-child(6) { order: 6; width: 50%; text-align: right; margin-top: 0.75rem; display: flex; align-items: flex-end; justify-content: flex-end; }
+                #users-table-body tr td:nth-child(7) { order: 7; width: 100%; margin-top: 1rem; padding-top: 1rem !important; border-top: 1px dashed var(--border); }
+                #users-table-body tr td:nth-child(7) > div { justify-content: space-between !important; width: 100%; gap: 0.5rem; }
+                #users-table-body tr td:nth-child(7) .btn { flex: 1; padding: 0.625rem 0; justify-content: center; }
+
+                /* TASKS TABLE MAPPING & WIDTH FIXES */
+                #view-tasks .table-wrapper { padding: 0 0.5rem; box-sizing: border-box; }
+                #view-tasks .data-table tbody tr.task-row { width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; }
+                #tasks-table-body tr.task-row td:nth-child(1) { order: 1; width: auto; margin-right: 0.75rem; margin-top: 2px; }
+                #tasks-table-body tr.task-row td:nth-child(2) { order: 2; flex: 1; min-width: 0; white-space: normal; word-wrap: break-word; overflow: hidden; }
+                #tasks-table-body tr.task-row td:nth-child(3) { order: 3; width: 100%; padding-left: 2rem; margin-top: 0.5rem; }
+                #tasks-table-body tr.task-row td:nth-child(4) { order: 4; width: 50%; padding-left: 2rem; margin-top: 0.75rem; }
+                #tasks-table-body tr.task-row td:nth-child(5) { order: 5; width: 50%; text-align: right; margin-top: 0.75rem; display: flex; align-items: flex-end; justify-content: flex-end; }
+                #tasks-table-body tr.task-row td:nth-child(6) { order: 6; width: 100%; margin-top: 1rem; padding-top: 0.75rem !important; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; }
+                #tasks-table-body tr.task-row td:nth-child(6) > div:first-child { margin-bottom: 0 !important; }
+
+                /* BROADCASTS TABLE MAPPING */
+                #broadcasts-table-body tr td:nth-child(1) { order: 1; width: auto; margin-right: 0.75rem; margin-top: 2px; }
+                #broadcasts-table-body tr td:nth-child(2) { order: 2; flex: 1; min-width: 0; }
+                #broadcasts-table-body tr td:nth-child(3) { order: 3; width: 100%; padding-left: 2.25rem; margin-top: 0.75rem; }
+                #broadcasts-table-body tr td:nth-child(4) { order: 4; width: 100%; padding-left: 2.25rem; margin-top: 0.5rem; }
+                #broadcasts-table-body tr td:nth-child(5) { order: 5; width: 100%; margin-top: 1rem; padding-top: 0.75rem !important; border-top: 1px dashed var(--border); }
+                #broadcasts-table-body tr td:nth-child(5) > div { justify-content: flex-end !important; }
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <div id="orion-app" class="app-layout" style="display: none;">
+
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-brand">
+                    <div class="flex items-center">
+                        <div class="brand-icon"><img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 40px; height: auto;"></div>
+                        <span style="margin-left: 0.75rem; font-weight: 700; font-size: 1.125rem; color: #fff;">Orion</span>
+                    </div>
+                    <button class="mobile-close-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-x"></i></button>
+                </div>
+                <nav class="sidebar-nav custom-scrollbar">
+                    <button onclick="app.setView('overview')" id="nav-overview" class="nav-item active">
+                        <i class="ph-bold ph-squares-four"></i><span>Overview</span>
+                    </button>
+                    <div class="nav-label">Data Sources</div>
+                    <button onclick="app.setView('users')" id="nav-users" class="nav-item">
+                        <i class="ph-bold ph-users"></i><span>Users</span>
+                    </button>
+                    <button onclick="app.setView('tasks')" id="nav-tasks" class="nav-item">
+                        <i class="ph-bold ph-check-square"></i><span>Tasks Master</span>
+                    </button>
+                    <button onclick="app.setView('broadcasts')" id="nav-broadcasts" class="nav-item">
+                        <i class="ph-bold ph-megaphone"></i><span>Broadcasts</span>
+                    </button>
+                    <div class="nav-label">System</div>
+                    <button onclick="app.setView('data')" id="nav-data" class="nav-item">
+                        <i class="ph-bold ph-database"></i><span>Data Management</span>
+                    </button>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="flex items-center" style="margin-bottom: 1.5rem; gap: 0.75rem;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; color: #fff;">O</div>
+                        <div style="min-width: 0;">
+                            <div class="truncate text-base font-bold" style="color: #fff;">Orion Console</div>
+                            <div class="text-sm text-muted">Connected</div>
                         </div>
                     </div>
+                    <button onclick="app.signOut()" class="btn btn-danger" style="width: 100%; text-transform: uppercase; font-size: 0.875rem; font-weight: 700; padding: 0.75rem;">
+                        <i class="ph-bold ph-sign-out" style="margin-right: 0.5rem;"></i> Sign Out
+                    </button>
+                </div>
+            </aside>
+
+            <main class="main-area">
+                
+                <header id="standard-header" class="header">
+                    <div class="flex items-center">
+                        <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
+                        <h1 id="page-title">Overview</h1>
+                    </div>
+                    <button onclick="app.refreshData(true)" class="btn btn-outline text-xs btn-icon" title="Refresh Data">
+                        <i class="ph-bold ph-arrows-clockwise"></i> <span style="margin-left: 0.5rem;" class="hidden sm:inline">Refresh</span>
+                    </button>
+                </header>
+
+                <header id="data-header" class="header hidden">
+                    <div class="flex items-center">
+                        <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
+                        <div class="flex items-center" style="gap: 0.75rem;">
+                        <h1>Data Management</h1>
+                        <span id="cache-badge" style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); font-weight: 700;">CACHED (0m ago)</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center" style="gap: 1rem;">
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase;">Last Sync</div>
+                            <div id="last-sync-time" style="font-family: monospace; color: #fff; font-size: 12px;">--:--:--</div>
+                        </div>
+                        <button onclick="app.hardRefresh()" class="btn btn-outline text-xs">
+                            <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Update App
+                        </button>
+                    </div>
+                </header>
+
+                <div class="scroll-container custom-scrollbar">
                     
-                    <div class="card" style="padding: 0; height: 400px;">
-                        <div class="card-header"><h3>System Health</h3></div>
-                        <div class="card-body">
-                            <div style="margin-bottom: 1.5rem;">
-                                <div class="flex justify-between text-sm" style="margin-bottom: 0.5rem;"><span class="text-muted">Task Completion Rate</span><span style="font-weight: 700; color: #fff;" id="health-completion">0%</span></div>
-                                <div style="width: 100%; background: var(--bg-main); border-radius: 999px; height: 8px; overflow: hidden;"><div id="bar-completion" style="background: var(--success); height: 100%; border-radius: 999px; transition: width 0.5s; width: 0%;"></div></div>
+                    <div id="view-overview" class="view-section fade-in">
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                            <button onclick="app.generatePDFReport()" class="btn text-xs" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3);">
+                                <i class="ph-bold ph-file-pdf" style="margin-right: 0.5rem; font-size: 1rem;"></i> Generate Monthly Report (PDF)
+                            </button>
+                        </div>
+                        <div class="dashboard-grid grid-cols-4">
+                            <div class="card">
+                                <div class="stat-icon" style="color: var(--brand);"><i class="ph-fill ph-users"></i></div>
+                                <div class="stat-label">Total Users</div>
+                                <div class="stat-value" id="kpi-users">--</div>
+                                <div class="text-xs" style="color: var(--success); display: flex; align-items: center;"><i class="ph-bold ph-trend-up" style="margin-right: 4px;"></i> Lifetime signups</div>
                             </div>
-                            <div style="margin-bottom: 1.5rem;">
-                                <div class="flex justify-between text-sm" style="margin-bottom: 0.5rem;"><span class="text-muted">High Priority Task Ratio</span><span style="font-weight: 700; color: #fff;" id="health-priority">0%</span></div>
-                                <div style="width: 100%; background: var(--bg-main); border-radius: 999px; height: 8px; overflow: hidden;"><div id="bar-priority" style="background: var(--danger); height: 100%; border-radius: 999px; transition: width 0.5s; width: 0%;"></div></div>
+                            <div class="card">
+                                <div class="stat-icon" style="color: var(--info);"><i class="ph-fill ph-clock"></i></div>
+                                <div class="stat-label">Total Focus Time</div>
+                                <div class="stat-value" id="kpi-focus">--</div>
+                                <div class="text-xs text-faint">Aggregated hours</div>
                             </div>
-                            <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); margin-top: 1.5rem;">
-                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Console Logs</div>
-                                <div id="console-log" style="font-size: 11px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
-                                    > Initializing Orion Console...<br>
+                            <div class="card">
+                                <div class="stat-icon" style="color: var(--success);"><i class="ph-fill ph-check-circle"></i></div>
+                                <div class="stat-label">Tasks Created</div>
+                                <div class="stat-value" id="kpi-tasks">--</div>
+                                <div class="text-xs text-faint">Across all projects</div>
+                            </div>
+                            <div class="card">
+                                <div class="stat-icon" style="color: var(--warning);"><i class="ph-fill ph-lightning"></i></div>
+                                <div class="stat-label">Avg Session</div>
+                                <div class="stat-value" id="kpi-avg">--</div>
+                                <div class="text-xs text-faint">Minutes per focus</div>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-grid grid-cols-3">
+                            <div class="card col-span-2">
+                                <h3 class="card-title">Global Focus Activity</h3>
+                                <div style="position: relative; height: 250px; width: 100%;"><canvas id="activityChart"></canvas></div>
+                            </div>
+                            <div class="card">
+                                <h3 class="card-title" style="margin-bottom: 0.25rem;">Popular Projects</h3>
+                                <p class="text-xs text-muted" style="margin-bottom: 1.5rem;">Top categories users create</p>
+                                <div style="position: relative; height: 180px; width: 100%; display: flex; justify-content: center; margin-bottom: 1rem;"><canvas id="projectDistChart"></canvas></div>
+                                <div id="top-projects-list" style="flex: 1; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-grid grid-cols-2">
+                            <div class="card" style="padding: 0; height: 400px;">
+                                <div class="card-header">
+                                    <h3>Recent Sessions</h3>
+                                    <span style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">Live Feed</span>
+                                </div>
+                                <div class="table-wrapper custom-scrollbar">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr><th>Timestamp</th><th>Task</th><th>Duration</th></tr>
+                                        </thead>
+                                        <tbody id="live-feed-body">
+                                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted); font-style: italic;">Loading...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="card" style="padding: 0; height: 400px;">
+                                <div class="card-header"><h3>System Health</h3></div>
+                                <div class="card-body">
+                                    <div style="margin-bottom: 1.5rem;">
+                                        <div class="flex justify-between text-sm" style="margin-bottom: 0.5rem;"><span class="text-muted">Task Completion Rate</span><span style="font-weight: 700; color: #fff;" id="health-completion">0%</span></div>
+                                        <div style="width: 100%; background: var(--bg-main); border-radius: 999px; height: 8px; overflow: hidden;"><div id="bar-completion" style="background: var(--success); height: 100%; border-radius: 999px; transition: width 0.5s; width: 0%;"></div></div>
+                                    </div>
+                                    <div style="margin-bottom: 1.5rem;">
+                                        <div class="flex justify-between text-sm" style="margin-bottom: 0.5rem;"><span class="text-muted">High Priority Task Ratio</span><span style="font-weight: 700; color: #fff;" id="health-priority">0%</span></div>
+                                        <div style="width: 100%; background: var(--bg-main); border-radius: 999px; height: 8px; overflow: hidden;"><div id="bar-priority" style="background: var(--danger); height: 100%; border-radius: 999px; transition: width 0.5s; width: 0%;"></div></div>
+                                    </div>
+                                    <div style="padding: 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); margin-top: 1.5rem;">
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Console Logs</div>
+                                        <div id="console-log" style="font-size: 11px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
+                                            > Initializing Orion Console...<br>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div id="view-users" class="view-section hidden fade-in">
-                 <div class="card" style="padding: 0;">
-                    <div class="card-header">
-                        <div>
-                            <h3>Active Users</h3>
-                            <p class="text-xs text-muted" style="margin-top: 4px;">Full user directory from Firestore.</p>
-                        </div>
-                        <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="btn btn-outline text-xs header-actions" style="margin-top: 0.5rem;">
-                            <i class="ph-bold ph-star" style="margin-right: 0.5rem;"></i> Show Starred Only
-                        </button>
-                    </div>
-                    <div class="table-wrapper custom-scrollbar">
-                        <table class="data-table">
-                             <thead>
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th style="width: 48px;"></th> 
-                                    <th class="sortable" onclick="app.handleSort('users', 'name')">User Profile <i class="ph-bold ph-caret-up-down" id="sort-users-name"></i></th>
-                                    <th class="sortable" onclick="app.handleSort('users', 'provider')">Login/Provider <i class="ph-bold ph-caret-up-down" id="sort-users-provider"></i></th>
-                                    <th class="sortable" onclick="app.handleSort('users', 'focus')">Engagement <i class="ph-bold ph-caret-up-down" id="sort-users-focus"></i></th>
-                                    <th class="sortable active" onclick="app.handleSort('users', 'lastActive')">Last Active <i class="ph-bold ph-caret-down" id="sort-users-lastActive"></i></th>
-                                    <th style="text-align: right;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-tasks" class="view-section hidden fade-in">
-                 <div class="card" style="padding: 0; height: 80vh;">
-                    <div class="card-header">
-                        <div class="flex items-center" style="flex-wrap: wrap; gap: 1rem;">
-                            <div>
-                                <h3 id="tasks-header-title">Global Task Master List</h3>
-                                <p class="text-xs text-muted" id="tasks-header-desc" style="margin-top: 4px;">Most recent 500 tasks from all users.</p>
-                            </div>
-                            <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden btn text-xs" style="background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">
-                                <i class="ph-bold ph-x-circle" style="margin-right: 4px;"></i> Show All
-                            </button>
-                        </div>
-                        <div class="flex items-center" style="gap: 1rem;">
-                            <div style="position: relative; width: 100%; max-width: 250px;">
-                                <i class="ph-bold ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                                <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="input-control" style="padding-left: 36px; border-radius: 999px; font-size: 0.875rem; margin: 0;">
-                            </div>
-                            <button onclick="app.toggleAdminTaskModal()" class="btn btn-primary text-xs flex-shrink-0">
-                                <i class="ph-bold ph-plus" style="margin-right: 0.5rem;"></i> New Task
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-wrapper custom-scrollbar" style="height: calc(100% - 80px);">
-                        <table class="data-table">
-                             <thead>
-                                <tr>
-                                    <th style="width: 48px;"></th>
-                                    <th class="sortable" onclick="app.handleSort('tasks', 'title')">Task Details <i class="ph-bold ph-caret-up-down" id="sort-tasks-title"></i></th>
-                                    <th class="sortable" onclick="app.handleSort('tasks', 'priority')">Priority <i class="ph-bold ph-caret-up-down" id="sort-tasks-priority"></i></th>
-                                    <th>Pomos</th>
-                                    <th class="sortable" onclick="app.handleSort('tasks', 'duration')">Duration <i class="ph-bold ph-caret-up-down" id="sort-tasks-duration"></i></th>
-                                    <th class="sortable active" onclick="app.handleSort('tasks', 'dueDate')" style="text-align: right;">Due Date <i class="ph-bold ph-caret-up" id="sort-tasks-dueDate"></i> / Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tasks-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-broadcasts" class="view-section hidden fade-in">
-                 <div class="card" style="padding: 0; height: 80vh;">
-                    <div class="card-header">
-                        <div>
-                            <h3>System Broadcasts</h3>
-                            <p class="text-xs text-muted" style="margin-top: 4px;">Manage global or targeted announcements.</p>
-                        </div>
-                        <button onclick="app.toggleBroadcastModal()" class="btn btn-primary text-xs">
-                            <i class="ph-bold ph-plus" style="margin-right: 0.5rem;"></i> New Broadcast
-                        </button>
-                    </div>
-                    <div class="table-wrapper custom-scrollbar" style="height: calc(100% - 80px);">
-                        <table class="data-table">
-                             <thead>
-                                <tr>
-                                    <th style="width: 48px;"></th>
-                                    <th>Message / Details</th>
-                                    <th class="sortable" onclick="app.handleSort('broadcasts', 'target')">Target <i class="ph-bold ph-caret-up-down" id="sort-broadcasts-target"></i></th>
-                                    <th class="sortable active" onclick="app.handleSort('broadcasts', 'createdAt')">Status / Engagement <i class="ph-bold ph-caret-down" id="sort-broadcasts-createdAt"></i></th>
-                                    <th style="text-align: right;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="broadcasts-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="view-data" class="view-section hidden fade-in">
-                <div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem;">
-                    
-                    <div class="flex items-center" style="gap: 1.5rem;">
-                        <div style="width: 56px; height: 56px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
-                             <i class="ph-bold ph-database" style="color: var(--brand); font-size: 1.5rem;"></i>
-                        </div>
-                        <div>
-                            <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff;">Data Management</h2>
-                            <p class="text-muted" style="margin-top: 4px;">Backup, restore, and manage your local data cache.</p>
-                        </div>
-                    </div>
-
-                    <div class="dashboard-grid grid-cols-2">
-                        <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
-                            <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">STORAGE</span>
-                            <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
-                                <i class="ph-bold ph-export" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <h3 class="card-title">Export Data</h3>
-                            <p class="text-sm text-muted" style="margin-bottom: 1rem; line-height: 1.6;">
-                                Download your dashboard state. JSON backs up everything, while CSV allows you to export flat tables for Excel.
-                            </p>
-                            
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                <button onclick="app.exportData()" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
-                                    <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Download Full JSON Backup
-                                </button>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button onclick="app.exportCSV('users')" class="btn btn-outline" style="flex: 1;">CSV: Users</button>
-                                    <button onclick="app.exportCSV('tasks')" class="btn btn-outline" style="flex: 1;">CSV: Tasks</button>
-                                    <button onclick="app.exportCSV('sessions')" class="btn btn-outline" style="flex: 1;">CSV: Sessions</button>
+                    <div id="view-users" class="view-section hidden fade-in">
+                        <div class="card" style="padding: 0;">
+                            <div class="card-header">
+                                <div>
+                                    <h3>Active Users</h3>
+                                    <p class="text-xs text-muted" style="margin-top: 4px;">Full user directory from Firestore.</p>
                                 </div>
+                                <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="btn btn-outline text-xs header-actions" style="margin-top: 0.5rem;">
+                                    <i class="ph-bold ph-star" style="margin-right: 0.5rem;"></i> Show Starred Only
+                                </button>
+                            </div>
+                            <div class="table-wrapper custom-scrollbar">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;"></th>
+                                            <th style="width: 48px;"></th> 
+                                            <th class="sortable" onclick="app.handleSort('users', 'name')">User Profile <i class="ph-bold ph-caret-up-down" id="sort-users-name"></i></th>
+                                            <th class="sortable" onclick="app.handleSort('users', 'provider')">Login/Provider <i class="ph-bold ph-caret-up-down" id="sort-users-provider"></i></th>
+                                            <th class="sortable" onclick="app.handleSort('users', 'focus')">Engagement <i class="ph-bold ph-caret-up-down" id="sort-users-focus"></i></th>
+                                            <th class="sortable active" onclick="app.handleSort('users', 'lastActive')">Last Active <i class="ph-bold ph-caret-down" id="sort-users-lastActive"></i></th>
+                                            <th style="text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body"></tbody>
+                                </table>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
-                            <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">RESTORE</span>
-                            <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
-                                <i class="ph-bold ph-upload-simple" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <h3 class="card-title">Import Data</h3>
-                            <p class="text-sm text-muted" style="margin-bottom: 1rem; line-height: 1.6;">
-                                Restore a JSON snapshot or merge a CSV file into your local cache. <span class="text-brand font-bold">Warning:</span> JSON will overwrite your current view.
-                            </p>
-                            
-                            <input type="file" id="import-file-json" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
-                            <input type="file" id="import-file-csv" class="hidden" accept=".csv" onchange="app.handleCSVImport(this)">
-                            
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                <button onclick="document.getElementById('import-file-json').click()" class="btn btn-outline" style="width: 100%; padding: 0.75rem;">
-                                    <i class="ph-bold ph-file-arrow-up" style="margin-right: 0.5rem;"></i> Upload JSON Backup
-                                </button>
-                                
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <select id="csv-import-target" class="input-control" style="flex: 1; margin: 0; padding: 0.5rem;">
-                                        <option value="users">Target: Users</option>
-                                        <option value="tasks">Target: Tasks</option>
-                                    </select>
-                                    <button onclick="document.getElementById('import-file-csv').click()" class="btn btn-outline" style="flex: 1; padding: 0.5rem;">
-                                        <i class="ph-bold ph-file-csv" style="margin-right: 0.5rem;"></i> Upload CSV
+                    <div id="view-tasks" class="view-section hidden fade-in">
+                        <div class="card" style="padding: 0; height: 80vh;">
+                            <div class="card-header">
+                                <div class="flex items-center" style="flex-wrap: wrap; gap: 1rem;">
+                                    <div>
+                                        <h3 id="tasks-header-title">Global Task Master List</h3>
+                                        <p class="text-xs text-muted" id="tasks-header-desc" style="margin-top: 4px;">Most recent 500 tasks from all users.</p>
+                                    </div>
+                                    <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden btn text-xs" style="background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">
+                                        <i class="ph-bold ph-x-circle" style="margin-right: 4px;"></i> Show All
+                                    </button>
+                                </div>
+                                <div class="flex items-center" style="gap: 1rem;">
+                                    <div style="position: relative; width: 100%; max-width: 250px;">
+                                        <i class="ph-bold ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                                        <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="input-control" style="padding-left: 36px; border-radius: 999px; font-size: 0.875rem; margin: 0;">
+                                    </div>
+                                    <button onclick="app.toggleAdminTaskModal()" class="btn btn-primary text-xs flex-shrink-0">
+                                        <i class="ph-bold ph-plus" style="margin-right: 0.5rem;"></i> New Task
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 style="font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 1rem;">Local Cache Status</h3>
-                        <div class="dashboard-grid grid-cols-3">
-                             <div class="card" style="padding: 1.25rem;">
-                                <div class="stat-label">Cache Age</div>
-                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-cache-age">--</div>
-                             </div>
-                             <div class="card" style="padding: 1.25rem;">
-                                <div class="stat-label">Items Stored</div>
-                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-items-count">-- objects</div>
-                             </div>
-                             <div class="card" style="padding: 1.25rem;">
-                                <div class="stat-label">Storage Usage</div>
-                                <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-storage-size">-- KB</div>
-                             </div>
-                        </div>
-                    </div>
-                     <div style="display: flex; justify-content: flex-end;">
-                        <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.8125rem; font-weight: 700; color: var(--danger); text-transform: uppercase; cursor: pointer; opacity: 0.7;">
-                            Clear Local Cache & Reset
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-
-        </div>
-    </main>
-</div>
-
-<div id="admin-task-modal" class="modal-overlay hidden">
-    <div class="modal-box large">
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-            <h2 id="admin-modal-title" style="font-size: 1.125rem; font-weight: 700; color: #fff;">New Task</h2>
-            <button type="button" onclick="app.toggleAdminTaskModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
-        </div>
-        <form id="admin-task-form" onsubmit="app.handleAdminSaveTask(event)">
-            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
-                
-                <div class="input-group">
-                    <label>Target User</label>
-                    <select id="admin-task-target" class="input-control">
-                        <option value="all">All Users (Broadcast Task)</option>
-                    </select>
-                </div>
-                
-                <input type="text" id="admin-task-title" placeholder="What needs to be done?" class="input-transparent" required>
-                <textarea id="admin-task-note" placeholder="Description or notes..." class="input-control" style="resize: none; height: 80px; margin-bottom: 1.5rem;"></textarea>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="input-group"><label>Est. Pomodoros</label><input type="number" id="admin-task-est" class="input-control" value="1" min="1"></div>
-                    <div class="input-group"><label>Duration (m)</label><input type="number" id="admin-task-dur" class="input-control" value="25" min="5"></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="input-group"><label>Priority</label>
-                        <select id="admin-task-priority" class="input-control">
-                            <option value="none">None</option>
-                            <option value="low">Low Priority</option>
-                            <option value="med">Medium Priority</option>
-                            <option value="high">High Priority (! Urgent)</option>
-                        </select>
-                    </div>
-                    <div class="input-group"><label>Due Date</label><input type="date" id="admin-task-date" class="input-control"></div>
-                </div>
-                
-                <input type="hidden" id="admin-task-id">
-            </div>
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" onclick="app.toggleAdminTaskModal()" class="btn btn-outline">Cancel</button>
-                <button type="submit" id="admin-save-task-btn" class="btn btn-primary">Save Task</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div id="admin-broadcast-modal" class="modal-overlay hidden">
-    <div class="modal-box large">
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-            <h2 id="admin-broadcast-title" style="font-size: 1.125rem; font-weight: 700; color: #fff;">New Broadcast</h2>
-            <button type="button" onclick="app.toggleBroadcastModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
-        </div>
-        <form id="admin-broadcast-form" onsubmit="app.handleSaveBroadcast(event)">
-            <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
-                
-                <div class="input-group">
-                    <label>Target User</label>
-                    <select id="admin-broadcast-target" class="input-control">
-                        <option value="all">Global Broadcast (All Users)</option>
-                    </select>
-                </div>
-                
-                <div class="input-group">
-                    <label>Broadcast Type</label>
-                    <select id="admin-broadcast-type" class="input-control">
-                        <option value="info">Info (Blue)</option>
-                        <option value="warning">Warning (Yellow)</option>
-                        <option value="alert">Alert (Red)</option>
-                        <option value="success">Success (Green)</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label>Message Content (Use **bold** for emphasis)</label>
-                    <textarea id="admin-broadcast-message" placeholder="Type announcement here. New lines will be preserved." class="input-control" style="resize: none; height: 120px;" required></textarea>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="input-group">
-                        <label>Button Text (Optional)</label>
-                        <input type="text" id="admin-broadcast-btn-text" class="input-control" placeholder="e.g. View Details">
-                    </div>
-                    <div class="input-group">
-                        <label>Button URL (Optional)</label>
-                        <input type="url" id="admin-broadcast-btn-url" class="input-control" placeholder="https://...">
-                    </div>
-                </div>
-
-                <div class="input-group" style="margin-bottom: 0;">
-                    <label>Expires On (Optional)</label>
-                    <input type="datetime-local" id="admin-broadcast-expiry" class="input-control">
-                </div>
-                
-                <input type="hidden" id="admin-broadcast-id">
-            </div>
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" onclick="app.toggleBroadcastModal()" class="btn btn-outline">Cancel</button>
-                <button type="submit" id="admin-save-broadcast-btn" class="btn btn-primary">Send Broadcast</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div id="user-profile-modal" class="modal-overlay hidden">
-    <div class="modal-box large" style="border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);">
-        
-        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02);">
-            <h2 style="font-size: 1.0625rem; font-weight: 600; color: #fff; letter-spacing: -0.01em;">User Profile</h2>
-            <button type="button" onclick="app.toggleUserProfileModal()" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';"><i class="ph-bold ph-x" style="font-size: 0.875rem;"></i></button>
-        </div>
-        
-        <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
-            <div style="padding: 1.5rem; overflow-y: auto; max-height: calc(85vh - 130px);" class="custom-scrollbar">
-                
-                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; text-align: center;">
-                    <div id="modal-user-avatar" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 700; color: #fff; overflow: hidden; margin-bottom: 1.25rem;">
-                    </div>
-                    <div style="min-width: 0; width: 100%;">
-                        <div id="modal-user-name-display" class="truncate" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;">User Name</div>
-                        <div id="modal-user-email-display" class="truncate" style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
-                        <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 12px; font-family: monospace;">UID: </div>
-                        <span id="modal-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Display Name</label>
-                        <input type="text" id="modal-input-name" class="input-control" style="background: var(--bg-main);" required>
-                    </div>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Contact Email</label>
-                        <input type="email" id="modal-input-email" class="input-control" disabled style="background: rgba(0,0,0,0.2); color: var(--text-faint); cursor: not-allowed;" title="Tied to Auth. Cannot be edited.">
-                    </div>
-                </div>
-
-                <div class="input-group" style="margin-bottom: 2.5rem;">
-                    <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Profile Picture URL</label>
-                    <input type="url" id="modal-input-photo" class="input-control" style="background: var(--bg-main);" placeholder="https://...">
-                </div>
-
-                <div class="nav-label" style="margin-left: 0; margin-bottom: 0.75rem; color: var(--text-muted);">User Data Management</div>
-                <div style="border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); overflow: hidden; margin-bottom: 2.5rem;">
-                    
-                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
-                        <div>
-                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Export User Data</div>
-                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Download a complete JSON package of this user's profile, tasks, and focus sessions.</div>
-                        </div>
-                        <button type="button" onclick="app.exportSingleUser()" class="btn text-xs" style="background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); flex-shrink: 0;">
-                            <i class="ph-bold ph-download-simple" style="margin-right: 4px;"></i> Export
-                        </button>
-                    </div>
-                    
-                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                        <div style="flex: 1; padding-right: 1.5rem; min-width: 200px;">
-                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Import/Restore Data</div>
-                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore this user's data from a previous JSON export.</div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-                            
-                            <select id="single-user-import-mode" class="input-control" style="margin-bottom: 0; padding: 0.5rem; font-size: 0.75rem; width: 140px;">
-                                <option value="both">Tasks + Sessions</option>
-                                <option value="tasks">Only Tasks</option>
-                                <option value="sessions">Only Sessions</option>
-                            </select>
-
-                            <input type="file" id="import-single-user-file" class="hidden" accept=".json" onchange="app.importSingleUser(this)">
-                            <button type="button" onclick="document.getElementById('import-single-user-file').click()" class="btn text-xs" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">
-                                <i class="ph-bold ph-upload-simple" style="margin-right: 4px;"></i> Import
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 1rem;">
-                        <div style="flex: 1; padding-right: 1.5rem; min-width: 200px;">
-                            <div style="font-size: 0.875rem; font-weight: 600; color: var(--danger);">Reset User Data</div>
-                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Permanently delete all tasks and sessions for this user. This action cannot be undone.</div>
-                        </div>
-                        <button type="button" id="btn-reset-user-data" onclick="app.resetUserData(this)" class="btn text-xs" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); flex-shrink: 0;">
-                            <i class="ph-bold ph-trash" style="margin-right: 4px;"></i> Delete Data
-                        </button>
-                    </div>
-                </div>
-
-                <div class="nav-label" style="margin-left: 0; margin-bottom: 0.75rem; color: var(--text-muted);">Administrative Actions</div>
-                <div style="border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); overflow: hidden;">
-                    
-                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
-                        <div>
-                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Password Reset</div>
-                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Force an auth reset link to the user's email.</div>
-                        </div>
-                        <button type="button" id="btn-reset-password" class="btn text-xs" style="background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); flex-shrink: 0;">
-                            Send Email
-                        </button>
-                    </div>
-                    
-                    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="flex: 1; padding-right: 1.5rem; min-width: 0;">
-                            <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Revert Profile Data</div>
-                            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore the original display name and photo from the initial auth provider.</div>
-                            
-                            <div id="revert-details-container" style="display: none; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 0.75rem; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05);">
-                                <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Original Snapshot</div>
-                                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <img id="revert-orig-photo" src="" alt="Original" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border);">
-                                    <div id="revert-orig-name" class="truncate" style="font-size: 0.8125rem; color: #fff; font-weight: 500;">--</div>
-                                </div>
+                            <div class="table-wrapper custom-scrollbar" style="height: calc(100% - 80px);">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 48px;"></th>
+                                            <th class="sortable" onclick="app.handleSort('tasks', 'title')">Task Details <i class="ph-bold ph-caret-up-down" id="sort-tasks-title"></i></th>
+                                            <th class="sortable" onclick="app.handleSort('tasks', 'priority')">Priority <i class="ph-bold ph-caret-up-down" id="sort-tasks-priority"></i></th>
+                                            <th>Pomos</th>
+                                            <th class="sortable" onclick="app.handleSort('tasks', 'duration')">Duration <i class="ph-bold ph-caret-up-down" id="sort-tasks-duration"></i></th>
+                                            <th class="sortable active" onclick="app.handleSort('tasks', 'dueDate')" style="text-align: right;">Due Date <i class="ph-bold ph-caret-up" id="sort-tasks-dueDate"></i> / Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tasks-table-body"></tbody>
+                                </table>
                             </div>
                         </div>
-                        <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn text-xs flex-shrink-0" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); margin-top: 2px;">
-                            Revert User
-                        </button>
+                    </div>
+
+                    <div id="view-broadcasts" class="view-section hidden fade-in">
+                        <div class="card" style="padding: 0; height: 80vh;">
+                            <div class="card-header">
+                                <div>
+                                    <h3>System Broadcasts</h3>
+                                    <p class="text-xs text-muted" style="margin-top: 4px;">Manage global or targeted announcements.</p>
+                                </div>
+                                <button onclick="app.toggleBroadcastModal()" class="btn btn-primary text-xs">
+                                    <i class="ph-bold ph-plus" style="margin-right: 0.5rem;"></i> New Broadcast
+                                </button>
+                            </div>
+                            <div class="table-wrapper custom-scrollbar" style="height: calc(100% - 80px);">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 48px;"></th>
+                                            <th>Message / Details</th>
+                                            <th class="sortable" onclick="app.handleSort('broadcasts', 'target')">Target <i class="ph-bold ph-caret-up-down" id="sort-broadcasts-target"></i></th>
+                                            <th class="sortable active" onclick="app.handleSort('broadcasts', 'createdAt')">Status / Engagement <i class="ph-bold ph-caret-down" id="sort-broadcasts-createdAt"></i></th>
+                                            <th style="text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="broadcasts-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="view-data" class="view-section hidden fade-in">
+                        <div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem;">
+                            
+                            <div class="flex items-center" style="gap: 1.5rem;">
+                                <div style="width: 56px; height: 56px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
+                                    <i class="ph-bold ph-database" style="color: var(--brand); font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff;">Data Management</h2>
+                                    <p class="text-muted" style="margin-top: 4px;">Backup, restore, and manage your local data cache.</p>
+                                </div>
+                            </div>
+
+                            <div class="dashboard-grid grid-cols-2">
+                                <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
+                                    <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">STORAGE</span>
+                                    <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: var(--info); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                                        <i class="ph-bold ph-export" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h3 class="card-title">Export Data</h3>
+                                    <p class="text-sm text-muted" style="margin-bottom: 1rem; line-height: 1.6;">
+                                        Download your dashboard state. JSON backs up everything, while CSV allows you to export flat tables for Excel.
+                                    </p>
+                                    
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <button onclick="app.exportData()" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+                                            <i class="ph-bold ph-download-simple" style="margin-right: 0.5rem;"></i> Download Full JSON Backup
+                                        </button>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button onclick="app.exportCSV('users')" class="btn btn-outline" style="flex: 1;">CSV: Users</button>
+                                            <button onclick="app.exportCSV('tasks')" class="btn btn-outline" style="flex: 1;">CSV: Tasks</button>
+                                            <button onclick="app.exportCSV('sessions')" class="btn btn-outline" style="flex: 1;">CSV: Sessions</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card" style="border-color: var(--border); transition: border-color 0.2s;">
+                                    <span style="position: absolute; top: 1.5rem; right: 1.5rem; font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 0.1em;">RESTORE</span>
+                                    <div style="width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                                        <i class="ph-bold ph-upload-simple" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h3 class="card-title">Import Data</h3>
+                                    <p class="text-sm text-muted" style="margin-bottom: 1rem; line-height: 1.6;">
+                                        Restore a JSON snapshot or merge a CSV file into your local cache. <span class="text-brand font-bold">Warning:</span> JSON will overwrite your current view.
+                                    </p>
+                                    
+                                    <input type="file" id="import-file-json" class="hidden" accept=".json" onchange="app.handleFileImport(this)">
+                                    <input type="file" id="import-file-csv" class="hidden" accept=".csv" onchange="app.handleCSVImport(this)">
+                                    
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <button onclick="document.getElementById('import-file-json').click()" class="btn btn-outline" style="width: 100%; padding: 0.75rem;">
+                                            <i class="ph-bold ph-file-arrow-up" style="margin-right: 0.5rem;"></i> Upload JSON Backup
+                                        </button>
+                                        
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <select id="csv-import-target" class="input-control" style="flex: 1; margin: 0; padding: 0.5rem;">
+                                                <option value="users">Target: Users</option>
+                                                <option value="tasks">Target: Tasks</option>
+                                            </select>
+                                            <button onclick="document.getElementById('import-file-csv').click()" class="btn btn-outline" style="flex: 1; padding: 0.5rem;">
+                                                <i class="ph-bold ph-file-csv" style="margin-right: 0.5rem;"></i> Upload CSV
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 style="font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 1rem;">Local Cache Status</h3>
+                                <div class="dashboard-grid grid-cols-3">
+                                    <div class="card" style="padding: 1.25rem;">
+                                        <div class="stat-label">Cache Age</div>
+                                        <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-cache-age">--</div>
+                                    </div>
+                                    <div class="card" style="padding: 1.25rem;">
+                                        <div class="stat-label">Items Stored</div>
+                                        <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-items-count">-- objects</div>
+                                    </div>
+                                    <div class="card" style="padding: 1.25rem;">
+                                        <div class="stat-label">Storage Usage</div>
+                                        <div style="font-size: 1.5rem; font-family: monospace; color: #fff; font-weight: 700;" id="stat-storage-size">-- KB</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end;">
+                                <button onclick="app.clearLocalData()" style="background: transparent; border: none; font-size: 0.8125rem; font-weight: 700; color: var(--danger); text-transform: uppercase; cursor: pointer; opacity: 0.7;">
+                                    Clear Local Cache & Reset
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </main>
+        </div>
 
-                <input type="hidden" id="modal-user-uid">
+        <div id="admin-task-modal" class="modal-overlay hidden">
+            <div class="modal-box large">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="admin-modal-title" style="font-size: 1.125rem; font-weight: 700; color: #fff;">New Task</h2>
+                    <button type="button" onclick="app.toggleAdminTaskModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+                </div>
+                <form id="admin-task-form" onsubmit="app.handleAdminSaveTask(event)">
+                    <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
+                        
+                        <div class="input-group">
+                            <label>Target User</label>
+                            <select id="admin-task-target" class="input-control">
+                                <option value="all">All Users (Broadcast Task)</option>
+                            </select>
+                        </div>
+                        
+                        <input type="text" id="admin-task-title" placeholder="What needs to be done?" class="input-transparent" required>
+                        <textarea id="admin-task-note" placeholder="Description or notes..." class="input-control" style="resize: none; height: 80px; margin-bottom: 1.5rem;"></textarea>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="input-group"><label>Est. Pomodoros</label><input type="number" id="admin-task-est" class="input-control" value="1" min="1"></div>
+                            <div class="input-group"><label>Duration (m)</label><input type="number" id="admin-task-dur" class="input-control" value="25" min="5"></div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="input-group"><label>Priority</label>
+                                <select id="admin-task-priority" class="input-control">
+                                    <option value="none">None</option>
+                                    <option value="low">Low Priority</option>
+                                    <option value="med">Medium Priority</option>
+                                    <option value="high">High Priority (! Urgent)</option>
+                                </select>
+                            </div>
+                            <div class="input-group"><label>Due Date</label><input type="date" id="admin-task-date" class="input-control"></div>
+                        </div>
+                        
+                        <input type="hidden" id="admin-task-id">
+                    </div>
+                    <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                        <button type="button" onclick="app.toggleAdminTaskModal()" class="btn btn-outline">Cancel</button>
+                        <button type="submit" id="admin-save-task-btn" class="btn btn-primary">Save Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="admin-broadcast-modal" class="modal-overlay hidden">
+            <div class="modal-box large">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="admin-broadcast-title" style="font-size: 1.125rem; font-weight: 700; color: #fff;">New Broadcast</h2>
+                    <button type="button" onclick="app.toggleBroadcastModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="ph-bold ph-x" style="font-size: 1.25rem;"></i></button>
+                </div>
+                <form id="admin-broadcast-form" onsubmit="app.handleSaveBroadcast(event)">
+                    <div style="padding: 1.5rem; overflow-y: auto; max-height: 60vh;" class="custom-scrollbar">
+                        
+                        <div class="input-group">
+                            <label>Target User</label>
+                            <select id="admin-broadcast-target" class="input-control">
+                                <option value="all">Global Broadcast (All Users)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Broadcast Type</label>
+                            <select id="admin-broadcast-type" class="input-control">
+                                <option value="info">Info (Blue)</option>
+                                <option value="warning">Warning (Yellow)</option>
+                                <option value="alert">Alert (Red)</option>
+                                <option value="success">Success (Green)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Message Content (Use **bold** for emphasis)</label>
+                            <textarea id="admin-broadcast-message" placeholder="Type announcement here. New lines will be preserved." class="input-control" style="resize: none; height: 120px;" required></textarea>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="input-group">
+                                <label>Button Text (Optional)</label>
+                                <input type="text" id="admin-broadcast-btn-text" class="input-control" placeholder="e.g. View Details">
+                            </div>
+                            <div class="input-group">
+                                <label>Button URL (Optional)</label>
+                                <input type="url" id="admin-broadcast-btn-url" class="input-control" placeholder="https://...">
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <label>Expires On (Optional)</label>
+                            <input type="datetime-local" id="admin-broadcast-expiry" class="input-control">
+                        </div>
+                        
+                        <input type="hidden" id="admin-broadcast-id">
+                    </div>
+                    <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                        <button type="button" onclick="app.toggleBroadcastModal()" class="btn btn-outline">Cancel</button>
+                        <button type="submit" id="admin-save-broadcast-btn" class="btn btn-primary">Send Broadcast</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="user-profile-modal" class="modal-overlay hidden">
+            <div class="modal-box large" style="border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);">
+                
+                <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02);">
+                    <h2 style="font-size: 1.0625rem; font-weight: 600; color: #fff; letter-spacing: -0.01em;">User Profile</h2>
+                    <button type="button" onclick="app.toggleUserProfileModal()" style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';"><i class="ph-bold ph-x" style="font-size: 0.875rem;"></i></button>
+                </div>
+                
+                <form id="user-profile-form" onsubmit="app.handleSaveUserProfile(event)">
+                    <div style="padding: 1.5rem; overflow-y: auto; max-height: calc(85vh - 130px);" class="custom-scrollbar">
+                        
+                        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2.5rem; text-align: center;">
+                            <div id="modal-user-avatar" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 700; color: #fff; overflow: hidden; margin-bottom: 1.25rem;">
+                            </div>
+                            <div style="min-width: 0; width: 100%;">
+                                <div id="modal-user-name-display" class="truncate" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;">User Name</div>
+                                <div id="modal-user-email-display" class="truncate" style="font-size: 0.9375rem; color: var(--text-muted); margin-bottom: 6px;">user@example.com</div>
+                                <div id="modal-user-uid-display" style="font-size: 0.8125rem; color: var(--text-faint); margin-bottom: 12px; font-family: monospace;">UID: </div>
+                                <span id="modal-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2);">PROVIDER</span>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Display Name</label>
+                                <input type="text" id="modal-input-name" class="input-control" style="background: var(--bg-main);" required>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Contact Email</label>
+                                <input type="email" id="modal-input-email" class="input-control" disabled style="background: rgba(0,0,0,0.2); color: var(--text-faint); cursor: not-allowed;" title="Tied to Auth. Cannot be edited.">
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 2.5rem;">
+                            <label style="font-size: 0.75rem; letter-spacing: 0.02em;">Profile Picture URL</label>
+                            <input type="url" id="modal-input-photo" class="input-control" style="background: var(--bg-main);" placeholder="https://...">
+                        </div>
+
+                        <div class="nav-label" style="margin-left: 0; margin-bottom: 0.75rem; color: var(--text-muted);">User Data Management</div>
+                        <div style="border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); overflow: hidden; margin-bottom: 2.5rem;">
+                            
+                            <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                                <div>
+                                    <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Export User Data</div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Download a complete JSON package of this user's profile, tasks, and focus sessions.</div>
+                                </div>
+                                <button type="button" onclick="app.exportSingleUser()" class="btn text-xs" style="background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); flex-shrink: 0;">
+                                    <i class="ph-bold ph-download-simple" style="margin-right: 4px;"></i> Export
+                                </button>
+                            </div>
+                            
+                            <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                                <div style="flex: 1; padding-right: 1.5rem; min-width: 200px;">
+                                    <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Import/Restore Data</div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore this user's data from a previous JSON export.</div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                    
+                                    <select id="single-user-import-mode" class="input-control" style="margin-bottom: 0; padding: 0.5rem; font-size: 0.75rem; width: 140px;">
+                                        <option value="both">Tasks + Sessions</option>
+                                        <option value="tasks">Only Tasks</option>
+                                        <option value="sessions">Only Sessions</option>
+                                    </select>
+
+                                    <input type="file" id="import-single-user-file" class="hidden" accept=".json" onchange="app.importSingleUser(this)">
+                                    <button type="button" onclick="document.getElementById('import-single-user-file').click()" class="btn text-xs" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2);">
+                                        <i class="ph-bold ph-upload-simple" style="margin-right: 4px;"></i> Import
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 1rem;">
+                                <div style="flex: 1; padding-right: 1.5rem; min-width: 200px;">
+                                    <div style="font-size: 0.875rem; font-weight: 600; color: var(--danger);">Reset User Data</div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Permanently delete all tasks and sessions for this user. This action cannot be undone.</div>
+                                </div>
+                                <button type="button" id="btn-reset-user-data" onclick="app.resetUserData(this)" class="btn text-xs" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); flex-shrink: 0;">
+                                    <i class="ph-bold ph-trash" style="margin-right: 4px;"></i> Delete Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="nav-label" style="margin-left: 0; margin-bottom: 0.75rem; color: var(--text-muted);">Administrative Actions</div>
+                        <div style="border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main); overflow: hidden;">
+                            
+                            <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                                <div>
+                                    <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Password Reset</div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Force an auth reset link to the user's email.</div>
+                                </div>
+                                <button type="button" id="btn-reset-password" class="btn text-xs" style="background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); flex-shrink: 0;">
+                                    Send Email
+                                </button>
+                            </div>
+                            
+                            <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1; padding-right: 1.5rem; min-width: 0;">
+                                    <div style="font-size: 0.875rem; font-weight: 600; color: #fff;">Revert Profile Data</div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px;">Restore the original display name and photo from the initial auth provider.</div>
+                                    
+                                    <div id="revert-details-container" style="display: none; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 0.75rem; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="font-size: 0.6875rem; font-weight: 700; color: var(--text-faint); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Original Snapshot</div>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <img id="revert-orig-photo" src="" alt="Original" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border);">
+                                            <div id="revert-orig-name" class="truncate" style="font-size: 0.8125rem; color: #fff; font-weight: 500;">--</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" id="btn-revert-profile" onclick="app.handleRevertProfile()" class="btn text-xs flex-shrink-0" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); margin-top: 2px;">
+                                    Revert User
+                                </button>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="modal-user-uid">
+                    </div>
+                    
+                    <div style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); background: rgba(255, 255, 255, 0.02); display: flex; justify-content: flex-end; gap: 0.75rem;">
+                        <button type="button" onclick="app.toggleUserProfileModal()" class="btn btn-outline" style="border-color: transparent;">Cancel</button>
+                        <button type="submit" id="modal-save-profile-btn" class="btn btn-primary" style="border-radius: 8px;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="fullscreen-avatar-overlay" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
+            
+            <div class="fs-image-panel">
+                <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar">
             </div>
             
-            <div style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); background: rgba(255, 255, 255, 0.02); display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" onclick="app.toggleUserProfileModal()" class="btn btn-outline" style="border-color: transparent;">Cancel</button>
-                <button type="submit" id="modal-save-profile-btn" class="btn btn-primary" style="border-radius: 8px;">Save Changes</button>
+            <div class="fs-details-panel">
+                
+                <button onclick="document.getElementById('fullscreen-avatar-overlay').classList.add('hidden')" style="position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+                
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; padding-right: 2rem;">Profile Details</h3>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Display Name</div>
+                    <div id="fs-user-name" style="font-size: 1.125rem; color: #fff; font-weight: 500;">--</div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Email Address</div>
+                    <div id="fs-user-email" style="font-size: 1rem; color: var(--text-main);">--</div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Provider</div>
+                    <span id="fs-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2); display: inline-block;">--</span>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">System UID</div>
+                    <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
+                </div>
+
+                <div id="fs-original-pic-container" style="margin-top: auto; padding-top: 1.5rem; display: none;">
+                    <button id="fs-btn-original-pic" class="btn btn-outline text-xs" style="width: 100%; border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
+                        <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
+                        <span id="fs-btn-original-text">View Original Avatar</span>
+                    </button>
+                </div>
+                
             </div>
-        </form>
-    </div>
-</div>
-
-<div id="fullscreen-avatar-overlay" class="modal-overlay hidden fs-overlay-container" style="z-index: 9999;">
-    
-    <div class="fs-image-panel">
-        <img id="fullscreen-avatar-img" src="" alt="Expanded Avatar">
-    </div>
-    
-    <div class="fs-details-panel">
-        
-        <button onclick="document.getElementById('fullscreen-avatar-overlay').classList.add('hidden')" style="position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#fff'; this.style.borderColor='var(--text-muted)';" onmouseout="this.style.color='var(--text-muted)'; this.style.borderColor='var(--border)';">
-            <i class="ph-bold ph-x"></i>
-        </button>
-        
-        <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; padding-right: 2rem;">Profile Details</h3>
-        
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Display Name</div>
-            <div id="fs-user-name" style="font-size: 1.125rem; color: #fff; font-weight: 500;">--</div>
-        </div>
-        
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Email Address</div>
-            <div id="fs-user-email" style="font-size: 1rem; color: var(--text-main);">--</div>
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Provider</div>
-            <span id="fs-user-provider" style="padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--brand-dim); color: var(--brand); border: 1px solid rgba(255,87,87,0.2); display: inline-block;">--</span>
-        </div>
-        
-        <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">System UID</div>
-            <div id="fs-user-uid" style="font-size: 0.875rem; color: var(--text-faint); font-family: monospace; word-break: break-all; background: var(--bg-main); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border);">--</div>
-        </div>
+        <script type="module" src="./orion.js"></script>
 
-        <div id="fs-original-pic-container" style="margin-top: auto; padding-top: 1.5rem; display: none;">
-            <button id="fs-btn-original-pic" class="btn btn-outline text-xs" style="width: 100%; border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
-                <i class="ph-bold ph-clock-counter-clockwise" style="margin-right: 0.5rem;"></i> 
-                <span id="fs-btn-original-text">View Original Avatar</span>
-            </button>
-        </div>
-        
-    </div>
-</div>
-
-<script type="module" src="./orion.js"></script>
-
-</body>
+    </body>
 </html>

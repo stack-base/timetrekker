@@ -247,6 +247,85 @@ const app={
         if(v==='tasks')renderTasksTable();
         if(v==='broadcasts')renderBroadcastsTable();
     },
+    generatePDFReport: () => {
+        if (!window.jspdf) {
+            alert("PDF library is still loading or failed to load. Please check your internet connection.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const now = new Date();
+        const monthStr = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+        // 1. Calculate KPIs for the current month
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+        const monthlySessions = state.sessions.filter(s => {
+            const completedAt = s.completedAt ? (typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000) : 0;
+            return completedAt >= currentMonthStart;
+        });
+
+        const monthlyTasks = state.tasks.filter(t => {
+            const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
+            return createdAt >= currentMonthStart;
+        });
+
+        const totalFocusMinutes = monthlySessions.reduce((acc, s) => acc + (s.duration || 25), 0);
+        const totalFocusHours = (totalFocusMinutes / 60).toFixed(1);
+
+        // 2. Setup Document Header
+        doc.setFontSize(22);
+        doc.setTextColor(30, 30, 30);
+        doc.text(`Orion Executive Summary`, 14, 22);
+
+        doc.setFontSize(11);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Reporting Period: ${monthStr}`, 14, 30);
+        doc.text(`Generated On: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, 14, 36);
+
+        // 3. Primary KPI Table
+        doc.autoTable({
+            startY: 45,
+            head: [['Key Performance Indicator', 'Value']],
+            body: [
+                ['Total Active Users in Directory', Object.keys(state.usersMap).length.toString()],
+                ['New Tasks Created (This Month)', monthlyTasks.length.toString()],
+                ['Focus Sessions Completed (This Month)', monthlySessions.length.toString()],
+                ['Total Focus Time Logged (This Month)', `${totalFocusHours} Hours`]
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 11, cellPadding: 6 },
+            alternateRowStyles: { fillColor: [250, 250, 250] }
+        });
+
+        // 4. Top Projects Analysis
+        const projs = {};
+        monthlySessions.forEach(s => {
+            const p = s.project || 'Inbox';
+            projs[p] = (projs[p] || 0) + 1;
+        });
+        const topProjs = Object.entries(projs).sort((a,b) => b[1] - a[1]).slice(0, 10);
+
+        if(topProjs.length > 0) {
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 15,
+                head: [['Top Categories / Projects (This Month)', 'Total Sessions']],
+                body: topProjs.map(p => [p[0], p[1].toString()]),
+                theme: 'grid',
+                headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 11, cellPadding: 6 },
+                alternateRowStyles: { fillColor: [250, 250, 250] }
+            });
+        }
+
+        // 5. Save the PDF
+        const filename = `Orion_Report_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`;
+        doc.save(filename);
+        
+        log(`<span style="color: var(--success);">Monthly PDF Report (${filename}) generated successfully.</span>`);
+    },
     handleSort: (view, col) => {
         if (state.sort[view].col === col) {
             state.sort[view].dir = state.sort[view].dir === 'asc' ? 'desc' : 'asc';
