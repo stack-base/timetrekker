@@ -379,32 +379,49 @@ const app={
                 doc.setFillColor(...brandColor);
                 doc.rect(0, 0, pageWidth, 6, 'F');
 
-                // Integrated Header
+                // Integrated Co-Branded Header
                 currentY = 28;
-                let titleX = margin;
+                const midX = pageWidth / 2; // Center of the A4 page
+                
+                // --- Left Side: ORION ---
+                let orionTitleX = margin;
                 if (orionLogoBase64) {
                     doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8, 10, 10);
-                    titleX = margin + 14; 
+                    orionTitleX = margin + 14; 
                 }
-
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(26);
                 doc.setTextColor(...textMain);
-                doc.text(`ORION Insights`, titleX, currentY);
-                
-                // Add TimeTrekker badge/logo if available next to the title
+                doc.text(`ORION Insights`, orionTitleX, currentY);
+
+                // --- Center Divider ---
+                doc.setDrawColor(226, 232, 240); // Light slate border color
+                doc.setLineWidth(0.5);
+                doc.line(midX, currentY - 8, midX, currentY + 2);
+
+                // --- Right Side: TIMETREKKER ---
+                const rightStartX = midX + 8;
+                let ttTitleX = rightStartX;
                 if (ttLogoBase64) {
-                    const titleWidth = doc.getTextWidth(`ORION Insights`);
-                    doc.addImage(ttLogoBase64, 'PNG', titleX + titleWidth + 4, currentY - 6, 7, 7);
+                    doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 8, 10, 10);
+                    ttTitleX = rightStartX + 14;
                 }
-                
-                currentY += 8;
+                doc.setFontSize(22); // Slightly smaller font to establish hierarchy
+                // Adjust Y slightly to baseline-align the 22pt text with the 26pt text
+                doc.text(`TIMETREKKER`, ttTitleX, currentY - 0.5); 
+
+                // --- Subtitles ---
+                currentY += 12;
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(11);
                 doc.setTextColor(...textMuted);
-                doc.text(`Target Environment: TIMETREKKER  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
+                doc.text(`System Telemetry & Operational Throughput Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
+                
+                currentY += 6;
+                doc.setFontSize(10);
+                doc.text(`Target Environment: TIMETREKKER`, margin, currentY);
 
-                currentY += 22;
+                currentY += 20;
                 currentY = drawSectionHeader('EXECUTIVE SUMMARY', 'High-level metrics and system health', currentY);
 
                 // KPI Grid (3x2)
