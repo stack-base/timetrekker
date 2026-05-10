@@ -280,7 +280,7 @@ const app={
                 const now = new Date();
                 
                 // --- DESIGN TOKENS ---
-                const margin = 20;
+                const margin = 14;
                 const pageWidth = doc.internal.pageSize.width;
                 const contentWidth = pageWidth - (margin * 2);
                 const brandColor = [255, 87, 87]; // var(--brand)
