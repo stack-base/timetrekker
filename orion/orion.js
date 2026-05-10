@@ -690,7 +690,7 @@ const app={
                 
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('SYSTEM DECLARATION & LEGAL NOTICE', 'Ecosystem definitions, disclaimers, and confidentiality terms', currentY);
+                currentY = drawSectionHeader('DECLARATION & ADMINISTRATIVE NOTES', 'Ecosystem definitions, disclaimers, and confidentiality terms', currentY);
                 
                 currentY += 10;
 
@@ -752,7 +752,7 @@ const app={
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(12);
                 doc.setTextColor(220, 38, 38); // Red text for emphasis
-                doc.text("Strict Confidentiality Notice", margin, currentY);
+                doc.text("Confidentiality Note", margin, currentY);
                 currentY += 8;
 
                 doc.setFont('helvetica', 'normal');
