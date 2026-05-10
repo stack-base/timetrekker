@@ -285,7 +285,7 @@ const app={
                 const contentWidth = pageWidth - (margin * 2);
                 const textMain = [15, 23, 42];   // Slate 900
                 const textMuted = [100, 116, 139]; // Slate 500
-                const brandColor = [255, 87, 87];
+                const brandColor = [74, 75, 168];
 
                 // --- DATA GATHERING & DEEP ANALYSIS ---
                 const usersCount = Object.keys(state.usersMap).length;
@@ -382,13 +382,13 @@ const app={
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(26);
                 doc.setTextColor(...textMain);
-                doc.text(`ORION INTELLIGENCE`, titleX, currentY);
+                doc.text(`ORION Insights`, titleX, currentY);
                 
                 currentY += 8;
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(11);
                 doc.setTextColor(...textMuted);
-                doc.text(`Comprehensive Ecosystem Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
+                doc.text(`System Telemetry & Operational Throughput Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
 
                 currentY += 22;
                 currentY = drawSectionHeader('Executive Summary', 'High-level metrics and system health', currentY);
@@ -468,9 +468,9 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin, currentY);
                     try {
-                        // 1. Boost resolution to 6x for ultra-crisp rendering
+                        // 1. Boost resolution to 4x for ultra-crisp rendering
                         const oldRatio = state.charts.activity.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.activity.options.devicePixelRatio = 6;
+                        state.charts.activity.options.devicePixelRatio = 4;
                         state.charts.activity.update('none'); 
                         
                         const activityImg = activityCanvas.toDataURL('image/png');
@@ -488,8 +488,8 @@ const app={
                         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, frameHeight);
                         
-                        // 2. Add 'SLOW' compression flag to keep the PDF size small
-                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight, undefined, 'SLOW');
+                        // 2. Add 'FAST' compression flag to keep the PDF size small
+                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, imgWidth, imgHeight, undefined, 'FAST');
                         
                         currentY += frameHeight + 16;
                     } catch(e) {
@@ -502,9 +502,9 @@ const app={
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
-                        // 1. Boost resolution to 6x
+                        // 1. Boost resolution to 4x
                         const oldRatio = state.charts.proj.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.proj.options.devicePixelRatio = 6;
+                        state.charts.proj.options.devicePixelRatio = 4;
                         state.charts.proj.update('none');
                         
                         const projectImg = projectCanvas.toDataURL('image/png');
@@ -530,8 +530,8 @@ const app={
 
                         doc.rect(margin, currentY + 4, 80, 80);
                         
-                        // 2. Add 'SLOW' compression flag
-                        doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'SLOW');
+                        // 2. Add 'FAST' compression flag
+                        doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
                     } catch(e) {
                         console.error("Project chart export failed", e);
                     }
@@ -678,7 +678,7 @@ const app={
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
                     doc.setTextColor(148, 163, 184);
-                    doc.text(`ORION CONSOLE`, margin + (logoBase64 ? 6 : 0), footerY - 0.5);
+                    doc.text(`ORION — CONFIDENTIAL & PROPRIETARY`, margin + (logoBase64 ? 6 : 0), footerY - 0.5);
 
                     doc.setFont('helvetica', 'normal');
                     doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
