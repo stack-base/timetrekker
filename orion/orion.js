@@ -463,96 +463,28 @@ const app={
                 currentY = 25;
                 currentY = drawSectionHeader('Telemetry Visuals', 'Graphical representation of current activity', currentY);
 
-                // --- HIGH-RES EXTRACTION & FILE SIZE OPTIMIZATION ---
-                const extractHighResChart = (chartInstance) => {
-                    if (!chartInstance) return null;
-                    
-                    const origRatio = chartInstance.options.devicePixelRatio || window.devicePixelRatio;
-                    
-                    // 1.5 is the sweet spot: crisp text, much smaller file size than 3.0
-                    chartInstance.options.devicePixelRatio = 1.5; 
-                    chartInstance.resize();
-                    chartInstance.update('none'); 
-                    
-                    const canvas = chartInstance.canvas;
-                    const ctx = canvas.getContext('2d');
-                    
-                    // JPEG doesn't support transparency. Fill the background with your dark theme color 
-                    // before taking the snapshot so it doesn't default to pitch black.
-                    ctx.save();
-                    ctx.globalCompositeOperation = 'destination-over';
-                    ctx.fillStyle = '#1e1e1e'; 
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Export as JPEG with 80% quality to crush the file size down to KBs
-                    const imgData = canvas.toDataURL('image/jpeg', 0.8);
-                    const aspect = canvas.width / canvas.height;
-                    
-                    ctx.restore(); // Remove the background fill
-                    
-                    // Revert back to screen-resolution
-                    chartInstance.options.devicePixelRatio = origRatio;
-                    chartInstance.resize();
-                    chartInstance.update('none');
-                    
-                    return { imgData, aspect };
-                };
-
-                const actData = extractHighResChart(state.charts.activity);
-                if (actData) {
+                const activityCanvas = document.getElementById('activityChart');
+                if (activityCanvas) {
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin, currentY);
                     try {
+                        const activityImg = activityCanvas.toDataURL('image/png', 1.0);
                         doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.5);
                         doc.rect(margin, currentY + 4, contentWidth, 75);
-                        
-                        const maxW = contentWidth - 4;
-                        const maxH = 71;
-                        let drawW = maxW;
-                        let drawH = maxW / actData.aspect;
-                        
-                        if (drawH > maxH) {
-                            drawH = maxH;
-                            drawW = maxH * actData.aspect;
-                        }
-                        
-                        const actX = margin + 2 + (maxW - drawW) / 2;
-                        const actY = currentY + 6 + (maxH - drawH) / 2;
-
-                        doc.addImage(actData.imgData, 'JPEG', actX, actY, drawW, drawH);
+                        doc.addImage(activityImg, 'PNG', margin + 2, currentY + 6, contentWidth - 4, 71);
                         currentY += 95;
-                    } catch(e) { console.warn("Activity chart export failed", e); }
+                    } catch(e) {}
                 }
 
-                const projData = extractHighResChart(state.charts.proj);
-                if (projData) {
+                const projectCanvas = document.getElementById('projectDistChart');
+                if (projectCanvas) {
                     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                     doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin, currentY);
                     try {
-                        // Increase pie chart container size to 110 tall
-                        const boxSize = 110; 
-                        doc.setDrawColor(226, 232, 240);
-                        doc.rect(margin, currentY + 4, contentWidth, boxSize); 
-                        
-                        const maxW = boxSize - 10;
-                        const maxH = boxSize - 10;
-                        let drawW = maxW;
-                        let drawH = maxW / projData.aspect;
-                        
-                        if (drawH > maxH) {
-                            drawH = maxH;
-                            drawW = maxH * projData.aspect;
-                        }
-                        
-                        // Perfectly center the larger pie chart on the page
-                        const projX = (pageWidth - drawW) / 2;
-                        const projY = currentY + 4 + (boxSize - drawH) / 2;
-
-                        doc.addImage(projData.imgData, 'JPEG', projX, projY, drawW, drawH);
-                        
-                        // Push the Y cursor down properly for the next pages
-                        currentY += boxSize + 15; 
-                    } catch(e) { console.warn("Project chart export failed", e); }
+                        const projectImg = projectCanvas.toDataURL('image/png', 1.0);
+                        doc.rect(margin, currentY + 4, 80, 80);
+                        doc.addImage(projectImg, 'PNG', margin + 2, currentY + 6, 76, 76);
+                    } catch(e) {}
                 }
 
                 // ==========================================
