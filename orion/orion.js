@@ -280,7 +280,7 @@ const app={
                 const now = new Date();
                 
                 // --- DESIGN TOKENS ---
-                const margin = 16; 
+                const margin = 14; 
                 const pageWidth = doc.internal.pageSize.width;
                 const contentWidth = pageWidth - (margin * 2);
                 const textMain = [15, 23, 42];   // Slate 900
@@ -353,50 +353,43 @@ const app={
                     }
                 };
 
-                // ULTRA-CLEAN TABLE STYLES
+                // RESTORED VIBRANT TABLE STYLES
                 const tableStyles = {
-                    theme: 'plain',
-                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 }, textColor: [51, 65, 85] },
-                    headStyles: { fontStyle: 'bold', textColor: [15, 23, 42], lineWidth: { bottom: 0.5 }, lineColor: [15, 23, 42] },
-                    bodyStyles: { lineWidth: { bottom: 0.1 }, lineColor: [226, 232, 240] },
+                    theme: 'striped',
+                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 }, textColor: [60, 60, 60] },
                     margin: { left: margin, right: margin }
                 };
 
                 let currentY = 0;
 
                 // ==========================================
-                // PAGE 1: DEDICATED COVER PAGE
+                // PAGE 1: HEADER & EXECUTIVE SUMMARY
                 // ==========================================
+                
+                // Top Brand Accent Line
+                doc.setFillColor(...brandColor);
+                doc.rect(0, 0, pageWidth, 6, 'F');
+
+                // Integrated Header
+                currentY = 28;
+                let titleX = margin;
                 if (logoBase64) {
-                    doc.addImage(logoBase64, 'PNG', pageWidth / 2 - 12, 60, 24, 24);
+                    doc.addImage(logoBase64, 'PNG', margin, currentY - 8, 10, 10);
+                    titleX = margin + 14; 
                 }
 
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(32);
+                doc.setFontSize(26);
                 doc.setTextColor(...textMain);
-                doc.text("ORION INTELLIGENCE", pageWidth / 2, 110, { align: 'center' });
-
+                doc.text(`ORION INTELLIGENCE`, titleX, currentY);
+                
+                currentY += 8;
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(12);
+                doc.setFontSize(11);
                 doc.setTextColor(...textMuted);
-                doc.text("ECOSYSTEM & TELEMETRY REPORT", pageWidth / 2, 120, { align: 'center' });
+                doc.text(`Comprehensive Ecosystem Report  •  Generated ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, currentY);
 
-                doc.setDrawColor(226, 232, 240);
-                doc.setLineWidth(0.5);
-                doc.line(pageWidth / 2 - 20, 130, pageWidth / 2 + 20, 130);
-
-                doc.setFontSize(9);
-                doc.text(`PREPARED ON: ${now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase()}`, pageWidth / 2, 145, { align: 'center' });
-                doc.text(`SYSTEM SCOPE: GLOBAL CACHE DATA`, pageWidth / 2, 152, { align: 'center' });
-
-                // ==========================================
-                // PAGE 2: EXECUTIVE SUMMARY & KPIs
-                // ==========================================
-                doc.addPage();
-                doc.setFillColor(...brandColor);
-                doc.rect(0, 0, pageWidth, 4, 'F'); // Thin top accent
-
-                currentY = 25;
+                currentY += 22;
                 currentY = drawSectionHeader('Executive Summary', 'High-level metrics and system health', currentY);
 
                 // KPI Grid (3x2)
@@ -434,10 +427,9 @@ const app={
                 doc.text(splitSummary, margin, currentY, { lineHeightFactor: 1.6 });
 
                 // ==========================================
-                // PAGE 3: VISUAL ANALYTICS
+                // PAGE 2: VISUAL ANALYTICS
                 // ==========================================
                 doc.addPage();
-                doc.setFillColor(...brandColor); doc.rect(0, 0, pageWidth, 4, 'F');
                 currentY = 25;
                 currentY = drawSectionHeader('Telemetry Visuals', 'Graphical representation of current activity', currentY);
 
@@ -466,12 +458,11 @@ const app={
                 }
 
                 // ==========================================
-                // DATA PAGES (4-7)
+                // DATA PAGES
                 // ==========================================
                 
                 // User Directory
                 doc.addPage();
-                doc.setFillColor(...brandColor); doc.rect(0, 0, pageWidth, 4, 'F');
                 currentY = 25;
                 currentY = drawSectionHeader('Global User Directory', 'Complete list of registered system identities', currentY);
 
@@ -488,13 +479,13 @@ const app={
                     startY: currentY,
                     head: [['Account Name', 'Email Address', 'Auth', 'Total Tasks', 'Focus Time', 'Last Active']],
                     body: userTableBody,
-                    ...tableStyles
+                    ...tableStyles,
+                    headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT RED
                 });
 
                 // Project Analytics Matrix
                 if (sortedProjs.length > 0) {
                     doc.addPage();
-                    doc.setFillColor(...brandColor); doc.rect(0, 0, pageWidth, 4, 'F');
                     currentY = 25;
                     currentY = drawSectionHeader('Project Analytics Matrix', 'Resource allocation per project category', currentY);
 
@@ -508,13 +499,13 @@ const app={
                         startY: currentY,
                         head: [['Project / Category Name', 'Total Sessions Logged', 'Aggregate Time Spent']],
                         body: projectTableBody,
-                        ...tableStyles
+                        ...tableStyles,
+                        headStyles: { fillColor: [139, 92, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT PURPLE
                     });
                 }
 
                 // Task Master List
                 doc.addPage();
-                doc.setFillColor(...brandColor); doc.rect(0, 0, pageWidth, 4, 'F');
                 currentY = 25;
                 currentY = drawSectionHeader('Task Master List', 'Global ledger of all system directives', currentY);
 
@@ -534,13 +525,13 @@ const app={
                     startY: currentY,
                     head: [['Task Directive', 'Assigned Owner', 'Project Tag', 'Priority', 'Pomos', 'Status']],
                     body: taskTableBody,
-                    ...tableStyles
+                    ...tableStyles,
+                    headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT BLUE
                 });
 
                 // Global Session Ledger
                 if (state.sessions.length > 0) {
                     doc.addPage();
-                    doc.setFillColor(...brandColor); doc.rect(0, 0, pageWidth, 4, 'F');
                     currentY = 25;
                     currentY = drawSectionHeader('Global Session Ledger', 'Raw chronological feed of focus blocks', currentY);
 
@@ -564,7 +555,34 @@ const app={
                         startY: currentY,
                         head: [['Completion Timestamp', 'User', 'Task Title', 'Project', 'Duration']],
                         body: sessionTableBody,
-                        ...tableStyles
+                        ...tableStyles,
+                        headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], fontStyle: 'bold' } // DARK SLATE
+                    });
+                }
+
+                // Broadcasts
+                if (state.broadcasts && state.broadcasts.length > 0) {
+                    doc.addPage();
+                    currentY = 25;
+                    currentY = drawSectionHeader('Broadcast Archive', 'Historical dispatch records', currentY);
+
+                    const broadcastBody = state.broadcasts.map(b => {
+                        const target = b.target === 'all' ? 'GLOBAL' : (state.usersMap[b.target] ? state.usersMap[b.target].name : b.target);
+                        return [
+                            b.createdAt ? new Date(b.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown',
+                            b.type.toUpperCase(),
+                            target,
+                            b.message.length > 60 ? b.message.substring(0, 60) + '...' : b.message,
+                            b.readBy ? b.readBy.length.toString() : '0'
+                        ];
+                    });
+
+                    doc.autoTable({
+                        startY: currentY,
+                        head: [['Dispatch Date', 'Class', 'Target Scope', 'Message Payload', 'Views']],
+                        body: broadcastBody,
+                        ...tableStyles,
+                        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: 'bold' } // VIBRANT GREEN
                     });
                 }
 
@@ -572,14 +590,14 @@ const app={
                 // GLOBAL FOOTER RENDERING
                 // ==========================================
                 const pageCount = doc.internal.getNumberOfPages();
-                for (let i = 2; i <= pageCount; i++) { // Skip cover page
+                for (let i = 1; i <= pageCount; i++) {
                     doc.setPage(i);
                     const footerY = doc.internal.pageSize.height - 12;
                     
                     if (logoBase64) doc.addImage(logoBase64, 'PNG', margin, footerY - 4, 4.5, 4.5);
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
-                    doc.setTextColor(148, 163, 184); // Slate 400
+                    doc.setTextColor(148, 163, 184);
                     doc.text(`ORION CONSOLE`, margin + (logoBase64 ? 6 : 0), footerY - 0.5);
 
                     doc.setFont('helvetica', 'normal');
@@ -589,7 +607,7 @@ const app={
                 // --- SAVE PDF ---
                 const filename = `Orion_Intelligence_Brief_${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}.pdf`;
                 doc.save(filename);
-                log(`<span style="color: var(--success);">Enterprise Intelligence Brief (${filename}) generated successfully.</span>`);
+                log(`<span style="color: var(--success);">Intelligence Report (${filename}) generated successfully.</span>`);
 
             } catch (err) {
                 console.error(err);
