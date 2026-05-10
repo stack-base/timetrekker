@@ -313,53 +313,23 @@ const app={
 
                 // --- HELPER FUNCTIONS ---
                 const drawSectionHeader = (title, subtitle, y) => {
-                    // Institutional style: Vertical Accent Line + ALL CAPS
-                    doc.setFillColor(...brandColor);
-                    doc.rect(margin, y - 4.5, 1.5, 12, 'F'); // Sharp vertical accent
-
                     doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(13);
+                    doc.setFontSize(16);
                     doc.setTextColor(...textMain);
-                    doc.text(title.toUpperCase(), margin + 5, y); // Offset text to the right of the line
+                    doc.text(title, margin, y);
                     
                     if (subtitle) {
                         doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(8);
+                        doc.setFontSize(9);
                         doc.setTextColor(...textMuted);
-                        doc.text(subtitle, margin + 5, y + 5);
+                        doc.text(subtitle, margin, y + 5);
                         y += 5;
                     }
                     
-                    // Removed the full horizontal line for a cleaner, open look
+                    doc.setDrawColor(226, 232, 240);
+                    doc.setLineWidth(0.5);
+                    doc.line(margin, y + 6, pageWidth - margin, y + 6);
                     return y + 16;
-                };
-
-                const drawKPICard = (x, y, w, h, label, value, subtext, accentColor = brandColor) => {
-                    // Minimalist Card Base (Sharp corners)
-                    doc.setFillColor(255, 255, 255);
-                    doc.setDrawColor(226, 232, 240); // Very subtle structural border
-                    doc.setLineWidth(0.2);
-                    doc.rect(x, y, w, h, 'FD'); 
-                    
-                    // Top Edge Colorful Accent
-                    doc.setFillColor(...accentColor);
-                    doc.rect(x, y, w, 1.5, 'F'); 
-                    
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(7);
-                    doc.setTextColor(100, 116, 139); // Slate muted
-                    doc.text(label.toUpperCase(), x + 4, y + 8);
-                    
-                    doc.setFontSize(18);
-                    doc.setTextColor(...textMain);
-                    doc.text(value.toString(), x + 4, y + 17);
-                    
-                    if (subtext) {
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(7);
-                        doc.setTextColor(148, 163, 184);
-                        doc.text(subtext, x + 4, y + 23);
-                    }
                 };
 
                 const drawKPICard = (x, y, w, h, label, value, subtext) => {
@@ -429,21 +399,15 @@ const app={
                 let cX = margin;
                 let cY = currentY;
 
-                // Color palette for top edges
-                const cBlue = [59, 130, 246];
-                const cGreen = [16, 185, 129];
-                const cOrange = [245, 158, 11];
-                const cPurple = [139, 92, 246];
-
-                drawKPICard(cX, cY, cardW, cardH, 'Total Active Users', usersCount, 'Global directory', cBlue);
-                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Total Tasks', totalTasks, `${completionRate}% Completion Rate`, cGreen);
-                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'High Priority', priorityCounts.high, 'Active directives', brandColor); // using your global red
+                drawKPICard(cX, cY, cardW, cardH, 'Total Active Users', usersCount, 'Global directory');
+                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Total Tasks', totalTasks, `${completionRate}% Completion Rate`);
+                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'High Priority', priorityCounts.high, 'Active directives');
                 
                 cY += cardH + 4;
                 
-                drawKPICard(cX, cY, cardW, cardH, 'Total Sessions', totalSessions, 'Focus blocks logged', cPurple);
-                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Aggregated Hours', totalFocusHours, 'Deep work recorded', cBlue);
-                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'Top Project', topProjectName.substring(0,15), 'Most active category', cOrange);
+                drawKPICard(cX, cY, cardW, cardH, 'Total Sessions', totalSessions, 'Focus blocks logged');
+                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Aggregated Hours', totalFocusHours, 'Deep work recorded');
+                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'Top Project', topProjectName.substring(0,15), 'Most active category');
 
                 currentY = cY + cardH + 15;
 
