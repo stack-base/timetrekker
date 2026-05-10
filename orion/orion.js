@@ -433,7 +433,7 @@ const app={
                     body: userTableBody,
                     theme: 'striped',
                     headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255] }, // Vibrant Red
-                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 5 }
+                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 } }
                 });
 
 
@@ -462,7 +462,7 @@ const app={
                     body: taskTableBody,
                     theme: 'striped',
                     headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] }, // Vibrant Blue
-                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 5 }
+                    styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 } }
                 });
 
 
@@ -491,7 +491,7 @@ const app={
                         body: broadcastBody,
                         theme: 'striped',
                         headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255] }, // Vibrant Green
-                        styles: { font: 'helvetica', fontSize: 9, cellPadding: 5 }
+                        styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 } }
                     });
                 }
 
