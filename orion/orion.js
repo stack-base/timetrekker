@@ -1,6 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
 const fb = initializeApp(C, "OrionConsole");
@@ -400,41 +401,66 @@ const app={
                 });
                 const sortedProjs = Object.entries(projectStats).sort((a,b) => b[1].count - a[1].count);
                 const topProjectName = sortedProjs.length > 0 ? sortedProjs[0][0] : 'None';
+                
                 const drawSectionHeader = (title, subtitle, y) => {
                     doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(16);
+                    doc.setFontSize(14);
                     doc.setTextColor(...textMain);
-                    doc.text(title, margin, y);
+                    doc.text(title.toUpperCase(), margin + 4, y);
+                    
+                    let endY = y;
                     if (subtitle) {
                         doc.setFont('helvetica', 'normal');
                         doc.setFontSize(9);
                         doc.setTextColor(...textMuted);
-                        doc.text(subtitle, margin, y + 5);
-                        y += 5;
+                        doc.text(subtitle, margin + 4, y + 5);
+                        endY = y + 5;
                     }
-                    doc.setDrawColor(226, 232, 240);
-                    doc.setLineWidth(0.5);
-                    doc.line(margin, y + 6, pageWidth - margin, y + 6);
-                    return y + 16;
+                    
+                    // Vertical accent line
+                    doc.setDrawColor(...brandColor);
+                    doc.setLineWidth(1.5);
+                    doc.line(margin, y - 4, margin, endY + 1);
+                    
+                    return endY + 12;
                 };
+
                 const drawKPICard = (x, y, w, h, label, value, subtext) => {
-                    doc.setFillColor(248, 250, 252);
+                    const accentColors = [
+                        [74, 75, 168], [16, 185, 129], [245, 158, 11], 
+                        [239, 68, 68], [59, 130, 246], [139, 92, 246]
+                    ];
+                    let hash = 0;
+                    for (let i = 0; i < label.length; i++) hash += label.charCodeAt(i);
+                    const accent = accentColors[hash % accentColors.length];
+            
+                    // Minimalist card with crisp corners
+                    doc.setFillColor(255, 255, 255);
                     doc.setDrawColor(226, 232, 240);
                     doc.setLineWidth(0.5);
-                    doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+                    doc.rect(x, y, w, h, 'FD');
+            
+                    // Colorful top-edge accent
+                    doc.setDrawColor(...accent);
+                    doc.setLineWidth(1.5);
+                    doc.line(x, y, x + w, y);
+            
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
                     doc.setTextColor(...textMuted);
-                    doc.text(label.toUpperCase(), x + 4, y + 6);
+                    doc.text(label.toUpperCase(), x + 5, y + 7);
+                    
                     doc.setFontSize(18);
                     doc.setTextColor(...textMain);
-                    doc.text(value.toString(), x + 4, y + 15);
+                    doc.text(value.toString(), x + 5, y + 16);
+                    
                     if (subtext) {
                         doc.setFont('helvetica', 'normal');
                         doc.setFontSize(7);
-                        doc.text(subtext, x + 4, y + 21);
+                        doc.text(subtext, x + 5, y + 22);
                     }
                 };
+
                 const tableStyles = {
                     theme: 'striped',
                     styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.5, bottom: 1.5, left: 2, right: 2 }, textColor: [60, 60, 60] },
