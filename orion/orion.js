@@ -412,15 +412,12 @@ const app={
                 // --- Right Side: TIMETREKKER ---
                 const rightStartX = midX + 8;
                 let ttTitleX = rightStartX;
-
                 if (ttLogoBase64) {
                     doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 8, 10, 10);
                     ttTitleX = rightStartX + 14;
                 }
-
-                // 1. Use the regular Inter font you already have loaded
                 doc.setFont('Inter', 'normal'); 
-                doc.setCharSpace(-0.75); 
+                doc.setCharSpace(-0.50); 
                 doc.setFontSize(26);
                 doc.setDrawColor(...textMain); 
                 doc.setLineWidth(0.5);
