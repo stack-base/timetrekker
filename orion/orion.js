@@ -763,7 +763,7 @@ const app={
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
                     doc.setTextColor(148, 163, 184);
-                    doc.text(`Orion  //  TimeTrekker REPORT — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 6 : 0), footerY - 0.5);
+                    doc.text(`Orion  //  TimeTrekker Report — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 4 : 0), footerY - 0.5);
                     doc.setFont('helvetica', 'normal');
                     doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
                 }
