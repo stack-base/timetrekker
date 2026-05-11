@@ -6,7 +6,14 @@ const appId='timetrekker-v1';
 const fb = initializeApp(C, "OrionConsole");
 const auth = getAuth(fb);
 const db = getFirestore(fb);
-const CACHE_KEY = 'orion_local_cache_v3';
+const CACHE_KEY = 'orion_timetrekker_local_cache_v1';
+const SECURE_PIN_HASH = "8152c10b77e804f3d1b64bd2db53644265f241a7d6568c4842a2754668b57731";
+async function hashPin(pin) {
+    const msgBuffer = new TextEncoder().encode(pin);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; 
 Chart.defaults.font.family='-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -142,16 +149,23 @@ function showUnauthorizedScreen() {
             </div>
         </div>
     `;
-}
+};
 onAuthStateChanged(auth, async u => {
     const modal = document.getElementById('dev-login-modal');
     const orionApp = document.getElementById('orion-app');
     if (u) {
         if (modal) modal.remove();
         if (ADMIN_UIDS.includes(u.uid)) {
-            if (orionApp) orionApp.style.display = 'flex';
-            log(`Authenticated as ${u.email}`);
-            app.refreshData(false);
+            try {
+                // Wait for the PIN to be entered correctly
+                await requireClearance();
+                if (orionApp) orionApp.style.display = 'flex';
+                log(`Authenticated and Authorized as ${u.email}`);
+                app.refreshData(false);
+            } catch (e) {
+                // If they cancel the PIN, show the unauthorized screen
+                showUnauthorizedScreen(); 
+            }
         } else {
             log(`Unauthorized access attempt by ${u.email}`);
             showUnauthorizedScreen();
@@ -174,7 +188,67 @@ function populateTargetSelectors() {
     });
     if(taskTarget) taskTarget.innerHTML = defaultTaskOpt + userOptions;
     if(broadcastTarget) broadcastTarget.innerHTML = defaultBroadcastOpt + userOptions;
-}
+};
+const requireClearance = () => {
+    return new Promise((resolve, reject) => {
+        if (document.getElementById('pin-clearance-modal')) {
+            document.getElementById('pin-clearance-modal').remove();
+        }
+
+        const modalHtml = `
+        <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: blur(12px);">
+            <div class="modal-box" style="max-width: 320px; text-align: center; border-color: var(--danger);">
+                <div style="font-size: 2.5rem; color: var(--danger); margin-bottom: 1rem;">
+                    <i class="ph-bold ph-shield-warning"></i>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Clearance Required</h3>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.5rem;">Enter authorization PIN to proceed.</p>
+                
+                <input type="password" id="clearance-pin-input" class="input-control" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5em; padding: 1rem; margin-bottom: 1rem;" maxlength="4" placeholder="••••" autocomplete="off">
+                
+                <div id="pin-error-msg" style="color: var(--danger); font-size: 0.75rem; margin-bottom: 1rem; display: none;">Invalid PIN. Access denied.</div>
+                
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="cancel-pin-btn" class="btn btn-outline" style="flex: 1;">Cancel</button>
+                    <button id="verify-pin-btn" class="btn btn-danger" style="flex: 1;">Authorize</button>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modal = document.getElementById('pin-clearance-modal');
+        const input = document.getElementById('clearance-pin-input');
+        const verifyBtn = document.getElementById('verify-pin-btn');
+        const cancelBtn = document.getElementById('cancel-pin-btn');
+        const errorMsg = document.getElementById('pin-error-msg');
+
+        input.focus();
+
+        const cleanup = () => modal.remove();
+
+        cancelBtn.onclick = () => { cleanup(); reject(new Error("Cancelled")); };
+
+        const attemptVerify = async () => {
+            const attemptedHash = await hashPin(input.value);
+            if (attemptedHash === SECURE_PIN_HASH) {
+                cleanup(); resolve(true);
+            } else {
+                errorMsg.style.display = 'block';
+                input.value = ''; input.focus();
+                modal.querySelector('.modal-box').style.transform = 'translateX(5px)';
+                setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(-5px)', 50);
+                setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(0)', 100);
+            }
+        };
+
+        verifyBtn.onclick = attemptVerify;
+        input.onkeyup = (e) => {
+            errorMsg.style.display = 'none';
+            if (e.key === 'Enter') attemptVerify();
+        };
+    });
+};
 const app={
     toggleMobileMenu: () => {
         document.getElementById('sidebar').classList.toggle('open');
@@ -216,6 +290,7 @@ const app={
             alert("PDF library is still loading or failed to load. Please check your internet connection.");
             return;
         }
+        try { await requireClearance(); } catch(e) { return; }
         const btn = document.querySelector('button[onclick="app.generatePDFReport()"]');
         if (!btn) return;
         const originalText = btn.innerHTML;
@@ -702,7 +777,8 @@ const app={
         }
         renderUsersTable();
     },
-    exportData: () => {
+    exportData: async () => {
+        try { await requireClearance(); } catch(e) { return; }
         const exportObj = { meta: { version: '1.0', exportDate: new Date().toISOString() }, cache: localStorage.getItem(CACHE_KEY), starred: localStorage.getItem(STAR_KEY) };
         const blob = new Blob([JSON.stringify(exportObj)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -889,6 +965,9 @@ const app={
         const u = state.usersMap[uid];
         if (!u || !u.originalProfile) return;
         if (!confirm('Are you sure you want to revert this user to their original profile?')) return;
+        
+        try { await requireClearance(); } catch(e) { return; }
+        
         const btn = document.getElementById('btn-revert-profile');
         const originalText = btn.innerHTML;
         btn.innerHTML = 'Reverting...'; btn.disabled = true;
@@ -911,6 +990,9 @@ const app={
     triggerPasswordReset: async (email) => {
         if (!email) return alert("User has no email address on file.");
         if (!confirm(`Send password reset email to ${email}?`)) return;
+        
+        try { await requireClearance(); } catch(e) { return; }
+        
         try {
             await sendPasswordResetEmail(auth, email);
             log(`<span style="color:var(--info)">Password reset email sent to ${email}</span>`);
@@ -1294,6 +1376,9 @@ const app={
         if (!confirm(`DANGER: Are you absolutely sure you want to permanently delete ALL tasks and sessions for ${userName}? This cannot be undone.`)) {
             return;
         }
+        
+        try { await requireClearance(); } catch(e) { return; }
+        
         try {
             const originalHtml = btn.innerHTML;
             btn.innerHTML = 'Deleting...';

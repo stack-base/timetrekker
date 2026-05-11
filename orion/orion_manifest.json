@@ -1,12 +1,12 @@
 {
-  "name": "Orion Console",
+  "name": "Orion",
   "short_name": "Orion",
   "start_url": "./app",
   "display": "standalone",
   "scope": "/",
   "background_color": "#0f0f0f",
   "theme_color": "#0f0f0f",
-  "description": "Orion Console from StackBase.",
+  "description": "Orion framework from StackBase.",
   "icons": [
     {
       "src": "https://stack-base.github.io/media/brand/orion/orion_icon.png",

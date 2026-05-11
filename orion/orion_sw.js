@@ -1,4 +1,4 @@
-const CACHE_NAME = 'orion-console-v1.0.0';
+const CACHE_NAME = 'orion-framework_timetrekker-v1.0.0';
 
 // Caching standard UI assets for Orion
 const ASSETS_TO_CACHE = [
