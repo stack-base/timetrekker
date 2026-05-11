@@ -410,7 +410,7 @@ const app={
                     ttTitleX = rightStartX + 14;
                 }
                 doc.setFont('helvetica', 'bold'); 
-                doc.setCharSpace(-0.30); 
+                doc.setCharSpace(-0.40); 
                 doc.setFontSize(26);
                 doc.text(`TimeTrekker`, ttTitleX, currentY);
                 doc.setCharSpace(0);
