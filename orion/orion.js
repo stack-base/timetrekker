@@ -242,7 +242,7 @@ const requireClearance = () => {
                 
                 <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 60px; gap: 12px;">
                     <img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-                    <div style="font-size: 2rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">Orion</div>
+                    <div style="font-size: 1.75rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">Orion</div>
                 </div>
                 
                 <h3 style="font-size: 1.5rem; font-weight: 400; color: #e8eaed; margin-bottom: 24px; letter-spacing: 0;">Verify it's you</h3>
@@ -459,12 +459,16 @@ const app={
                 doc.setDrawColor(226, 232, 240);
                 doc.setLineWidth(0.5);
                 doc.line(midX, currentY - 8, midX, currentY + 2);
+                
+                // --- MODIFICATION: INCREASED LOGO SIZE ---
                 const rightStartX = midX + 8;
                 let ttTitleX = rightStartX;
                 if (ttLogoBase64) {
-                    doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 8, 10, 10);
-                    ttTitleX = rightStartX + 14;
+                    doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 12, 16, 16);
+                    ttTitleX = rightStartX + 20;
                 }
+                // --- END OF MODIFICATION ---
+
                 doc.setFont('helvetica', 'bold'); 
                 doc.setCharSpace(-0.40); 
                 doc.setFontSize(26);
