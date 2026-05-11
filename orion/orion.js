@@ -285,10 +285,6 @@ const app={
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
-                
-                const interRegularBase64 = "AAEAAAAA...";
-                doc.addFileToVFS("Inter-Regular.ttf", interRegularBase64);
-                doc.addFont("Inter-Regular.ttf", "Inter", "normal");
 
                 const now = new Date();
                 
@@ -413,15 +409,11 @@ const app={
                     doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 8, 10, 10);
                     ttTitleX = rightStartX + 14;
                 }
-                doc.setFont('Inter', 'normal'); 
-                doc.setCharSpace(-0.50); 
+                doc.setFont('helvetica', 'bold'); 
+                doc.setCharSpace(-0.30); 
                 doc.setFontSize(26);
-                doc.setDrawColor(...textMain); 
-                doc.setLineWidth(0.3);
-                doc.text(`TimeTrekker`, ttTitleX, currentY, { renderingMode: 'fillThenStroke' });
+                doc.text(`TimeTrekker`, ttTitleX, currentY);
                 doc.setCharSpace(0);
-                doc.setLineWidth(0.5);           // Resets to your default line width for dividers
-                doc.setDrawColor(226, 232, 240); // Resets to your default slate border color
 
                 // --- Subtitles ---
                 currentY += 12;
