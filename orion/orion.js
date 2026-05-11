@@ -447,7 +447,7 @@ const app={
                 const midX = pageWidth / 2;
                 let orionTitleX = margin;
                 if (orionLogoBase64) {
-                    doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8, 10, 10);
+                    doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8.5, 10.5, 10.5);
                     orionTitleX = margin + 13; 
                 }
                 doc.setFont('helvetica', 'bold');
