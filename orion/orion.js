@@ -406,9 +406,9 @@ const app={
                     doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 8, 10, 10);
                     ttTitleX = rightStartX + 14;
                 }
-                doc.setFontSize(22); // Slightly smaller font to establish hierarchy
+                doc.setFontSize(26); // Slightly smaller font to establish hierarchy
                 // Adjust Y slightly to baseline-align the 22pt text with the 26pt text
-                doc.text(`TimeTrekker`, ttTitleX, currentY - 0.5); 
+                doc.text(`TimeTrekker`, ttTitleX, currentY); 
 
                 // --- Subtitles ---
                 currentY += 12;
@@ -709,7 +709,7 @@ const app={
                 doc.text("StackBase:", margin, currentY);
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(51, 65, 85);
-                let defStackBase = doc.splitTextToSize("The parent organization and foundational infrastructure provider responsible for the development, deployment, and maintenance of both the application and the administrative console.", contentWidth - 25);
+                let defStackBase = doc.splitTextToSize("The parent organization and foundational infrastructure provider responsible for the development, deployment, and maintenance of both the application and the Orion framework.", contentWidth - 25);
                 doc.text(defStackBase, margin + 25, currentY);
                 currentY += (defStackBase.length * 4.5) + 4;
 
@@ -726,10 +726,10 @@ const app={
                 // Orion
                 doc.setFont('helvetica', 'bold');
                 doc.setTextColor(...textMain);
-                doc.text("Orion Console:", margin, currentY);
+                doc.text("Orion:", margin, currentY);
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(51, 65, 85);
-                let defOrion = doc.splitTextToSize("The centralized administrative framework and analytical engine. Orion Intelligence programmatically aggregates, processes, and formats the raw data from TimeTrekker to generate this brief.", contentWidth - 25);
+                let defOrion = doc.splitTextToSize("The centralized administrative framework and analytical engine. Orion Intelligence programmatically aggregates, processes, and formats the raw data from application to generate this brief.", contentWidth - 25);
                 doc.text(defOrion, margin + 25, currentY);
                 currentY += (defOrion.length * 4.5) + 12;
 
