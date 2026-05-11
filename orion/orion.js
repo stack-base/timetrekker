@@ -285,6 +285,11 @@ const app={
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
+                
+                const interBase64 = "AAEAAAAA...";
+                doc.addFileToVFS("Inter-Regular.ttf", interBase64);
+                doc.addFont("Inter-Regular.ttf", "Inter", "normal");
+
                 const now = new Date();
                 
                 // --- DESIGN TOKENS ---
@@ -392,7 +397,9 @@ const app={
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(26);
                 doc.setTextColor(...textMain);
+                doc.setCharSpace(-0.52);
                 doc.text(`Orion`, orionTitleX, currentY);
+                doc.setCharSpace(0);
 
                 // --- Center Divider ---
                 doc.setDrawColor(226, 232, 240); // Light slate border color
@@ -406,9 +413,11 @@ const app={
                     doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 8, 10, 10);
                     ttTitleX = rightStartX + 14;
                 }
-                doc.setFontSize(26); // Slightly smaller font to establish hierarchy
-                // Adjust Y slightly to baseline-align the 22pt text with the 26pt text
-                doc.text(`TimeTrekker`, ttTitleX, currentY); 
+                doc.setFont('Inter', 'normal'); 
+                doc.setCharSpace(-0.75); 
+                doc.setFontSize(26);
+                doc.text(`TimeTrekker`, ttTitleX, currentY);
+                doc.setCharSpace(0);
 
                 // --- Subtitles ---
                 currentY += 12;
