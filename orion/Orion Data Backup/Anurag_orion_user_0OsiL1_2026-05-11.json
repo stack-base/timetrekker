@@ -1,0 +1,1247 @@
+{
+  "meta": {
+    "version": "1.0",
+    "exportDate": "2026-05-11T10:08:56.053Z",
+    "type": "single_user",
+    "originalUid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+  },
+  "userProfile": {
+    "id": "0OsiL1pYtPcsYKGHGkhJtXZ0q862",
+    "email": "angautam35@gmail.com",
+    "uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862",
+    "updatedAt": {
+      "seconds": 1777215874,
+      "nanoseconds": 159000000
+    },
+    "providerId": "google.com",
+    "photoURL": "https://lh3.googleusercontent.com/a/ACg8ocIVd9x50E8gTlTWw2yURsi6NH311tcNiwzQ_7gnSBZh2N-hkucO=s96-c",
+    "lastLogin": {
+      "seconds": 1778493816,
+      "nanoseconds": 913000000
+    },
+    "displayName": "Anurag Gautam",
+    "createdAt": {
+      "seconds": 1776887078,
+      "nanoseconds": 508000000
+    }
+  },
+  "tasks": [
+    {
+      "id": "5z7GnwMppFutUdHrzkm8",
+      "reminder": "",
+      "createdAt": "2026-05-08T18:18:03.013Z",
+      "dueDate": "2026-05-11",
+      "priority": "med",
+      "project": "Study",
+      "status": "todo",
+      "note": "",
+      "completedSessionIds": [
+        "5z7GnwMppFutUdHrzkm8_1778264285892",
+        "5z7GnwMppFutUdHrzkm8_1778299001682",
+        "5z7GnwMppFutUdHrzkm8_1778301190251",
+        "5z7GnwMppFutUdHrzkm8_1778438644838",
+        "5z7GnwMppFutUdHrzkm8_1778471487599",
+        "5z7GnwMppFutUdHrzkm8_1778473822803",
+        "5z7GnwMppFutUdHrzkm8_1778480278077",
+        "5z7GnwMppFutUdHrzkm8_1778487554053",
+        "5z7GnwMppFutUdHrzkm8_1778489945668"
+      ],
+      "tags": [],
+      "subtasks": [],
+      "pomoDuration": 30,
+      "title": "COMEDK PYQ",
+      "repeat": "none",
+      "estimatedPomos": 10,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "9caKZRZdiFILT8A7IhSV",
+      "reminder": "",
+      "createdAt": "2026-05-01T17:48:46.458Z",
+      "dueDate": "2026-05-01",
+      "priority": "med",
+      "status": "done",
+      "project": "IPMAT",
+      "note": "",
+      "completedSessionIds": [
+        "9caKZRZdiFILT8A7IhSV_1777657729915"
+      ],
+      "completedAt": "2026-05-01T19:16:08.195Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "subtasks": [],
+      "title": "Percentages",
+      "pomoDuration": 25,
+      "repeat": "none",
+      "estimatedPomos": 1,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "A7Oj9k9xb4YmWWzGPjve",
+      "priority": "high",
+      "dueDate": "2026-04-25",
+      "createdAt": "2026-04-24T18:53:46.585Z",
+      "reminder": "",
+      "tags": [
+        "WebDev",
+        "StackBase"
+      ],
+      "completedAt": "2026-04-24T23:13:46.055Z",
+      "completedSessionIds": [
+        "A7Oj9k9xb4YmWWzGPjve_1777072402354"
+      ],
+      "note": "",
+      "status": "done",
+      "project": "Web Development",
+      "repeat": "none",
+      "title": "Update Firestore Rules",
+      "pomoDuration": 25,
+      "subtasks": [],
+      "estimatedPomos": 1,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "A910364XIoozYrIylF0A",
+      "reminder": "",
+      "dueDate": "2026-05-11",
+      "createdAt": "2026-05-07T05:17:17.433Z",
+      "priority": "high",
+      "status": "todo",
+      "project": "JEE Advanced",
+      "note": "",
+      "completedSessionIds": [],
+      "tags": [
+        "Study",
+        "Physics"
+      ],
+      "subtasks": [],
+      "title": "Modern Physics",
+      "pomoDuration": 30,
+      "repeat": "none",
+      "estimatedPomos": 6,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "AJQfYcSZLs5JXnef25sz",
+      "subtasks": [],
+      "repeat": "none",
+      "pomoDuration": 30,
+      "title": "Logarithm",
+      "estimatedPomos": 2,
+      "createdAt": "2026-05-01T19:18:10.516Z",
+      "dueDate": "2026-05-03",
+      "reminder": "",
+      "priority": "high",
+      "completedSessionIds": [
+        "AJQfYcSZLs5JXnef25sz_1778047251221",
+        "AJQfYcSZLs5JXnef25sz_1778047272714"
+      ],
+      "note": "",
+      "status": "done",
+      "project": "IPMAT",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "completedAt": "2026-05-05T09:11:19.717Z",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "G7OmfN04PCa59R3jruQi",
+      "reminder": "",
+      "dueDate": "2026-05-03",
+      "createdAt": "2026-05-01T19:53:55.880Z",
+      "priority": "med",
+      "status": "done",
+      "project": "IPMAT",
+      "note": "",
+      "completedSessionIds": [
+        "G7OmfN04PCa59R3jruQi_1778047308170",
+        "G7OmfN04PCa59R3jruQi_1778047316483"
+      ],
+      "completedAt": "2026-05-05T09:11:21.944Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "subtasks": [],
+      "title": "Mean, Median and Mode",
+      "pomoDuration": 25,
+      "repeat": "none",
+      "estimatedPomos": 2,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "I7Khdj6DE1GjAmpY1PTk",
+      "estimatedPomos": 1,
+      "subtasks": [
+        "Add Line/Bar pill to Today's Timeline",
+        "Increase graphs height in mobile app"
+      ],
+      "repeat": "none",
+      "title": "Fix Today's Timeline",
+      "pomoDuration": 25,
+      "completedSessionIds": [],
+      "note": "",
+      "project": "Web Development",
+      "status": "todo",
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "createdAt": "2026-04-24T19:51:05.132Z",
+      "dueDate": "2026-05-18",
+      "reminder": "",
+      "priority": "high",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "IoG4611397T2n8swYI2L",
+      "dueDate": "2026-05-03",
+      "createdAt": "2026-05-03T09:33:25.077Z",
+      "reminder": "",
+      "priority": "high",
+      "note": "",
+      "completedSessionIds": [
+        "IoG4611397T2n8swYI2L_1777800808056"
+      ],
+      "status": "done",
+      "project": "IPMAT",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Geometry"
+      ],
+      "completedAt": "2026-05-03T10:13:34.960Z",
+      "subtasks": [],
+      "repeat": "none",
+      "pomoDuration": 25,
+      "title": "Triangle",
+      "estimatedPomos": 1,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "LCOYWh79WC92vTh4q6hl",
+      "priority": "high",
+      "createdAt": "2026-05-01T19:17:58.671Z",
+      "dueDate": "2026-05-03",
+      "reminder": "",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "completedAt": "2026-05-05T09:11:20.349Z",
+      "completedSessionIds": [
+        "LCOYWh79WC92vTh4q6hl_1778047287099"
+      ],
+      "note": "",
+      "status": "done",
+      "project": "IPMAT",
+      "repeat": "none",
+      "pomoDuration": 30,
+      "title": "Inequalities",
+      "subtasks": [],
+      "estimatedPomos": 1,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "NXYt7QyDvvHMkXRnqFya",
+      "reminder": "",
+      "createdAt": "2026-04-24T19:55:36.096Z",
+      "dueDate": "2026-05-03",
+      "priority": "med",
+      "status": "done",
+      "project": "IPMAT",
+      "completedSessionIds": [
+        "NXYt7QyDvvHMkXRnqFya_1778047246478",
+        "NXYt7QyDvvHMkXRnqFya_1778047325047",
+        "NXYt7QyDvvHMkXRnqFya_1778047336148",
+        "NXYt7QyDvvHMkXRnqFya_1778047343240",
+        "NXYt7QyDvvHMkXRnqFya_1778047349739",
+        "NXYt7QyDvvHMkXRnqFya_1778047356501"
+      ],
+      "note": "",
+      "completedAt": "2026-05-05T09:11:43.746Z",
+      "tags": [
+        "Study",
+        "IPMAT"
+      ],
+      "subtasks": [
+        "Anshi's Notes",
+        "Supergrads Notes",
+        "iQuanta Formula Book"
+      ],
+      "pomoDuration": 30,
+      "title": "Read Notes",
+      "repeat": "none",
+      "estimatedPomos": 6,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "O8vhUd0fvSJDiMSvZSa0",
+      "title": "Profit and Loss",
+      "pomoDuration": 30,
+      "repeat": "none",
+      "subtasks": [],
+      "estimatedPomos": 1,
+      "priority": "low",
+      "reminder": "",
+      "dueDate": "2026-05-02",
+      "createdAt": "2026-05-01T19:54:26.540Z",
+      "completedAt": "2026-05-02T09:52:33.978Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "status": "done",
+      "project": "IPMAT",
+      "note": "",
+      "completedSessionIds": [
+        "O8vhUd0fvSJDiMSvZSa0_1777713707653"
+      ],
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "QSmONWDVlxvV7L6XN9xC",
+      "subtasks": [],
+      "title": "Client side url redirect",
+      "pomoDuration": 25,
+      "repeat": "none",
+      "estimatedPomos": 1,
+      "reminder": "",
+      "createdAt": "2026-04-24T20:48:07.275Z",
+      "dueDate": "2026-04-25",
+      "priority": "low",
+      "status": "done",
+      "project": "Web Development",
+      "note": "",
+      "completedSessionIds": [
+        "QSmONWDVlxvV7L6XN9xC_1777105258499"
+      ],
+      "completedAt": "2026-05-01T14:10:56.768Z",
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "T65kfKMT8lO0KI0FdI4A",
+      "estimatedPomos": 1,
+      "repeat": "none",
+      "pomoDuration": 25,
+      "title": "Fix Timezone",
+      "subtasks": [],
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "completedAt": "2026-04-25T05:58:43.224Z",
+      "note": "",
+      "completedSessionIds": [
+        "T65kfKMT8lO0KI0FdI4A_1777096716707"
+      ],
+      "status": "done",
+      "project": "Web Development",
+      "priority": "high",
+      "createdAt": "2026-04-24T19:50:00.333Z",
+      "dueDate": "2026-04-25",
+      "reminder": "",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "TRk5OXaIp55GC1loImBa",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "title": "Simple and Compound Interest",
+      "pomoDuration": 25,
+      "repeat": "none",
+      "status": "done",
+      "project": "IPMAT",
+      "note": "",
+      "completedSessionIds": [
+        "TRk5OXaIp55GC1loImBa_1777702065678"
+      ],
+      "completedAt": "2026-05-02T06:41:04.460Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "reminder": "",
+      "createdAt": "2026-05-01T19:45:30.289Z",
+      "dueDate": "2026-05-02",
+      "priority": "med",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "TiMBIyev9NqAAkDIRIJR",
+      "estimatedPomos": 1,
+      "pomoDuration": 25,
+      "title": "Revise Formula Sheet",
+      "repeat": "none",
+      "subtasks": [],
+      "completedAt": "2026-05-05T09:11:47.878Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability"
+      ],
+      "project": "IPMAT",
+      "status": "done",
+      "note": "",
+      "completedSessionIds": [
+        "TiMBIyev9NqAAkDIRIJR_1778047207722"
+      ],
+      "priority": "med",
+      "reminder": "",
+      "createdAt": "2026-04-24T19:55:07.196Z",
+      "dueDate": "2026-05-03",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "UGxFfhAXVeDFahOzKZAW",
+      "createdAt": "2026-05-06T06:06:30.532Z",
+      "dueDate": "2026-05-11",
+      "reminder": "",
+      "priority": "high",
+      "completedSessionIds": [],
+      "note": "",
+      "status": "todo",
+      "project": "JEE Advanced",
+      "tags": [
+        "Study",
+        "Chemistry",
+        "Organic Chemistry"
+      ],
+      "subtasks": [],
+      "repeat": "none",
+      "pomoDuration": 30,
+      "title": "GOC",
+      "estimatedPomos": 6,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "Ud6Q5i0vJuc5nJpB3Qkj",
+      "dueDate": "2026-05-03",
+      "createdAt": "2026-05-03T11:20:08.518Z",
+      "reminder": "",
+      "priority": "low",
+      "note": "",
+      "completedSessionIds": [
+        "Ud6Q5i0vJuc5nJpB3Qkj_1777807212928"
+      ],
+      "status": "done",
+      "project": "IPMAT",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Geometry"
+      ],
+      "completedAt": "2026-05-03T11:48:58.346Z",
+      "subtasks": [],
+      "repeat": "none",
+      "title": "Circles",
+      "pomoDuration": 25,
+      "estimatedPomos": 1,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "VDv8ax0fxepdBxh7kKDx",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "pomoDuration": 25,
+      "title": "Custom delete task ask modal",
+      "repeat": "none",
+      "project": "Web Development",
+      "status": "todo",
+      "note": "",
+      "completedSessionIds": [],
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "reminder": "",
+      "createdAt": "2026-05-01T19:19:32.336Z",
+      "dueDate": "2026-05-18",
+      "priority": "none",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "WVgEeWZwx17CoNB2djFo",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "pomoDuration": 25,
+      "title": "Divisibility Rules",
+      "repeat": "none",
+      "status": "done",
+      "project": "IPMAT",
+      "completedSessionIds": [
+        "WVgEeWZwx17CoNB2djFo_1777743682740"
+      ],
+      "note": "",
+      "completedAt": "2026-05-02T18:14:52.360Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Number System"
+      ],
+      "reminder": "",
+      "dueDate": "2026-05-02",
+      "createdAt": "2026-05-02T17:40:48.445Z",
+      "priority": "low",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "Wnpbywq2n03cg7WajAos",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "repeat": "none",
+      "title": "Fix Orion",
+      "pomoDuration": 10,
+      "note": "Fix Orion for new architecture",
+      "completedSessionIds": [
+        "Wnpbywq2n03cg7WajAos_1777210248227"
+      ],
+      "project": "Web Development",
+      "status": "done",
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "completedAt": "2026-04-26T13:40:58.616Z",
+      "dueDate": "2026-04-25",
+      "createdAt": "2026-04-24T19:53:23.486Z",
+      "reminder": "",
+      "priority": "low",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "WwENAx8k8lQCLlSmewlQ",
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "status": "todo",
+      "project": "Web Development",
+      "completedSessionIds": [],
+      "note": "",
+      "priority": "med",
+      "reminder": "",
+      "createdAt": "2026-05-01T14:17:53.194Z",
+      "dueDate": "2026-05-18",
+      "estimatedPomos": 1,
+      "title": "Make Daily Brief better",
+      "pomoDuration": 40,
+      "repeat": "none",
+      "subtasks": [
+        "Show Folder name next to task/event",
+        "Show a detailed summary of segregated work around folders and difficult level",
+        "Add Daily brief branding",
+        "Add TimeTrekker Intelligence branding"
+      ],
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "XD0fUziDLMvrxhngDWv9",
+      "estimatedPomos": 1,
+      "title": "Mixtures and Alligation",
+      "pomoDuration": 25,
+      "repeat": "none",
+      "subtasks": [],
+      "completedAt": "2026-05-02T08:21:50.524Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "project": "IPMAT",
+      "status": "done",
+      "completedSessionIds": [
+        "XD0fUziDLMvrxhngDWv9_1777706368570"
+      ],
+      "note": "",
+      "priority": "high",
+      "reminder": "",
+      "createdAt": "2026-05-01T19:53:20.529Z",
+      "dueDate": "2026-05-02",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "Ycd0H7ocGAdS6NyddcbC",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "pomoDuration": 25,
+      "title": "Ask name while creating account",
+      "repeat": "none",
+      "status": "todo",
+      "project": "Web Development",
+      "note": "",
+      "completedSessionIds": [],
+      "tags": [],
+      "reminder": "",
+      "dueDate": "2026-05-18",
+      "createdAt": "2026-05-07T14:59:11.210Z",
+      "priority": "high",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "dZFhSHAbVx4iTa9zHnBP",
+      "estimatedPomos": 1,
+      "pomoDuration": 25,
+      "title": "Task duplicate option",
+      "repeat": "none",
+      "subtasks": [],
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "project": "Web Development",
+      "status": "todo",
+      "completedSessionIds": [],
+      "note": "",
+      "priority": "med",
+      "reminder": "",
+      "dueDate": "2026-05-18",
+      "createdAt": "2026-05-02T18:21:38.095Z",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "h6E5e1yywazNlHWc4DqR",
+      "estimatedPomos": 1,
+      "title": "Add Task duplicate button",
+      "pomoDuration": 25,
+      "repeat": "none",
+      "subtasks": [],
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "project": "Web Development",
+      "status": "todo",
+      "note": "",
+      "completedSessionIds": [],
+      "priority": "high",
+      "reminder": "",
+      "createdAt": "2026-05-01T14:26:02.474Z",
+      "dueDate": "2026-05-18",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "hLgs2bnkuHq2jz2DLKnt",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "pomoDuration": 10,
+      "title": "Afterboards RC",
+      "repeat": "none",
+      "project": "IPMAT",
+      "status": "done",
+      "completedSessionIds": [
+        "hLgs2bnkuHq2jz2DLKnt_1778047438377"
+      ],
+      "note": "",
+      "completedAt": "2026-05-06T06:04:02.384Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Verbal Ability"
+      ],
+      "reminder": "",
+      "createdAt": "2026-04-30T08:16:17.951Z",
+      "dueDate": "2026-05-03",
+      "priority": "med",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "jkxcp1itsb7kgRkgm71n",
+      "completedSessionIds": [
+        "jkxcp1itsb7kgRkgm71n_1777696388848"
+      ],
+      "note": "",
+      "status": "done",
+      "project": "IPMAT",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "completedAt": "2026-05-02T06:07:50.466Z",
+      "dueDate": "2026-05-02",
+      "createdAt": "2026-05-01T19:52:26.608Z",
+      "reminder": "",
+      "priority": "low",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "repeat": "none",
+      "pomoDuration": 25,
+      "title": "Time speed and Distance",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "kx6U7u6lazuU00ZJMeOn",
+      "reminder": "",
+      "createdAt": "2026-05-07T05:03:17.895Z",
+      "dueDate": "2026-05-18",
+      "priority": "med",
+      "status": "todo",
+      "project": "Web Development",
+      "completedSessionIds": [],
+      "note": "Richer Install Experience: Implement features that allow the PWA to show a custom installation dialog with screenshots and descriptions in Chrome for Android, improving engagement.\n\nOffline Fallback: Create a dedicated offline fallback page to enhance the user experience when the network is unavailable, caching it during the service worker install event.\n\nApplication Panel: Inspect Service Workers, Web App Manifests, and Cache Storage in the Application tab to ensure they are configured properly.",
+      "completedAt": null,
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "subtasks": [
+        "Richer Install Experience",
+        "Offline Fallback",
+        "Application Panel"
+      ],
+      "pomoDuration": 30,
+      "title": "TimeTrekker PWA",
+      "repeat": "none",
+      "estimatedPomos": 3,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "m3kvUGPYHTzeGAsvr9NA",
+      "estimatedPomos": 1,
+      "repeat": "none",
+      "title": "Making phone app better",
+      "pomoDuration": 40,
+      "subtasks": [
+        "Show rest of the 6 stats box at bottom of page"
+      ],
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "note": "",
+      "completedSessionIds": [],
+      "project": "Web Development",
+      "status": "todo",
+      "priority": "med",
+      "dueDate": "2026-05-18",
+      "createdAt": "2026-05-01T14:20:18.761Z",
+      "reminder": "",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "mBgpi8l3woMmSurJiuSC",
+      "project": "Web Development",
+      "status": "todo",
+      "note": "",
+      "completedSessionIds": [],
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "reminder": "",
+      "createdAt": "2026-05-01T14:27:56.100Z",
+      "dueDate": "2026-05-18",
+      "priority": "high",
+      "estimatedPomos": 1,
+      "subtasks": [
+        "Change break timer focus ring color to blue"
+      ],
+      "title": "Desktop app",
+      "pomoDuration": 45,
+      "repeat": "none",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "qcMxfmIvqY1EeBTmd7Uu",
+      "reminder": "",
+      "createdAt": "2026-05-01T19:18:44.324Z",
+      "dueDate": "2026-05-03",
+      "priority": "high",
+      "project": "IPMAT",
+      "status": "done",
+      "note": "",
+      "completedSessionIds": [
+        "qcMxfmIvqY1EeBTmd7Uu_1778047300656"
+      ],
+      "completedAt": "2026-05-05T09:11:21.472Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "subtasks": [],
+      "title": "Modulus",
+      "pomoDuration": 30,
+      "repeat": "none",
+      "estimatedPomos": 1,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "qr5wl6NL0eW6uEETGWaa",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "repeat": "none",
+      "title": "Active device window resize ",
+      "pomoDuration": 25,
+      "note": "",
+      "completedSessionIds": [
+        "qr5wl6NL0eW6uEETGWaa_1777096291008"
+      ],
+      "status": "done",
+      "project": "Web Development",
+      "tags": [
+        "StackBase",
+        "TimeTrekker"
+      ],
+      "completedAt": "2026-04-25T05:52:14.218Z",
+      "createdAt": "2026-04-24T20:47:34.418Z",
+      "dueDate": "2026-04-25",
+      "reminder": "",
+      "priority": "low",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "s8xlivYy5JeDIryhWDfa",
+      "completedSessionIds": [
+        "s8xlivYy5JeDIryhWDfa_1777781568314"
+      ],
+      "note": "",
+      "project": "IPMAT",
+      "status": "done",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Algebra"
+      ],
+      "completedAt": "2026-05-03T05:51:59.218Z",
+      "createdAt": "2026-05-03T04:10:53.175Z",
+      "dueDate": "2026-05-03",
+      "reminder": "",
+      "priority": "high",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "repeat": "none",
+      "title": "Progression and Series",
+      "pomoDuration": 40,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "wdeUyeZsI3psh79N50Wh",
+      "estimatedPomos": 1,
+      "subtasks": [],
+      "repeat": "none",
+      "title": "Afterboards RC",
+      "pomoDuration": 10,
+      "completedSessionIds": [
+        "wdeUyeZsI3psh79N50Wh_1777059642066"
+      ],
+      "note": "",
+      "project": "IPMAT",
+      "status": "done",
+      "tags": [],
+      "completedAt": "2026-04-30T08:16:10.393Z",
+      "dueDate": "2026-04-30",
+      "createdAt": "2026-04-24T19:39:54.456Z",
+      "reminder": "12:00",
+      "priority": "med",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "xNVU1L7JtuMe5BNQYaFR",
+      "estimatedPomos": 1,
+      "title": "Time and Work",
+      "pomoDuration": 25,
+      "repeat": "none",
+      "subtasks": [],
+      "completedAt": "2026-05-01T19:16:09.031Z",
+      "tags": [
+        "Study",
+        "IPMAT",
+        "Quantitative Ability",
+        "Arithmetic"
+      ],
+      "project": "IPMAT",
+      "status": "done",
+      "note": "",
+      "completedSessionIds": [
+        "xNVU1L7JtuMe5BNQYaFR_1777635021850"
+      ],
+      "priority": "med",
+      "reminder": "",
+      "createdAt": "2026-05-01T11:29:36.854Z",
+      "dueDate": "2026-05-01",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    }
+  ],
+  "sessions": [
+    {
+      "project": "Study",
+      "taskTitle": "COMEDK PYQ",
+      "id": "5z7GnwMppFutUdHrzkm8_1778489945668",
+      "duration": 30,
+      "completedAt": 1778489946525,
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "id": "5z7GnwMppFutUdHrzkm8_1778487554053",
+      "duration": 30,
+      "completedAt": 1778487556083,
+      "taskTitle": "COMEDK PYQ",
+      "project": "Study",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "duration": 30,
+      "id": "5z7GnwMppFutUdHrzkm8_1778480278077",
+      "completedAt": 1778480279498,
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "project": "Study",
+      "taskTitle": "COMEDK PYQ",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "project": "Study",
+      "taskTitle": "COMEDK PYQ",
+      "id": "5z7GnwMppFutUdHrzkm8_1778473822803",
+      "completedAt": 1778477080501,
+      "duration": 30,
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "completedAt": 1778473810204,
+      "id": "5z7GnwMppFutUdHrzkm8_1778471487599",
+      "duration": 30,
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "project": "Study",
+      "taskTitle": "COMEDK PYQ",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskTitle": "COMEDK PYQ",
+      "project": "Study",
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "duration": 30,
+      "id": "5z7GnwMppFutUdHrzkm8_1778438644838",
+      "completedAt": 1778441364030,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "project": "Study",
+      "taskTitle": "COMEDK PYQ",
+      "completedAt": 1778304530873,
+      "id": "5z7GnwMppFutUdHrzkm8_1778301190251",
+      "duration": 30,
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "5z7GnwMppFutUdHrzkm8_1778299001682",
+      "duration": 30,
+      "completedAt": 1778301153209,
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "project": "Study",
+      "taskTitle": "COMEDK PYQ",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "duration": 30,
+      "completedAt": 1778266086500,
+      "id": "5z7GnwMppFutUdHrzkm8_1778264285892",
+      "taskId": "5z7GnwMppFutUdHrzkm8",
+      "project": "Study",
+      "taskTitle": "COMEDK PYQ",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "project": "IPMAT",
+      "taskTitle": "Afterboards RC",
+      "id": "hLgs2bnkuHq2jz2DLKnt_1778047438377",
+      "completedAt": 1778047439603,
+      "duration": 10,
+      "taskId": "hLgs2bnkuHq2jz2DLKnt",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "NXYt7QyDvvHMkXRnqFya_1778047356501",
+      "duration": 30,
+      "completedAt": 1778047358008,
+      "taskId": "NXYt7QyDvvHMkXRnqFya",
+      "project": "IPMAT",
+      "taskTitle": "Read Notes",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskId": "NXYt7QyDvvHMkXRnqFya",
+      "completedAt": 1778047350748,
+      "id": "NXYt7QyDvvHMkXRnqFya_1778047349739",
+      "duration": 30,
+      "taskTitle": "Read Notes",
+      "project": "IPMAT",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskId": "NXYt7QyDvvHMkXRnqFya",
+      "id": "NXYt7QyDvvHMkXRnqFya_1778047343240",
+      "duration": 30,
+      "completedAt": 1778047344125,
+      "taskTitle": "Read Notes",
+      "project": "IPMAT",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskId": "NXYt7QyDvvHMkXRnqFya",
+      "duration": 30,
+      "completedAt": 1778047337777,
+      "id": "NXYt7QyDvvHMkXRnqFya_1778047336148",
+      "taskTitle": "Read Notes",
+      "project": "IPMAT",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskTitle": "Read Notes",
+      "project": "IPMAT",
+      "taskId": "NXYt7QyDvvHMkXRnqFya",
+      "id": "NXYt7QyDvvHMkXRnqFya_1778047325047",
+      "completedAt": 1778047326035,
+      "duration": 30,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskId": "G7OmfN04PCa59R3jruQi",
+      "id": "G7OmfN04PCa59R3jruQi_1778047316483",
+      "duration": 25,
+      "completedAt": 1778047317868,
+      "taskTitle": "Mean, Median and Mode",
+      "project": "IPMAT",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskTitle": "Mean, Median and Mode",
+      "project": "IPMAT",
+      "taskId": "G7OmfN04PCa59R3jruQi",
+      "id": "G7OmfN04PCa59R3jruQi_1778047308170",
+      "completedAt": 1778047309026,
+      "duration": 25,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "project": "IPMAT",
+      "taskTitle": "Modulus",
+      "completedAt": 1778047301896,
+      "id": "qcMxfmIvqY1EeBTmd7Uu_1778047300656",
+      "duration": 30,
+      "taskId": "qcMxfmIvqY1EeBTmd7Uu",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "completedAt": 1778047289008,
+      "duration": 30,
+      "id": "LCOYWh79WC92vTh4q6hl_1778047287099",
+      "taskId": "LCOYWh79WC92vTh4q6hl",
+      "project": "IPMAT",
+      "taskTitle": "Inequalities",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "AJQfYcSZLs5JXnef25sz_1778047272714",
+      "completedAt": 1778047276752,
+      "duration": 30,
+      "taskId": "AJQfYcSZLs5JXnef25sz",
+      "project": "IPMAT",
+      "taskTitle": "Logarithm",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "project": "IPMAT",
+      "taskTitle": "Logarithm",
+      "duration": 30,
+      "completedAt": 1778047253366,
+      "id": "AJQfYcSZLs5JXnef25sz_1778047251221",
+      "taskId": "AJQfYcSZLs5JXnef25sz",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskTitle": "Read Notes",
+      "project": "IPMAT",
+      "taskId": "NXYt7QyDvvHMkXRnqFya",
+      "duration": 30,
+      "id": "NXYt7QyDvvHMkXRnqFya_1778047246478",
+      "completedAt": 1778047248216,
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskTitle": "Revise Formula Sheet",
+      "project": "IPMAT",
+      "taskId": "TiMBIyev9NqAAkDIRIJR",
+      "completedAt": 1778047214703,
+      "duration": 25,
+      "id": "TiMBIyev9NqAAkDIRIJR_1778047207722",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "Ud6Q5i0vJuc5nJpB3Qkj_1777807212928",
+      "duration": 25,
+      "completedAt": 1777808713265,
+      "taskId": "Ud6Q5i0vJuc5nJpB3Qkj",
+      "project": "IPMAT",
+      "taskTitle": "Circles",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "completedAt": 1777802323283,
+      "duration": 25,
+      "id": "IoG4611397T2n8swYI2L_1777800808056",
+      "taskId": "IoG4611397T2n8swYI2L",
+      "project": "IPMAT",
+      "taskTitle": "Triangle",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "completedAt": 1777787514348,
+      "duration": 40,
+      "id": "s8xlivYy5JeDIryhWDfa_1777781568314",
+      "taskId": "s8xlivYy5JeDIryhWDfa",
+      "project": "IPMAT",
+      "taskTitle": "Progression and Series",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "WVgEeWZwx17CoNB2djFo_1777743682740",
+      "duration": 25,
+      "completedAt": 1777745682983,
+      "taskId": "WVgEeWZwx17CoNB2djFo",
+      "project": "IPMAT",
+      "taskTitle": "Divisibility Rules",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskTitle": "Profit and Loss",
+      "project": "IPMAT",
+      "taskId": "O8vhUd0fvSJDiMSvZSa0",
+      "completedAt": 1777715508395,
+      "duration": 30,
+      "id": "O8vhUd0fvSJDiMSvZSa0_1777713707653",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "duration": 25,
+      "completedAt": 1777707869556,
+      "id": "XD0fUziDLMvrxhngDWv9_1777706368570",
+      "taskId": "XD0fUziDLMvrxhngDWv9",
+      "project": "IPMAT",
+      "taskTitle": "Mixtures and Alligation",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskId": "TRk5OXaIp55GC1loImBa",
+      "completedAt": 1777703566924,
+      "id": "TRk5OXaIp55GC1loImBa_1777702065678",
+      "duration": 25,
+      "taskTitle": "Simple and Compound Interest",
+      "project": "IPMAT",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "completedAt": 1777697889346,
+      "duration": 25,
+      "id": "jkxcp1itsb7kgRkgm71n_1777696388848",
+      "taskId": "jkxcp1itsb7kgRkgm71n",
+      "project": "IPMAT",
+      "taskTitle": "Time speed and Distance",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "9caKZRZdiFILT8A7IhSV_1777657729915",
+      "completedAt": 1777663009607,
+      "duration": 25,
+      "taskId": "9caKZRZdiFILT8A7IhSV",
+      "project": "IPMAT",
+      "taskTitle": "Percentages",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "project": "IPMAT",
+      "taskTitle": "Time and Work",
+      "duration": 25,
+      "id": "xNVU1L7JtuMe5BNQYaFR_1777635021850",
+      "completedAt": 1777636522815,
+      "taskId": "xNVU1L7JtuMe5BNQYaFR",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "completedAt": 1777210849443,
+      "id": "Wnpbywq2n03cg7WajAos_1777210248227",
+      "duration": 10,
+      "taskId": "Wnpbywq2n03cg7WajAos",
+      "project": "Work",
+      "taskTitle": "Fix Orion",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "taskId": "QSmONWDVlxvV7L6XN9xC",
+      "id": "QSmONWDVlxvV7L6XN9xC_1777105258499",
+      "completedAt": 1777107180474,
+      "duration": 25,
+      "taskTitle": "Client side url redirect",
+      "project": "Work",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "project": "Work",
+      "taskTitle": "Fix Timezone",
+      "duration": 25,
+      "id": "T65kfKMT8lO0KI0FdI4A_1777096716707",
+      "completedAt": 1777096720127,
+      "taskId": "T65kfKMT8lO0KI0FdI4A",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "completedAt": 1777096331570,
+      "duration": 25,
+      "id": "qr5wl6NL0eW6uEETGWaa_1777096291008",
+      "taskId": "qr5wl6NL0eW6uEETGWaa",
+      "project": "Work",
+      "taskTitle": "Active device window resize ",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "duration": 25,
+      "id": "A7Oj9k9xb4YmWWzGPjve_1777072402354",
+      "completedAt": 1777072409685,
+      "taskId": "A7Oj9k9xb4YmWWzGPjve",
+      "project": "Inbox",
+      "taskTitle": "Update ORION",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    },
+    {
+      "id": "wdeUyeZsI3psh79N50Wh_1777059642066",
+      "duration": 10,
+      "completedAt": 1777059672616,
+      "taskId": "wdeUyeZsI3psh79N50Wh",
+      "project": "IPMAT",
+      "taskTitle": "Afterboards RC",
+      "_uid": "0OsiL1pYtPcsYKGHGkhJtXZ0q862"
+    }
+  ]
+}
