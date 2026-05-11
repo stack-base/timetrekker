@@ -287,11 +287,8 @@ const app={
                 const doc = new jsPDF('p', 'mm', 'a4');
                 
                 const interRegularBase64 = "AAEAAAAA...";
-                const interBoldBase64 = "AAEAAAAA...";
                 doc.addFileToVFS("Inter-Regular.ttf", interRegularBase64);
                 doc.addFont("Inter-Regular.ttf", "Inter", "normal");
-                doc.addFileToVFS("Inter-Bold.ttf", interBoldBase64);
-                doc.addFont("Inter-Bold.ttf", "Inter", "bold");
 
                 const now = new Date();
                 
@@ -420,7 +417,7 @@ const app={
                 doc.setCharSpace(-0.50); 
                 doc.setFontSize(26);
                 doc.setDrawColor(...textMain); 
-                doc.setLineWidth(0.5);
+                doc.setLineWidth(0.3);
                 doc.text(`TimeTrekker`, ttTitleX, currentY, { renderingMode: 'fillThenStroke' });
                 doc.setCharSpace(0);
                 doc.setLineWidth(0.5);           // Resets to your default line width for dividers
