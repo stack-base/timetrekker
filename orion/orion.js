@@ -286,9 +286,12 @@ const app={
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
                 
-                const interBase64 = "AAEAAAAA...";
-                doc.addFileToVFS("Inter-Regular.ttf", interBase64);
+                const interRegularBase64 = "AAEAAAAA...";
+                const interBoldBase64 = "AAEAAAAA...";
+                doc.addFileToVFS("Inter-Regular.ttf", interRegularBase64);
                 doc.addFont("Inter-Regular.ttf", "Inter", "normal");
+                doc.addFileToVFS("Inter-Bold.ttf", interBoldBase64);
+                doc.addFont("Inter-Bold.ttf", "Inter", "bold");
 
                 const now = new Date();
                 
@@ -413,7 +416,7 @@ const app={
                     doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 8, 10, 10);
                     ttTitleX = rightStartX + 14;
                 }
-                doc.setFont('Inter', 'normal'); 
+                doc.setFont('Inter', 'bold'); 
                 doc.setCharSpace(-0.75); 
                 doc.setFontSize(26);
                 doc.text(`TimeTrekker`, ttTitleX, currentY);
