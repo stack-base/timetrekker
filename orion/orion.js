@@ -227,7 +227,7 @@ const app={
         const navTarget = document.getElementById(`nav-${v}`);
         if(navTarget) navTarget.classList.add('active');
         
-        const titles = {'overview': 'Overview', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
+        const titles = {'overview': 'Overview', 'analytics': 'Analytics', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
 
         if(v === 'data'){
@@ -1695,7 +1695,9 @@ const app={
 
 function renderAll(){
     processUsers(); updateKPIs(); updateCharts(); updateFeed();
+    updateAdminAnalytics();
     if(state.view==='users')renderUsersTable();
+    if(state.view==='analytics')updateAdminAnalytics();
     if(state.view==='tasks')renderTasksTable();
     if(state.view==='broadcasts')renderBroadcastsTable();
     updateStorageStats();
@@ -2105,4 +2107,216 @@ if ('serviceWorker' in navigator) {
                 console.log('Orion ServiceWorker registration failed: ', error);
             });
     });
+}
+
+function updateAdminAnalytics() {
+    if (!document.getElementById('anaTodayTimeline')) return;
+
+    const parseOrionDate = (val) => {
+        if (!val) return null;
+        if (typeof val === 'number') return new Date(val);
+        if (val.seconds !== undefined) return new Date(val.seconds * 1000);
+        if (typeof val === 'string') return new Date(val);
+        return null;
+    };
+    const getDayStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    const now = new Date();
+    const todayStr = getDayStr(now);
+
+    // 1. Today Timeline
+    const todayHours = Array(24).fill(0);
+    state.sessions.forEach(s => {
+        const d = parseOrionDate(s.completedAt);
+        if (d && getDayStr(d) === todayStr) {
+            todayHours[d.getHours()] += (s.duration || 25);
+        }
+    });
+
+    // 2. Trend & Tasks (7 Days)
+    const last7Days = [], lbl7 = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        last7Days.push(getDayStr(d));
+        lbl7.push(d.toLocaleDateString('en-US', {weekday:'short'}));
+    }
+
+    const focusTrend = last7Days.map(dStr =>
+        state.sessions.filter(s => { const d = parseOrionDate(s.completedAt); return d && getDayStr(d) === dStr; })
+            .reduce((a,b)=>a+(b.duration||25), 0)
+    );
+
+    const taskTrend = last7Days.map(dStr =>
+        state.tasks.filter(t => t.status === 'done' && getDayStr(parseOrionDate(t.completedAt)) === dStr).length
+    );
+
+    // 3. Hourly & Weekday
+    const hourly = Array(24).fill(0);
+    const weekday = Array(7).fill(0);
+    state.sessions.forEach(s => {
+        const d = parseOrionDate(s.completedAt);
+        if (d) {
+            hourly[d.getHours()] += (s.duration || 25);
+            const wd = d.getDay();
+            weekday[wd === 0 ? 6 : wd - 1] += (s.duration || 25);
+        }
+    });
+
+    // Chart Helpers
+    const cOpts = (isBar) => ({
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { grid: { display: false } }
+        },
+        plugins: { legend: { display: false } },
+        elements: isBar ? { bar: { borderRadius: 4 } } : { line: { tension: 0.4 } }
+    });
+
+    const dOpts = {
+        responsive: true, maintainAspectRatio: false, cutout: '75%',
+        plugins: { legend: { display: false } }
+    };
+
+    const createChart = (id, type, labels, data, color) => {
+        if (state.charts[id]) state.charts[id].destroy();
+        state.charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: type === 'line' ? `rgba(${color}, 0.1)` : `rgb(${color})`,
+                    borderColor: `rgb(${color})`,
+                    borderWidth: type === 'line' ? 2 : 0,
+                    fill: type === 'line'
+                }]
+            },
+            options: cOpts(type === 'bar')
+        });
+    };
+
+    createChart('anaTodayTimeline', 'line', Array.from({length:24},(_,i)=>i+'h'), todayHours, '139, 92, 246'); // purple
+    createChart('anaFocusTrend', 'bar', lbl7, focusTrend, '255, 87, 87'); // brand
+    createChart('anaTaskTrend', 'bar', lbl7, taskTrend, '59, 130, 246'); // blue
+    createChart('anaHourly', 'bar', Array.from({length:24},(_,i)=>i), hourly, '16, 185, 129'); // green
+    createChart('anaWeekday', 'bar', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], weekday, '245, 158, 11'); // yellow
+
+    // 4. Project Distribution
+    const projs = {};
+    state.sessions.forEach(s => {
+        const p = s.project || 'Inbox';
+        projs[p] = (projs[p] || 0) + (s.duration || 25);
+    });
+    const sp = Object.entries(projs).sort((a,b)=>b[1]-a[1]).slice(0, 8); // top 8
+    if(state.charts.anaProject) state.charts.anaProject.destroy();
+    state.charts.anaProject = new Chart(document.getElementById('anaProject').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: sp.map(x=>x[0]),
+            datasets: [{
+                data: sp.map(x=>x[1]),
+                backgroundColor: ['#ff5757', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#64748b'],
+                borderWidth: 0
+            }]
+        },
+        options: dOpts
+    });
+    document.getElementById('ana-project-list').innerHTML = sp.map(x => `
+        <div style="display:flex; justify-content:space-between; font-size:0.8125rem;">
+            <span style="color:#fff;">${x[0]}</span><span style="color:var(--text-muted);">${Math.round(x[1])}m</span>
+        </div>
+    `).join('');
+
+    // 5. Priorities
+    const pri = { high: 0, med: 0, low: 0, none: 0 };
+    state.tasks.forEach(t => { pri[t.priority || 'none']++; });
+    if(state.charts.anaPriority) state.charts.anaPriority.destroy();
+    state.charts.anaPriority = new Chart(document.getElementById('anaPriority').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['High', 'Med', 'Low', 'None'],
+            datasets: [{
+                data: [pri.high, pri.med, pri.low, pri.none],
+                backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'],
+                borderWidth: 0
+            }]
+        },
+        options: dOpts
+    });
+    const priData = [
+        { label: 'High', count: pri.high, color: '#ef4444' },
+        { label: 'Medium', count: pri.med, color: '#eab308' },
+        { label: 'Low', count: pri.low, color: '#3b82f6' },
+        { label: 'None', count: pri.none, color: '#525252' }
+    ];
+    const totalPri = priData.reduce((a, b) => a + b.count, 0);
+    document.getElementById('ana-priority-list').innerHTML = priData.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8125rem; margin-bottom: 0.25rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="width:8px; height:8px; border-radius:50%; background:${p.color};"></span>
+                <span style="color:#a1a1aa;">${p.label}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="color:#fff; font-family:monospace;">${p.count}</span>
+                <span style="color:var(--text-faint); font-size:10px;">${totalPri > 0 ? Math.round((p.count/totalPri)*100) : 0}%</span>
+            </div>
+        </div>
+    `).join('');
+
+    // 6. Tags
+    const tags = {};
+    state.tasks.forEach(t => {
+        if(t.tags && Array.isArray(t.tags)) {
+            t.tags.forEach(tg => { tags[tg] = (tags[tg] || 0) + 1; });
+        }
+    });
+    const st = Object.entries(tags).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+    document.getElementById('ana-tag-list').innerHTML = st.length > 0 ? st.map((x, i) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8125rem; margin-bottom: 0.25rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="color:var(--text-faint); width:16px;">${i+1}.</span>
+                <span style="background:var(--hover); color:#fff; padding:2px 6px; border-radius:4px;">${x[0]}</span>
+            </div>
+            <span style="color:var(--text-muted);">${x[1]} tasks</span>
+        </div>
+    `).join('') : '<div style="color:var(--text-muted); font-size:0.8125rem; font-style:italic;">No tags data available.</div>';
+
+    // 7. Pomodoro Grid (14 days)
+    const grid = document.getElementById('ana-pomo-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 14; i++) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        const dStr = getDayStr(d);
+        const dayLogs = state.sessions.filter(s => {
+            const ld = parseOrionDate(s.completedAt);
+            return ld && getDayStr(ld) === dStr;
+        });
+
+        const lbl = i === 0 ? "Today" : (i === 1 ? "Yesterday" : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+
+        let barsHtml = '';
+        for (let j = 1; j < 6; j++) {
+            barsHtml += `<div style="position:absolute; top:0; bottom:0; left:${(j * 4 / 24) * 100}%; border-left:1px solid var(--border); opacity:0.3;"></div>`;
+        }
+
+        dayLogs.forEach(l => {
+            const ld = parseOrionDate(l.completedAt);
+            const sm = (ld.getHours() * 60) + ld.getMinutes();
+            const dur = l.duration || 25;
+            const lp = ((sm - dur) / 1440) * 100;
+            const wp = (dur / 1440) * 100;
+
+            barsHtml += `<div title="${l.taskTitle} (${dur}m)" style="position:absolute; top:4px; bottom:4px; left:${lp}%; width:${Math.max(wp, 0.5)}%; background:var(--brand); opacity:0.8; border-radius:2px; cursor:pointer;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='var(--brand)'"></div>`;
+        });
+
+        grid.innerHTML += `
+            <div style="display:flex; align-items:center; height:32px; border-radius:4px;">
+                <div style="width:6rem; font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; padding-left:8px;">${lbl}</div>
+                <div style="flex:1; height:100%; position:relative; background:var(--bg-main); border:1px solid var(--border); border-radius:4px; overflow:hidden; margin:0 8px;">
+                    ${barsHtml}
+                </div>
+            </div>
+        `;
+    }
 }

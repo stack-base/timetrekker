@@ -275,6 +275,9 @@
                     <button onclick="app.setView('overview')" id="nav-overview" class="nav-item active">
                         <i class="ph-bold ph-squares-four"></i><span>Overview</span>
                     </button>
+                    <button onclick="app.setView('analytics')" id="nav-analytics" class="nav-item">
+                        <i class="ph-bold ph-chart-line-up"></i><span>Analytics</span>
+                    </button>
                     <div class="nav-label">Data Sources</div>
                     <button onclick="app.setView('users')" id="nav-users" class="nav-item">
                         <i class="ph-bold ph-users"></i><span>Users</span>
@@ -417,6 +420,96 @@
                                         <div id="console-log" style="font-size: 11px; font-family: monospace; color: var(--text-faint); height: 96px; overflow-y: auto;">
                                             > Initializing Orion Console...<br>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div id="view-analytics" class="view-section hidden fade-in">
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
+                            <div class="flex items-center" style="gap: 1.5rem; margin-bottom: 1rem;">
+                                <div style="width: 56px; height: 56px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
+                                    <i class="ph-bold ph-chart-line-up" style="color: var(--brand); font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff;">Admin Product Insights</h2>
+                                    <p class="text-muted" style="margin-top: 4px;">Global aggregated telemetry from all users for usage tracking and performance analysis.</p>
+                                </div>
+                            </div>
+
+                            <!-- Today's Timeline -->
+                            <div class="card" style="padding: 1.5rem;">
+                                <h3 class="card-title">Today's Global Timeline</h3>
+                                <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">Minute-by-minute breakdown of active focus sessions across all users today.</p>
+                                <div style="height: 200px; width: 100%; position: relative;"><canvas id="anaTodayTimeline"></canvas></div>
+                            </div>
+
+                            <!-- Focus Trend & Task Completion -->
+                            <div class="dashboard-grid grid-cols-2">
+                                <div class="card" style="padding: 1.5rem;">
+                                    <h3 class="card-title">Focus Trend (Last 7 Days)</h3>
+                                    <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">Total aggregate focus duration logged by the platform.</p>
+                                    <div style="height: 250px; width: 100%; position: relative;"><canvas id="anaFocusTrend"></canvas></div>
+                                </div>
+                                <div class="card" style="padding: 1.5rem;">
+                                    <h3 class="card-title">Task Completion (Last 7 Days)</h3>
+                                    <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">Volume of directives fully resolved and archived globally.</p>
+                                    <div style="height: 250px; width: 100%; position: relative;"><canvas id="anaTaskTrend"></canvas></div>
+                                </div>
+                            </div>
+
+                            <!-- Hourly & Weekly -->
+                            <div class="dashboard-grid grid-cols-2">
+                                <div class="card" style="padding: 1.5rem;">
+                                    <h3 class="card-title">Hourly Productivity</h3>
+                                    <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">All-time global aggregation by hour of the day.</p>
+                                    <div style="height: 250px; width: 100%; position: relative;"><canvas id="anaHourly"></canvas></div>
+                                </div>
+                                <div class="card" style="padding: 1.5rem;">
+                                    <h3 class="card-title">Weekly Performance</h3>
+                                    <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">All-time global focus time distributed by day of the week.</p>
+                                    <div style="height: 250px; width: 100%; position: relative;"><canvas id="anaWeekday"></canvas></div>
+                                </div>
+                            </div>
+
+                            <!-- Projects, Priorities, Tags -->
+                            <div class="dashboard-grid grid-cols-3">
+                                <div class="card flex flex-col" style="padding: 1.5rem;">
+                                    <h3 class="card-title">Project Distribution</h3>
+                                    <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">Time invested across active categories.</p>
+                                    <div style="height: 180px; width: 100%; position: relative; display: flex; justify-content: center; margin-bottom: 1rem;"><canvas id="anaProject"></canvas></div>
+                                    <div id="ana-project-list" style="flex: 1; overflow-y: auto;" class="custom-scrollbar flex flex-col gap-2"></div>
+                                </div>
+                                <div class="card flex flex-col" style="padding: 1.5rem;">
+                                    <h3 class="card-title">Task Priorities</h3>
+                                    <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">Distribution of system-wide task priority weightings.</p>
+                                    <div style="height: 180px; width: 100%; position: relative; display: flex; justify-content: center; margin-bottom: 1rem;"><canvas id="anaPriority"></canvas></div>
+                                    <div id="ana-priority-list" style="flex: 1; overflow-y: auto;" class="custom-scrollbar flex flex-col gap-2"></div>
+                                </div>
+                                <div class="card flex flex-col" style="padding: 1.5rem;">
+                                    <h3 class="card-title mb-4">Top Tags</h3>
+                                    <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">Most frequently utilized labels across all user tasks.</p>
+                                    <div id="ana-tag-list" style="flex: 1; overflow-y: auto;" class="custom-scrollbar flex flex-col gap-3"></div>
+                                </div>
+                            </div>
+
+                            <!-- Pomodoro Records -->
+                            <div class="card" style="padding: 1.5rem;">
+                                <h3 class="card-title">Global Pomodoro Records</h3>
+                                <p class="text-xs text-muted mb-4" style="margin-bottom: 1rem;">Historical 14-day heatmap of all focus intervals logged across the system.</p>
+                                <div class="table-wrapper custom-scrollbar overflow-x-auto pb-2">
+                                    <div style="min-width: 600px; width: 100%;">
+                                        <div style="display: flex; font-size: 0.75rem; color: var(--text-muted); font-family: monospace; margin-bottom: 0.5rem; padding-left: 6rem;">
+                                            <span style="flex: 1; border-left: 1px solid var(--border); padding-left: 4px;">00:00</span>
+                                            <span style="flex: 1; border-left: 1px solid var(--border); padding-left: 4px;">04:00</span>
+                                            <span style="flex: 1; border-left: 1px solid var(--border); padding-left: 4px;">08:00</span>
+                                            <span style="flex: 1; border-left: 1px solid var(--border); padding-left: 4px;">12:00</span>
+                                            <span style="flex: 1; border-left: 1px solid var(--border); padding-left: 4px;">16:00</span>
+                                            <span style="flex: 1; border-left: 1px solid var(--border); padding-left: 4px;">20:00</span>
+                                        </div>
+                                        <div id="ana-pomo-grid" style="display: flex; flex-direction: column; gap: 4px;"></div>
                                     </div>
                                 </div>
                             </div>
