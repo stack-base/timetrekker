@@ -192,7 +192,7 @@ const requireClearance = () => {
         // 1. Fetch user and force a cache load if the map is empty
         const user = auth.currentUser;
         if (Object.keys(state.usersMap).length === 0) {
-            loadCache(); // Pulls your Firestore profile data from local storage
+            loadCache();
         }
         const localUser = user ? state.usersMap[user.uid] : null;
         
@@ -209,14 +209,40 @@ const requireClearance = () => {
             avatarHtml = `<div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: #fff; border: 2px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">${initial}</div>`;
         }
 
-        // 3. Build the Branded Modal
+        // 3. Build the Branded Modal with Mobile CSS
         const modalHtml = `
-        <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: none; background: rgba(0,0,0,0.7);">
-            <div class="modal-box" style="max-width: 400px; padding: 36px 40px; text-align: center; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); box-shadow: 0 8px 24px rgba(0,0,0,0.8);">
+        <style>
+            #pin-clearance-modal .auth-box {
+                width: 100%;
+                max-width: 400px;
+                padding: 36px 40px;
+                text-align: center;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--bg-card);
+                box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            }
+            /* Make it full screen on mobile devices */
+            @media (max-width: 768px) {
+                #pin-clearance-modal .auth-box {
+                    max-width: 100%;
+                    height: 100dvh;
+                    border-radius: 0;
+                    border: none;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    padding: 24px;
+                }
+            }
+        </style>
+        
+        <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: none; background: rgba(0,0,0,0.7); padding: 0;">
+            <div class="auth-box">
                 
-                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
-                    <img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 48px; height: 48px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-                    <div style="font-size: 1.125rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">Orion Console</div>
+                <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 24px; gap: 12px;">
+                    <img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                    <div style="font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">Orion Console</div>
                 </div>
                 
                 <h3 style="font-size: 1.5rem; font-weight: 400; color: #e8eaed; margin-bottom: 24px; letter-spacing: 0;">Verify it's you</h3>
@@ -266,9 +292,9 @@ const requireClearance = () => {
             } else {
                 errorMsg.style.display = 'flex';
                 input.value = ''; input.focus();
-                modal.querySelector('.modal-box').style.transform = 'translateX(4px)';
-                setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(-4px)', 50);
-                setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(0)', 100);
+                modal.querySelector('.auth-box').style.transform = 'translateX(4px)';
+                setTimeout(() => modal.querySelector('.auth-box').style.transform = 'translateX(-4px)', 50);
+                setTimeout(() => modal.querySelector('.auth-box').style.transform = 'translateX(0)', 100);
             }
         };
 
