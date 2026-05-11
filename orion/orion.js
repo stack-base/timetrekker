@@ -183,6 +183,7 @@ function populateTargetSelectors() {
     if(taskTarget) taskTarget.innerHTML = defaultTaskOpt + userOptions;
     if(broadcastTarget) broadcastTarget.innerHTML = defaultBroadcastOpt + userOptions;
 };
+// --- NEW: CLEARANCE MODAL ENGINE (GOOGLE STYLE) ---
 const requireClearance = () => {
     return new Promise((resolve, reject) => {
         if (document.getElementById('pin-clearance-modal')) {
@@ -190,22 +191,30 @@ const requireClearance = () => {
         }
 
         const modalHtml = `
-        <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: blur(12px);">
-            <div class="modal-box" style="max-width: 320px; text-align: center; border-color: var(--danger);">
-                <div style="font-size: 2.5rem; color: var(--danger); margin-bottom: 1rem;">
-                    <i class="ph-bold ph-shield-warning"></i>
+        <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: none; background: rgba(0,0,0,0.6);">
+            <div class="modal-box" style="max-width: 400px; padding: 36px 40px; text-align: center; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                
+                <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #8ab4f8; background: var(--bg-main);">
+                        <i class="ph-fill ph-shield-check"></i>
+                    </div>
                 </div>
-                <h3 style="font-size: 1.125rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Clearance Required</h3>
-                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.5rem;">Enter authorization PIN to proceed.</p>
                 
-                <input type="password" id="clearance-pin-input" class="input-control" style="text-align: center; font-size: 1.25rem; letter-spacing: 0.1em; padding: 1rem; margin-bottom: 1rem;" placeholder="Enter Passkey" autocomplete="off">
+                <h3 style="font-size: 1.5rem; font-weight: 400; color: #e8eaed; margin-bottom: 8px; letter-spacing: 0;">Verify it's you</h3>
+                <p style="font-size: 0.875rem; color: #9aa0a6; margin-bottom: 32px; line-height: 1.5;">To help keep your system safe, Orion wants to make sure it's really you.</p>
                 
-                <div id="pin-error-msg" style="color: var(--danger); font-size: 0.75rem; margin-bottom: 1rem; display: none;">Invalid PIN. Access denied.</div>
-                
-                <div style="display: flex; gap: 0.5rem;">
-                    <button id="cancel-pin-btn" class="btn btn-outline" style="flex: 1;">Cancel</button>
-                    <button id="verify-pin-btn" class="btn btn-danger" style="flex: 1;">Authorize</button>
+                <div style="text-align: left; margin-bottom: 32px; position: relative;">
+                    <input type="password" id="clearance-pin-input" style="width: 100%; padding: 13px 15px; border: 1px solid #5f6368; border-radius: 4px; background: transparent; color: #e8eaed; font-size: 1rem; outline: none; transition: all 0.2s;" placeholder="Enter passkey" autocomplete="off" onfocus="this.style.border='2px solid #8ab4f8'; this.style.padding='12px 14px';" onblur="this.style.border='1px solid #5f6368'; this.style.padding='13px 15px';">
+                    <div id="pin-error-msg" style="color: #f28b82; font-size: 0.75rem; margin-top: 8px; display: none; align-items: center;">
+                        <i class="ph-bold ph-warning-circle" style="margin-right: 6px; font-size: 1rem;"></i> Wrong passkey. Try again.
+                    </div>
                 </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <button id="cancel-pin-btn" style="background: transparent; border: none; color: #8ab4f8; font-weight: 500; font-size: 0.875rem; cursor: pointer; padding: 8px 8px; margin-left: -8px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(138, 180, 248, 0.08)'" onmouseout="this.style.background='transparent'">Cancel</button>
+                    <button id="verify-pin-btn" style="background: #8ab4f8; color: #202124; border: none; border-radius: 4px; padding: 8px 24px; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#9ec1f9'" onmouseout="this.style.background='#8ab4f8'">Next</button>
+                </div>
+                
             </div>
         </div>`;
 
@@ -224,14 +233,15 @@ const requireClearance = () => {
         cancelBtn.onclick = () => { cleanup(); reject(new Error("Cancelled")); };
 
         const attemptVerify = async () => {
-            // Check against the disguised constant
+            // Checking against your disguised STAR_KEY
             if (input.value === STAR_KEY) {
                 cleanup(); resolve(true);
             } else {
-                errorMsg.style.display = 'block';
+                errorMsg.style.display = 'flex';
                 input.value = ''; input.focus();
-                modal.querySelector('.modal-box').style.transform = 'translateX(5px)';
-                setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(-5px)', 50);
+                // Google-style subtle shake animation
+                modal.querySelector('.modal-box').style.transform = 'translateX(4px)';
+                setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(-4px)', 50);
                 setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(0)', 100);
             }
         };
