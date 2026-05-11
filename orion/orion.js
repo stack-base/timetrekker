@@ -431,7 +431,7 @@ const app={
             
                     // Thick, colorful top-edge accent
                     doc.setDrawColor(...accentColor);
-                    doc.setLineWidth(1.6);
+                    doc.setLineWidth(1.5);
                     doc.line(x, y, x + w, y);
             
                     // Label
@@ -461,7 +461,7 @@ const app={
                 };
                 let currentY = 0;
                 doc.setFillColor(...brandColor);
-                doc.rect(0, 0, pageWidth, 4.2, 'F');
+                doc.rect(0, 0, pageWidth, 4, 'F');
                 currentY = 28;
                 const midX = pageWidth / 2;
                 let orionTitleX = margin;
