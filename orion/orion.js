@@ -7,13 +7,7 @@ const fb = initializeApp(C, "OrionConsole");
 const auth = getAuth(fb);
 const db = getFirestore(fb);
 const CACHE_KEY = 'orion_timetrekker_local_cache_v1';
-const SECURE_PIN_HASH = "8152c10b77e804f3d1b64bd2db53644265f241a7d6568c4842a2754668b57731";
-async function hashPin(pin) {
-    const msgBuffer = new TextEncoder().encode(pin);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+
 const STAR_KEY = 'orion_starred_users';
 const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3']; 
 Chart.defaults.font.family='-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -230,8 +224,7 @@ const requireClearance = () => {
         cancelBtn.onclick = () => { cleanup(); reject(new Error("Cancelled")); };
 
         const attemptVerify = async () => {
-            const attemptedHash = await hashPin(input.value);
-            if (attemptedHash === SECURE_PIN_HASH) {
+            if (input.value === "8618") {
                 cleanup(); resolve(true);
             } else {
                 errorMsg.style.display = 'block';
