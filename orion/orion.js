@@ -464,8 +464,8 @@ const app={
                 const rightStartX = midX + 8;
                 let ttTitleX = rightStartX;
                 if (ttLogoBase64) {
-                    doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 12, 16, 16);
-                    ttTitleX = rightStartX + 20;
+                    doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 10, 13, 13);
+                    ttTitleX = rightStartX + 15;
                 }
                 // --- END OF MODIFICATION ---
 
