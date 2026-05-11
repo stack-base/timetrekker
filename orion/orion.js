@@ -616,37 +616,43 @@ const app={
                         doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                         doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin + padding, currentY + 8);
 
-                        // Size and position the chart to the left
-                        const maxDim = 45;
+                        // ENLARGED CHART: Scale the image up to 75px (previously 45px)
+                        const maxDim = 75; 
                         let imgW = maxDim;
                         let imgH = maxDim;
                         if (ratio > 1) { imgH = maxDim / ratio; } else { imgW = maxDim * ratio; }
                         
-                        const offsetX = margin + padding;
-                        const offsetY = currentY + 14 + ((maxDim - imgH) / 2);
+                        // "Crop" the canvas padding by shifting the image left and up
+                        const offsetX = margin - 2; 
+                        const offsetY = currentY + 4; 
                         doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
                         
-                        // Add Dynamic List next to the chart
+                        // Shift text slightly to the right to accommodate the larger chart image
+                        const textStartX = margin + padding + 60; 
+                        
                         doc.setFont('helvetica', 'bold');
                         doc.setFontSize(8);
                         doc.setTextColor(100, 116, 139);
-                        doc.text("TOP CATEGORIES BY FOCUS", margin + padding + maxDim + 15, currentY + 18);
+                        doc.text("TOP CATEGORIES BY FOCUS", textStartX, currentY + 18);
                         
                         let listY = currentY + 26;
                         doc.setFont('helvetica', 'normal');
                         doc.setTextColor(51, 65, 85);
                         
+                        // Match the exact color array from your Chart.js configuration
+                        const chartColors = ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+                        
                         // Render Top 4 categories dynamically next to the chart
                         sortedProjs.slice(0, 4).forEach((p, i) => {
-                            // Draw bullet point
-                            doc.setFillColor(139, 92, 246); // Brand purple
-                            doc.circle(margin + padding + maxDim + 16, listY - 1, 1.2, 'F');
+                            // Apply dynamic color based on the index
+                            doc.setFillColor(chartColors[i % chartColors.length]); 
+                            doc.circle(textStartX + 1, listY - 1, 1.5, 'F'); // Slightly larger bullet
                             
                             // Draw Project Name
-                            doc.text(`${p[0]}`, margin + padding + maxDim + 20, listY);
+                            doc.text(`${p[0]}`, textStartX + 5, listY);
                             
                             // Draw Session Count (Right aligned relative to list)
-                            doc.text(`${p[1].count} sessions`, margin + padding + maxDim + 80, listY);
+                            doc.text(`${p[1].count} sessions`, textStartX + 60, listY);
                             listY += 7;
                         });
 
