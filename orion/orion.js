@@ -417,7 +417,6 @@ const app={
                         endY = y + 5;
                     }
                     
-                    // Vertical accent line
                     doc.setDrawColor(...brandColor);
                     doc.setLineWidth(1.5);
                     doc.line(margin, y - 4, margin, endY + 1);
@@ -425,39 +424,33 @@ const app={
                     return endY + 12;
                 };
 
-                const drawKPICard = (x, y, w, h, label, value, subtext) => {
-                    const accentColors = [
-                        [74, 75, 168], [16, 185, 129], [245, 158, 11], 
-                        [239, 68, 68], [59, 130, 246], [139, 92, 246]
-                    ];
-                    let hash = 0;
-                    for (let i = 0; i < label.length; i++) hash += label.charCodeAt(i);
-                    const accent = accentColors[hash % accentColors.length];
+                const drawKPICard = (x, y, w, h, label, value, subtext, accentColor) => {
+                    // Minimalist card with off-white background and no border
+                    doc.setFillColor(248, 249, 250); 
+                    doc.rect(x, y, w, h, 'F'); 
             
-                    // Minimalist card with crisp corners
-                    doc.setFillColor(255, 255, 255);
-                    doc.setDrawColor(226, 232, 240);
-                    doc.setLineWidth(0.5);
-                    doc.rect(x, y, w, h, 'FD');
-            
-                    // Colorful top-edge accent
-                    doc.setDrawColor(...accent);
-                    doc.setLineWidth(1.5);
+                    // Thick, colorful top-edge accent
+                    doc.setDrawColor(...accentColor);
+                    doc.setLineWidth(2.5);
                     doc.line(x, y, x + w, y);
             
+                    // Label
                     doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(7);
-                    doc.setTextColor(...textMuted);
-                    doc.text(label.toUpperCase(), x + 5, y + 7);
+                    doc.setFontSize(8);
+                    doc.setTextColor(108, 117, 125); 
+                    doc.text(label.toUpperCase(), x + 5, y + 8);
                     
-                    doc.setFontSize(18);
-                    doc.setTextColor(...textMain);
-                    doc.text(value.toString(), x + 5, y + 16);
+                    // Value
+                    doc.setFontSize(22);
+                    doc.setTextColor(20, 25, 35); 
+                    doc.text(value.toString(), x + 5, y + 18);
                     
+                    // Subtext
                     if (subtext) {
                         doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(7);
-                        doc.text(subtext, x + 5, y + 22);
+                        doc.setFontSize(8);
+                        doc.setTextColor(40, 45, 55);
+                        doc.text(subtext, x + 5, y + 26);
                     }
                 };
 
@@ -507,18 +500,26 @@ const app={
                 doc.text(`Target Environment: TimeTrekker`, margin, currentY);
                 currentY += 20;
                 currentY = drawSectionHeader('EXECUTIVE SUMMARY', 'High-level metrics and system health', currentY);
+                
                 const cardW = (contentWidth - 8) / 3;
-                const cardH = 26;
+                const cardH = 32; 
                 let cX = margin;
                 let cY = currentY;
-                drawKPICard(cX, cY, cardW, cardH, 'Total Active Users', usersCount, 'Global directory');
-                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Total Tasks', totalTasks, `${completionRate}% Completion Rate`);
-                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'High Priority', priorityCounts.high, 'Active directives');
-                cY += cardH + 4;
-                drawKPICard(cX, cY, cardW, cardH, 'Total Sessions', totalSessions, 'Focus blocks logged');
-                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'Aggregated Hours', totalFocusHours, 'Deep work recorded');
-                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'Top Project', topProjectName.substring(0,15), 'Most active category');
+                
+                // Top Row
+                drawKPICard(cX, cY, cardW, cardH, 'TOTAL ACTIVE USERS', usersCount, 'Global users directory', [244, 67, 54]); 
+                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'TOTAL TASKS', totalTasks, `${completionRate}% Completion Rate`, [66, 133, 244]); 
+                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'HIGH PRIORITY', priorityCounts.high, 'Active directives', [249, 168, 37]); 
+                
+                cY += cardH + 6; 
+                
+                // Bottom Row
+                drawKPICard(cX, cY, cardW, cardH, 'LOGGED SESSIONS', totalSessions, 'Focus sessions recorded', [38, 166, 154]); 
+                drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'AGGREGATED HOURS', totalFocusHours, 'Deep work sustained', [126, 87, 194]); 
+                drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'PRIMARY VECTOR', topProjectName.substring(0,15), 'Dominant focus category', [33, 33, 33]); 
+                
                 currentY = cY + cardH + 15;
+                
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
                 doc.setTextColor(...textMain);
@@ -789,7 +790,7 @@ const app={
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(7);
                     doc.setTextColor(148, 163, 184);
-                    doc.text(`Orion  //  TimeTrekker Report — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 4 : 0), footerY - 0.5);
+                    doc.text(`Orion  //  TimeTrekker Report — CONFIDENTIAL & PROPRIETARY`, margin + (orionLogoBase64 ? 5 : 0), footerY - 0.5);
                     doc.setFont('helvetica', 'normal');
                     doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
                 }
