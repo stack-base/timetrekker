@@ -447,8 +447,8 @@ const app={
                 const midX = pageWidth / 2;
                 let orionTitleX = margin;
                 if (orionLogoBase64) {
-                    doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8, 10, 10);
-                    orionTitleX = margin + 14; 
+                    doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8, 11, 11);
+                    orionTitleX = margin + 12; 
                 }
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(26);
@@ -459,15 +459,12 @@ const app={
                 doc.setDrawColor(226, 232, 240);
                 doc.setLineWidth(0.5);
                 doc.line(midX, currentY - 8, midX, currentY + 2);
-                
-                // --- MODIFICATION: INCREASED LOGO SIZE ---
                 const rightStartX = midX + 8;
                 let ttTitleX = rightStartX;
                 if (ttLogoBase64) {
                     doc.addImage(ttLogoBase64, 'PNG', rightStartX, currentY - 10, 13, 13);
                     ttTitleX = rightStartX + 15;
                 }
-                // --- END OF MODIFICATION ---
 
                 doc.setFont('helvetica', 'bold'); 
                 doc.setCharSpace(-0.40); 
