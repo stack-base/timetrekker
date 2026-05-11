@@ -183,30 +183,50 @@ function populateTargetSelectors() {
     if(taskTarget) taskTarget.innerHTML = defaultTaskOpt + userOptions;
     if(broadcastTarget) broadcastTarget.innerHTML = defaultBroadcastOpt + userOptions;
 };
-// --- NEW: CLEARANCE MODAL ENGINE (GOOGLE STYLE) ---
 const requireClearance = () => {
     return new Promise((resolve, reject) => {
         if (document.getElementById('pin-clearance-modal')) {
             document.getElementById('pin-clearance-modal').remove();
         }
 
+        // 1. Fetch the currently logged-in user's details
+        const user = auth.currentUser;
+        const localUser = user ? state.usersMap[user.uid] : null;
+        
+        const dName = localUser?.name || user?.displayName || 'Administrator';
+        const dEmail = user?.email || 'System Account';
+        const dAvatar = localUser?.avatar || user?.photoURL || null;
+
+        // 2. Generate the dynamic Avatar HTML
+        let avatarHtml = '';
+        if (dAvatar) {
+            avatarHtml = `<img src="${dAvatar}" alt="Profile" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">`;
+        } else {
+            const initial = dName.charAt(0).toUpperCase();
+            avatarHtml = `<div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: #fff; border: 1px solid var(--border); margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">${initial}</div>`;
+        }
+
+        // 3. Build the Modal
         const modalHtml = `
         <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: none; background: rgba(0,0,0,0.6);">
             <div class="modal-box" style="max-width: 400px; padding: 36px 40px; text-align: center; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
                 
-                <div style="display: flex; justify-content: center; margin-bottom: 16px;">
-                    <div style="width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #8ab4f8; background: var(--bg-main);">
-                        <i class="ph-fill ph-shield-check"></i>
+                <h3 style="font-size: 1.5rem; font-weight: 400; color: #e8eaed; margin-bottom: 24px; letter-spacing: 0;">Verify it's you</h3>
+                
+                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border);">
+                    ${avatarHtml}
+                    <div style="font-size: 1rem; color: #e8eaed; font-weight: 500; letter-spacing: -0.01em;">${dName}</div>
+                    <div style="font-size: 0.8125rem; color: #9aa0a6; display: flex; align-items: center; gap: 4px;">
+                        <i class="ph-bold ph-user-circle"></i> ${dEmail}
                     </div>
                 </div>
                 
-                <h3 style="font-size: 1.5rem; font-weight: 400; color: #e8eaed; margin-bottom: 8px; letter-spacing: 0;">Verify it's you</h3>
-                <p style="font-size: 0.875rem; color: #9aa0a6; margin-bottom: 32px; line-height: 1.5;">To help keep your system safe, Orion wants to make sure it's really you.</p>
+                <p style="font-size: 0.875rem; color: #9aa0a6; margin-bottom: 24px; line-height: 1.5;">To help keep your system safe, Orion requires you to enter your administrative passcode.</p>
                 
                 <div style="text-align: left; margin-bottom: 32px; position: relative;">
-                    <input type="password" id="clearance-pin-input" style="width: 100%; padding: 13px 15px; border: 1px solid #5f6368; border-radius: 4px; background: transparent; color: #e8eaed; font-size: 1rem; outline: none; transition: all 0.2s;" placeholder="Enter passkey" autocomplete="off" onfocus="this.style.border='2px solid #8ab4f8'; this.style.padding='12px 14px';" onblur="this.style.border='1px solid #5f6368'; this.style.padding='13px 15px';">
+                    <input type="password" id="clearance-pin-input" style="width: 100%; padding: 13px 15px; border: 1px solid #5f6368; border-radius: 4px; background: transparent; color: #e8eaed; font-size: 1rem; outline: none; transition: all 0.2s;" placeholder="Enter passcode" autocomplete="off" onfocus="this.style.border='2px solid #8ab4f8'; this.style.padding='12px 14px';" onblur="this.style.border='1px solid #5f6368'; this.style.padding='13px 15px';">
                     <div id="pin-error-msg" style="color: #f28b82; font-size: 0.75rem; margin-top: 8px; display: none; align-items: center;">
-                        <i class="ph-bold ph-warning-circle" style="margin-right: 6px; font-size: 1rem;"></i> Wrong passkey. Try again.
+                        <i class="ph-bold ph-warning-circle" style="margin-right: 6px; font-size: 1rem;"></i> Wrong passcode. Try again.
                     </div>
                 </div>
                 
@@ -233,13 +253,11 @@ const requireClearance = () => {
         cancelBtn.onclick = () => { cleanup(); reject(new Error("Cancelled")); };
 
         const attemptVerify = async () => {
-            // Checking against your disguised STAR_KEY
             if (input.value === STAR_KEY) {
                 cleanup(); resolve(true);
             } else {
                 errorMsg.style.display = 'flex';
                 input.value = ''; input.focus();
-                // Google-style subtle shake animation
                 modal.querySelector('.modal-box').style.transform = 'translateX(4px)';
                 setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(-4px)', 50);
                 setTimeout(() => modal.querySelector('.modal-box').style.transform = 'translateX(0)', 100);
