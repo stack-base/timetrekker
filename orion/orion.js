@@ -447,11 +447,11 @@ const app={
                 const midX = pageWidth / 2;
                 let orionTitleX = margin;
                 if (orionLogoBase64) {
-                    doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8, 11, 11);
-                    orionTitleX = margin + 12; 
+                    doc.addImage(orionLogoBase64, 'PNG', margin, currentY - 8, 10, 10);
+                    orionTitleX = margin + 14; 
                 }
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(26);
+                doc.setFontSize(25);
                 doc.setTextColor(...textMain);
                 doc.setCharSpace(-0.52);
                 doc.text(`Orion`, orionTitleX, currentY);
@@ -468,7 +468,7 @@ const app={
 
                 doc.setFont('helvetica', 'bold'); 
                 doc.setCharSpace(-0.40); 
-                doc.setFontSize(26);
+                doc.setFontSize(25);
                 doc.text(`TimeTrekker`, ttTitleX, currentY);
                 doc.setCharSpace(0);
                 currentY += 12;
