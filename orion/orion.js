@@ -198,7 +198,7 @@ const requireClearance = () => {
                 <h3 style="font-size: 1.125rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Clearance Required</h3>
                 <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.5rem;">Enter authorization PIN to proceed.</p>
                 
-                <input type="password" id="clearance-pin-input" class="input-control" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5em; padding: 1rem; margin-bottom: 1rem;" maxlength="4" placeholder="••••" autocomplete="off">
+                <input type="password" id="clearance-pin-input" class="input-control" style="text-align: center; font-size: 1.25rem; letter-spacing: 0.1em; padding: 1rem; margin-bottom: 1rem;" placeholder="Enter Passkey" autocomplete="off">
                 
                 <div id="pin-error-msg" style="color: var(--danger); font-size: 0.75rem; margin-bottom: 1rem; display: none;">Invalid PIN. Access denied.</div>
                 
@@ -224,7 +224,8 @@ const requireClearance = () => {
         cancelBtn.onclick = () => { cleanup(); reject(new Error("Cancelled")); };
 
         const attemptVerify = async () => {
-            if (input.value === "8618") {
+            // Check against the disguised constant
+            if (input.value === STAR_KEY) {
                 cleanup(); resolve(true);
             } else {
                 errorMsg.style.display = 'block';
