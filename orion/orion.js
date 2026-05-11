@@ -604,11 +604,9 @@ const app={
                         
                         const ratio = projectCanvas.width / projectCanvas.height;
                         const padding = 6;
-                        
-                        // 1. Increased container height to accommodate the larger chart
                         const containerHeight = 85; 
                         
-                        // Modern Card Container (Spans full width)
+                        // Modern Card Container
                         doc.setFillColor(248, 250, 252);
                         doc.setDrawColor(226, 232, 240); 
                         doc.setLineWidth(0.5);
@@ -618,43 +616,40 @@ const app={
                         doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
                         doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin + padding, currentY + 8);
 
-                        // 2. Chart Size and Placement
-                        const maxDim = 70; // Optimized size for the new container height
+                        // Clean Chart Sizing (No negative offset hacks)
+                        const maxDim = 65; 
                         let imgW = maxDim;
                         let imgH = maxDim;
                         if (ratio > 1) { imgH = maxDim / ratio; } else { imgW = maxDim * ratio; }
                         
-                        // Shifted DOWN to avoid title overlap, and right to respect padding
-                        const offsetX = margin + 2; 
-                        const offsetY = currentY + 12; 
+                        // Centered vertically inside the card
+                        const offsetX = margin + padding; 
+                        const offsetY = currentY + 12 + ((maxDim - imgH) / 2); 
                         doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
                         
-                        // 3. Legend Alignment (Tied dynamically to chart width)
-                        const textStartX = margin + padding + maxDim + 5; 
+                        // Legend Alignment
+                        const textStartX = margin + padding + maxDim + 15; 
                         
                         doc.setFont('helvetica', 'bold');
                         doc.setFontSize(8);
                         doc.setTextColor(100, 116, 139);
-                        doc.text("TOP CATEGORIES BY FOCUS", textStartX, currentY + 20); // Pushed down to align with chart
+                        doc.text("TOP CATEGORIES BY FOCUS", textStartX, currentY + 20); 
                         
                         let listY = currentY + 28;
                         doc.setFont('helvetica', 'normal');
                         doc.setTextColor(51, 65, 85);
                         
+                        // Dynamic chart colors matched to UI
                         const chartColors = ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
                         
-                        // Render Top 4 categories dynamically next to the chart
+                        // Render Top categories dynamically
                         sortedProjs.slice(0, 4).forEach((p, i) => {
-                            // Apply dynamic color based on the index
                             doc.setFillColor(chartColors[i % chartColors.length]); 
                             doc.circle(textStartX + 1, listY - 1, 1.5, 'F'); 
                             
-                            // Draw Project Name
                             doc.text(`${p[0]}`, textStartX + 6, listY);
-                            
-                            // Draw Session Count (Right aligned relative to list)
                             doc.text(`${p[1].count} sessions`, textStartX + 60, listY);
-                            listY += 8; // Increased vertical breathing room
+                            listY += 8; 
                         });
 
                         currentY += containerHeight + 8;
