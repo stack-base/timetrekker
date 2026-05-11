@@ -240,9 +240,9 @@ const requireClearance = () => {
         <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: none; background: rgba(0,0,0,0.7); padding: 0;">
             <div class="auth-box">
                 
-                <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 24px; gap: 12px;">
+                <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 60px; gap: 12px;">
                     <img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-                    <div style="font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">Orion Console</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">Orion</div>
                 </div>
                 
                 <h3 style="font-size: 1.5rem; font-weight: 400; color: #e8eaed; margin-bottom: 24px; letter-spacing: 0;">Verify it's you</h3>
