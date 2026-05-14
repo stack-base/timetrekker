@@ -34,18 +34,34 @@ self.addEventListener('activate', event => {
     return self.clients.claim();
 });
 
-// Fetch: Serve from Cache first, then Network
 self.addEventListener('fetch', event => {
-    // Ignore Firestore/Firebase requests
-    if (event.request.url.includes('firestore.googleapis.com') || 
-        event.request.url.includes('firebase')) {
-        return;
-    }
+    // Only cache GET requests (ignore POST/PUT/etc.)
+    if (event.request.method !== 'GET') return;
 
     event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request).then(networkResponse => {
+        caches.match(event.request).then(cachedResponse => {
+            // 1. Return the cached version instantly if available
+            if (cachedResponse) {
+                return cachedResponse; 
+            }
+            
+            // 2. Fetch from the network if not in cache
+            return fetch(event.request).then(networkResponse => {
+                // Ensure the response is valid before caching
+                if (!networkResponse || (networkResponse.status !== 200 && networkResponse.status !== 0)) {
+                    return networkResponse;
+                }
+
+                // 3. Clone the response and save it to the cache dynamically
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, responseToCache);
+                });
+
+                // 4. Return the original network response to the browser
                 return networkResponse;
+            }).catch(error => {
+                console.error('[Service Worker] Fetch failed for:', event.request.url, error);
             });
         })
     );
