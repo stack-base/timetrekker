@@ -1789,119 +1789,223 @@ function updateFeed(){
         return `<tr><td style="color: var(--text-muted);">${d.toLocaleDateString()} <span style="color: var(--text-faint);">${d.toLocaleTimeString()}</span></td><td style="color: #fff; font-weight: 500;">${s.taskTitle||'Unknown Task'}</td><td style="color: var(--brand);">${s.duration||25}m</td></tr>`;
     }).join('');
 }
-function updateCharts(){
-    const days={}; 
-    state.sessions.forEach(s=>{ 
-        if(!s.completedAt) return; 
-        const dateObj = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000); 
-        const dateKey = dateObj.toISOString().split('T')[0];
-        days[dateKey] = (days[dateKey] || 0) + (s.duration || 25); 
+function updateCharts() {
+    const now = new Date();
+    const last7Days = Array.from({length: 7}, (_, i) => {
+        const d = new Date(); d.setDate(now.getDate() - (6 - i));
+        return d.toISOString().split('T')[0];
     });
-    const sortedDateKeys = Object.keys(days).sort().slice(-7);
-    const displayLabels = sortedDateKeys.map(dKey => {
-        return new Date(dKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const displayLabels = last7Days.map(dKey => new Date(dKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+
+    // Global Chart Configuration
+    const cOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2a2a2a', drawBorder: false } }, x: { grid: { display: false, drawBorder: false } } } };
+
+    // 1. Focus Trend (Activity) - Replaces old line chart with TimeTrekker's preferred bar style
+    const focusData = last7Days.map(dateKey => {
+        return state.sessions.filter(s => {
+            if(!s.completedAt) return false;
+            const sDate = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000);
+            return sDate.toISOString().split('T')[0] === dateKey;
+        }).reduce((acc, s) => acc + (s.duration || 25), 0);
     });
+
     if(state.charts.activity) state.charts.activity.destroy();
-    state.charts.activity = new Chart(document.getElementById('activityChart').getContext('2d'), { 
-        type: 'line', 
-        data: {
-            labels: displayLabels,
-            datasets: [{
-                label: 'Focus Minutes',
-                data: sortedDateKeys.map(k => days[k]),
-                borderColor: '#ff5757',
-                backgroundColor: 'rgba(255, 87, 87, 0.1)',
-                borderWidth: 2,
-                pointBackgroundColor: '#1e1e1e', 
-                pointBorderColor: '#ff5757',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6, 
-                fill: true,
-                tension: 0.4
-            }]
-        }, 
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index', 
-                intersect: false,
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(20, 20, 20, 0.9)',
-                    titleColor: '#a3a3a3',
-                    bodyColor: '#fff',
-                    borderColor: '#2a2a2a',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: false, 
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.y + ' minutes';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#2a2a2a', drawBorder: false },
-                    ticks: { maxTicksLimit: 6, padding: 10 }
-                },
-                x: {
-                    grid: { display: false, drawBorder: false },
-                    ticks: { padding: 10 }
-                }
-            }
-        } 
+    state.charts.activity = new Chart(document.getElementById('activityChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: displayLabels, datasets: [{ label: 'Focus Minutes', data: focusData, backgroundColor: 'rgba(255, 87, 87, 0.9)', borderRadius: 4 }] },
+        options: cOpts
     });
-    const projs={}; 
-    state.sessions.forEach(s=>{
-        const p=s.project||'Inbox';
-        projs[p]=(projs[p]||0)+1;
+
+    // 2. Task Completion Trend
+    const taskData = last7Days.map(dateKey => {
+        return state.tasks.filter(t => {
+            if(t.status !== 'done' || !t.completedAt) return false;
+            let tDate = new Date(typeof t.completedAt === 'string' ? t.completedAt : (t.completedAt.seconds ? t.completedAt.seconds * 1000 : t.completedAt));
+            return tDate.toISOString().split('T')[0] === dateKey;
+        }).length;
     });
-    const sortedProj=Object.entries(projs).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    if(state.charts.taskCompletion) state.charts.taskCompletion.destroy();
+    state.charts.taskCompletion = new Chart(document.getElementById('taskBarChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: displayLabels, datasets: [{ label: 'Tasks Completed', data: taskData, backgroundColor: 'rgba(59, 130, 246, 0.9)', borderRadius: 4 }] },
+        options: cOpts
+    });
+
+    // 3. Today's Timeline
+    const todayHours = Array(24).fill(0);
+    const todayStr = now.toISOString().split('T')[0];
+    state.sessions.forEach(s => {
+        if(!s.completedAt) return;
+        const sDate = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000);
+        if(sDate.toISOString().split('T')[0] === todayStr) {
+            todayHours[sDate.getHours()] += (s.duration || 25);
+        }
+    });
+
+    if(state.charts.todayTimeline) state.charts.todayTimeline.destroy();
+    state.charts.todayTimeline = new Chart(document.getElementById('todayTimelineChart').getContext('2d'), {
+        type: 'line',
+        data: { labels: Array.from({ length: 24 }, (_, i) => i + 'h'), datasets: [{ label: 'Minutes', data: todayHours, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', fill: true, tension: 0.4, borderWidth: 2 }] },
+        options: cOpts
+    });
+
+    // 4. Hourly Productivity
+    const allHours = Array(24).fill(0);
+    state.sessions.forEach(s => {
+        if(!s.completedAt) return;
+        const sDate = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000);
+        allHours[sDate.getHours()] += (s.duration || 25);
+    });
+
+    if(state.charts.hourly) state.charts.hourly.destroy();
+    state.charts.hourly = new Chart(document.getElementById('hourlyChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: Array.from({ length: 24 }, (_, i) => i), datasets: [{ label: 'Minutes', data: allHours, backgroundColor: '#10b981', borderRadius: 4 }] },
+        options: cOpts
+    });
+
+    // 5. Weekly Performance
+    const weekdays = Array(7).fill(0);
+    state.sessions.forEach(s => {
+        if(!s.completedAt) return;
+        const sDate = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000);
+        const wd = sDate.getDay();
+        weekdays[wd === 0 ? 6 : wd - 1] += (s.duration || 25);
+    });
+
+    if(state.charts.weekday) state.charts.weekday.destroy();
+    state.charts.weekday = new Chart(document.getElementById('weekdayChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Minutes', data: weekdays, backgroundColor: '#f59e0b', borderRadius: 4 }] },
+        options: cOpts
+    });
+
+    // 6. Project Distribution
+    const projs = {};
+    state.sessions.forEach(s => { const p = s.project || 'Inbox'; projs[p] = (projs[p] || 0) + 1; });
+    const sortedProj = Object.entries(projs).sort((a,b) => b[1] - a[1]).slice(0,5);
+
     if(state.charts.proj) state.charts.proj.destroy();
-    state.charts.proj = new Chart(document.getElementById('projectDistChart').getContext('2d'), { 
-        type: 'doughnut', 
-        data: {
-            labels: sortedProj.map(x=>x[0]),
-            datasets: [{
-                data: sortedProj.map(x=>x[1]),
-                backgroundColor: ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'],
-                borderWidth: 2,
-                borderColor: '#1e1e1e', 
-                hoverOffset: 5 
-            }]
-        }, 
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(20, 20, 20, 0.9)',
-                    bodyColor: '#fff',
-                    borderColor: '#2a2a2a',
-                    borderWidth: 1,
-                    padding: 10
-                }
-            },
-            cutout: '75%'
-        } 
+    state.charts.proj = new Chart(document.getElementById('projectDistChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: sortedProj.map(x=>x[0]), datasets: [{ data: sortedProj.map(x=>x[1]), backgroundColor: ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'], borderWidth: 2, borderColor: '#1e1e1e', hoverOffset: 5 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
     });
-    document.getElementById('top-projects-list').innerHTML=sortedProj.map((p,i)=>`
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; padding: 0.5rem; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='transparent'">
-            <div style="display: flex; align-items: center;">
-                <span style="width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span>
-                <span style="color: #fff;">${p[0]}</span>
+    
+    document.getElementById('top-projects-list').innerHTML = sortedProj.map((p,i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.875rem;padding:0.5rem;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='transparent'">
+            <div style="display:flex;align-items:center;">
+                <span style="width:8px;height:8px;border-radius:50%;margin-right:12px;background:${['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></span>
+                <span style="color:#fff;">${p[0]}</span>
             </div>
-            <span style="color: var(--text-muted); font-family: monospace;">${p[1]}</span>
+            <span style="color:var(--text-muted);font-family:monospace;">${p[1]} sessions</span>
         </div>
     `).join('');
+
+    // 7. Task Priorities
+    const pri = { high: 0, med: 0, low: 0, none: 0 };
+    state.tasks.forEach(t => pri[t.priority || 'none']++);
+    const totalTasksPri = state.tasks.length || 1;
+
+    if(state.charts.priority) state.charts.priority.destroy();
+    state.charts.priority = new Chart(document.getElementById('priorityChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: ['High', 'Medium', 'Low', 'None'], datasets: [{ data: [pri.high, pri.med, pri.low, pri.none], backgroundColor: ['#ef4444', '#eab308', '#3b82f6', '#525252'], borderWidth: 2, borderColor: '#1e1e1e', hoverOffset: 5 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+    });
+
+    const priData = [
+        { label: 'High Priority', count: pri.high, color: '#ef4444' },
+        { label: 'Medium Priority', count: pri.med, color: '#eab308' },
+        { label: 'Low Priority', count: pri.low, color: '#3b82f6' },
+        { label: 'No Priority', count: pri.none, color: '#525252' }
+    ];
+    document.getElementById('priority-rank-list').innerHTML = priData.map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.875rem;padding:0.6rem;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:8px;height:8px;border-radius:50%;background-color:${p.color};"></div>
+                <span style="color:var(--text-muted);">${p.label}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span style="color:#fff;font-family:monospace;font-weight:700;">${p.count}</span>
+                <span style="color:var(--text-faint);font-size:0.75rem;width:32px;text-align:right;">${Math.round((p.count/totalTasksPri)*100)}%</span>
+            </div>
+        </div>
+    `).join('');
+
+    // 8. Top Tags
+    const tagsCount = {};
+    state.tasks.forEach(t => { if(t.tags) t.tags.forEach(tag => tagsCount[tag] = (tagsCount[tag] || 0) + 1); });
+    const sortedTags = Object.entries(tagsCount).sort((a,b) => b[1] - a[1]).slice(0, 10);
+    
+    const tagList = document.getElementById('tag-rank-list');
+    if (sortedTags.length > 0) {
+        tagList.innerHTML = sortedTags.map((t, i) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.875rem;">
+                <div style="display:flex;align-items:center;">
+                    <span style="color:var(--text-faint);width:20px;font-weight:700;">${i+1}.</span>
+                    <span style="background:var(--hover);color:#fff;padding:4px 8px;border-radius:4px;border:1px solid var(--border);">${t[0]}</span>
+                </div>
+                <span style="color:var(--text-muted);font-family:monospace;">${t[1]} tasks</span>
+            </div>
+        `).join('');
+    } else {
+        tagList.innerHTML = '<p class="text-xs text-muted" style="font-style:italic;">No tags data available.</p>';
+    }
+
+    // 9. Pomodoro Records Timeline Grid
+    const grid = document.getElementById('pomo-timeline-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(now.getDate() - i);
+        const dStr = d.toISOString().split('T')[0];
+        const dayLogs = state.sessions.filter(s => {
+            if(!s.completedAt) return false;
+            const sDate = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000);
+            return sDate.toISOString().split('T')[0] === dStr;
+        });
+
+        const row = document.createElement('div');
+        row.style.cssText = "display:flex;align-items:center;height:24px;border-radius:4px;transition:background 0.2s;";
+        row.onmouseover = () => row.style.background = 'var(--hover)';
+        row.onmouseout = () => row.style.background = 'transparent';
+
+        const lbl = document.createElement('div');
+        lbl.style.cssText = "width:72px;font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0;";
+        lbl.textContent = i === 0 ? "Today" : (i === 1 ? "Yesterday" : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+
+        const bars = document.createElement('div');
+        bars.style.cssText = "flex:1;height:100%;position:relative;background:var(--bg-main);border-radius:4px;margin-left:8px;overflow:hidden;border:1px solid var(--border);";
+
+        for (let j = 1; j < 6; j++) {
+            const l = document.createElement('div');
+            l.style.cssText = "position:absolute;top:0;bottom:0;border-left:1px solid var(--border);opacity:0.3;";
+            l.style.left = `${(j * 4 / 24) * 100}%`;
+            bars.appendChild(l);
+        }
+
+        dayLogs.forEach(l => {
+            const ld = new Date(typeof l.completedAt === 'number' ? l.completedAt : l.completedAt.seconds * 1000);
+            const sm = (ld.getHours() * 60) + ld.getMinutes();
+            const dur = l.duration || 25;
+            const lp = ((sm - dur) / 1440) * 100;
+            const wp = (dur / 1440) * 100;
+
+            const b = document.createElement('div');
+            b.style.cssText = "position:absolute;top:4px;bottom:4px;border-radius:2px;background:var(--brand);opacity:0.8;z-index:10;transition:background 0.2s;";
+            b.style.left = `${lp}%`;
+            b.style.width = `${Math.max(wp, 0.5)}%`;
+            b.title = `${l.taskTitle || 'Session'} | ${ld.getHours()}:${ld.getMinutes().toString().padStart(2, '0')} - ${dur}m`;
+            b.onmouseover = () => b.style.background = '#fff';
+            b.onmouseout = () => b.style.background = 'var(--brand)';
+            bars.appendChild(b);
+        });
+
+        row.appendChild(lbl);
+        row.appendChild(bars);
+        grid.appendChild(row);
+    }
 }
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
