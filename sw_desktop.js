@@ -1,8 +1,11 @@
-const CACHE_NAME = 'timetrekker-desktop-v1.0.6';
+const CACHE_NAME = 'timetrekker-desktop-v1.0.7'; // Bumped version to force cache update
+const OFFLINE_URL = './offline.html'; // Reusing the same offline page
+
 const ASSETS_TO_CACHE = [
     './',
     './application.html',
     './script_desktop.js',
+    OFFLINE_URL, // Explicitly cache the offline page
     'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
     'https://stack-base.github.io/media/brand/timetrekker/timetrekker-icon.png',
     'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',
@@ -10,7 +13,7 @@ const ASSETS_TO_CACHE = [
     'https://actions.google.com/sounds/v1/ambiences/forest_morning.ogg'
 ];
 
-// Install: Cache all static assets
+// Install: Cache all static assets including the offline page
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
@@ -61,7 +64,13 @@ self.addEventListener('fetch', event => {
                 // 4. Return the original network response to the browser
                 return networkResponse;
             }).catch(error => {
-                console.error('[Service Worker] Fetch failed for:', event.request.url, error);
+                console.warn('[Service Worker] Fetch failed for:', event.request.url, error);
+                
+                // 5. Offline Fallback Logic
+                // If the user is requesting a page (navigation) and the network fails, show offline.html
+                if (event.request.mode === 'navigate') {
+                    return caches.match(OFFLINE_URL);
+                }
             });
         })
     );
