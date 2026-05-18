@@ -152,13 +152,11 @@ onAuthStateChanged(auth, async u => {
         if (modal) modal.remove();
         if (ADMIN_UIDS.includes(u.uid)) {
             try {
-                // Wait for the PIN to be entered correctly
                 await requireClearance();
                 if (orionApp) orionApp.style.display = 'flex';
                 log(`Authenticated and Authorized as ${u.email}`);
                 app.refreshData(false);
             } catch (e) {
-                // If they cancel the PIN, show the unauthorized screen
                 showUnauthorizedScreen(); 
             }
         } else {
@@ -190,7 +188,6 @@ const requireClearance = () => {
             document.getElementById('pin-clearance-modal').remove();
         }
 
-        // 1. Fetch user and force a cache load if the map is empty
         const user = auth.currentUser;
         if (Object.keys(state.usersMap).length === 0) {
             loadCache();
@@ -201,7 +198,6 @@ const requireClearance = () => {
         const dEmail = user?.email || 'System Account';
         const dAvatar = localUser?.avatar || user?.photoURL || null;
 
-        // 2. Generate the dynamic Avatar HTML
         let avatarHtml = '';
         if (dAvatar) {
             avatarHtml = `<img src="${dAvatar}" alt="Profile" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">`;
@@ -210,7 +206,6 @@ const requireClearance = () => {
             avatarHtml = `<div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: #fff; border: 2px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">${initial}</div>`;
         }
 
-        // 3. Build the Branded Modal with Mobile CSS
         const modalHtml = `
         <style>
             #pin-clearance-modal .auth-box {
@@ -223,7 +218,6 @@ const requireClearance = () => {
                 background: var(--bg-card);
                 box-shadow: 0 8px 24px rgba(0,0,0,0.8);
             }
-            /* Make it full screen on mobile devices */
             @media (max-width: 768px) {
                 #pin-clearance-modal .auth-box {
                     max-width: 100%;
@@ -240,14 +234,11 @@ const requireClearance = () => {
         
         <div id="pin-clearance-modal" class="modal-overlay" style="z-index: 99999; backdrop-filter: none; background: rgba(0,0,0,0.7); padding: 0;">
             <div class="auth-box">
-                
                 <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 60px; gap: 12px;">
                     <img src="https://stack-base.github.io/media/brand/orion/orion_icon.png" alt="Orion Logo" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
                     <div style="font-size: 1.75rem; font-weight: 700; color: #fff; letter-spacing: -0.02em;">Orion</div>
                 </div>
-                
                 <h3 style="font-size: 1.5rem; font-weight: 400; color: #e8eaed; margin-bottom: 24px; letter-spacing: 0;">Verify it's you</h3>
-                
                 <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border);">
                     <div style="margin-bottom: 12px;">${avatarHtml}</div>
                     <div style="font-size: 0.9375rem; color: #e8eaed; font-weight: 500; letter-spacing: -0.01em; margin-bottom: 4px;">${dName}</div>
@@ -255,21 +246,17 @@ const requireClearance = () => {
                         <i class="ph-bold ph-user-circle"></i> ${dEmail}
                     </div>
                 </div>
-                
                 <p style="font-size: 0.875rem; color: #9aa0a6; margin-bottom: 24px; line-height: 1.5;">To continue, first verify that it's you.</p>
-                
                 <div style="text-align: left; margin-bottom: 32px; position: relative;">
                     <input type="password" id="clearance-pin-input" style="width: 100%; padding: 13px 15px; border: 1px solid #5f6368; border-radius: 4px; background: transparent; color: #e8eaed; font-size: 1rem; outline: none; transition: all 0.2s;" placeholder="Enter passcode" autocomplete="off" onfocus="this.style.border='2px solid #8ab4f8'; this.style.padding='12px 14px';" onblur="this.style.border='1px solid #5f6368'; this.style.padding='13px 15px';">
                     <div id="pin-error-msg" style="color: #f28b82; font-size: 0.75rem; margin-top: 8px; display: none; align-items: center;">
                         <i class="ph-bold ph-warning-circle" style="margin-right: 6px; font-size: 1rem;"></i> Wrong passcode. Try again.
                     </div>
                 </div>
-                
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="cancel-pin-btn" style="background: transparent; border: none; color: #8ab4f8; font-weight: 500; font-size: 0.875rem; cursor: pointer; padding: 8px 8px; margin-left: -8px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(138, 180, 248, 0.08)'" onmouseout="this.style.background='transparent'">Cancel</button>
                     <button id="verify-pin-btn" style="background: #8ab4f8; color: #202124; border: none; border-radius: 4px; padding: 8px 24px; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#9ec1f9'" onmouseout="this.style.background='#8ab4f8'">Next</button>
                 </div>
-                
             </div>
         </div>`;
 
@@ -425,27 +412,22 @@ const app={
                 };
 
                 const drawKPICard = (x, y, w, h, label, value, subtext, accentColor) => {
-                    // Minimalist card with off-white background and no border
                     doc.setFillColor(248, 249, 250); 
                     doc.rect(x, y, w, h, 'F'); 
             
-                    // Thick, colorful top-edge accent
                     doc.setDrawColor(...accentColor);
                     doc.setLineWidth(1.5);
                     doc.line(x, y, x + w, y);
             
-                    // Label
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(8);
                     doc.setTextColor(108, 117, 125); 
                     doc.text(label.toUpperCase(), x + 5, y + 8);
                     
-                    // Value
                     doc.setFontSize(22);
                     doc.setTextColor(20, 25, 35); 
                     doc.text(value.toString(), x + 5, y + 18);
                     
-                    // Subtext
                     if (subtext) {
                         doc.setFont('helvetica', 'normal');
                         doc.setFontSize(8);
@@ -506,14 +488,12 @@ const app={
                 let cX = margin;
                 let cY = currentY;
                 
-                // Top Row
                 drawKPICard(cX, cY, cardW, cardH, 'TOTAL ACTIVE USERS', usersCount, 'Global users directory', [244, 67, 54]); 
                 drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'TOTAL TASKS', totalTasks, `${completionRate}% Completion Rate`, [66, 133, 244]); 
                 drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'HIGH PRIORITY', priorityCounts.high, 'Active directives', [249, 168, 37]); 
                 
                 cY += cardH + 6; 
                 
-                // Bottom Row
                 drawKPICard(cX, cY, cardW, cardH, 'LOGGED SESSIONS', totalSessions, 'Focus sessions recorded', [38, 166, 154]); 
                 drawKPICard(cX + cardW + 4, cY, cardW, cardH, 'AGGREGATED HOURS', totalFocusHours, 'Deep work sustained', [126, 87, 194]); 
                 drawKPICard(cX + (cardW * 2) + 8, cY, cardW, cardH, 'PRIMARY VECTOR', topProjectName.substring(0,15), 'Dominant focus category', [33, 33, 33]); 
@@ -554,110 +534,80 @@ const app={
                     tableWidth: contentWidth * 0.75, 
                     margin: { left: margin }
                 });
+
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('TELEMETRY VISUALS', 'Graphical representation of current activity', currentY);
+                currentY = drawSectionHeader('TELEMETRY VISUALS', 'Graphical representation of global system activity', currentY);
                 
-                const activityCanvas = document.getElementById('activityChart');
-                if (activityCanvas && state.charts.activity) {
+                const addChartCard = (canvasId, chartRef, title, x, y, w, h) => {
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas || !chartRef) return false;
                     try {
-                        const oldRatio = state.charts.activity.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.activity.options.devicePixelRatio = 4; // High-res capture
-                        state.charts.activity.update('none'); 
-                        const activityImg = activityCanvas.toDataURL('image/png');
-                        state.charts.activity.options.devicePixelRatio = oldRatio;
-                        state.charts.activity.update('none');
+                        const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
+                        chartRef.options.devicePixelRatio = 4; 
+                        chartRef.update('none');
+                        const imgData = canvas.toDataURL('image/png');
+                        chartRef.options.devicePixelRatio = oldRatio;
+                        chartRef.update('none');
                         
-                        const ratio = activityCanvas.width / activityCanvas.height;
-                        const padding = 6;
-                        const imgWidth = contentWidth - (padding * 2);
-                        const imgHeight = imgWidth / ratio;
-                        const containerHeight = imgHeight + 18;
-
-                        // Modern Card Container (Rounded with light fill)
-                        doc.setFillColor(248, 250, 252); // Slate 50
-                        doc.setDrawColor(226, 232, 240); // Slate 200
-                        doc.setLineWidth(0.5);
-                        doc.roundedRect(margin, currentY, contentWidth, containerHeight, 3, 3, 'FD');
-                        
-                        // Embedded Card Title
-                        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
-                        doc.text(`FOCUS ACTIVITY CONTINUUM (7-DAY TREND)`, margin + padding, currentY + 8);
-
-                        // Render Image inside container
-                        doc.addImage(activityImg, 'PNG', margin + padding, currentY + 12, imgWidth, imgHeight, undefined, 'FAST');
-                        currentY += containerHeight + 8;
-                    } catch(e) {
-                        console.error("Activity chart export failed", e);
-                    }
-                }
-
-                const projectCanvas = document.getElementById('projectDistChart');
-                if (projectCanvas && state.charts.proj) {
-                    try {
-                        const oldRatio = state.charts.proj.options.devicePixelRatio || window.devicePixelRatio;
-                        state.charts.proj.options.devicePixelRatio = 4; // High-res capture
-                        state.charts.proj.update('none');
-                        const projectImg = projectCanvas.toDataURL('image/png');
-                        state.charts.proj.options.devicePixelRatio = oldRatio;
-                        state.charts.proj.update('none');
-                        
-                        const ratio = projectCanvas.width / projectCanvas.height;
-                        const padding = 6;
-                        const containerHeight = 85; 
-                        
-                        // Modern Card Container
-                        doc.setFillColor(248, 250, 252);
+                        doc.setFillColor(248, 250, 252); 
                         doc.setDrawColor(226, 232, 240); 
                         doc.setLineWidth(0.5);
-                        doc.roundedRect(margin, currentY, contentWidth, containerHeight, 3, 3, 'FD');
+                        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
 
-                        // Embedded Card Title
-                        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...textMain);
-                        doc.text(`CATEGORICAL PROJECT DISTRIBUTION`, margin + padding, currentY + 8);
+                        doc.setFont('helvetica', 'bold'); 
+                        doc.setFontSize(8); 
+                        doc.setTextColor(...textMain);
+                        doc.text(title, x + 6, y + 8);
 
-                        // Clean Chart Sizing (No negative offset hacks)
-                        const maxDim = 65; 
-                        let imgW = maxDim;
-                        let imgH = maxDim;
-                        if (ratio > 1) { imgH = maxDim / ratio; } else { imgW = maxDim * ratio; }
-                        
-                        // Centered vertically inside the card
-                        const offsetX = margin + padding; 
-                        const offsetY = currentY + 12 + ((maxDim - imgH) / 2); 
-                        doc.addImage(projectImg, 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
-                        
-                        // Legend Alignment
-                        const textStartX = margin + padding + maxDim + 15; 
-                        
-                        doc.setFont('helvetica', 'bold');
-                        doc.setFontSize(8);
-                        doc.setTextColor(100, 116, 139);
-                        doc.text("TOP CATEGORIES BY FOCUS", textStartX, currentY + 20); 
-                        
-                        let listY = currentY + 28;
-                        doc.setFont('helvetica', 'normal');
-                        doc.setTextColor(51, 65, 85);
-                        
-                        // Dynamic chart colors matched to UI
-                        const chartColors = ['#ff5757', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
-                        
-                        // Render Top categories dynamically
-                        sortedProjs.slice(0, 4).forEach((p, i) => {
-                            doc.setFillColor(chartColors[i % chartColors.length]); 
-                            doc.circle(textStartX + 1, listY - 1, 1.5, 'F'); 
-                            
-                            doc.text(`${p[0]}`, textStartX + 6, listY);
-                            doc.text(`${p[1].count} sessions`, textStartX + 60, listY);
-                            listY += 8; 
-                        });
+                        const imgPadding = 6;
+                        const availableW = w - (imgPadding * 2);
+                        const availableH = h - 14; 
+                        const ratio = canvas.width / canvas.height;
 
-                        currentY += containerHeight + 8;
+                        let imgW = availableW;
+                        let imgH = imgW / ratio;
+
+                        if (imgH > availableH) {
+                            imgH = availableH;
+                            imgW = imgH * ratio;
+                        }
+
+                        const imgX = x + imgPadding + ((availableW - imgW) / 2);
+                        const imgY = y + 11 + ((availableH - imgH) / 2);
+
+                        doc.addImage(imgData, 'PNG', imgX, imgY, imgW, imgH, undefined, 'FAST');
+                        return true;
                     } catch(e) {
-                        console.error("Project chart export failed", e);
+                        console.error(`Export failed for ${canvasId}`, e);
+                        return false;
                     }
-                }
-                
+                };
+
+                const fullCardH = 75;
+                const halfCardW = (contentWidth - 6) / 2;
+                const halfCardH = 80;
+
+                if (addChartCard('activityChart', state.charts.activity, 'FOCUS ACTIVITY CONTINUUM (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
+                if (addChartCard('taskBarChart', state.charts.taskCompletion, 'TASK COMPLETION VOLUME (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
+
+                doc.addPage();
+                currentY = 25;
+
+                if (addChartCard('todayTimelineChart', state.charts.todayTimeline, "TODAY'S MINUTE-BY-MINUTE TIMELINE", margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
+
+                let rowY = currentY;
+                let addedHalf = false;
+                if (addChartCard('hourlyChart', state.charts.hourly, 'HOURLY PRODUCTIVITY (ALL TIME)', margin, rowY, halfCardW, halfCardH)) addedHalf = true;
+                if (addChartCard('weekdayChart', state.charts.weekday, 'WEEKLY PERFORMANCE (ALL TIME)', margin + halfCardW + 6, rowY, halfCardW, halfCardH)) addedHalf = true;
+                if (addedHalf) currentY += halfCardH + 6;
+
+                rowY = currentY;
+                addedHalf = false;
+                if (addChartCard('projectDistChart', state.charts.proj, 'PROJECT CATEGORY DISTRIBUTION', margin, rowY, halfCardW, halfCardH)) addedHalf = true;
+                if (addChartCard('priorityChart', state.charts.priority, 'GLOBAL TASK PRIORITIES', margin + halfCardW + 6, rowY, halfCardW, halfCardH)) addedHalf = true;
+                if (addedHalf) currentY += halfCardH + 6;
+
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
@@ -1797,10 +1747,8 @@ function updateCharts() {
     });
     const displayLabels = last7Days.map(dKey => new Date(dKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
 
-    // Global Chart Configuration
     const cOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#2a2a2a', drawBorder: false } }, x: { grid: { display: false, drawBorder: false } } } };
 
-    // 1. Focus Trend (Activity) - Replaces old line chart with TimeTrekker's preferred bar style
     const focusData = last7Days.map(dateKey => {
         return state.sessions.filter(s => {
             if(!s.completedAt) return false;
@@ -1816,7 +1764,6 @@ function updateCharts() {
         options: cOpts
     });
 
-    // 2. Task Completion Trend
     const taskData = last7Days.map(dateKey => {
         return state.tasks.filter(t => {
             if(t.status !== 'done' || !t.completedAt) return false;
@@ -1832,7 +1779,6 @@ function updateCharts() {
         options: cOpts
     });
 
-    // 3. Today's Timeline
     const todayHours = Array(24).fill(0);
     const todayStr = now.toISOString().split('T')[0];
     state.sessions.forEach(s => {
@@ -1850,7 +1796,6 @@ function updateCharts() {
         options: cOpts
     });
 
-    // 4. Hourly Productivity
     const allHours = Array(24).fill(0);
     state.sessions.forEach(s => {
         if(!s.completedAt) return;
@@ -1865,7 +1810,6 @@ function updateCharts() {
         options: cOpts
     });
 
-    // 5. Weekly Performance
     const weekdays = Array(7).fill(0);
     state.sessions.forEach(s => {
         if(!s.completedAt) return;
@@ -1881,7 +1825,6 @@ function updateCharts() {
         options: cOpts
     });
 
-    // 6. Project Distribution
     const projs = {};
     state.sessions.forEach(s => { const p = s.project || 'Inbox'; projs[p] = (projs[p] || 0) + 1; });
     const sortedProj = Object.entries(projs).sort((a,b) => b[1] - a[1]).slice(0,5);
@@ -1903,7 +1846,6 @@ function updateCharts() {
         </div>
     `).join('');
 
-    // 7. Task Priorities
     const pri = { high: 0, med: 0, low: 0, none: 0 };
     state.tasks.forEach(t => pri[t.priority || 'none']++);
     const totalTasksPri = state.tasks.length || 1;
@@ -1934,7 +1876,6 @@ function updateCharts() {
         </div>
     `).join('');
 
-    // 8. Top Tags
     const tagsCount = {};
     state.tasks.forEach(t => { if(t.tags) t.tags.forEach(tag => tagsCount[tag] = (tagsCount[tag] || 0) + 1); });
     const sortedTags = Object.entries(tagsCount).sort((a,b) => b[1] - a[1]).slice(0, 10);
@@ -1954,7 +1895,6 @@ function updateCharts() {
         tagList.innerHTML = '<p class="text-xs text-muted" style="font-style:italic;">No tags data available.</p>';
     }
 
-    // 9. Pomodoro Records Timeline Grid
     const grid = document.getElementById('pomo-timeline-grid');
     grid.innerHTML = '';
     for (let i = 0; i < 7; i++) {
