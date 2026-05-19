@@ -535,6 +535,7 @@ const app={
                     margin: { left: margin }
                 });
 
+                // --- PAGE 2: Telemetry Visuals ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('TELEMETRY VISUALS', 'Graphical representation of global system activity', currentY);
@@ -584,32 +585,119 @@ const app={
                     }
                 };
 
+                // New Helper: Draws a chart on the left, and a color-coded legend table on the right
+                const addChartWithLegendCard = (canvasId, chartRef, title, legendData, x, y, w, h) => {
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas || !chartRef) return false;
+                    try {
+                        const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
+                        chartRef.options.devicePixelRatio = 4; 
+                        chartRef.update('none');
+                        const imgData = canvas.toDataURL('image/png');
+                        chartRef.options.devicePixelRatio = oldRatio;
+                        chartRef.update('none');
+                        
+                        doc.setFillColor(248, 250, 252); 
+                        doc.setDrawColor(226, 232, 240); 
+                        doc.setLineWidth(0.5);
+                        doc.roundedRect(x, y, w, h, 3, 3, 'FD');
+
+                        doc.setFont('helvetica', 'bold'); 
+                        doc.setFontSize(8); 
+                        doc.setTextColor(...textMain);
+                        doc.text(title, x + 6, y + 8);
+
+                        // Left 50% for Chart Image
+                        const leftW = w / 2;
+                        const imgPadding = 6;
+                        const availableW = leftW - (imgPadding * 2);
+                        const availableH = h - 14; 
+                        const ratio = canvas.width / canvas.height;
+
+                        let imgW = availableW;
+                        let imgH = imgW / ratio;
+
+                        if (imgH > availableH) { imgH = availableH; imgW = imgH * ratio; }
+
+                        const imgX = x + imgPadding + ((availableW - imgW) / 2);
+                        const imgY = y + 11 + ((availableH - imgH) / 2);
+
+                        doc.addImage(imgData, 'PNG', imgX, imgY, imgW, imgH, undefined, 'FAST');
+
+                        // Right 50% for Custom Legend Table
+                        const rightX = x + leftW;
+                        const startY = y + 20;
+                        const rowHeight = 9;
+                        
+                        legendData.forEach((item, i) => {
+                            const itemY = startY + (i * rowHeight);
+                            
+                            // Color Dot
+                            doc.setFillColor(item.color);
+                            doc.circle(rightX + 6, itemY - 1.2, 2.5, 'F');
+                            
+                            // Legend Label
+                            doc.setFont('helvetica', 'bold');
+                            doc.setFontSize(8);
+                            doc.setTextColor(...textMain);
+                            doc.text(item.label.toUpperCase(), rightX + 12, itemY);
+                            
+                            // Legend Value (Right Aligned)
+                            doc.setFont('helvetica', 'normal');
+                            doc.setTextColor(...textMuted);
+                            doc.text(item.value, x + w - 10, itemY, { align: 'right' });
+                            
+                            // Subtle Row Divider
+                            if (i < legendData.length - 1) {
+                                doc.setDrawColor(226, 232, 240);
+                                doc.setLineWidth(0.2);
+                                doc.line(rightX + 4, itemY + 3.5, x + w - 10, itemY + 3.5);
+                            }
+                        });
+
+                        return true;
+                    } catch(e) { return false; }
+                };
+
                 const fullCardH = 75;
-                const halfCardW = (contentWidth - 6) / 2;
-                const halfCardH = 80;
+                const pieCardH = 65;
 
                 if (addChartCard('activityChart', state.charts.activity, 'FOCUS ACTIVITY CONTINUUM (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('taskBarChart', state.charts.taskCompletion, 'TASK COMPLETION VOLUME (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
-
-                doc.addPage();
-                currentY = 25;
-
                 if (addChartCard('todayTimelineChart', state.charts.todayTimeline, "TODAY'S MINUTE-BY-MINUTE TIMELINE", margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
-                let rowY = currentY;
-                let addedHalf = false;
-                if (addChartCard('hourlyChart', state.charts.hourly, 'HOURLY PRODUCTIVITY (ALL TIME)', margin, rowY, halfCardW, halfCardH)) addedHalf = true;
-                if (addChartCard('weekdayChart', state.charts.weekday, 'WEEKLY PERFORMANCE (ALL TIME)', margin + halfCardW + 6, rowY, halfCardW, halfCardH)) addedHalf = true;
-                if (addedHalf) currentY += halfCardH + 6;
-
-                rowY = currentY;
-                addedHalf = false;
-                if (addChartCard('projectDistChart', state.charts.proj, 'PROJECT CATEGORY DISTRIBUTION', margin, rowY, halfCardW, halfCardH)) addedHalf = true;
-                if (addChartCard('priorityChart', state.charts.priority, 'GLOBAL TASK PRIORITIES', margin + halfCardW + 6, rowY, halfCardW, halfCardH)) addedHalf = true;
-                if (addedHalf) currentY += halfCardH + 6;
-
+                // --- PAGE 3: Behaviors & Categories ---
                 doc.addPage();
                 currentY = 25;
+                currentY = drawSectionHeader('BEHAVIORAL & CATEGORICAL ANALYSIS', 'Time distribution and project weightage', currentY);
+
+                // Both now Full Width
+                if (addChartCard('hourlyChart', state.charts.hourly, 'HOURLY PRODUCTIVITY (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
+                if (addChartCard('weekdayChart', state.charts.weekday, 'WEEKLY PERFORMANCE (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
+
+                // Project Distribution with Legend
+                const projColors = ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'];
+                const projLegend = sortedProjs.slice(0,5).map((p, i) => ({
+                    color: projColors[i],
+                    label: p[0].length > 25 ? p[0].substring(0, 25) + '...' : p[0],
+                    value: `${p[1].count} sessions`
+                }));
+                if (addChartWithLegendCard('projectDistChart', state.charts.proj, 'PROJECT CATEGORY DISTRIBUTION', projLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 6;
+
+                // --- PAGE 4: Priorities & Identity Ledger ---
+                doc.addPage();
+                currentY = 25;
+                
+                // Priority Matrix with Legend
+                const priColors = ['#ef4444', '#eab308', '#3b82f6', '#525252'];
+                const priLegend = [
+                    { color: priColors[0], label: 'High Priority', value: `${priorityCounts.high} tasks` },
+                    { color: priColors[1], label: 'Medium Priority', value: `${priorityCounts.med} tasks` },
+                    { color: priColors[2], label: 'Low Priority', value: `${priorityCounts.low} tasks` },
+                    { color: priColors[3], label: 'No Priority', value: `${priorityCounts.none} tasks` }
+                ];
+                if (addChartWithLegendCard('priorityChart', state.charts.priority, 'GLOBAL TASK PRIORITIES', priLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 12;
+
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
                 const userTableBody = Object.values(state.usersMap).map(u => [
                     u.name || 'Unknown',
