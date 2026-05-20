@@ -545,7 +545,7 @@ const app={
                     if (!canvas || !chartRef) return false;
                     try {
                         const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
-                        chartRef.options.devicePixelRatio = 2; 
+                        chartRef.options.devicePixelRatio = 4; 
                         chartRef.update('none');
                         const imgData = canvas.toDataURL('image/png');
                         chartRef.options.devicePixelRatio = oldRatio;
@@ -591,7 +591,7 @@ const app={
                     if (!canvas || !chartRef) return false;
                     try {
                         const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
-                        chartRef.options.devicePixelRatio = 2; 
+                        chartRef.options.devicePixelRatio = 4; 
                         chartRef.update('none');
                         const imgData = canvas.toDataURL('image/png');
                         chartRef.options.devicePixelRatio = oldRatio;
