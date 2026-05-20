@@ -98,9 +98,6 @@
 <button onclick="app.setView('overview')" id="nav-overview" class="nav-item active">
 <i class="ph-bold ph-squares-four"></i><span>Overview</span>
 </button>
-<button onclick="app.setView('density')" id="nav-density" class="nav-item">
-<i class="ph-bold ph-calendar-heatmap"></i><span>Density Map</span>
-</button>
 <div class="nav-label">Data Sources</div>
 <button onclick="app.setView('users')" id="nav-users" class="nav-item">
 <i class="ph-bold ph-users"></i><span>Users</span>
@@ -190,6 +187,29 @@
 <div class="stat-value" id="kpi-avg">--</div>
 <div class="text-xs text-faint">Minutes per focus</div>
 </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem; overflow: hidden; padding: 0;">
+    <div class="card-header" style="border-bottom: none; padding-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; width: 100%;">
+            <div>
+                <h3 class="card-title" style="margin-bottom:0.25rem;">Global Session Density</h3>
+                <p class="text-xs text-muted" style="margin: 0;">A comprehensive, 365-day visualization of global focus activity.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">
+                Less 
+                <div class="density-cell tier-0" style="cursor:default;"></div>
+                <div class="density-cell tier-1" style="cursor:default;"></div>
+                <div class="density-cell tier-2" style="cursor:default;"></div>
+                <div class="density-cell tier-3" style="cursor:default;"></div>
+                <div class="density-cell tier-4" style="cursor:default;"></div> 
+                More
+            </div>
+        </div>
+    </div>
+    <div class="card-body custom-scrollbar" style="padding: 1.5rem; overflow-x: auto;">
+        <div id="density-heatmap-container" style="display: flex; gap: 4px; padding-bottom: 0.5rem; width: max-content; margin: 0 auto;"></div>
+    </div>
 </div>
 
 <div class="dashboard-grid grid-cols-2">
@@ -311,45 +331,19 @@
 </div>
 </div>
 
-<div id="view-density" class="view-section hidden fade-in">
-    <div class="card dynamic-table-card" style="padding: 0;">
-        <div class="card-header">
-            <div>
-                <h3>Global Session Density</h3>
-                <p class="text-xs text-muted" style="margin-top:4px;">A comprehensive, 365-day visualization of global focus activity.</p>
-            </div>
-        </div>
-        <div class="card-body custom-scrollbar" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
-            <div class="density-wrapper">
-                <div id="density-heatmap-container" style="display: flex; gap: 4px;">
-                    </div>
-            </div>
-            <div style="margin-top: 2rem; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">
-                Less Focus 
-                <div class="density-cell tier-0" style="cursor:default;"></div>
-                <div class="density-cell tier-1" style="cursor:default;"></div>
-                <div class="density-cell tier-2" style="cursor:default;"></div>
-                <div class="density-cell tier-3" style="cursor:default;"></div>
-                <div class="density-cell tier-4" style="cursor:default;"></div> 
-                More Focus
-            </div>
-        </div>
-    </div>
-</div>
-
 <div id="view-users" class="view-section hidden fade-in">
 <div class="card dynamic-table-card">
-<div class="card-header" style="flex-direction: row; flex-wrap: wrap; gap: 1rem; align-items: center;">
-    <div>
-        <h3>Active Users</h3>
-        <p class="text-xs text-muted" style="margin-top:4px;">Full user directory from Firestore.</p>
+<div class="card-header" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+    <div style="flex: 1 1 250px; min-width: 0;">
+        <h3 style="margin: 0 0 4px 0;">Active Users</h3>
+        <p class="text-xs text-muted" style="margin: 0;">Full user directory from Firestore.</p>
     </div>
-    <div class="flex items-center" style="gap:1rem; flex-wrap: wrap;">
-        <div style="position:relative;width:100%;max-width:250px;">
-            <i class="ph-bold ph-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
-            <input type="text" placeholder="Search by name, email, country..." onkeyup="app.filterUsers(this.value)" class="input-control" style="padding-left:36px;border-radius:999px;font-size:0.875rem;margin:0;">
+    <div class="flex items-center justify-end" style="gap: 0.75rem; flex-wrap: wrap; flex: 2 1 auto;">
+        <div style="position:relative; width:100%; max-width:280px; min-width: 150px;">
+            <i class="ph-bold ph-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            <input type="text" placeholder="Search by name, email, country..." onkeyup="app.filterUsers(this.value)" class="input-control" style="padding-left:36px; border-radius:999px; font-size:0.875rem; margin:0;">
         </div>
-        <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="btn btn-outline text-xs header-actions" style="margin:0; flex-shrink:0;">
+        <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="btn btn-outline text-xs flex-shrink-0" style="border-radius: 999px; padding: 0.5rem 1.25rem; margin: 0;">
             <i class="ph-bold ph-star" style="margin-right:0.5rem;"></i> Show Starred Only
         </button>
     </div>
@@ -374,33 +368,34 @@
 </div>
 </div>
 </div>
+
 <div id="view-tasks" class="view-section hidden fade-in">
 <div class="card dynamic-table-card">
-<div class="card-header">
-<div class="flex items-center" style="flex-wrap:wrap;gap:1rem;">
-<div>
-<h3 id="tasks-header-title">Global Task Master List</h3>
-<p class="text-xs text-muted" id="tasks-header-desc" style="margin-top:4px;">Most recent 500 tasks from all users.</p>
-</div>
-<button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden btn text-xs" style="background:var(--brand-dim);color:var(--brand);border:1px solid rgba(255,87,87,0.2);">
-<i class="ph-bold ph-x-circle" style="margin-right:4px;"></i> Show All
-</button>
-</div>
-<div class="flex items-center" style="gap: 0.75rem; flex-wrap: wrap;">
-    <div style="position:relative; width:100%; max-width:250px;">
-        <i class="ph-bold ph-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
-        <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="input-control" style="padding-left:36px; border-radius:999px; font-size:0.875rem; margin:0;">
+<div class="card-header" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+    <div style="flex: 1 1 250px; min-width: 0;">
+        <div class="flex items-center" style="gap: 0.75rem; margin-bottom: 4px;">
+            <h3 id="tasks-header-title" style="margin: 0;">Global Task Master List</h3>
+            <button id="clear-filter-btn" onclick="app.clearTaskFilter()" class="hidden btn text-xs" style="padding: 2px 8px; background:var(--brand-dim);color:var(--brand);border:1px solid rgba(255,87,87,0.2);">
+                <i class="ph-bold ph-x-circle" style="margin-right:4px;"></i> Show All
+            </button>
+        </div>
+        <p class="text-xs text-muted" id="tasks-header-desc" style="margin: 0;">Most recent 500 tasks from all users.</p>
     </div>
-    <select id="task-filter-preset" class="input-control" onchange="app.setTaskPreset(this.value)" style="width: auto; border-radius: 999px; padding: 0.5rem 1rem; font-size: 0.8125rem; margin: 0; background: var(--bg-card);">
-        <option value="all">All Tasks</option>
-        <option value="high">High Priority (!)</option>
-        <option value="overdue">Overdue Tasks</option>
-        <option value="recent">Last 24h Activity</option>
-    </select>
-    <button onclick="app.toggleAdminTaskModal()" class="btn btn-primary text-xs flex-shrink-0">
-        <i class="ph-bold ph-plus" style="margin-right:0.5rem;"></i> New Task
-    </button>
-</div>
+    <div class="flex items-center justify-end" style="gap: 0.75rem; flex-wrap: wrap; flex: 2 1 auto;">
+        <div style="position:relative; width:100%; max-width:240px; min-width: 150px;">
+            <i class="ph-bold ph-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            <input type="text" placeholder="Search tasks..." onkeyup="app.filterTasks(this.value)" class="input-control" style="padding-left:36px; border-radius:999px; font-size:0.875rem; margin:0;">
+        </div>
+        <select id="task-filter-preset" class="input-control" onchange="app.setTaskPreset(this.value)" style="width: auto; border-radius: 999px; padding: 0.5rem 1rem; font-size: 0.8125rem; margin: 0; background: var(--bg-card);">
+            <option value="all">All Tasks</option>
+            <option value="high">High Priority (!)</option>
+            <option value="overdue">Overdue Tasks</option>
+            <option value="recent">Last 24h Activity</option>
+        </select>
+        <button onclick="app.toggleAdminTaskModal()" class="btn btn-primary text-xs flex-shrink-0" style="border-radius: 999px; padding: 0.5rem 1.25rem; margin: 0;">
+            <i class="ph-bold ph-plus" style="margin-right:0.5rem;"></i> New Task
+        </button>
+    </div>
 </div>
 <div class="table-wrapper custom-scrollbar">
 <table class="data-table">
@@ -419,16 +414,19 @@
 </div>
 </div>
 </div>
+
 <div id="view-broadcasts" class="view-section hidden fade-in">
 <div class="card dynamic-table-card">
-<div class="card-header">
-<div>
-<h3>System Broadcasts</h3>
-<p class="text-xs text-muted" style="margin-top:4px;">Manage global or targeted announcements.</p>
-</div>
-<button onclick="app.toggleBroadcastModal()" class="btn btn-primary text-xs">
-<i class="ph-bold ph-plus" style="margin-right:0.5rem;"></i> New Broadcast
-</button>
+<div class="card-header" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+    <div style="flex: 1 1 250px; min-width: 0;">
+        <h3 style="margin: 0 0 4px 0;">System Broadcasts</h3>
+        <p class="text-xs text-muted" style="margin: 0;">Manage global or targeted announcements.</p>
+    </div>
+    <div class="flex items-center justify-end" style="gap: 0.75rem; flex-wrap: wrap; flex: 2 1 auto;">
+        <button onclick="app.toggleBroadcastModal()" class="btn btn-primary text-xs flex-shrink-0" style="border-radius: 999px; padding: 0.5rem 1.25rem; margin: 0;">
+            <i class="ph-bold ph-plus" style="margin-right:0.5rem;"></i> New Broadcast
+        </button>
+    </div>
 </div>
 <div class="table-wrapper custom-scrollbar">
 <table class="data-table">
@@ -446,6 +444,7 @@
 </div>
 </div>
 </div>
+
 <div id="view-data" class="view-section hidden fade-in">
 <div style="max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:2.5rem;">
 <div class="flex items-center" style="gap:1.5rem;">
