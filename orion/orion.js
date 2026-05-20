@@ -535,7 +535,7 @@ const app={
                     margin: { left: margin }
                 });
 
-                // --- PAGE 2: Telemetry Visuals ---
+                // --- PAGE 2: Telemetry Visuals (Part 1) ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('TELEMETRY VISUALS', 'Graphical representation of global system activity', currentY);
@@ -666,16 +666,13 @@ const app={
                 if (addChartCard('taskBarChart', state.charts.taskCompletion, 'TASK COMPLETION VOLUME (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('todayTimelineChart', state.charts.todayTimeline, "TODAY'S MINUTE-BY-MINUTE TIMELINE", margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
-                // --- PAGE 3: Behaviors & Categories ---
+                // --- PAGE 3: Telemetry Visuals (Part 2) ---
                 doc.addPage();
                 currentY = 25;
-                currentY = drawSectionHeader('BEHAVIORAL & CATEGORICAL ANALYSIS', 'Time distribution and project weightage', currentY);
 
-                // Both now Full Width
                 if (addChartCard('hourlyChart', state.charts.hourly, 'HOURLY PRODUCTIVITY (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('weekdayChart', state.charts.weekday, 'WEEKLY PERFORMANCE (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
-                // Project Distribution with Legend
                 const projColors = ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'];
                 const projLegend = sortedProjs.slice(0,5).map((p, i) => ({
                     color: projColors[i],
@@ -684,11 +681,10 @@ const app={
                 }));
                 if (addChartWithLegendCard('projectDistChart', state.charts.proj, 'PROJECT CATEGORY DISTRIBUTION', projLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 6;
 
-                // --- PAGE 4: Priorities & Identity Ledger ---
+                // --- PAGE 4: Telemetry Visuals (Part 3) ---
                 doc.addPage();
                 currentY = 25;
                 
-                // Priority Matrix with Legend
                 const priColors = ['#ef4444', '#eab308', '#3b82f6', '#525252'];
                 const priLegend = [
                     { color: priColors[0], label: 'High Priority', value: `${priorityCounts.high} tasks` },
@@ -698,6 +694,9 @@ const app={
                 ];
                 if (addChartWithLegendCard('priorityChart', state.charts.priority, 'GLOBAL TASK PRIORITIES', priLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 12;
 
+                // --- PAGE 5: Global Identity Ledger (Independent Page) ---
+                doc.addPage();
+                currentY = 25;
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
                 const userTableBody = Object.values(state.usersMap).map(u => [
                     u.name || 'Unknown',
