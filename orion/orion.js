@@ -14,20 +14,38 @@ const ADMIN_UIDS = ['oxnHr84lGgOkLQuxSouJaXJDx1I3'];
 Chart.defaults.font.family='-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 Chart.defaults.color='#a3a3a3';
 Chart.defaults.borderColor='#2a2a2a';
+
 const log=(msg)=>{
     const b=document.getElementById('console-log');
     if(b){b.innerHTML+=`> ${msg}<br>`;b.scrollTop=b.scrollHeight;}
 };
+
+// String Highlighter Utility
+const highlightText = (text, query) => {
+    if (!query || !text) return text || '';
+    const str = String(text);
+    const q = query.toLowerCase();
+    const idx = str.toLowerCase().indexOf(q);
+    if (idx === -1) return str;
+    
+    const matched = str.substring(idx, idx + query.length);
+    const markStyle = "background: rgba(255,87,87,0.2); color: #fff; border-bottom: 1px solid var(--brand); padding: 0 2px; border-radius: 2px;";
+    
+    return str.substring(0, idx) + `<mark style="${markStyle}">${matched}</mark>` + str.substring(idx + query.length);
+};
+
 const state={
     sessions:[], tasks:[], usersList:[], broadcasts: [], charts:{}, view:'overview', usersMap:{}, filterUser:null, editTaskId: null,
     starred: JSON.parse(localStorage.getItem(STAR_KEY) || '[]'),
     showStarredOnly: false, lastSyncTime: null,
+    userSearchQuery: '', taskSearchQuery: '', taskPresetFilter: 'all',
     sort: {
         users: { col: 'lastActive', dir: 'desc' },
         tasks: { col: 'dueDate', dir: 'asc' },
         broadcasts: { col: 'createdAt', dir: 'desc' }
     }
 };
+
 let isInitialLoad = true;
 const updateURL = () => {
     const url = new URL(window.location);
@@ -41,6 +59,7 @@ const updateURL = () => {
         window.history.pushState({}, '', url);
     }
 };
+
 const applyUrlState = () => {
     const params = new URLSearchParams(window.location.search);
     const v = params.get('view') || 'overview';
@@ -67,6 +86,7 @@ const applyUrlState = () => {
     }
 };
 window.addEventListener('popstate', applyUrlState);
+
 const saveCache = () => {
     try {
         const now = Date.now();
@@ -76,6 +96,7 @@ const saveCache = () => {
         updateStorageStats();
     } catch (e) { log('Cache Error: ' + e.message); }
 };
+
 const loadCache = () => {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return false;
@@ -87,6 +108,7 @@ const loadCache = () => {
         return true;
     } catch (e) { return false; }
 };
+
 const updateStorageStats = () => {
     const cache = localStorage.getItem(CACHE_KEY) || '';
     const stars = localStorage.getItem(STAR_KEY) || '';
@@ -111,6 +133,7 @@ const updateStorageStats = () => {
     if(elAge) elAge.innerText = ageStr;
     if(elBadge) elBadge.innerText = `CACHED (${ageStr} ago)`;
 };
+
 const showLoginModal=()=>{
     if(document.getElementById('dev-login-modal'))return;
     const div=document.createElement('div');
@@ -133,6 +156,7 @@ const showLoginModal=()=>{
         }
     };
 };
+
 function showUnauthorizedScreen() {
     document.body.innerHTML = `
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; background-color: var(--bg-main); color: var(--text-main);">
@@ -145,6 +169,7 @@ function showUnauthorizedScreen() {
         </div>
     `;
 };
+
 onAuthStateChanged(auth, async u => {
     const modal = document.getElementById('dev-login-modal');
     const orionApp = document.getElementById('orion-app');
@@ -169,6 +194,7 @@ onAuthStateChanged(auth, async u => {
         showLoginModal();
     }
 });
+
 function populateTargetSelectors() {
     const taskTarget = document.getElementById('admin-task-target');
     const broadcastTarget = document.getElementById('admin-broadcast-target');
@@ -182,6 +208,7 @@ function populateTargetSelectors() {
     if(taskTarget) taskTarget.innerHTML = defaultTaskOpt + userOptions;
     if(broadcastTarget) broadcastTarget.innerHTML = defaultBroadcastOpt + userOptions;
 };
+
 const requireClearance = () => {
     return new Promise((resolve, reject) => {
         if (document.getElementById('pin-clearance-modal')) {
@@ -293,6 +320,7 @@ const requireClearance = () => {
         };
     });
 };
+
 const app={
     toggleMobileMenu: () => {
         document.getElementById('sidebar').classList.toggle('open');
@@ -312,8 +340,11 @@ const app={
         document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
         const navTarget = document.getElementById(`nav-${v}`);
         if(navTarget) navTarget.classList.add('active');
-        const titles = {'overview': 'Overview', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
+        
+        // Updated titles routing map
+        const titles = {'overview': 'Overview', 'density': 'Density Map', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
+        
         if(v === 'data'){
             document.getElementById('standard-header').classList.add('hidden');
             document.getElementById('data-header').classList.remove('hidden');
@@ -535,7 +566,6 @@ const app={
                     margin: { left: margin }
                 });
 
-                // --- PAGE 2: Telemetry Visuals (Part 1) ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('TELEMETRY VISUALS', 'Graphical representation of global system activity', currentY);
@@ -585,7 +615,6 @@ const app={
                     }
                 };
 
-                // New Helper: Draws a chart on the left, and a color-coded legend table on the right
                 const addChartWithLegendCard = (canvasId, chartRef, title, legendData, x, y, w, h) => {
                     const canvas = document.getElementById(canvasId);
                     if (!canvas || !chartRef) return false;
@@ -607,7 +636,6 @@ const app={
                         doc.setTextColor(...textMain);
                         doc.text(title, x + 6, y + 8);
 
-                        // Left 50% for Chart Image
                         const leftW = w / 2;
                         const imgPadding = 6;
                         const availableW = leftW - (imgPadding * 2);
@@ -624,7 +652,6 @@ const app={
 
                         doc.addImage(imgData, 'PNG', imgX, imgY, imgW, imgH, undefined, 'FAST');
 
-                        // Right 50% for Custom Legend Table
                         const rightX = x + leftW;
                         const startY = y + 20;
                         const rowHeight = 9;
@@ -632,22 +659,18 @@ const app={
                         legendData.forEach((item, i) => {
                             const itemY = startY + (i * rowHeight);
                             
-                            // Color Dot
                             doc.setFillColor(item.color);
                             doc.circle(rightX + 6, itemY - 1.2, 2.5, 'F');
                             
-                            // Legend Label
                             doc.setFont('helvetica', 'bold');
                             doc.setFontSize(8);
                             doc.setTextColor(...textMain);
                             doc.text(item.label.toUpperCase(), rightX + 12, itemY);
                             
-                            // Legend Value (Right Aligned)
                             doc.setFont('helvetica', 'normal');
                             doc.setTextColor(...textMuted);
                             doc.text(item.value, x + w - 10, itemY, { align: 'right' });
                             
-                            // Subtle Row Divider
                             if (i < legendData.length - 1) {
                                 doc.setDrawColor(226, 232, 240);
                                 doc.setLineWidth(0.2);
@@ -666,7 +689,6 @@ const app={
                 if (addChartCard('taskBarChart', state.charts.taskCompletion, 'TASK COMPLETION VOLUME (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('todayTimelineChart', state.charts.todayTimeline, "TODAY'S MINUTE-BY-MINUTE TIMELINE", margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
-                // --- PAGE 3: Telemetry Visuals (Part 2) ---
                 doc.addPage();
                 currentY = 25;
 
@@ -674,7 +696,6 @@ const app={
                 if (addChartCard('weekdayChart', state.charts.weekday, 'WEEKLY PERFORMANCE (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('genderChart', state.charts.gender, 'USER DEMOGRAPHICS: GENDER', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
-                // --- PAGE 4: Telemetry Visuals (Part 3) ---
                 doc.addPage();
                 currentY = 25;
 
@@ -697,7 +718,6 @@ const app={
                 ];
                 if (addChartWithLegendCard('priorityChart', state.charts.priority, 'GLOBAL TASK PRIORITIES', priLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 12;
 
-                // --- PAGE 5: Global Identity Ledger (Independent Page) ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
@@ -928,13 +948,17 @@ const app={
         updateURL();
         renderTasksTable(); 
     },
-    filterTasks:(q)=>{
-        const trs=document.getElementById('tasks-table-body').querySelectorAll('tr');
-        q=q.toLowerCase();
-        trs.forEach(tr=>{ if(tr.classList.contains('task-row')) { tr.style.display=tr.innerText.toLowerCase().includes(q)?'':'none'; } });
+    // Updated Filtering logic attached to central state
+    filterTasks: (q) => {
+        state.taskSearchQuery = q;
+        renderTasksTable(); 
+    },
+    setTaskPreset: (val) => {
+        state.taskPresetFilter = val;
+        renderTasksTable();
     },
     filterUsers: (q) => {
-        state.userSearchQuery = q.toLowerCase();
+        state.userSearchQuery = q;
         renderUsersTable();
     },
     toggleStar: (uid) => {
@@ -1600,14 +1624,9 @@ const app={
         }
     },
 };
-function renderAll(){
-    processUsers(); updateKPIs(); updateCharts(); updateFeed();
-    if(state.view==='users')renderUsersTable();
-    if(state.view==='tasks')renderTasksTable();
-    if(state.view==='broadcasts')renderBroadcastsTable();
-    updateStorageStats();
-}
+
 window.app=app;
+
 function processUsers(){
     const map={};
     state.usersList.forEach(u=>{ 
@@ -1635,22 +1654,20 @@ function processUsers(){
     });
     state.usersMap=map;
 }
+
 function renderUsersTable(){
     const tbody=document.getElementById('users-table-body');
     let users=Object.values(state.usersMap);
     if(state.showStarredOnly) users = users.filter(u => state.starred.includes(u.uid));
     
-    // NEW: Text-based search filter across all data points
-    if(state.userSearchQuery) {
-        const q = state.userSearchQuery;
+    const q = state.userSearchQuery ? state.userSearchQuery.toLowerCase() : '';
+    if(q) {
         users = users.filter(u => {
-            // Combine all relevant data into one lowercase string for easy searching
             const searchStr = `${u.name||''} ${u.email||''} ${u.phone||''} ${u.country||''} ${u.gender||''} ${u.provider||''}`.toLowerCase();
             return searchStr.includes(q);
         });
     }
 
-    // Updated sorting logic for new columns
     const { col, dir } = state.sort.users;
     users.sort((a, b) => {
         let valA = a[col] || '', valB = b[col] || '';
@@ -1662,7 +1679,6 @@ function renderUsersTable(){
         return 0;
     });
 
-    // Updated empty state colspan (now 9 columns)
     if(users.length===0){ tbody.innerHTML=`<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1rem;">No user data found.</td></tr>`; return; }
     
     tbody.innerHTML=users.map(u=>{
@@ -1673,20 +1689,25 @@ function renderUsersTable(){
         const starColor = isStarred ? "color: var(--warning);" : "color: var(--text-muted);";
         let avatarHTML=u.avatar?`<img src="${u.avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`:`<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff;">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>`;
         
-        // Phone layout
-        const phoneStr = u.phone ? `<div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-phone" style="margin-right: 4px;"></i>${u.phone}</div>` : '';
+        const hlName = highlightText(u.name||'No Name', q);
+        const hlEmail = highlightText(u.email||'No Email', q);
+        const hlPhone = highlightText(u.phone||'', q);
+        const hlCountry = highlightText(u.country||'-', q);
+        const hlProvider = highlightText(u.provider, q);
+
+        const phoneStr = u.phone ? `<div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-phone" style="margin-right: 4px;"></i>${hlPhone}</div>` : '';
 
         return `
         <tr>
             <td style="text-align: center;"><button onclick="app.toggleStar('${u.uid}')" style="background:none; border:none; cursor:pointer;"><i class="${starIconClass}" style="font-size: 1.125rem; ${starColor}"></i></button></td>
             <td>${avatarHTML}</td>
             <td>
-                <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${u.name||'No Name'}</div>
-                <div style="font-size: 0.8125rem; color: var(--text-muted);">${u.email||'No Email'}</div>
+                <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${hlName}</div>
+                <div style="font-size: 0.8125rem; color: var(--text-muted);">${hlEmail}</div>
                 ${phoneStr}
             </td>
-            <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-muted);">${u.provider}</span></td>
-            <td><div style="font-weight: 500; color: #fff; font-size: 0.875rem;">${u.country || '-'}</div></td>
+            <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-muted);">${hlProvider}</span></td>
+            <td><div style="font-weight: 500; color: #fff; font-size: 0.875rem;">${hlCountry}</div></td>
             <td><div style="text-transform: capitalize; color: var(--text-muted); font-size: 0.875rem;">${u.gender ? u.gender.replace(/-/g, ' ') : '-'}</div></td>
             <td>
                 <div class="flex flex-col gap-1">
@@ -1705,26 +1726,64 @@ function renderUsersTable(){
         </tr>`;
     }).join('');
 }
+
 const fmtTime=(m)=>{ const h=Math.floor(m/60); const rm=m%60; if(h===0&&rm===0)return'0m'; return h>0?`${h}h ${rm}m`:`${rm}m`; };
+
 const getDateLabel=(dateStr)=>{
     if(!dateStr)return'No Due Date';
     const today=new Date().toISOString().split('T')[0];
     const tomorrow=new Date(Date.now()+86400000).toISOString().split('T')[0];
     if(dateStr<today)return'Overdue'; if(dateStr===today)return'Today'; if(dateStr===tomorrow)return'Tomorrow'; return dateStr;
 };
-function renderTasksTable(){
-    const tbody=document.getElementById('tasks-table-body');
-    let filteredTasks=state.tasks;
-    if(state.filterUser){
-        filteredTasks=state.tasks.filter(t=>t._uid===state.filterUser);
-        const u=state.usersMap[state.filterUser];
-        document.getElementById('tasks-header-title').innerHTML=`Tasks for <span style="color: var(--brand);">${u?(u.name||u.email):'User'}</span>`;
+
+function renderTasksTable() {
+    const tbody = document.getElementById('tasks-table-body');
+    let filteredTasks = state.tasks;
+
+    if (state.filterUser) {
+        filteredTasks = filteredTasks.filter(t => t._uid === state.filterUser);
+        const u = state.usersMap[state.filterUser];
+        document.getElementById('tasks-header-title').innerHTML = `Tasks for <span style="color: var(--brand);">${u ? (u.name || u.email) : 'User'}</span>`;
         document.getElementById('clear-filter-btn').classList.remove('hidden');
-    }else{
-        document.getElementById('tasks-header-title').innerText="Global Task Master List";
+    } else {
+        document.getElementById('tasks-header-title').innerText = "Global Task Master List";
         document.getElementById('clear-filter-btn').classList.add('hidden');
     }
-    if(filteredTasks.length===0){tbody.innerHTML=`<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1rem;">No tasks found.</td></tr>`;return;}
+
+    const preset = state.taskPresetFilter || 'all';
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yesterdayTs = Date.now() - (24 * 60 * 60 * 1000);
+
+    const getTs = (val) => {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') return new Date(val).getTime();
+        if (val.seconds) return val.seconds * 1000;
+        return 0;
+    };
+
+    if (preset === 'high') {
+        filteredTasks = filteredTasks.filter(t => t.priority === 'high');
+    } else if (preset === 'overdue') {
+        filteredTasks = filteredTasks.filter(t => t.dueDate && t.dueDate < todayStr && t.status !== 'done');
+    } else if (preset === 'recent') {
+        filteredTasks = filteredTasks.filter(t => Math.max(getTs(t.createdAt), getTs(t.updatedAt)) > yesterdayTs);
+    }
+
+    const tq = state.taskSearchQuery ? state.taskSearchQuery.toLowerCase() : '';
+    if (tq) {
+        filteredTasks = filteredTasks.filter(t => {
+            const uName = state.usersMap[t._uid] ? (state.usersMap[t._uid].name || state.usersMap[t._uid].email) : '';
+            const searchStr = `${t.title||''} ${t.project||''} ${t.subtasks ? t.subtasks.join(' ') : ''} ${uName}`.toLowerCase();
+            return searchStr.includes(tq);
+        });
+    }
+
+    if (filteredTasks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1rem;">No tasks match the current filters.</td></tr>`;
+        return;
+    }
+
     const { col, dir } = state.sort.tasks;
     filteredTasks.sort((a, b) => {
         let valA = a[col] || '', valB = b[col] || '';
@@ -1739,26 +1798,40 @@ function renderTasksTable(){
         if (valA > valB) return dir === 'asc' ? 1 : -1;
         return 0;
     });
+
     const renderFlat = col !== 'dueDate';
-    let html='';
+    let html = '';
+    
     if (!renderFlat) {
-        const groups={}; const sortOrder=['Overdue','Today','Tomorrow','No Due Date'];
-        filteredTasks.forEach(t=>{ const l=getDateLabel(t.dueDate); if(!groups[l])groups[l]=[]; groups[l].push(t); });
-        const sortedKeys=Object.keys(groups).sort((a,b)=>{
-            const idxA=sortOrder.indexOf(a), idxB=sortOrder.indexOf(b);
-            if(idxA!==-1&&idxB!==-1)return idxA-idxB; if(idxA!==-1)return-1; if(idxB!==-1)return 1;
-            if(a==='No Due Date')return 1; if(b==='No Due Date')return-1; return a.localeCompare(b);
+        const groups = {}; 
+        const sortOrder = ['Overdue', 'Today', 'Tomorrow', 'No Due Date'];
+        filteredTasks.forEach(t => { 
+            const l = getDateLabel(t.dueDate); 
+            if (!groups[l]) groups[l] = []; 
+            groups[l].push(t); 
         });
-        sortedKeys.forEach(label=>{
-            html+=`<tr style="background: rgba(20,20,20,0.5);"><td colspan="6" style="padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);">${label}</td></tr>`;
-            html+=groups[label].map(t=>generateTaskRowHtml(t)).join('');
+        const sortedKeys = Object.keys(groups).sort((a, b) => {
+            const idxA = sortOrder.indexOf(a), idxB = sortOrder.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB; 
+            if (idxA !== -1) return -1; 
+            if (idxB !== -1) return 1;
+            if (a === 'No Due Date') return 1; 
+            if (b === 'No Due Date') return -1; 
+            return a.localeCompare(b);
+        });
+        
+        sortedKeys.forEach(label => {
+            html += `<tr style="background: rgba(20,20,20,0.5);"><td colspan="6" style="padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);">${label}</td></tr>`;
+            html += groups[label].map(t => generateTaskRowHtml(t, tq)).join('');
         });
     } else {
-        html += filteredTasks.map(t=>generateTaskRowHtml(t)).join('');
+        html += filteredTasks.map(t => generateTaskRowHtml(t, tq)).join('');
     }
-    tbody.innerHTML=html;
+    
+    tbody.innerHTML = html;
 }
-function generateTaskRowHtml(t) {
+
+function generateTaskRowHtml(t, query = '') {
     const icon=t.status==='done'?'<i class="ph-fill ph-check-circle" style="color: var(--success); font-size: 1.125rem;"></i>':'<i class="ph-regular ph-circle" style="color: var(--text-muted); font-size: 1.125rem;"></i>';
     const priBadge={
         high:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">HIGH</span>',
@@ -1766,17 +1839,28 @@ function generateTaskRowHtml(t) {
         low:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: rgba(59, 130, 246, 0.1); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2);">LOW</span>',
         none:'<span style="padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; background: var(--bg-card); color: var(--text-faint); border: 1px solid var(--border);">NONE</span>'
     }[t.priority||'none'];
-    const dur=t.pomoDuration||25; const estPomos=t.estimatedPomos||1; const donePomos=t.completedSessionIds?t.completedSessionIds.length:0;
-    const u=state.usersMap[t._uid]; const uName=u?(u.name||u.email):'Unknown';
-    const userTag=!state.filterUser?`<div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${uName}</div>`:'';
-    const subHtml=(t.subtasks&&t.subtasks.length>0)?`<div style="margin-top: 8px;">${t.subtasks.map(s=>`<div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${s}</div>`).join('')}</div>`:'';
+    
+    const dur = t.pomoDuration || 25; 
+    const estPomos = t.estimatedPomos || 1; 
+    const donePomos = t.completedSessionIds ? t.completedSessionIds.length : 0;
+    
+    const u = state.usersMap[t._uid]; 
+    const rawUName = u ? (u.name || u.email) : 'Unknown';
+
+    const hlTitle = highlightText(t.title || 'Untitled', query);
+    const hlProject = highlightText(t.project || 'Inbox', query);
+    const hlUser = highlightText(rawUName, query);
+
+    const userTag = !state.filterUser ? `<div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-user"></i> ${hlUser}</div>` : '';
+    const subHtml = (t.subtasks && t.subtasks.length > 0) ? `<div style="margin-top: 8px;">${t.subtasks.map(s => `<div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;"><i class="ph-bold ph-caret-right" style="margin-right: 4px; color: var(--text-faint);"></i>${highlightText(s, query)}</div>`).join('')}</div>` : '';
+    
     return `
     <tr class="task-row">
         <td style="vertical-align: top; padding-top: 1.25rem;">${icon}</td>
         <td style="vertical-align: top;">
-            <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${t.title||'Untitled'}</div>${subHtml}
+            <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${hlTitle}</div>${subHtml}
             <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;">
-                <span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 11px; color: var(--text-muted);">${t.project||'Inbox'}</span>
+                <span style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 11px; color: var(--text-muted);">${hlProject}</span>
                 ${userTag}
             </div>
         </td>
@@ -1797,6 +1881,7 @@ function generateTaskRowHtml(t) {
         </td>
     </tr>`;
 }
+
 function renderBroadcastsTable(){
     const tbody=document.getElementById('broadcasts-table-body');
     if(!state.broadcasts || state.broadcasts.length === 0) {
@@ -1857,6 +1942,7 @@ function renderBroadcastsTable(){
         </tr>`;
     }).join('');
 }
+
 function updateKPIs(){
     const totalTime=state.sessions.reduce((a,b)=>a+(b.duration||25),0);
     document.getElementById('kpi-users').innerText=Object.keys(state.usersMap).length;
@@ -1868,6 +1954,7 @@ function updateKPIs(){
     document.getElementById('health-completion').innerText=`${rate}%`; document.getElementById('bar-completion').style.width=`${rate}%`;
     document.getElementById('health-priority').innerText=`${priRate}%`; document.getElementById('bar-priority').style.width=`${priRate}%`;
 }
+
 function updateFeed(){
     const b=document.getElementById('live-feed-body');
     if(state.sessions.length===0){b.innerHTML=`<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem; font-style: italic;">No recent activity.</td></tr>`;return;}
@@ -1876,6 +1963,7 @@ function updateFeed(){
         return `<tr><td style="color: var(--text-muted);">${d.toLocaleDateString()} <span style="color: var(--text-faint);">${d.toLocaleTimeString()}</span></td><td style="color: #fff; font-weight: 500;">${s.taskTitle||'Unknown Task'}</td><td style="color: var(--brand);">${s.duration||25}m</td></tr>`;
     }).join('');
 }
+
 function updateCharts() {
     const now = new Date();
     const last7Days = Array.from({length: 7}, (_, i) => {
@@ -2032,7 +2120,6 @@ function updateCharts() {
         tagList.innerHTML = '<p class="text-xs text-muted" style="font-style:italic;">No tags data available.</p>';
     }
 
-    // --- GENDER DISTRIBUTION CHART ---
     const genderCounts = { male: 0, female: 0, 'non-binary': 0, other: 0, 'prefer-not-to-say': 0, unknown: 0 };
     Object.values(state.usersMap).forEach(u => {
         const g = u.gender ? u.gender.toLowerCase() : 'unknown';
@@ -2047,18 +2134,16 @@ function updateCharts() {
     const genderData = [];
     const genderColors = [];
     const gColorMap = {
-        male: '#3b82f6',             // Blue
-        female: '#ec4899',           // Pink
-        'non-binary': '#8b5cf6',     // Purple
-        other: '#f59e0b',            // Yellow
-        'prefer-not-to-say': '#64748b', // Slate
-        unknown: '#334155'           // Dark Slate
+        male: '#3b82f6',             
+        female: '#ec4899',           
+        'non-binary': '#8b5cf6',     
+        other: '#f59e0b',            
+        'prefer-not-to-say': '#64748b', 
+        unknown: '#334155'           
     };
 
-    // Only add data points that have > 0 users to keep the chart clean
     Object.keys(genderCounts).forEach(k => {
         if (genderCounts[k] > 0) {
-            // Format labels nicely (e.g. "non-binary" -> "Non Binary")
             genderLabels.push(k.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
             genderData.push(genderCounts[k]);
             genderColors.push(gColorMap[k] || '#525252');
@@ -2094,14 +2179,12 @@ function updateCharts() {
         });
     }
 
-    // --- COUNTRY DISTRIBUTION CHART ---
     const countryCounts = {};
     Object.values(state.usersMap).forEach(u => {
         const c = u.country ? u.country.toUpperCase() : 'UNKNOWN';
         countryCounts[c] = (countryCounts[c] || 0) + 1;
     });
 
-    // Sort and grab the top 7 countries
     const sortedCountries = Object.entries(countryCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 7);
@@ -2119,7 +2202,7 @@ function updateCharts() {
                 datasets: [{
                     label: 'Users',
                     data: countryData,
-                    backgroundColor: '#10b981', // Emerald green
+                    backgroundColor: '#10b981', 
                     borderRadius: 4
                 }]
             },
@@ -2131,7 +2214,7 @@ function updateCharts() {
                     y: { 
                         beginAtZero: true, 
                         grid: { color: '#2a2a2a', drawBorder: false },
-                        ticks: { precision: 0 } // Force whole numbers for user counts
+                        ticks: { precision: 0 } 
                     },
                     x: { grid: { display: false, drawBorder: false } }
                 }
@@ -2191,6 +2274,80 @@ function updateCharts() {
         grid.appendChild(row);
     }
 }
+
+function renderDensityMap() {
+    const container = document.getElementById('density-heatmap-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const dailyCounts = {};
+    let maxCount = 0;
+    
+    state.sessions.forEach(s => {
+        if (!s.completedAt) return;
+        const d = new Date(typeof s.completedAt === 'number' ? s.completedAt : s.completedAt.seconds * 1000);
+        const dStr = d.toISOString().split('T')[0];
+        
+        dailyCounts[dStr] = (dailyCounts[dStr] || 0) + 1;
+        if (dailyCounts[dStr] > maxCount) maxCount = dailyCounts[dStr];
+    });
+
+    const today = new Date();
+    const daysToShow = 365;
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - daysToShow + 1);
+    
+    while (startDate.getDay() !== 0) {
+        startDate.setDate(startDate.getDate() - 1);
+    }
+
+    const totalDays = Math.round((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const totalCols = Math.ceil(totalDays / 7);
+
+    let currDate = new Date(startDate);
+    
+    for (let c = 0; c < totalCols; c++) {
+        const col = document.createElement('div');
+        col.className = 'density-col';
+        
+        for (let r = 0; r < 7; r++) {
+            if (currDate > today) break;
+            
+            const cell = document.createElement('div');
+            const dStr = currDate.toISOString().split('T')[0];
+            const count = dailyCounts[dStr] || 0;
+            
+            let tier = 0;
+            if (count > 0) {
+                const ratio = count / (maxCount || 1);
+                if (ratio > 0.75) tier = 4;
+                else if (ratio > 0.50) tier = 3;
+                else if (ratio > 0.25) tier = 2;
+                else tier = 1;
+            }
+            
+            cell.className = `density-cell tier-${tier}`;
+            
+            const displayDate = currDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            cell.title = count === 0 
+                ? `No sessions on ${displayDate}` 
+                : `${count} session${count > 1 ? 's' : ''} on ${displayDate}`;
+                
+            col.appendChild(cell);
+            currDate.setDate(currDate.getDate() + 1);
+        }
+        container.appendChild(col);
+    }
+}
+
+function renderAll(){
+    processUsers(); updateKPIs(); updateCharts(); updateFeed(); renderDensityMap();
+    if(state.view==='users')renderUsersTable();
+    if(state.view==='tasks')renderTasksTable();
+    if(state.view==='broadcasts')renderBroadcastsTable();
+    updateStorageStats();
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./orion_sw.js')
