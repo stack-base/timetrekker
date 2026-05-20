@@ -933,6 +933,10 @@ const app={
         q=q.toLowerCase();
         trs.forEach(tr=>{ if(tr.classList.contains('task-row')) { tr.style.display=tr.innerText.toLowerCase().includes(q)?'':'none'; } });
     },
+    filterUsers: (q) => {
+        state.userSearchQuery = q.toLowerCase();
+        renderUsersTable();
+    },
     toggleStar: (uid) => {
         if (state.starred.includes(uid)) state.starred = state.starred.filter(id => id !== uid);
         else state.starred.push(uid);
@@ -1636,6 +1640,16 @@ function renderUsersTable(){
     let users=Object.values(state.usersMap);
     if(state.showStarredOnly) users = users.filter(u => state.starred.includes(u.uid));
     
+    // NEW: Text-based search filter across all data points
+    if(state.userSearchQuery) {
+        const q = state.userSearchQuery;
+        users = users.filter(u => {
+            // Combine all relevant data into one lowercase string for easy searching
+            const searchStr = `${u.name||''} ${u.email||''} ${u.phone||''} ${u.country||''} ${u.gender||''} ${u.provider||''}`.toLowerCase();
+            return searchStr.includes(q);
+        });
+    }
+
     // Updated sorting logic for new columns
     const { col, dir } = state.sort.users;
     users.sort((a, b) => {

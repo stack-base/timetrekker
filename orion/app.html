@@ -255,14 +255,20 @@
 </div>
 <div id="view-users" class="view-section hidden fade-in">
 <div class="card" style="padding:0;">
-<div class="card-header">
-<div>
-<h3>Active Users</h3>
-<p class="text-xs text-muted" style="margin-top:4px;">Full user directory from Firestore.</p>
-</div>
-<button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="btn btn-outline text-xs header-actions" style="margin-top:0.5rem;">
-<i class="ph-bold ph-star" style="margin-right:0.5rem;"></i> Show Starred Only
-</button>
+<div class="card-header" style="flex-direction: row; flex-wrap: wrap; gap: 1rem; align-items: center;">
+    <div>
+        <h3>Active Users</h3>
+        <p class="text-xs text-muted" style="margin-top:4px;">Full user directory from Firestore.</p>
+    </div>
+    <div class="flex items-center" style="gap:1rem; flex-wrap: wrap;">
+        <div style="position:relative;width:100%;max-width:250px;">
+            <i class="ph-bold ph-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+            <input type="text" placeholder="Search by name, email, country..." onkeyup="app.filterUsers(this.value)" class="input-control" style="padding-left:36px;border-radius:999px;font-size:0.875rem;margin:0;">
+        </div>
+        <button id="btn-star-filter" onclick="app.toggleStarredFilter()" class="btn btn-outline text-xs header-actions" style="margin:0; flex-shrink:0;">
+            <i class="ph-bold ph-star" style="margin-right:0.5rem;"></i> Show Starred Only
+        </button>
+    </div>
 </div>
 <div class="table-wrapper custom-scrollbar">
 <table class="data-table">
