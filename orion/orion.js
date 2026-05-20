@@ -545,9 +545,14 @@ const app={
                     if (!canvas || !chartRef) return false;
                     try {
                         const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
-                        chartRef.options.devicePixelRatio = 4; 
+                        chartRef.options.devicePixelRatio = 4;
+                        Chart.defaults.font.size = 18; // Make text 50% larger so it survives the downscale
+
                         chartRef.update('none');
                         const imgData = canvas.toDataURL('image/png');
+                        
+                        // 3. Revert back to UI standards immediately
+                        Chart.defaults.font.size = oldFontSize;
                         chartRef.options.devicePixelRatio = oldRatio;
                         chartRef.update('none');
                         
@@ -591,9 +596,14 @@ const app={
                     if (!canvas || !chartRef) return false;
                     try {
                         const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
-                        chartRef.options.devicePixelRatio = 4; 
+                        chartRef.options.devicePixelRatio = 4;
+                        Chart.defaults.font.size = 18; // Make text 50% larger so it survives the downscale
+                        
                         chartRef.update('none');
                         const imgData = canvas.toDataURL('image/png');
+                        
+                        // 3. Revert back to UI standards immediately
+                        Chart.defaults.font.size = oldFontSize;
                         chartRef.options.devicePixelRatio = oldRatio;
                         chartRef.update('none');
                         
