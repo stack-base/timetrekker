@@ -361,7 +361,7 @@ const app={
         setTimeout(() => {
             try {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'mm', 'a4');
+                const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
                 const now = new Date();
                 const margin = 14; 
                 const pageWidth = doc.internal.pageSize.width;
@@ -545,7 +545,7 @@ const app={
                     if (!canvas || !chartRef) return false;
                     try {
                         const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
-                        chartRef.options.devicePixelRatio = 4; 
+                        chartRef.options.devicePixelRatio = 2; 
                         chartRef.update('none');
                         const imgData = canvas.toDataURL('image/png');
                         chartRef.options.devicePixelRatio = oldRatio;
@@ -591,7 +591,7 @@ const app={
                     if (!canvas || !chartRef) return false;
                     try {
                         const oldRatio = chartRef.options.devicePixelRatio || window.devicePixelRatio;
-                        chartRef.options.devicePixelRatio = 4; 
+                        chartRef.options.devicePixelRatio = 2; 
                         chartRef.update('none');
                         const imgData = canvas.toDataURL('image/png');
                         chartRef.options.devicePixelRatio = oldRatio;
