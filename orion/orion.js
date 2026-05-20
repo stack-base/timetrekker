@@ -672,6 +672,13 @@ const app={
 
                 if (addChartCard('hourlyChart', state.charts.hourly, 'HOURLY PRODUCTIVITY (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('weekdayChart', state.charts.weekday, 'WEEKLY PERFORMANCE (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
+                if (addChartCard('genderChart', state.charts.gender, 'USER DEMOGRAPHICS: GENDER', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
+
+                // --- PAGE 4: Telemetry Visuals (Part 3) ---
+                doc.addPage();
+                currentY = 25;
+
+                if (addChartCard('countryChart', state.charts.country, 'GLOBAL REACH: TOP COUNTRIES', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
                 const projColors = ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'];
                 const projLegend = sortedProjs.slice(0,5).map((p, i) => ({
@@ -680,10 +687,6 @@ const app={
                     value: `${p[1].count} sessions`
                 }));
                 if (addChartWithLegendCard('projectDistChart', state.charts.proj, 'PROJECT CATEGORY DISTRIBUTION', projLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 6;
-
-                // --- PAGE 4: Telemetry Visuals (Part 3) ---
-                doc.addPage();
-                currentY = 25;
                 
                 const priColors = ['#ef4444', '#eab308', '#3b82f6', '#525252'];
                 const priLegend = [
@@ -700,15 +703,15 @@ const app={
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
                 const userTableBody = Object.values(state.usersMap).map(u => [
                     u.name || 'Unknown',
-                    u.email || 'No Email',
-                    u.provider.replace('.com', '').toUpperCase(),
+                    `${u.email || 'No Email'}\n${u.phone || 'No Phone'}`,
+                    u.country || '-',
                     u.tasks.toString(),
                     `${Math.floor(u.focus / 60)}h ${u.focus % 60}m`,
                     u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'
                 ]);
                 doc.autoTable({
                     startY: currentY,
-                    head: [['Account Name', 'Email Address', 'Auth', 'Total Tasks', 'Focus Time', 'Last Active']],
+                    head: [['Account Name', 'Contact Info', 'Locale', 'Total Tasks', 'Focus Time', 'Last Active']],
                     body: userTableBody,
                     ...tableStyles,
                     headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' }
@@ -1061,6 +1064,11 @@ const app={
             document.getElementById('modal-input-name').value = u.name || '';
             document.getElementById('modal-input-email').value = u.email || '';
             document.getElementById('modal-input-photo').value = u.avatar || '';
+            
+            document.getElementById('modal-input-phone').value = u.phone || '';
+            document.getElementById('modal-input-country').value = u.country || '';
+            document.getElementById('modal-input-gender').value = u.gender || '';
+
             document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
             document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
             document.getElementById('modal-user-uid-display').innerText = `UID: ${uid}`;
@@ -1112,6 +1120,9 @@ const app={
         const updatedData = {
             displayName: document.getElementById('modal-input-name').value,
             photoURL: document.getElementById('modal-input-photo').value,
+            phone: document.getElementById('modal-input-phone').value,
+            country: document.getElementById('modal-input-country').value.toUpperCase(),
+            gender: document.getElementById('modal-input-gender').value,
             updatedAt: serverTimestamp()
         };
         if (!u.originalProfile) {
@@ -1403,6 +1414,14 @@ const app={
             document.getElementById('fs-user-email').innerText = u.email || 'No Email';
             document.getElementById('fs-user-provider').innerText = u.provider || 'UNKNOWN';
             document.getElementById('fs-user-uid').innerText = uid;
+            
+            const fsPhone = document.getElementById('fs-user-phone');
+            if (fsPhone) fsPhone.innerText = u.phone || 'N/A';
+            const fsCountry = document.getElementById('fs-user-country');
+            if (fsCountry) fsCountry.innerText = u.country || 'N/A';
+            const fsGender = document.getElementById('fs-user-gender');
+            if (fsGender) fsGender.innerText = u.gender || 'N/A';
+
             if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== url) {
                 const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
                 originalBtnContainer.style.display = 'block';
@@ -1597,7 +1616,10 @@ function processUsers(){
             tasks:0, focus:0, 
             lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0, 
             profileLoaded:true,
-            originalProfile: u.originalProfile || null
+            originalProfile: u.originalProfile || null,
+            phone: u.phone || '',
+            country: u.country || '',
+            gender: u.gender || ''
         }; 
     });
     state.tasks.forEach(t=>{ if(!map[t._uid])map[t._uid]={uid:t._uid,tasks:0,focus:0,lastActive:0,profileLoaded:false,name:'Anonymous',email:t._uid}; map[t._uid].tasks++; });
@@ -1613,15 +1635,22 @@ function renderUsersTable(){
     const tbody=document.getElementById('users-table-body');
     let users=Object.values(state.usersMap);
     if(state.showStarredOnly) users = users.filter(u => state.starred.includes(u.uid));
+    
+    // Updated sorting logic for new columns
     const { col, dir } = state.sort.users;
     users.sort((a, b) => {
-        let valA = a[col], valB = b[col];
+        let valA = a[col] || '', valB = b[col] || '';
         if (col === 'name') { valA = (a.name||a.email).toLowerCase(); valB = (b.name||b.email).toLowerCase(); }
+        if (col === 'country') { valA = (a.country||'').toLowerCase(); valB = (b.country||'').toLowerCase(); }
+        if (col === 'gender') { valA = (a.gender||'').toLowerCase(); valB = (b.gender||'').toLowerCase(); }
         if (valA < valB) return dir === 'asc' ? -1 : 1;
         if (valA > valB) return dir === 'asc' ? 1 : -1;
         return 0;
     });
-    if(users.length===0){ tbody.innerHTML=`<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1rem;">No user data found.</td></tr>`; return; }
+
+    // Updated empty state colspan (now 9 columns)
+    if(users.length===0){ tbody.innerHTML=`<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1rem;">No user data found.</td></tr>`; return; }
+    
     tbody.innerHTML=users.map(u=>{
         const last=u.lastActive?new Date(u.lastActive).toLocaleDateString()+' '+new Date(u.lastActive).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Never';
         const h=Math.floor(u.focus/60);
@@ -1629,6 +1658,10 @@ function renderUsersTable(){
         const starIconClass = isStarred ? "ph-fill ph-star" : "ph-bold ph-star";
         const starColor = isStarred ? "color: var(--warning);" : "color: var(--text-muted);";
         let avatarHTML=u.avatar?`<img src="${u.avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`:`<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(to bottom right, var(--info), #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff;">${(u.name||u.email||'?').charAt(0).toUpperCase()}</div>`;
+        
+        // Phone layout
+        const phoneStr = u.phone ? `<div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 4px;"><i class="ph-bold ph-phone" style="margin-right: 4px;"></i>${u.phone}</div>` : '';
+
         return `
         <tr>
             <td style="text-align: center;"><button onclick="app.toggleStar('${u.uid}')" style="background:none; border:none; cursor:pointer;"><i class="${starIconClass}" style="font-size: 1.125rem; ${starColor}"></i></button></td>
@@ -1636,8 +1669,11 @@ function renderUsersTable(){
             <td>
                 <div style="color: #fff; font-weight: 500; font-size: 0.875rem;">${u.name||'No Name'}</div>
                 <div style="font-size: 0.8125rem; color: var(--text-muted);">${u.email||'No Email'}</div>
+                ${phoneStr}
             </td>
             <td><span style="padding: 4px 8px; border-radius: 4px; background: var(--bg-main); border: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-muted);">${u.provider}</span></td>
+            <td><div style="font-weight: 500; color: #fff; font-size: 0.875rem;">${u.country || '-'}</div></td>
+            <td><div style="text-transform: capitalize; color: var(--text-muted); font-size: 0.875rem;">${u.gender ? u.gender.replace(/-/g, ' ') : '-'}</div></td>
             <td>
                 <div class="flex flex-col gap-1">
                     <span style="font-size: 0.8125rem; color: var(--text-muted);"><strong style="color: #fff;">${u.tasks}</strong> tasks</span><br>
@@ -1980,6 +2016,113 @@ function updateCharts() {
         `).join('');
     } else {
         tagList.innerHTML = '<p class="text-xs text-muted" style="font-style:italic;">No tags data available.</p>';
+    }
+
+    // --- GENDER DISTRIBUTION CHART ---
+    const genderCounts = { male: 0, female: 0, 'non-binary': 0, other: 0, 'prefer-not-to-say': 0, unknown: 0 };
+    Object.values(state.usersMap).forEach(u => {
+        const g = u.gender ? u.gender.toLowerCase() : 'unknown';
+        if (genderCounts[g] !== undefined) {
+            genderCounts[g]++;
+        } else {
+            genderCounts['unknown']++; 
+        }
+    });
+
+    const genderLabels = [];
+    const genderData = [];
+    const genderColors = [];
+    const gColorMap = {
+        male: '#3b82f6',             // Blue
+        female: '#ec4899',           // Pink
+        'non-binary': '#8b5cf6',     // Purple
+        other: '#f59e0b',            // Yellow
+        'prefer-not-to-say': '#64748b', // Slate
+        unknown: '#334155'           // Dark Slate
+    };
+
+    // Only add data points that have > 0 users to keep the chart clean
+    Object.keys(genderCounts).forEach(k => {
+        if (genderCounts[k] > 0) {
+            // Format labels nicely (e.g. "non-binary" -> "Non Binary")
+            genderLabels.push(k.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+            genderData.push(genderCounts[k]);
+            genderColors.push(gColorMap[k] || '#525252');
+        }
+    });
+
+    if(state.charts.gender) state.charts.gender.destroy();
+    const genderCtx = document.getElementById('genderChart');
+    if (genderCtx) {
+        state.charts.gender = new Chart(genderCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: genderLabels,
+                datasets: [{
+                    data: genderData,
+                    backgroundColor: genderColors,
+                    borderWidth: 2,
+                    borderColor: '#1e1e1e',
+                    hoverOffset: 5
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                cutout: '65%', 
+                plugins: { 
+                    legend: { 
+                        position: 'right', 
+                        labels: { color: '#a3a3a3', font: { size: 11 }, padding: 15 } 
+                    } 
+                } 
+            }
+        });
+    }
+
+    // --- COUNTRY DISTRIBUTION CHART ---
+    const countryCounts = {};
+    Object.values(state.usersMap).forEach(u => {
+        const c = u.country ? u.country.toUpperCase() : 'UNKNOWN';
+        countryCounts[c] = (countryCounts[c] || 0) + 1;
+    });
+
+    // Sort and grab the top 7 countries
+    const sortedCountries = Object.entries(countryCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 7);
+
+    const countryLabels = sortedCountries.map(c => c[0]);
+    const countryData = sortedCountries.map(c => c[1]);
+
+    if(state.charts.country) state.charts.country.destroy();
+    const countryCtx = document.getElementById('countryChart');
+    if (countryCtx) {
+        state.charts.country = new Chart(countryCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: countryLabels,
+                datasets: [{
+                    label: 'Users',
+                    data: countryData,
+                    backgroundColor: '#10b981', // Emerald green
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#2a2a2a', drawBorder: false },
+                        ticks: { precision: 0 } // Force whole numbers for user counts
+                    },
+                    x: { grid: { display: false, drawBorder: false } }
+                }
+            }
+        });
     }
 
     const grid = document.getElementById('pomo-timeline-grid');
