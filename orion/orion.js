@@ -1061,6 +1061,9 @@ const app={
             document.getElementById('modal-input-name').value = u.name || '';
             document.getElementById('modal-input-email').value = u.email || '';
             document.getElementById('modal-input-photo').value = u.avatar || '';
+            document.getElementById('modal-input-phone').value = u.phone || '';
+            document.getElementById('modal-input-gender').value = u.gender || '';
+            document.getElementById('modal-input-country').value = u.country || '';
             document.getElementById('modal-user-name-display').innerText = u.name || 'Unknown User';
             document.getElementById('modal-user-email-display').innerText = u.email || 'No Email';
             document.getElementById('modal-user-uid-display').innerText = `UID: ${uid}`;
@@ -1111,7 +1114,11 @@ const app={
         btn.innerText = 'Saving...'; btn.disabled = true;
         const updatedData = {
             displayName: document.getElementById('modal-input-name').value,
+            name: document.getElementById('modal-input-name').value, 
             photoURL: document.getElementById('modal-input-photo').value,
+            phone: document.getElementById('modal-input-phone').value,
+            gender: document.getElementById('modal-input-gender').value,
+            country: document.getElementById('modal-input-country').value.toUpperCase(),
             updatedAt: serverTimestamp()
         };
         if (!u.originalProfile) {
@@ -1403,6 +1410,9 @@ const app={
             document.getElementById('fs-user-email').innerText = u.email || 'No Email';
             document.getElementById('fs-user-provider').innerText = u.provider || 'UNKNOWN';
             document.getElementById('fs-user-uid').innerText = uid;
+            document.getElementById('fs-user-phone').innerText = u.phone || '--';
+            document.getElementById('fs-user-gender').innerText = u.gender || '--';
+            document.getElementById('fs-user-country').innerText = u.country || '--';
             if (u.originalProfile && u.originalProfile.photoURL && u.originalProfile.photoURL !== url) {
                 const highResOriginal = u.originalProfile.photoURL.replace(/=s\d+-c/g, '=s1024-c');
                 originalBtnContainer.style.display = 'block';
@@ -1593,7 +1603,10 @@ function processUsers(){
             name:u.displayName||u.name||u.email.split('@')[0], 
             email:u.email, 
             avatar:u.photoURL, 
-            provider:u.providerId||'Unknown', 
+            provider:u.providerId||'Unknown',
+            phone: u.phone || '',       // <<< ADD THIS
+            gender: u.gender || '',     // <<< ADD THIS
+            country: u.country || '',   // <<< ADD THIS
             tasks:0, focus:0, 
             lastActive:u.lastLogin ? (u.lastLogin.seconds ? u.lastLogin.seconds*1000 : u.lastLogin) : 0, 
             profileLoaded:true,
