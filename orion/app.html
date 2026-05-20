@@ -28,6 +28,28 @@
 #users-table-body tr td:nth-child(9)>div{justify-content:space-between!important;width:100%;gap:0.5rem}
 #users-table-body tr td:nth-child(9) .btn{flex:1;padding:0.625rem 0;justify-content:center}
 #view-tasks .table-wrapper{padding:0 0.5rem;box-sizing:border-box}#view-tasks .data-table tbody tr.task-row{width:100%;max-width:100%;box-sizing:border-box;overflow:hidden}#tasks-table-body tr.task-row td:nth-child(1){order:1;width:auto;margin-right:0.75rem;margin-top:2px}#tasks-table-body tr.task-row td:nth-child(2){order:2;flex:1;min-width:0;white-space:normal;word-wrap:break-word;overflow:hidden}#tasks-table-body tr.task-row td:nth-child(3){order:3;width:100%;padding-left:2rem;margin-top:0.5rem}#tasks-table-body tr.task-row td:nth-child(4){order:4;width:50%;padding-left:2rem;margin-top:0.75rem}#tasks-table-body tr.task-row td:nth-child(5){order:5;width:50%;text-align:right;margin-top:0.75rem;display:flex;align-items:flex-end;justify-content:flex-end}#tasks-table-body tr.task-row td:nth-child(6){order:6;width:100%;margin-top:1rem;padding-top:0.75rem!important;border-top:1px dashed var(--border);display:flex;justify-content:space-between;align-items:center}#tasks-table-body tr.task-row td:nth-child(6)>div:first-child{margin-bottom:0!important}#broadcasts-table-body tr td:nth-child(1){order:1;width:auto;margin-right:0.75rem;margin-top:2px}#broadcasts-table-body tr td:nth-child(2){order:2;flex:1;min-width:0}#broadcasts-table-body tr td:nth-child(3){order:3;width:100%;padding-left:2.25rem;margin-top:0.75rem}#broadcasts-table-body tr td:nth-child(4){order:4;width:100%;padding-left:2.25rem;margin-top:0.5rem}#broadcasts-table-body tr td:nth-child(5){order:5;width:100%;margin-top:1rem;padding-top:0.75rem!important;border-top:1px dashed var(--border)}#broadcasts-table-body tr td:nth-child(5)>div{justify-content:flex-end!important}}
+/* Dynamic Full-Height Table Containers */
+.dynamic-table-card {
+    height: calc(100vh - 64px - 4rem) !important;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.dynamic-table-card .card-header {
+    flex-shrink: 0;
+}
+.dynamic-table-card .table-wrapper {
+    flex: 1;
+    min-height: 0;
+    height: auto !important;
+    overflow-y: auto;
+}
+@media (max-width: 768px) {
+    .dynamic-table-card {
+        height: calc(100dvh - 56px - 2rem) !important;
+    }
+}
 </style>
 </head>
 <body>
@@ -254,7 +276,7 @@
 </div>
 </div>
 <div id="view-users" class="view-section hidden fade-in">
-<div class="card" style="padding:0;">
+<div class="card dynamic-table-card">
 <div class="card-header" style="flex-direction: row; flex-wrap: wrap; gap: 1rem; align-items: center;">
     <div>
         <h3>Active Users</h3>
@@ -291,7 +313,7 @@
 </div>
 </div>
 <div id="view-tasks" class="view-section hidden fade-in">
-<div class="card" style="padding:0;height:80vh;">
+<div class="card dynamic-table-card">
 <div class="card-header">
 <div class="flex items-center" style="flex-wrap:wrap;gap:1rem;">
 <div>
@@ -312,7 +334,7 @@
 </button>
 </div>
 </div>
-<div class="table-wrapper custom-scrollbar" style="height:calc(100% - 80px);">
+<div class="table-wrapper custom-scrollbar">
 <table class="data-table">
 <thead>
 <tr>
@@ -330,7 +352,7 @@
 </div>
 </div>
 <div id="view-broadcasts" class="view-section hidden fade-in">
-<div class="card" style="padding:0;height:80vh;">
+<div class="card dynamic-table-card">
 <div class="card-header">
 <div>
 <h3>System Broadcasts</h3>
@@ -340,7 +362,7 @@
 <i class="ph-bold ph-plus" style="margin-right:0.5rem;"></i> New Broadcast
 </button>
 </div>
-<div class="table-wrapper custom-scrollbar" style="height:calc(100% - 80px);">
+<div class="table-wrapper custom-scrollbar">
 <table class="data-table">
 <thead>
 <tr>
