@@ -50,7 +50,7 @@
         height: calc(100dvh - 56px - 2rem) !important;
     }
 }
-/* Density Map Styles */
+/* LARGER Density Map Styles */
 .density-wrapper {
     background: var(--bg-main);
     border: 1px solid var(--border);
@@ -61,12 +61,12 @@
 .density-col {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px; /* Increased gap */
 }
 .density-cell {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
+    width: 16px; /* Increased Size */
+    height: 16px; /* Increased Size */
+    border-radius: 4px; /* Smoother edges */
     background: rgba(255, 255, 255, 0.03);
     position: relative;
     cursor: pointer;
@@ -208,7 +208,7 @@
         </div>
     </div>
     <div class="card-body custom-scrollbar" style="padding: 1.5rem; overflow-x: auto;">
-        <div id="density-heatmap-container" style="display: flex; gap: 4px; padding-bottom: 0.5rem; width: max-content; margin: 0 auto;"></div>
+        <div id="density-heatmap-container" style="display: flex; gap: 5px; padding-bottom: 0.5rem; width: max-content; margin: 0 auto;"></div>
     </div>
 </div>
 
