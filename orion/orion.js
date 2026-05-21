@@ -40,7 +40,7 @@ const state={
     showStarredOnly: false, lastSyncTime: null,
     userSearchQuery: '', taskSearchQuery: '', taskPresetFilter: 'all',
     sort: {
-        users: { col: 'lastActive', dir: 'desc' },
+        users: { col: 'name', dir: 'asc' },
         tasks: { col: 'dueDate', dir: 'asc' },
         broadcasts: { col: 'createdAt', dir: 'desc' }
     }
@@ -793,7 +793,9 @@ const app={
                 // --- GLOBAL IDENTITY LEDGER ---
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
                 
-                const userTableBody = Object.values(state.usersMap).map(u => {
+                const userTableBody = Object.values(state.usersMap)
+                    .sort((a, b) => (a.name || a.email || '').toLowerCase().localeCompare((b.name || b.email || '').toLowerCase()))
+                    .map(u => {
                     const genderStr = u.gender ? u.gender.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
                     return [
                         `${u.name || 'Unknown'}\nGender: ${genderStr}`, // Gender appended dynamically here
