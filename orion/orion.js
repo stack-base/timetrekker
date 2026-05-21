@@ -785,13 +785,18 @@ const app={
                 ];
                 if (addChartWithLegendCard('priorityChart', state.charts.priority, 'GLOBAL TASK PRIORITIES', priLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 12;
 
+                // 1. Force a new page
+                doc.addPage();
+                // 2. Reset the Y-axis to the top of the new page
+                currentY = 25;
+
                 // --- GLOBAL IDENTITY LEDGER ---
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
                 
                 const userTableBody = Object.values(state.usersMap).map(u => {
                     const genderStr = u.gender ? u.gender.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
                     return [
-                        `${u.name || 'Unknown'}\nGen: ${genderStr}`, // Gender appended dynamically here
+                        `${u.name || 'Unknown'}\nGender: ${genderStr}`, // Gender appended dynamically here
                         `${u.email || 'No Email'}\n${u.phone || 'No Phone'}`,
                         u.country || '-',
                         u.tasks.toString(),
