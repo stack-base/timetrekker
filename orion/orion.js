@@ -341,7 +341,6 @@ const app={
         const navTarget = document.getElementById(`nav-${v}`);
         if(navTarget) navTarget.classList.add('active');
         
-        // Cleaned titles array (Density map removed)
         const titles = {'overview': 'Overview', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
         
@@ -566,10 +565,77 @@ const app={
                     margin: { left: margin }
                 });
 
+                // --- PAGE 2: Telemetry Visuals & Density Map ---
                 doc.addPage();
                 currentY = 25;
                 currentY = drawSectionHeader('TELEMETRY VISUALS', 'Graphical representation of global system activity', currentY);
                 
+                // --- MANUAL DENSITY MAP DRAWING ---
+                const densityCardH = 40;
+                doc.setFillColor(248, 250, 252); 
+                doc.setDrawColor(226, 232, 240); 
+                doc.setLineWidth(0.5);
+                doc.roundedRect(margin, currentY, contentWidth, densityCardH, 3, 3, 'FD');
+                doc.setFont('helvetica', 'bold'); 
+                doc.setFontSize(8); 
+                doc.setTextColor(...textMain);
+                doc.text('GLOBAL SESSION DENSITY (365 DAYS)', margin + 6, currentY + 8);
+
+                const dCounts = {};
+                let dMax = 0;
+                state.sessions.forEach(s => {
+                    if(!s.completedAt) return;
+                    const dt = new Date(typeof s.completedAt==='number' ? s.completedAt : s.completedAt.seconds*1000);
+                    const dStr = dt.toISOString().split('T')[0];
+                    dCounts[dStr] = (dCounts[dStr]||0) + 1;
+                    if(dCounts[dStr] > dMax) dMax = dCounts[dStr];
+                });
+                
+                const mapEnd = new Date();
+                const mapStart = new Date(mapEnd);
+                mapStart.setDate(mapStart.getDate() - 364);
+                while(mapStart.getDay() !== 0) mapStart.setDate(mapStart.getDate() - 1); 
+                
+                const totalMapDays = Math.round((mapEnd - mapStart)/86400000) + 1;
+                const totalMapCols = Math.ceil(totalMapDays / 7);
+                
+                const mapGap = 0.6;
+                const mapCellW = Math.floor(((contentWidth - 12 - (totalMapCols*mapGap)) / totalMapCols) * 10) / 10;
+                const mapCellH = mapCellW;
+                
+                const actualGridWidth = totalMapCols * (mapCellW + mapGap);
+                const mapStartX = margin + ((contentWidth - actualGridWidth) / 2);
+                const mapStartY = currentY + 12;
+                
+                let mapCurr = new Date(mapStart);
+                for(let c=0; c<totalMapCols; c++){
+                    for(let r=0; r<7; r++){
+                        if(mapCurr > mapEnd) break;
+                        const dateStr = mapCurr.toISOString().split('T')[0];
+                        const cnt = dCounts[dateStr] || 0;
+                        
+                        let tier = 0;
+                        if(cnt > 0){
+                            const rt = cnt / (dMax || 1);
+                            if(rt > 0.75) tier = 4;
+                            else if(rt > 0.50) tier = 3;
+                            else if(rt > 0.25) tier = 2;
+                            else tier = 1;
+                        }
+                        
+                        if (tier === 0) doc.setFillColor(235, 235, 235); 
+                        else if (tier === 1) doc.setFillColor(255, 213, 213); 
+                        else if (tier === 2) doc.setFillColor(255, 171, 171); 
+                        else if (tier === 3) doc.setFillColor(255, 129, 129); 
+                        else doc.setFillColor(255, 87, 87); 
+
+                        doc.roundedRect(mapStartX + c*(mapCellW + mapGap), mapStartY + r*(mapCellH + mapGap), mapCellW, mapCellH, 0.3, 0.3, 'F');
+                        mapCurr.setDate(mapCurr.getDate() + 1);
+                    }
+                }
+                currentY += densityCardH + 6;
+
+                // --- CHART INJECTION UTILS ---
                 const addChartCard = (canvasId, chartRef, title, x, y, w, h) => {
                     const canvas = document.getElementById(canvasId);
                     if (!canvas || !chartRef) return false;
@@ -687,18 +753,17 @@ const app={
 
                 if (addChartCard('activityChart', state.charts.activity, 'FOCUS ACTIVITY CONTINUUM (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('taskBarChart', state.charts.taskCompletion, 'TASK COMPLETION VOLUME (7-DAY TREND)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
-                if (addChartCard('todayTimelineChart', state.charts.todayTimeline, "TODAY'S MINUTE-BY-MINUTE TIMELINE", margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
-
+                
                 doc.addPage();
                 currentY = 25;
+                if (addChartCard('todayTimelineChart', state.charts.todayTimeline, "TODAY'S MINUTE-BY-MINUTE TIMELINE", margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
                 if (addChartCard('hourlyChart', state.charts.hourly, 'HOURLY PRODUCTIVITY (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('weekdayChart', state.charts.weekday, 'WEEKLY PERFORMANCE (ALL TIME)', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
-                if (addChartCard('genderChart', state.charts.gender, 'USER DEMOGRAPHICS: GENDER', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
                 doc.addPage();
                 currentY = 25;
-
+                if (addChartCard('genderChart', state.charts.gender, 'USER DEMOGRAPHICS: GENDER', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
                 if (addChartCard('countryChart', state.charts.country, 'GLOBAL REACH: TOP COUNTRIES', margin, currentY, contentWidth, fullCardH)) currentY += fullCardH + 6;
 
                 const projColors = ['#ff5757','#3b82f6','#10b981','#f59e0b','#8b5cf6'];
@@ -709,6 +774,8 @@ const app={
                 }));
                 if (addChartWithLegendCard('projectDistChart', state.charts.proj, 'PROJECT CATEGORY DISTRIBUTION', projLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 6;
                 
+                doc.addPage();
+                currentY = 25;
                 const priColors = ['#ef4444', '#eab308', '#3b82f6', '#525252'];
                 const priLegend = [
                     { color: priColors[0], label: 'High Priority', value: `${priorityCounts.high} tasks` },
@@ -718,17 +785,21 @@ const app={
                 ];
                 if (addChartWithLegendCard('priorityChart', state.charts.priority, 'GLOBAL TASK PRIORITIES', priLegend, margin, currentY, contentWidth, pieCardH)) currentY += pieCardH + 12;
 
-                doc.addPage();
-                currentY = 25;
+                // --- GLOBAL IDENTITY LEDGER ---
                 currentY = drawSectionHeader('GLOBAL IDENTITY LEDGER', 'Complete list of registered users', currentY);
-                const userTableBody = Object.values(state.usersMap).map(u => [
-                    u.name || 'Unknown',
-                    `${u.email || 'No Email'}\n${u.phone || 'No Phone'}`,
-                    u.country || '-',
-                    u.tasks.toString(),
-                    `${Math.floor(u.focus / 60)}h ${u.focus % 60}m`,
-                    u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'
-                ]);
+                
+                const userTableBody = Object.values(state.usersMap).map(u => {
+                    const genderStr = u.gender ? u.gender.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
+                    return [
+                        `${u.name || 'Unknown'}\nGen: ${genderStr}`, // Gender appended dynamically here
+                        `${u.email || 'No Email'}\n${u.phone || 'No Phone'}`,
+                        u.country || '-',
+                        u.tasks.toString(),
+                        `${Math.floor(u.focus / 60)}h ${u.focus % 60}m`,
+                        u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'
+                    ];
+                });
+                
                 doc.autoTable({
                     startY: currentY,
                     head: [['Account Name', 'Contact Info', 'Locale', 'Total Tasks', 'Focus Time', 'Last Active']],
@@ -736,6 +807,7 @@ const app={
                     ...tableStyles,
                     headStyles: { fillColor: [255, 87, 87], textColor: [255, 255, 255], fontStyle: 'bold' }
                 });
+                
                 if (sortedProjs.length > 0) {
                     doc.addPage();
                     currentY = 25;
@@ -948,8 +1020,6 @@ const app={
         updateURL();
         renderTasksTable(); 
     },
-    
-    // --- INTEGRATED: State-Driven Table Filters ---
     filterTasks: (q) => {
         state.taskSearchQuery = q;
         renderTasksTable(); 
@@ -962,8 +1032,6 @@ const app={
         state.userSearchQuery = q.toLowerCase();
         renderUsersTable();
     },
-    // ----------------------------------------------
-
     toggleStar: (uid) => {
         if (state.starred.includes(uid)) state.starred = state.starred.filter(id => id !== uid);
         else state.starred.push(uid);
@@ -1658,7 +1726,6 @@ function processUsers(){
     state.usersMap=map;
 }
 
-// --- INTEGRATED Highlight Rendering in Users Table ---
 function renderUsersTable(){
     const tbody=document.getElementById('users-table-body');
     let users=Object.values(state.usersMap);
@@ -1740,7 +1807,6 @@ const getDateLabel=(dateStr)=>{
     if(dateStr<today)return'Overdue'; if(dateStr===today)return'Today'; if(dateStr===tomorrow)return'Tomorrow'; return dateStr;
 };
 
-// --- INTEGRATED Multi-Criteria Filters & Highlighting in Tasks Table ---
 function renderTasksTable() {
     const tbody = document.getElementById('tasks-table-body');
     let filteredTasks = state.tasks;
@@ -2280,7 +2346,6 @@ function updateCharts() {
     }
 }
 
-// --- INTEGRATED: Embedded Density Map Generation ---
 function renderDensityMap() {
     const container = document.getElementById('density-heatmap-container');
     if (!container) return;
@@ -2346,7 +2411,6 @@ function renderDensityMap() {
     }
 }
 
-// --- INTEGRATED: Core Rendering Loop ---
 function renderAll(){
     processUsers(); 
     updateKPIs(); 
