@@ -341,8 +341,8 @@ const app={
         const navTarget = document.getElementById(`nav-${v}`);
         if(navTarget) navTarget.classList.add('active');
         
-        // Updated titles routing map
-        const titles = {'overview': 'Overview', 'density': 'Density Map', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
+        // Cleaned titles array (Density map removed)
+        const titles = {'overview': 'Overview', 'users': 'Users', 'tasks': 'Tasks', 'broadcasts': 'Broadcasts', 'data': 'Data Management'};
         document.getElementById('page-title').innerText = titles[v] || 'Orion';
         
         if(v === 'data'){
@@ -948,7 +948,8 @@ const app={
         updateURL();
         renderTasksTable(); 
     },
-    // Updated Filtering logic attached to central state
+    
+    // --- INTEGRATED: State-Driven Table Filters ---
     filterTasks: (q) => {
         state.taskSearchQuery = q;
         renderTasksTable(); 
@@ -958,9 +959,11 @@ const app={
         renderTasksTable();
     },
     filterUsers: (q) => {
-        state.userSearchQuery = q;
+        state.userSearchQuery = q.toLowerCase();
         renderUsersTable();
     },
+    // ----------------------------------------------
+
     toggleStar: (uid) => {
         if (state.starred.includes(uid)) state.starred = state.starred.filter(id => id !== uid);
         else state.starred.push(uid);
@@ -1625,7 +1628,7 @@ const app={
     },
 };
 
-window.app=app;
+window.app = app;
 
 function processUsers(){
     const map={};
@@ -1655,6 +1658,7 @@ function processUsers(){
     state.usersMap=map;
 }
 
+// --- INTEGRATED Highlight Rendering in Users Table ---
 function renderUsersTable(){
     const tbody=document.getElementById('users-table-body');
     let users=Object.values(state.usersMap);
@@ -1736,6 +1740,7 @@ const getDateLabel=(dateStr)=>{
     if(dateStr<today)return'Overdue'; if(dateStr===today)return'Today'; if(dateStr===tomorrow)return'Tomorrow'; return dateStr;
 };
 
+// --- INTEGRATED Multi-Criteria Filters & Highlighting in Tasks Table ---
 function renderTasksTable() {
     const tbody = document.getElementById('tasks-table-body');
     let filteredTasks = state.tasks;
@@ -2275,6 +2280,7 @@ function updateCharts() {
     }
 }
 
+// --- INTEGRATED: Embedded Density Map Generation ---
 function renderDensityMap() {
     const container = document.getElementById('density-heatmap-container');
     if (!container) return;
@@ -2340,11 +2346,16 @@ function renderDensityMap() {
     }
 }
 
+// --- INTEGRATED: Core Rendering Loop ---
 function renderAll(){
-    processUsers(); updateKPIs(); updateCharts(); updateFeed(); renderDensityMap();
-    if(state.view==='users')renderUsersTable();
-    if(state.view==='tasks')renderTasksTable();
-    if(state.view==='broadcasts')renderBroadcastsTable();
+    processUsers(); 
+    updateKPIs(); 
+    updateCharts(); 
+    updateFeed(); 
+    renderDensityMap(); 
+    if(state.view==='users') renderUsersTable();
+    if(state.view==='tasks') renderTasksTable();
+    if(state.view==='broadcasts') renderBroadcastsTable();
     updateStorageStats();
 }
 
