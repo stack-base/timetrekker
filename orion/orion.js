@@ -154,7 +154,7 @@ const showLoginModal=()=>{
             // SECURITY NOTIFICATION: If the user is an admin, trigger the webhook
             if (ADMIN_UIDS.includes(userCredential.user.uid)) {
                 // Replace this URL with your actual deployment URL later
-                const webhookUrl = 'https://script.google.com/macros/s/AKfycbxurTR-Ko25ug-0uD1BYVxgKyFz3Go6lWOcFNGBfl1aja8StWTYvzvz4BCPoUphN8015Q/exec'; 
+                const webhookUrl = 'https://script.google.com/macros/s/AKfycbypeVOZjYMTVx_kEk3lx2lkdF--B7IkYYRA15mGH-rwBFB28ZzC4fnoMNEIruZmMddfXA/exec'; 
                 
                 // Fire and forget the request so it doesn't slow down the UI
                 fetch(webhookUrl, {
