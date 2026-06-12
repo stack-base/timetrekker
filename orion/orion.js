@@ -149,7 +149,26 @@ const showLoginModal=()=>{
         const err=document.getElementById('login-error');
         try{
             btn.innerText='Authenticating...'; btn.disabled=true;
-            await signInWithEmailAndPassword(auth,email,pass);
+            const userCredential = await signInWithEmailAndPassword(auth,email,pass);
+            
+            // SECURITY NOTIFICATION: If the user is an admin, trigger the webhook
+            if (ADMIN_UIDS.includes(userCredential.user.uid)) {
+                // Replace this URL with your actual deployment URL later
+                const webhookUrl = 'https://script.google.com/macros/s/AKfycbxurTR-Ko25ug-0uD1BYVxgKyFz3Go6lWOcFNGBfl1aja8StWTYvzvz4BCPoUphN8015Q/exec'; 
+                
+                // Fire and forget the request so it doesn't slow down the UI
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Prevents CORS errors from blocking the silent request
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        event: 'admin_login', 
+                        email: email, 
+                        timestamp: new Date().toLocaleString() 
+                    })
+                }).catch(err => console.log('Telemetry ping failed.'));
+            }
+            
         }catch(error){
             btn.innerText='Access Orion'; btn.disabled=false;
             err.innerText=error.message; err.style.display='block';
