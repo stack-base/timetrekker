@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, doc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, deleteField, arrayUnion, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const C={apiKey:"AIzaSyDkKhb8m0znWyC2amv6uGpA8KmbkuW-j1U",authDomain:"timetrekker-app.firebaseapp.com",projectId:"timetrekker-app",storageBucket:"timetrekker-app.firebasestorage.app",messagingSenderId:"83185163190",appId:"1:83185163190:web:e2974c5d0f0274fe5e3f17",measurementId:"G-FLZ02E1Y5L"};
 const appId='timetrekker-v1';
@@ -302,14 +302,38 @@ const requireClearance = () => {
         cancelBtn.onclick = () => { cleanup(); reject(new Error("Cancelled")); };
 
         const attemptVerify = async () => {
-            if (input.value === STAR_KEY) {
-                cleanup(); resolve(true);
-            } else {
+            // Show loading state on the button
+            verifyBtn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i>';
+            verifyBtn.disabled = true;
+
+            try {
+                // Fetch the admin's user document from Firestore
+                const adminDocRef = doc(db, 'artifacts', appId, 'users', user.uid);
+                const adminSnap = await getDoc(adminDocRef);
+
+                // Check if document exists and the PIN matches the 'clearancePin' field
+                if (adminSnap.exists() && adminSnap.data().clearancePin === input.value) {
+                    cleanup(); 
+                    resolve(true);
+                } else {
+                    errorMsg.innerHTML = '<i class="ph-bold ph-warning-circle" style="margin-right: 6px; font-size: 1rem;"></i> Wrong passcode. Try again.';
+                    errorMsg.style.display = 'flex';
+                    input.value = ''; 
+                    input.focus();
+                    
+                    // Trigger shake animation
+                    modal.querySelector('.auth-box').style.transform = 'translateX(4px)';
+                    setTimeout(() => modal.querySelector('.auth-box').style.transform = 'translateX(-4px)', 50);
+                    setTimeout(() => modal.querySelector('.auth-box').style.transform = 'translateX(0)', 100);
+                }
+            } catch (error) {
+                console.error("Error verifying clearance:", error);
+                errorMsg.innerHTML = '<i class="ph-bold ph-warning-circle" style="margin-right: 6px; font-size: 1rem;"></i> Verification failed.';
                 errorMsg.style.display = 'flex';
-                input.value = ''; input.focus();
-                modal.querySelector('.auth-box').style.transform = 'translateX(4px)';
-                setTimeout(() => modal.querySelector('.auth-box').style.transform = 'translateX(-4px)', 50);
-                setTimeout(() => modal.querySelector('.auth-box').style.transform = 'translateX(0)', 100);
+            } finally {
+                // Reset button state
+                verifyBtn.innerHTML = 'Next';
+                verifyBtn.disabled = false;
             }
         };
 
