@@ -548,6 +548,16 @@ const _saveSetting = debounce((k, v) => {
 }, 500);
 
 const app = {
+    openReportPage: () => {
+        app.showToast("Preparing report...");
+        // Cache tasks locally to save Firebase reads
+        localStorage.setItem('timetrekker_report_cache', JSON.stringify(state.tasks));
+        
+        // Brief delay for the toast to show, then redirect
+        setTimeout(() => {
+            window.location.href = './report.html';
+        }, 600);
+    },
     toggleBriefModal: (show = true) => {
         const modal = $('brief-modal');
         const panel = $('brief-panel');

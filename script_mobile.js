@@ -569,6 +569,17 @@ const app = {
     },
 
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
+
+    openReportPage: () => {
+        app.showToast("Preparing report...");
+        // Cache tasks locally to save Firebase reads
+        localStorage.setItem('timetrekker_report_cache', JSON.stringify(state.tasks));
+        
+        // Brief delay for the toast to show, then redirect
+        setTimeout(() => {
+            window.location.href = './report.html';
+        }, 600);
+    },
     
     unlockAudio: () => {
         if (!state.audioContext) {
