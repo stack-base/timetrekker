@@ -93,10 +93,6 @@
                 <h1 id="page-title" class="text-2xl font-bold tracking-tight">Today</h1>
                 <p id="current-date" class="text-xs text-text-muted font-medium mt-0.5">Loading...</p>
             </div>
-            <button onclick="app.exportPDFReport()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand/10 text-brand border border-brand/20 hover:bg-brand hover:text-white transition-all shadow-sm text-sm font-medium">
-                <i class="ph-bold ph-download-simple"></i>
-                <span>Download PDF</span>
-            </button>
             <div class="relative">
                 <div id="header-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-xs font-bold border border-white/10 shadow-lg shadow-brand/20">U</div>
                 <img id="header-avatar-img" src="" alt="Profile" class="absolute inset-0 w-9 h-9 rounded-full object-cover hidden border border-white/10">
@@ -400,6 +396,13 @@
                      <a href="https://stack-base.github.io/workspace/page?view=account-center" target="_blank" class="px-4 py-2 bg-dark-active hover:bg-dark-border rounded-lg border border-dark-border text-xs font-bold text-white active:scale-95 transition-transform text-center whitespace-nowrap">Manage</a>
                 </div>
 
+                <div class="pt-2">
+                    <button onclick="app.signOut()" class="w-full p-4 text-red-400 font-bold text-sm bg-red-400/5 rounded-xl border border-red-400/10 hover:bg-red-400/10 transition-colors">
+                        Sign Out
+                    </button>
+                </div>
+
+                <div class="pt-2 mt-6">
                 <div class="pt-2 mt-6">
                     <button onclick="app.openReportPage()" class="w-full flex items-center justify-between p-4 bg-dark-card rounded-xl text-white font-medium border border-dark-border hover:border-brand/40 transition-all active:scale-[0.98]">
                         <div class="flex items-center">
@@ -410,12 +413,6 @@
                             </div>
                         </div>
                         <i class="ph-bold ph-arrow-right text-text-muted"></i>
-                    </button>
-                </div>
-
-                <div class="pt-2">
-                    <button onclick="app.signOut()" class="w-full p-4 text-red-400 font-bold text-sm bg-red-400/5 rounded-xl border border-red-400/10 hover:bg-red-400/10 transition-colors">
-                        Sign Out
                     </button>
                 </div>
 
