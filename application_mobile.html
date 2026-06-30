@@ -399,6 +399,26 @@
                      </div>
                      <a href="https://stack-base.github.io/workspace/page?view=account-center" target="_blank" class="px-4 py-2 bg-dark-active hover:bg-dark-border rounded-lg border border-dark-border text-xs font-bold text-white active:scale-95 transition-transform text-center whitespace-nowrap">Manage</a>
                 </div>
+
+                <div class="border-t border-dark-border pt-6 mt-6">
+                    <button onclick="app.openReportPage()" class="w-full flex items-center justify-between p-4 bg-dark-card rounded-xl text-white font-medium border border-dark-border hover:border-brand/40 transition-all active:scale-[0.98]">
+                        <div class="flex items-center">
+                            <i class="ph-bold ph-file-pdf text-xl mr-3 text-brand"></i>
+                            <div>
+                                <div class="text-sm font-bold">Export Status Report</div>
+                                <div class="text-xs text-text-muted">Generate PDF of all tasks</div>
+                            </div>
+                        </div>
+                        <i class="ph-bold ph-arrow-right text-text-muted"></i>
+                    </button>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="app.signOut()" class="w-full p-4 text-red-400 font-bold text-sm bg-red-400/5 rounded-xl border border-red-400/10 hover:bg-red-400/10 transition-colors">
+                        Sign Out
+                    </button>
+                </div>
+                
                 <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden shadow-sm">
                     <div class="px-4 py-3 bg-dark-active/30 border-b border-dark-border text-xs font-bold uppercase text-text-muted">Timer Configuration</div>
                     <div class="p-4 space-y-6">
@@ -441,10 +461,6 @@
                         </div>
                     </div>
                 </div>
-
-                <button onclick="app.signOut()" class="w-full flex items-center justify-center p-4 bg-dark-card rounded-xl text-red-500 font-medium border border-dark-border active:bg-red-500/10 transition-colors shadow-sm">
-                    <i class="ph-bold ph-sign-out text-xl mr-3"></i> Sign Out
-                </button>
 
                 <div class="mt-6 mb-safe-b">
                     <div class="bg-dark-card rounded-2xl border border-dark-border overflow-hidden shadow-sm mx-0">
