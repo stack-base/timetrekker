@@ -655,13 +655,14 @@ const app = {
         }
         
         document.querySelectorAll('.nav-item').forEach(el => {
-            el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted transition-colors`;
+            el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-all duration-300`;
             el.querySelector('i').classList.remove('ph-fill');
             el.querySelector('i').classList.add('ph-bold');
         });
+
         const activeBtn = $(`tab-${tab}`);
         if(activeBtn) {
-            activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand transition-colors`;
+            activeBtn.className = `nav-item animate-nav-pop flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-all duration-300`;
             activeBtn.querySelector('i').classList.remove('ph-bold');
             activeBtn.querySelector('i').classList.add('ph-fill');
         }
