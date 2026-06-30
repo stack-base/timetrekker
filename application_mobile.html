@@ -93,8 +93,9 @@
                 <h1 id="page-title" class="text-2xl font-bold tracking-tight">Today</h1>
                 <p id="current-date" class="text-xs text-text-muted font-medium mt-0.5">Loading...</p>
             </div>
-            <button onclick="app.openReportPage()" class="w-9 h-9 flex items-center justify-center rounded-full bg-dark-active border border-dark-border text-text-muted hover:text-white active:scale-90 transition-transform shadow-sm" aria-label="Export Tasks">
-                <i class="ph-bold ph-download-simple text-lg"></i>
+            <button onclick="app.exportPDFReport()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand/10 text-brand border border-brand/20 hover:bg-brand hover:text-white transition-all shadow-sm text-sm font-medium">
+                <i class="ph-bold ph-download-simple"></i>
+                <span>Export PDF</span>
             </button>
             <div class="relative">
                 <div id="header-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-red-600 flex items-center justify-center text-xs font-bold border border-white/10 shadow-lg shadow-brand/20">U</div>

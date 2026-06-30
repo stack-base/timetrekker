@@ -269,8 +269,9 @@
             <button onclick="app.toggleAddTaskModal()" class="bg-brand hover:bg-brand-hover text-white px-4 py-2 rounded text-sm font-medium flex items-center transition-colors shadow-sm">
                 <i class="ph-bold ph-plus mr-2"></i> <span class="hidden sm:inline">Add Task</span><span class="sm:hidden">Add</span>
             </button>
-            <button onclick="app.openReportPage()" class="bg-dark-active border border-dark-border hover:bg-dark-hover text-text-muted hover:text-white px-3 py-2 rounded text-sm font-medium flex items-center transition-colors shadow-sm" title="Export PDF">
-                <i class="ph-bold ph-download-simple sm:mr-2"></i> <span class="hidden sm:inline">Export</span>
+            <button onclick="app.exportPDFReport()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand/10 text-brand border border-brand/20 hover:bg-brand hover:text-white transition-all shadow-sm text-sm font-medium">
+                <i class="ph-bold ph-download-simple"></i>
+                <span>Export PDF</span>
             </button>
         </div>
     </header>
