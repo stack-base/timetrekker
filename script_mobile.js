@@ -580,6 +580,18 @@ const app = {
             window.location.href = './report.html';
         }, 600);
     },
+    exportPDFReport: () => {
+        // 1. Notify the user
+        app.showToast("Preparing offline report module...", "success");
+        
+        // 2. Stringify and cache current task state globally
+        localStorage.setItem('timetrekker_report_cache', JSON.stringify(state.tasks));
+        
+        // 3. Brief delay for the toast to register, then navigate to the module
+        setTimeout(() => {
+            window.location.href = './report.html';
+        }, 600);
+    },
     
     unlockAudio: () => {
         if (!state.audioContext) {

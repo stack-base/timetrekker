@@ -3,49 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generating Report - TimeTrekker</title>
+    <title>Compiling Report - TimeTrekker</title>
     <meta name="theme-color" content="#09090b">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        brand: '#ff5757',
-                        dark: { bg: '#09090b', card: '#18181b', border: '#27272a' }
-                    }
+                    colors: { brand: '#ff5757', dark: { bg: '#09090b', card: '#18181b', border: '#27272a' } }
                 }
             }
         };
     </script>
 </head>
-<body class="bg-dark-bg text-white h-screen flex flex-col items-center justify-center overflow-hidden font-sans">
+<body class="bg-dark-bg text-white h-screen flex flex-col items-center justify-center overflow-hidden font-sans selection:bg-brand/30">
 
-    <div class="flex flex-col items-center justify-center space-y-4 animate-pulse z-10 relative">
-        <div class="w-16 h-16 rounded-2xl bg-dark-card border border-dark-border shadow-2xl flex items-center justify-center relative overflow-hidden">
-            <div class="absolute inset-0 bg-brand/20 blur-xl"></div>
-            <i class="ph-fill ph-mountains text-brand text-3xl relative z-10"></i>
+    <div class="flex flex-col items-center justify-center space-y-6 z-10 relative">
+        <div class="relative flex items-center justify-center w-20 h-20">
+            <div class="absolute inset-0 bg-brand/20 rounded-full blur-xl animate-pulse"></div>
+            <div class="w-16 h-16 rounded-2xl bg-dark-card border border-white/10 shadow-2xl flex items-center justify-center relative overflow-hidden z-10 animate-bounce" style="animation-duration: 2s;">
+                <i class="ph-fill ph-files text-brand text-3xl relative z-10"></i>
+            </div>
+            <svg class="animate-spin absolute w-24 h-24 text-brand/30" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
         </div>
-        <h2 class="text-xl font-bold tracking-tight">Compiling Report</h2>
-        <p class="text-sm text-zinc-400">Please wait while your PDF is generated...</p>
+        <div class="text-center">
+            <h2 class="text-xl font-bold tracking-tight text-white mb-1">Compiling Intelligence Report</h2>
+            <p class="text-sm text-zinc-500 font-medium">Structuring telemetry & tasks. Please wait...</p>
+        </div>
     </div>
-
-    <div id="pdf-container" style="position: absolute; top: -9999px; left: -9999px; width: 800px; background: white; color: black; padding: 40px; font-family: 'Inter', sans-serif;">
-        </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const rawData = localStorage.getItem('timetrekker_report_cache');
             if (!rawData) {
-                alert("No task data found. Returning to app.");
+                alert("No task data found in cache. Returning to app.");
                 window.history.back();
                 return;
             }
@@ -58,8 +62,9 @@
             
             const pending = tasks.filter(t => t.status === 'todo');
             const completed = tasks.filter(t => t.status === 'done');
+            
             const priMap = { high: 3, med: 2, low: 1, none: 0 };
-
+            
             const urgentTasks = pending.filter(t => !t.dueDate || t.dueDate <= today)
                 .sort((a, b) => priMap[b.priority || 'none'] - priMap[a.priority || 'none']);
             
@@ -68,92 +73,144 @@
 
             completed.sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
 
-            const escapeHTML = (str) => {
-                if (!str) return '';
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            };
-
-            const buildRows = (taskList) => taskList.map(t => `
-                <tr style="border-bottom: 1px solid #e4e4e7;">
-                    <td style="padding: 12px 8px; font-weight: 500; color: #18181b;">${escapeHTML(t.title)}</td>
-                    <td style="padding: 12px 8px; color: #52525b; font-size: 12px;">${escapeHTML(t.project || 'Inbox')}</td>
-                    <td style="padding: 12px 8px; color: #52525b; font-size: 12px;">${t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '-'}</td>
-                    <td style="padding: 12px 8px; font-size: 12px;">
-                        ${t.priority === 'high' ? '<span style="color: #ef4444; font-weight: bold;">High</span>' : 
-                          t.priority === 'med' ? '<span style="color: #eab308; font-weight: 600;">Med</span>' : 
-                          t.priority === 'low' ? '<span style="color: #3b82f6; font-weight: 600;">Low</span>' : '-'}
-                    </td>
-                </tr>
-            `).join('');
-
-            const container = document.getElementById('pdf-container');
-            container.innerHTML = `
-                <div style="border-bottom: 2px solid #18181b; padding-bottom: 16px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div>
-                        <h1 style="font-size: 24px; font-weight: bold; margin: 0; color: #18181b; letter-spacing: -0.025em;">TimeTrekker Status Report</h1>
-                        <p style="margin: 4px 0 0 0; color: #71717a; font-size: 14px;">Generated on ${new Date().toLocaleString()}</p>
-                    </div>
-                    <div style="text-align: right; color: #71717a; font-size: 14px;">
-                        <strong>${pending.length}</strong> Pending &bull; <strong>${completed.length}</strong> Completed
-                    </div>
-                </div>
-
-                ${urgentTasks.length > 0 ? `
-                    <h2 style="font-size: 16px; font-weight: bold; color: #ef4444; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Action Required (Today & Overdue)</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px; text-align: left;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #e4e4e7; color: #71717a; font-size: 12px; text-transform: uppercase;">
-                                <th style="padding: 8px;">Task</th><th style="padding: 8px;">Project</th><th style="padding: 8px;">Due</th><th style="padding: 8px;">Priority</th>
-                            </tr>
-                        </thead>
-                        <tbody>${buildRows(urgentTasks)}</tbody>
-                    </table>
-                ` : ''}
-
-                ${upcomingTasks.length > 0 ? `
-                    <h2 style="font-size: 16px; font-weight: bold; color: #3b82f6; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Upcoming Tasks</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px; text-align: left;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #e4e4e7; color: #71717a; font-size: 12px; text-transform: uppercase;">
-                                <th style="padding: 8px;">Task</th><th style="padding: 8px;">Project</th><th style="padding: 8px;">Due</th><th style="padding: 8px;">Priority</th>
-                            </tr>
-                        </thead>
-                        <tbody>${buildRows(upcomingTasks)}</tbody>
-                    </table>
-                ` : ''}
-
-                ${completed.length > 0 ? `
-                    <h2 style="font-size: 16px; font-weight: bold; color: #10b981; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Recently Completed</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px; text-align: left;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #e4e4e7; color: #71717a; font-size: 12px; text-transform: uppercase;">
-                                <th style="padding: 8px;">Task</th><th style="padding: 8px;">Project</th><th style="padding: 8px;">Due</th><th style="padding: 8px;">Priority</th>
-                            </tr>
-                        </thead>
-                        <tbody>${buildRows(completed.slice(0, 40))}</tbody>
-                    </table>
-                ` : ''}
-            `;
-
-            const opt = {
-                margin:       0.5,
-                filename:     `TimeTrekker_Report_${today}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-
-            // Allow a small rendering tick, then generate and step back
+            // Small delay to allow the loading animation to render smoothly
             setTimeout(() => {
-                html2pdf().set(opt).from(container).save().then(() => {
-                    // Clear cache to keep storage clean
-                    localStorage.removeItem('timetrekker_report_cache');
-                    // Route user right back to where they were
-                    window.history.back();
-                });
-            }, 500);
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                
+                const margin = 14;
+                const pageWidth = doc.internal.pageSize.width;
+                const brandColor = [255, 87, 87];
+                let currentY = 20;
+
+                // --- HEADER ---
+                doc.setFillColor(...brandColor);
+                doc.rect(0, 0, pageWidth, 4, 'F');
+                
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(22);
+                doc.setTextColor(15, 23, 42);
+                doc.text("TimeTrekker", margin, currentY);
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139);
+                doc.text(`Operational Status Report • Generated ${new Date().toLocaleString()}`, margin, currentY + 6);
+                currentY += 18;
+
+                // --- KPI CARDS ---
+                const drawKPI = (x, y, w, title, val) => {
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(x, y, w, 20, 'F');
+                    doc.setDrawColor(226, 232, 240);
+                    doc.setLineWidth(0.5);
+                    doc.rect(x, y, w, 20, 'S');
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(100, 116, 139);
+                    doc.text(title.toUpperCase(), x + 4, y + 6);
+                    
+                    doc.setFontSize(14);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(val.toString(), x + 4, y + 15);
+                };
+
+                const cardW = (pageWidth - (margin * 2) - 8) / 3;
+                drawKPI(margin, currentY, cardW, "Total Pending", pending.length);
+                drawKPI(margin + cardW + 4, currentY, cardW, "Action Required", urgentTasks.length);
+                drawKPI(margin + (cardW * 2) + 8, currentY, cardW, "Recently Completed", completed.length);
+                currentY += 32;
+
+                // --- TABLE STYLES ---
+                const tableStyles = {
+                    theme: 'grid',
+                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 3, textColor: [51, 65, 85], lineColor: [226, 232, 240], lineWidth: 0.1 },
+                    headStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42], fontStyle: 'bold' },
+                    margin: { left: margin, right: margin }
+                };
+
+                const formatRow = (t) => [
+                    t.title,
+                    t.project || 'Inbox',
+                    t.dueDate || '-',
+                    t.priority ? t.priority.toUpperCase() : 'NONE'
+                ];
+
+                // --- URGENT TASKS ---
+                if (urgentTasks.length > 0) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.setTextColor(239, 68, 68); // Red
+                    doc.text("ACTION REQUIRED (TODAY & OVERDUE)", margin, currentY);
+                    
+                    doc.autoTable({
+                        startY: currentY + 4,
+                        head: [['Task Directive', 'Project', 'Due Date', 'Priority']],
+                        body: urgentTasks.map(formatRow),
+                        ...tableStyles
+                    });
+                    currentY = doc.lastAutoTable.finalY + 12;
+                }
+
+                // --- UPCOMING TASKS ---
+                if (upcomingTasks.length > 0) {
+                    if (currentY > 250) { doc.addPage(); currentY = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.setTextColor(59, 130, 246); // Blue
+                    doc.text("UPCOMING DIRECTIVES", margin, currentY);
+                    
+                    doc.autoTable({
+                        startY: currentY + 4,
+                        head: [['Task Directive', 'Project', 'Due Date', 'Priority']],
+                        body: upcomingTasks.map(formatRow),
+                        ...tableStyles
+                    });
+                    currentY = doc.lastAutoTable.finalY + 12;
+                }
+
+                // --- COMPLETED TASKS ---
+                if (completed.length > 0) {
+                    if (currentY > 250) { doc.addPage(); currentY = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.setTextColor(16, 185, 129); // Green
+                    doc.text("RECENTLY COMPLETED (TOP 30)", margin, currentY);
+                    
+                    doc.autoTable({
+                        startY: currentY + 4,
+                        head: [['Task Directive', 'Project', 'Completion Date', 'Priority']],
+                        body: completed.slice(0, 30).map(t => {
+                            const row = formatRow(t);
+                            row[2] = t.completedAt ? new Date(t.completedAt).toLocaleDateString() : '-';
+                            return row;
+                        }),
+                        ...tableStyles
+                    });
+                }
+
+                // --- FOOTER ---
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(`TimeTrekker PDF Module`, margin, doc.internal.pageSize.height - 10);
+                    doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, doc.internal.pageSize.height - 10, { align: 'right' });
+                }
+
+                // --- SAVE AND ROUTE BACK ---
+                doc.save(`TimeTrekker_Status_${today}.pdf`);
+                
+                // Clear the cache to prevent memory bloat
+                localStorage.removeItem('timetrekker_report_cache');
+                
+                // Instantly bounce back to the app seamlessly
+                window.history.back();
+
+            }, 800); // 800ms delay ensures the loading UI renders and feels intentional
         });
     </script>
 </body>
