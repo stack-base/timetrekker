@@ -569,6 +569,14 @@ const app = {
     },
 
     customPrompt: { resolve: null, el: $('custom-prompt-modal'), input: $('prompt-input'), title: $('prompt-title') },
+
+    exportPDFReport: () => {
+        app.showToast("Compiling data for PDF generation", "success");
+        localStorage.setItem('timetrekker_export_cache', JSON.stringify(state.tasks));
+        setTimeout(() => {
+            window.location.href = './export.html';
+        }, 600);
+    },
     
     unlockAudio: () => {
         if (!state.audioContext) {

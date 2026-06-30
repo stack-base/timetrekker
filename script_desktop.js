@@ -548,6 +548,13 @@ const _saveSetting = debounce((k, v) => {
 }, 500);
 
 const app = {
+    exportPDFReport: () => {
+        app.showToast("Compiling data for PDF generation", "success");
+        localStorage.setItem('timetrekker_export_cache', JSON.stringify(state.tasks));
+        setTimeout(() => {
+            window.location.href = './export.html';
+        }, 600);
+    },
     toggleBriefModal: (show = true) => {
         const modal = $('brief-modal');
         const panel = $('brief-panel');
