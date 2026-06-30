@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exporting Tasks...</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    /* Minimalist Loading UI */
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f5f5f7; /* Clean, Apple-like off-white */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #007aff;
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto 20px auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Hidden container for the PDF content.
+      We render it off-screen so html2pdf can capture it, 
+      but the user doesn't see a flash of unstyled content.
+    */
+    #pdf-content {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: 800px; /* Fixed width for consistent PDF rendering */
+      padding: 40px;
+      background: white;
+      color: #1d1d1f;
+    }
+
+    /* PDF Specific Styling */
+    .pdf-header { border-bottom: 2px solid #eaeaea; padding-bottom: 20px; margin-bottom: 30px; }
+    .task-section { margin-bottom: 40px; }
+    .task-section h2 { color: #007aff; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+    .task-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
+    .task-title { font-weight: 500; }
+    .task-date { color: #86868b; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <div class="glass-card">
+    <div class="spinner"></div>
+    <h2 style="margin:0; font-size: 20px; font-weight: 600;">Generating Document</h2>
+    <p style="margin-top: 8px; color: #86868b; font-size: 14px;">Please wait while we prepare your file...</p>
+  </div>
+
+  <div id="pdf-content">
+    <div class="pdf-header">
+      <h1 style="margin:0;">Task Overview</h1>
+      <p style="margin: 4px 0 0 0; color: #86868b;" id="pdf-date"></p>
+    </div>
+    <div id="task-container"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Retrieve and Parse Data
+      const rawData = localStorage.getItem('taskExportData');
+      if (!rawData) {
+        alert("No task data found.");
+        window.history.back();
+        return;
+      }
+      
+      const tasks = JSON.parse(rawData);
+      
+      // 2. Smart Sorting (Upcoming -> Pending -> Completed)
+      const categorized = { upcoming: [], pending: [], completed: [] };
+      
+      tasks.forEach(task => {
+        if (task.status === 'completed') categorized.completed.push(task);
+        else if (task.status === 'upcoming') categorized.upcoming.push(task);
+        else categorized.pending.push(task);
+      });
+
+      // 3. Populate the HTML Template
+      document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
+      const container = document.getElementById('task-container');
+      
+      const buildSection = (title, taskList) => {
+        if (taskList.length === 0) return '';
+        let html = `<div class="task-section"><h2>${title}</h2>`;
+        taskList.forEach(t => {
+          html += `
+            <div class="task-item">
+              <span class="task-title">${t.title}</span>
+              <span class="task-date">${t.dueDate || ''}</span>
+            </div>
+          `;
+        });
+        html += `</div>`;
+        return html;
+      };
+
+      container.innerHTML = 
+        buildSection('Upcoming', categorized.upcoming) +
+        buildSection('Pending', categorized.pending) +
+        buildSection('Completed', categorized.completed);
+
+      // 4. Generate PDF
+      const element = document.getElementById('pdf-content');
+      const opt = {
+        margin:       0.5,
+        filename:     'Task_Overview.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      try {
+        await html2pdf().set(opt).from(element).save();
+        
+        // 5. Cleanup and Return
+        localStorage.removeItem('taskExportData'); // Optional: clear cache
+        
+        // Small delay to ensure the OS download dialog registers
+        setTimeout(() => {
+          // If you know the previous URL, you can use window.location.href = '...'
+          // Otherwise, history.back() works well.
+          window.history.back(); 
+        }, 1000);
+        
+      } catch (error) {
+        console.error("PDF Generation failed:", error);
+        alert("There was an issue generating the PDF.");
+        window.history.back();
+      }
+    });
+  </script>
+</body>
+</html>
