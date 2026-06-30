@@ -253,7 +253,7 @@
                 <div id="user-avatar-initials" class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-xs font-bold text-white shrink-0">U</div>
                 <div class="flex md:hidden lg:flex flex-col ml-3 overflow-hidden"><span id="user-name-text" class="text-sm font-medium text-white truncate">User</span><span id="user-email-text" class="text-xs text-text-muted truncate">email@example.com</span></div>
             </div>
-            <div class="mt-3 text-tiny text-text-faint text-center md:hidden lg:block tracking-wide uppercase font-bold opacity-60">Powered by StackBase</div>
+            <div class="mt-3 text-tiny text-text-faint text-center md:hidden lg:block tracking-wide font-bold opacity-60">StackBase</div>
         </div>
     </div>
 </nav>
@@ -266,12 +266,12 @@
             <span id="current-date-display" class="ml-4 text-sm text-text-muted hidden md:block border-l border-dark-border pl-4"></span>
         </div>
         <div class="flex items-center space-x-3 shrink-0" id="header-actions">
-            <button onclick="app.toggleAddTaskModal()" class="bg-brand hover:bg-brand-hover text-white px-4 py-2 rounded text-sm font-medium flex items-center transition-colors shadow-sm">
-                <i class="ph-bold ph-plus mr-2"></i> <span class="hidden sm:inline">Add Task</span><span class="sm:hidden">Add</span>
-            </button>
             <button onclick="app.exportPDFReport()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand/10 text-brand border border-brand/20 hover:bg-brand hover:text-white transition-all shadow-sm text-sm font-medium">
                 <i class="ph-bold ph-download-simple"></i>
                 <span>Download PDF</span>
+            </button>
+            <button onclick="app.toggleAddTaskModal()" class="bg-brand hover:bg-brand-hover text-white px-4 py-2 rounded text-sm font-medium flex items-center transition-colors shadow-sm">
+                <i class="ph-bold ph-plus mr-2"></i> <span class="hidden sm:inline">Add Task</span><span class="sm:hidden">Add</span>
             </button>
         </div>
     </header>
