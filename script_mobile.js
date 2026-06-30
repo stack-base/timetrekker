@@ -655,16 +655,30 @@ const app = {
         }
         
         document.querySelectorAll('.nav-item').forEach(el => {
+            // Reset buttons to default
             el.className = `nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-all duration-300`;
-            el.querySelector('i').classList.remove('ph-fill');
-            el.querySelector('i').classList.add('ph-bold');
+            
+            // Reset icons and remove the animation trigger
+            const icon = el.querySelector('i');
+            icon.classList.remove('ph-fill', 'pop-trigger');
+            icon.classList.add('ph-bold');
         });
 
         const activeBtn = $(`tab-${tab}`);
         if(activeBtn) {
-            activeBtn.className = `nav-item animate-nav-pop flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-all duration-300`;
-            activeBtn.querySelector('i').classList.remove('ph-bold');
-            activeBtn.querySelector('i').classList.add('ph-fill');
+            // Set the active button to brand colors
+            activeBtn.className = `nav-item flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-all duration-300`;
+            
+            // Set the active icon to filled
+            const icon = activeBtn.querySelector('i');
+            icon.classList.remove('ph-bold');
+            icon.classList.add('ph-fill');
+            
+            // Force a DOM reflow so the browser registers the animation restart
+            void icon.offsetWidth;
+            
+            // Add the animation class directly to the icon
+            icon.classList.add('pop-trigger');
         }
 
         const isTask = tab === 'tasks';

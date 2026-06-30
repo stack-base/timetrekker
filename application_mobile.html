@@ -55,8 +55,15 @@
     
     #timer-progress { filter: drop-shadow(0 0 8px rgba(255, 87, 87, 0.4)); transition: stroke-dashoffset 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
     
-    @keyframes navPop {0% { transform: scale(0.95); } 50% { transform: scale(1.2); } 100% { transform: scale(1); }}
-    .animate-nav-pop i {animation: navPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;}
+    @keyframes navPop {
+        0% { transform: scale(0.95); } 
+        50% { transform: scale(1.2); } 
+        100% { transform: scale(1); }
+    }
+    .pop-trigger {
+        display: inline-block; 
+        animation: navPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
 </style>
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
