@@ -54,16 +54,6 @@
     .spring-sheet { transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) !important; }
     
     #timer-progress { filter: drop-shadow(0 0 8px rgba(255, 87, 87, 0.4)); transition: stroke-dashoffset 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
-    
-    @keyframes navPop {
-        0% { transform: scale(0.95); } 
-        50% { transform: scale(1.2); } 
-        100% { transform: scale(1); }
-    }
-    .pop-trigger {
-        display: inline-block; 
-        animation: navPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
 </style>
 </head>
 <body class="h-[100dvh] w-full flex flex-col bg-dark-bg text-text-main">
@@ -518,16 +508,16 @@
 
     <nav class="fixed bottom-0 left-0 w-full bg-dark-bg/95 backdrop-blur border-t border-dark-border pb-safe-b z-40">
         <div class="flex justify-around items-center h-16">
-            <button onclick="app.switchTab('tasks')" id="tab-tasks" aria-label="Tasks Tab" class="nav-item animate-nav-pop flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-all duration-300">
+            <button onclick="app.switchTab('tasks')" id="tab-tasks" aria-label="Tasks Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-brand active:scale-95 transition-transform">
                 <i class="ph-fill ph-check-circle text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Tasks</span>
             </button>
-            <button onclick="app.switchTab('timer')" id="tab-timer" aria-label="Timer Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-all duration-300">
+            <button onclick="app.switchTab('timer')" id="tab-timer" aria-label="Timer Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-timer text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Focus</span>
             </button>
-            <button onclick="app.switchTab('analytics')" id="tab-analytics" aria-label="Analytics Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-all duration-300">
+            <button onclick="app.switchTab('analytics')" id="tab-analytics" aria-label="Analytics Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-chart-bar text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Analytics</span>
             </button>
-            <button onclick="app.switchTab('settings')" id="tab-settings" aria-label="Settings Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-all duration-300">
+            <button onclick="app.switchTab('settings')" id="tab-settings" aria-label="Settings Tab" class="nav-item flex flex-col items-center justify-center w-full h-full text-text-muted active:scale-95 transition-transform">
                 <i class="ph-bold ph-gear text-2xl mb-0.5"></i><span class="text-[10px] font-medium">Settings</span>
             </button>
         </div>
