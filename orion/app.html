@@ -149,120 +149,6 @@
     .tier-2 { background: rgba(255, 87, 87, 0.50); }
     .tier-3 { background: rgba(255, 87, 87, 0.75); }
     .tier-4 { background: rgba(255, 87, 87, 1.00); }
-
-    /* --- Add this media query for your header button --- */
-@media (min-width: 640px) {
-    .sm\:inline { display: inline !important; }
-}
-
-/* --- 1. Fixed Main Header --- */
-.header {
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-main); /* Removed transparency to prevent scroll overlap issues */
-    z-index: 10;
-    flex-shrink: 0;
-}
-
-/* --- 2. Standardized Card Header --- */
-.card-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-wrap: wrap; /* Allows native wrapping without inline styles */
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem; 
-    background: transparent; /* Makes it seamless with the card body */
-}
-.card-header h3 {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #fff;
-    margin: 0;
-}
-
-/* --- 3. Fixed Table Sticky Borders & Colors --- */
-.data-table {
-    width: 100%;
-    border-collapse: separate; /* CRITICAL: Required for sticky borders to work */
-    border-spacing: 0;
-    text-align: left;
-}
-.data-table th {
-    padding: 1rem;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    background: var(--bg-card); /* Matches the card background instead of the sidebar */
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    white-space: nowrap;
-    border-bottom: none; /* Removed to prevent the scroll-away bug */
-    box-shadow: inset 0 -1px 0 var(--border); /* Keeps the border visible while stuck */
-}
-.data-table td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.875rem;
-}
-
-@media (max-width: 768px) {
-    /* --- 1. Responsive Main Header --- */
-    .header {
-        padding: 0 1rem;
-        height: 56px;
-    }
-    .header h1 {
-        font-size: 1.125rem;
-    }
-
-    /* --- 2. Responsive Card Headers --- */
-    .card-header {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 1rem;
-        gap: 0.75rem;
-    }
-    
-    /* Force header content sections to stack and take full width */
-    .card-header > div {
-        flex: 1 1 100% !important; 
-        width: 100%;
-    }
-    
-    /* Re-align actions to the left for better mobile reading */
-    .card-header .justify-end {
-        justify-content: flex-start !important; 
-    }
-    
-    /* Ensure search bars stretch the full width of the screen */
-    .card-header input[type="text"],
-    .card-header select {
-        max-width: 100% !important; 
-        width: 100%;
-    }
-    
-    /* Ensure action buttons stretch across the mobile view */
-    .card-header .btn {
-        flex: 1;
-        justify-content: center;
-    }
-
-    /* --- 3. Responsive Table Wrapper --- */
-    .table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* Smooth horizontal scroll on iOS */
-        padding-bottom: 0.5rem; /* Prevents scrollbar from clipping text */
-    }
-}
 </style>
 </head>
 <body>
@@ -309,16 +195,13 @@
 </aside>
 <main class="main-area">
 <header id="standard-header" class="header">
-    <div class="flex items-center">
-        <button class="mobile-menu-btn" onclick="app.toggleMobileMenu()">
-            <i class="ph-bold ph-list"></i>
-        </button>
-        <h1 id="page-title">Overview</h1>
-    </div>
-    <button onclick="app.refreshData(true)" class="btn btn-outline text-xs btn-icon" title="Refresh Data">
-        <i class="ph-bold ph-arrows-clockwise"></i> 
-        <span style="margin-left:0.5rem;" class="hidden sm:inline">Refresh</span>
-    </button>
+<div class="flex items-center">
+<button class="mobile-menu-btn" onclick="app.toggleMobileMenu()"><i class="ph-bold ph-list"></i></button>
+<h1 id="page-title">Overview</h1>
+</div>
+<button onclick="app.refreshData(true)" class="btn btn-outline text-xs btn-icon" title="Refresh Data">
+<i class="ph-bold ph-arrows-clockwise"></i> <span style="margin-left:0.5rem;" class="hidden sm:inline">Refresh</span>
+</button>
 </header>
 <header id="data-header" class="header hidden">
 <div class="flex items-center">
@@ -517,10 +400,9 @@
 
 <div id="view-users" class="view-section hidden fade-in">
 <div class="card dynamic-table-card">
-<div class="card-header">
+<div class="card-header" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
     <div style="flex: 1 1 250px; min-width: 0;">
-        <h3 style="margin-bottom: 4px;">Active Users</h3>
-        <p class="text-xs text-muted" style="margin: 0;">Full user directory from Firestore.</p>
+        <h3 style="margin: 0 0 4px 0;">Users</h3>
     </div>
     <div class="flex items-center justify-end" style="gap: 0.75rem; flex-wrap: wrap; flex: 2 1 auto;">
         <div style="position:relative; width:100%; max-width:280px; min-width: 150px;">
